@@ -46,8 +46,14 @@ typedef T_sink<my_chunk> my_sink;
 
 #define OLD_PATH 1
 #define TEST 0
+#define TEST0 0
+#define TEST1 0
+#define TEST2 0
 
 #define NON_SSE_INTS 1
+#define	CARE_ABOUT_INPUT 0
+#define ECHO_INPUT 0
+#define DO_OUTPUT 1
 
 #if OLD_PATH
 #define C_LOOPS 1
@@ -62,8 +68,10 @@ typedef T_sink<my_chunk> my_sink;
 
 #if !USE_SSE2 && !NON_SSE_INTS
 typedef int_N_wavfile_chunker_T<short, BUFFERSIZE> my_wavfile_chunker;
+typedef int_N_wavfile_chunker_T_base<short, BUFFERSIZE> my_wavfile_chunker_base;
 #else
 typedef int_N_wavfile_chunker_T<int, BUFFERSIZE> my_wavfile_chunker;
+typedef int_N_wavfile_chunker_T_base<int, BUFFERSIZE> my_wavfile_chunker_base;
 #endif
 
 #include "asiodrv.cpp"
@@ -174,8 +182,24 @@ public:
 		_src1_active = false;
 		return ASIOStop();
 	}
+
+	template <typename BufferT>
+	void CopyBuffer(BufferT *bufOut, float *copyFromBuf, float *copyFromEnd, float resamplerate)
+	{
+		BufferT *bufEnd = bufOut + BUFFERSIZE;
+		float myPeriod = 1.0f / resamplerate, smpOut;
+		while (bufOut < bufEnd)
+		{
+			EvalSignalN<1>(_outputTime, &smpOut, _inputBufTime, copyFromBuf, _bufLEnd - _bufLBegin);
+			if (smpOut < 0.0f)
+				*bufOut++ = short(smpOut * -SHRT_MIN);
+			else
+				*bufOut++ = short(smpOut * SHRT_MAX);
+			_outputTime += myPeriod;
+		}
+	}
 	
-	template <typename T>
+	template <typename BufferT>
 	void BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	{
 		/*int *bufL, *bufR;
@@ -195,47 +219,24 @@ public:
 		//memcpy(chk->_data, 
 		//printf("BufferSwitch\n");
 		_doubleBufferIndex = doubleBufferIndex;
-		
+#if CARE_ABOUT_INPUT
 		this->ProcessInput();
-		//process output
-		// play soundfile
-		//_src1.ld_data((short*)_buffer_infos[2].buffers[doubleBufferIndex], (short*)_buffer_infos[3].buffers[doubleBufferIndex]);
-		//float outputrate = SAMPLERATE * (float)sp;
-#define ECHO 0
-#if !ECHO
+#endif
+
+#if DO_OUTPUT
 		double sp = _speed * (48000.0f / 44100.0f);
 		float resamplerate = 44100.0f  * sp;
 		SetOutputSamplingFrequency(resamplerate);
-		short *bufOut, *bufEnd;
-		
-		bufOut = (short*)_buffer_infos[2].buffers[doubleBufferIndex];
-		bufEnd = bufOut + BUFFERSIZE;
-		float smpOut;
-		float myPeriod = 1.0f / resamplerate;
 		CheckBuffers(resamplerate);
+
 		double tt = _outputTime;
-		while (bufOut < bufEnd)
-		{
-			EvalSignalN<1>(_outputTime, &smpOut, _inputBufTime, _bufLBegin, _bufLEnd - _bufLBegin);
-			if (smpOut < 0.0f)
-				*bufOut++ = short(smpOut * -SHRT_MIN);
-			else
-				*bufOut++ = short(smpOut * SHRT_MAX);
-			_outputTime += myPeriod;
-		}
-		bufOut = (short*)_buffer_infos[3].buffers[doubleBufferIndex];
-		bufEnd = bufOut + BUFFERSIZE;
+		CopyBuffer((BufferT*)_buffer_infos[2].buffers[doubleBufferIndex], _bufLBegin, _bufLEnd, resamplerate);
+
 		_outputTime = tt;
-		while (bufOut < bufEnd)
-		{
-			EvalSignalN<1>(_outputTime, &smpOut, _inputBufTime, _bufRBegin, _bufREnd - _bufRBegin);
-			if (smpOut < 0.0f)
-				*bufOut++ = short(smpOut * -SHRT_MIN);
-			else
-				*bufOut++ = short(smpOut * SHRT_MAX);
-			_outputTime += myPeriod;
-		}
-#else
+		CopyBuffer((BufferT*)_buffer_infos[3].buffers[doubleBufferIndex], _bufRBegin, _bufREnd, resamplerate);
+#endif
+
+#if ECHO_INPUT
 		// copy input
 		memcpy(_buffer_infos[2].buffers[doubleBufferIndex], _buffer_infos[0].buffers[doubleBufferIndex], BUFFERSIZE*sizeof(short));
 		memcpy(_buffer_infos[3].buffers[doubleBufferIndex], _buffer_infos[1].buffers[doubleBufferIndex], BUFFERSIZE*sizeof(short));
@@ -449,7 +450,11 @@ protected:
 		long minSize, maxSize, preferredSize, granularity;
 
 		try {
+#if TEST2
+			_src1 = new int_N_wavfile_chunker_T_test<int, BUFFERSIZE>;
+#else
 			_src1 = new my_wavfile_chunker(_default_src);
+#endif
 		} catch (exception e) {
 			throw e;
 		}
@@ -668,7 +673,7 @@ protected:
 	ASIOChannelInfo *_output_channel_infos;
 	long _bufSize;
 	double _outputTime;
-	my_wavfile_chunker *_src1;
+	my_wavfile_chunker_base *_src1;
 	bool _src1_active;
 	SpeedParser2<BUFFERSIZE> _sp;
 	std::ofstream _log;
@@ -731,8 +736,13 @@ long asioMessage(long selector, long value, void *message, double *opt)
 void begin()
 {
 	asio = new ASIOThinger;
+
 #if RUN
 	ASIOStart();
+#endif
+
+#if TEST2
+	asio->Start();
 #endif
 }
 
@@ -879,7 +889,7 @@ void MainLoop_Win32()
 
 void testf()
 {
-#if 0
+#if TEST0
 	char buf[128];
 	char *f1 = buf;
 	while ((int)f1 & 0xFF) ++f1;
@@ -915,7 +925,9 @@ void testf()
 	//}
 	bar = 50;
 	return;
-#else
+#endif
+
+#if TEST1
 	FILE *output = fopen("foo.txt", "w");
 #if !USE_SSE2 && !NON_SSE_INTS
 		short *tmp = T_allocator_N_16ba<short, BUFFERSIZE>::alloc();
@@ -936,6 +948,9 @@ void testf()
 		}
 		fprintf(output, "\n%p %p %x\n", buffer, end, end-buffer);
 	fclose(output);
+#endif
+
+#if TEST2
 #endif
 }
 

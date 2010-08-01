@@ -121,7 +121,7 @@ public:
 		short buf[2*chunk_size];
 		chunk_T_T_size<short, 2*chunk_size> *chk = T_allocator<chunk_T_T_size<short, 2*chunk_size> >::alloc();
 		short *lbuf = chk->_data, *rbuf = chk->_data + chunk_size;
-		fread(buf, sizeof(short), 2*chunk_size, _file);
+		_file->read(buf, sizeof(short), 2*chunk_size);
 		for (int i = 0; i < chunk_size; ++i)
 		{
 			*lbuf++ = buf[i*2];
@@ -133,7 +133,7 @@ public:
 	virtual void ld_data(short *lbuf, short *rbuf)
 	{
 		short buf[2*chunk_size];
-		fread(buf, sizeof(short), 2*chunk_size, _file);
+		_file->read(buf, sizeof(short), 2*chunk_size);
 		for (int i = 0; i < chunk_size; ++i)
 		{
 			*lbuf++ = buf[i*2];
@@ -180,6 +180,22 @@ public:
 template <typename T, int chunk_size>
 class int_N_wavfile_chunker_T_test : public int_N_wavfile_chunker_T_base<T, chunk_size>
 {
+public:
+	int_N_wavfile_chunker_T_test() :
+		int_N_wavfile_chunker_T_base<T, chunk_size>(new TestFile<T>)
+	{
+	}
+	chunk_T_T_size<T, 2*chunk_size>* next()
+	{
+		chunk_T_T_size<T, 2*chunk_size> *chk = T_allocator<chunk_T_T_size<T, 2*chunk_size> >::alloc();
+		_file->read(chk->_data, sizeof(T), 2*chunk_size);
+		return chk;
+	}
+	void ld_data(T *lbuf, T *rbuf)
+	{
+		_file->read(lbuf, sizeof(T), chunk_size);
+		_file->read(rbuf, sizeof(T), chunk_size);
+	}
 };
 
 #endif
