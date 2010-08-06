@@ -87,4 +87,17 @@ const char* asio_sampletype_str(ASIOSampleType t)
 	}
 }
 
+template <typename T>
+class Zero
+{
+public:
+	const static T val;
+};
+
+template <typename T>
+const T Zero<T>::val = T(0);
+
+template <>
+const fftwf_complex Zero<fftwf_complex>::val = {0.0f, 0.0f};
+
 #endif
