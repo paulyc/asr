@@ -99,6 +99,11 @@ public:
 		}
 		_dataOfs = _file->tell();
 		_dataBytes = ch.len;
+
+		_len.samples = _dataBytes / (_fmtChk.nChannels*sizeof(short));
+		_len.chunks = _len.samples / chunk_size + 1;
+		_len.smp_ofs_in_chk = _len.samples % chunk_size;
+		_len.time = _len.samples / double(_fmtChk.sampleRate);
 	}
 	wavfile_chunker_T_N_base<T, chunk_size, channels>(GenericFile *file) :
 		_file(file)
@@ -112,10 +117,6 @@ public:
 
 	virtual T* next() = 0;
 
-	virtual bool eof()
-	{
-		return _eof;
-	}
 	void seek(int smp_ofs)
 	{
 		_eof = false;
@@ -127,9 +128,9 @@ public:
 		seek(smp_ofs);
 	}
 
-	int length_samples()
+	const pos_info& len()
 	{
-		return _dataBytes / (_fmtChk.nChannels*sizeof(short));
+		return _len;
 	}
 
 protected:
@@ -140,6 +141,7 @@ protected:
 	long _dataOfs;
 	unsigned long _dataBytes;
 	bool _eof;
+	pos_info _len;
 };
 
 template <typename T, int chunk_size, int channels>
@@ -241,20 +243,20 @@ public:
 };
 */
 template <int buffer_size, int channels>
-class wavfile_chunker_T_N<chunk_time_domain_2d<SamplePairf, buffer_size, 1>, buffer_size, channels> : public wavfile_chunker_T_N_base<chunk_time_domain_2d<SamplePairf, buffer_size, 1>, buffer_size, channels>
+class wavfile_chunker_T_N<chunk_time_domain_1d<SamplePairf, buffer_size>, buffer_size, channels> : public wavfile_chunker_T_N_base<chunk_time_domain_1d<SamplePairf, buffer_size>, buffer_size, channels>
 {
 public:
 	double tm;
-	wavfile_chunker_T_N<chunk_time_domain_2d<SamplePairf, buffer_size, 1>, buffer_size, channels>(const wchar_t *filename) : 
-		wavfile_chunker_T_N_base<chunk_time_domain_2d<SamplePairf, buffer_size, 1>, buffer_size, channels>(filename),
+	wavfile_chunker_T_N<chunk_time_domain_1d<SamplePairf, buffer_size>, buffer_size, channels>(const wchar_t *filename) : 
+		wavfile_chunker_T_N_base<chunk_time_domain_1d<SamplePairf, buffer_size>, buffer_size, channels>(filename),
 		tm(0.0)
 	{
 	}
-	chunk_time_domain_2d<SamplePairf, buffer_size, 1>* next()
+	chunk_time_domain_1d<SamplePairf, buffer_size>* next()
 	{
 		short buffer[2*buffer_size], smp;
 		size_t bytes_to_read = _bytesPerSample*2*buffer_size, rd;
-		chunk_time_domain_2d<SamplePairf, buffer_size, 1>* chk = T_allocator<chunk_time_domain_2d<SamplePairf, buffer_size, 1> >::alloc();
+		chunk_time_domain_1d<SamplePairf, buffer_size>* chk = T_allocator<chunk_time_domain_1d<SamplePairf, buffer_size> >::alloc();
 
 		rd = _file->read(buffer, 1, bytes_to_read);
 		if (rd < bytes_to_read)

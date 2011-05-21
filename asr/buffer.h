@@ -12,7 +12,7 @@ public:
 	CircularBuffer(T_source<Chunk_T> *src);
 };
 
-template <typename Chunk_T, typename Sample_T, int chunk_size>
+template <typename Chunk_T, typename Sample_T>
 class BufferedStream : public T_source<Chunk_T>, T_sink<Chunk_T>
 {
 public:
@@ -22,7 +22,9 @@ public:
 	  _chk_ofs(0),
 	  _smp_ofs(0)
 	{
-
+		int chks = len().chunks;
+		if (chks != -1)
+			_chks.resize(chks, 0);
 	}
 
 	~BufferedStream()
@@ -50,7 +52,7 @@ public:
 	{
 		smp_ofs_t ofs_in_chk;
 		Chunk_T *chk = T_allocator<Chunk_T>::alloc(), *buf_chk = get_chunk(_chk_ofs);
-		int to_fill = chunk_size, loop_fill;
+		int to_fill = Chunk_T::chunk_size, loop_fill;
 		Sample_T *to_ptr = chk->_data;
 		while (to_fill > 0)
 		{
@@ -64,14 +66,14 @@ public:
 			}
 			if (to_fill == 0)
 				break;
-			ofs_in_chk = _smp_ofs % chunk_size;
-			loop_fill = min(to_fill, chunk_size - ofs_in_chk);
+			ofs_in_chk = _smp_ofs % Chunk_T::chunk_size;
+			loop_fill = min(to_fill, Chunk_T::chunk_size - ofs_in_chk);
 			memcpy(to_ptr, buf_chk->_data + ofs_in_chk, loop_fill*sizeof(Sample_T));
 			to_fill -= loop_fill;
 			to_ptr += loop_fill;
-			if (ofs_in_chk + loop_fill >= chunk_size)
+			if (ofs_in_chk + loop_fill >= Chunk_T::chunk_size)
 				buf_chk = get_chunk(++_chk_ofs);
-			ofs_in_chk = (ofs_in_chk + loop_fill) % chunk_size;
+			ofs_in_chk = (ofs_in_chk + loop_fill) % Chunk_T::chunk_size;
 			_smp_ofs += loop_fill;
 		}
 		
@@ -80,7 +82,7 @@ public:
 
 	void seek_chk(int chk_ofs)
 	{
-		seek_smp(chk_ofs*chunk_size);
+		seek_smp(chk_ofs*Chunk_T::chunk_size);
 	}
 
 	void seek_smp(smp_ofs_t smp_ofs)
@@ -89,7 +91,7 @@ public:
 		if (_smp_ofs < 0)
 			_chk_ofs = 0;
 		else
-			_chk_ofs = smp_ofs / chunk_size;
+			_chk_ofs = smp_ofs / Chunk_T::chunk_size;
 	}
 
 	int get_samples(double tm, Sample_T *buf, int num)
@@ -136,6 +138,11 @@ public:
 		} while (num > 0);
 
 		return written;
+	}
+
+	const pos_info& len()
+	{
+		return _src->len();
 	}
 
 protected:
@@ -193,6 +200,11 @@ public:
 		}
 	}
 
+	const typename Source_T::pos_info& len()
+	{
+		return _src->len();
+	}
+
 protected:
 	Source_T *_src;
 	Sample_T _buffer[BufSz];
@@ -203,7 +215,7 @@ protected:
 	double _sample_period;
 };
 
-template <typename Chunk_T, typename Sample_T, int chunk_size>
+template <typename Chunk_T, typename Sample_T>
 class StreamMetadata
 {
 public:
@@ -214,6 +226,8 @@ public:
 		Sample_T abs_sum;
 		Sample_T avg;
 		Sample_T avg_db;
+		Sample_T peak;
+		Sample_T peak_db;
 	};
 
 	class iterator
@@ -246,10 +260,15 @@ public:
 	}
 
 
-	StreamMetadata(BufferedStream<Chunk_T, Sample_T, chunk_size> *src) :
+	StreamMetadata(BufferedStream<Chunk_T, Sample_T> *src) :
 	  _src(src)
 	  {
 	  }
+
+	const typename BufferedStream<Chunk_T, Sample_T>::pos_info& len()
+	{
+		return _src->len();
+	}
 
 	const ChunkMetadata& get_metadata(int chk_ofs)
 	{
@@ -260,20 +279,19 @@ public:
 		{
 			Chunk_T *chk = _src->get_chunk(chk_ofs);
 			meta.abs_sum = Zero<Sample_T>::val;
-			for (Sample_T *data=chk->_data, *end=data+chunk_size;
+			for (Sample_T *data=chk->_data, *end=data+Chunk_T::chunk_size;
 				data != end; ++data)
 			{
 				Sum<Sample_T>::calc(meta.abs_sum, meta.abs_sum, *data);
 			}
-			Division<Sample_T>::calc(meta.avg, meta.abs_sum, chunk_size);
-			Log10<Sample_T>::calc(meta.avg_db, meta.avg);
-			Product<Sample_T>::calc(meta.avg_db, meta.avg_db, 20);
+			Division<Sample_T>::calc(meta.avg, meta.abs_sum, Chunk_T::chunk_size);
+			dBm<Sample_T>::calc(meta.avg_db, meta.avg);
 			meta.valid = true;
 		}
 		return meta;
 	}
 protected:
-	BufferedStream<Chunk_T, Sample_T, chunk_size> *_src;
+	BufferedStream<Chunk_T, Sample_T> *_src;
 	std::vector<ChunkMetadata> _chk_data;
 };
 

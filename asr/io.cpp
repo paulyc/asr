@@ -16,7 +16,7 @@ void asio_sink<Input_Sample_T, Output_Sample_T, Chunk_T, chunk_size, false>::pro
 */
 
 template <>
-void asio_sink<SamplePairf, short, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096, true>::process()
+void asio_sink<SamplePairf, short, chunk_time_domain_1d<SamplePairf, 4096>, 4096, true>::process()
 {
 	size_t to_write = asio->_bufSize, loop_write, written=0;
 	int stride = 2;
@@ -26,7 +26,7 @@ void asio_sink<SamplePairf, short, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4
 	{
 		if (_read - _chk->_data >= 4096)
 		{
-			T_allocator<chunk_time_domain_2d<SamplePairf, 4096, 1> >::free(_chk);
+			T_allocator<chunk_time_domain_1d<SamplePairf, 4096> >::free(_chk);
 			_chk = 0;
 			_chk = _src->next();
 			_read = _chk->_data;
@@ -76,7 +76,7 @@ asio_source<Input_Sample_T, Output_Sample_T, Chunk_T, chunk_size>::~asio_source(
 }
 
 template <>
-void asio_source<short, SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096>::have_data()
+void asio_source<short, SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>::have_data()
 {
 	size_t buf_sz = asio->_bufSize;
 	short *input0 = (short*)asio->_buffer_infos[0].buffers[asio->_doubleBufferIndex], 
@@ -103,7 +103,7 @@ void asio_source<short, SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>,
 			sem_wait(&_next_sem);
 			_chks_next.push(_chk_working);
 			sem_post(&_next_sem);
-			_chk_working = T_allocator<chunk_time_domain_2d<SamplePairf, 4096, 1> >::alloc();
+			_chk_working = T_allocator<chunk_time_domain_1d<SamplePairf, 4096> >::alloc();
 			_chk_ptr = _chk_working->_data;
 			end_chk = _chk_ptr + 4096;
 		}
@@ -221,19 +221,19 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Init()
 		/*static_cast<int_N_wavfile_chunker_T_test<int, BUFFERSIZE>*>(_src1)->_file;*/
 #else
 		_src1 = new my_wavfile_chunker(_default_src);
-		_src2 = new wavfile_chunker_T_N<chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096, 1>(_default_src);
-		_src_buf = new BufferedStream<chunk_time_domain_2d<SamplePairf, 4096, 1>, SamplePairf, 4096>(_src2);
-		_resample_filter = new lowpass_filter_td<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, double>(_src_buf, 22050.0, 44100.0, 48000.0);
-		_my_sink = new asio_sink<SamplePairf, short, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096, true>(_resample_filter);
-		//_my_sink = new asio_sink<SamplePairf, short, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096, true>(_src2);
-		_my_controller = new controller<lowpass_filter_td<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, double>, 
-			   peak_detector<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096> 
+		_src2 = new wavfile_chunker_T_N<chunk_time_domain_1d<SamplePairf, 4096>, 4096, 1>(_default_src);
+		_src_buf = new BufferedStream<chunk_time_domain_1d<SamplePairf, 4096>, SamplePairf>(_src2);
+		_resample_filter = new lowpass_filter_td<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, double>(_src_buf, 22050.0, 44100.0, 48000.0);
+		_my_sink = new asio_sink<SamplePairf, short, chunk_time_domain_1d<SamplePairf, 4096>, 4096, true>(_resample_filter);
+		//_my_sink = new asio_sink<SamplePairf, short, chunk_time_domain_1d<SamplePairf, 4096>, 4096, true>(_src2);
+		_my_controller = new controller<lowpass_filter_td<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, double>, 
+			   peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096> 
 			   >;
-		new StreamMetadata<chunk_time_domain_2d<SamplePairf, 4096, 1>, SamplePairf, 4096>(_src_buf);
+		new StreamMetadata<chunk_time_domain_1d<SamplePairf, 4096>, SamplePairf>(_src_buf);
 #if CARE_ABOUT_INPUT
-		_my_source = new asio_source<short, SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096>;
-		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096>(_my_source);
-		_my_raw_output = new file_raw_output<chunk_time_domain_2d<SamplePairf, 4096, 1> >(_my_pk_det);
+		_my_source = new asio_source<short, SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>;
+		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>(_my_source);
+		_my_raw_output = new file_raw_output<chunk_time_domain_1d<SamplePairf, 4096> >(_my_pk_det);
 #endif
 #endif
 	} catch (std::exception e) {
@@ -722,9 +722,9 @@ void ASIOThinger<SamplePairf, short>::SetSrc(int ch, const wchar_t *fqpath)
 	
 	try {
 		_src1 = new my_wavfile_chunker(fqpath);
-		_src2 = new wavfile_chunker_T_N<chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096, 1>(fqpath);
-		_resample_filter = new lowpass_filter_td<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, double>(_src2, 22050.0, 44100.0, 48000.0);
-		_my_sink = new asio_sink<SamplePairf, short, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096, true>(_resample_filter);
+		_src2 = new wavfile_chunker_T_N<chunk_time_domain_1d<SamplePairf, 4096>, 4096, 1>(fqpath);
+		_resample_filter = new lowpass_filter_td<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, double>(_src2, 22050.0, 44100.0, 48000.0);
+		_my_sink = new asio_sink<SamplePairf, short, chunk_time_domain_1d<SamplePairf, 4096>, 4096, true>(_resample_filter);
 	} catch (std::exception e) {
 	}
 	if (was_active && _src1 && _src2)

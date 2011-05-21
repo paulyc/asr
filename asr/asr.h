@@ -175,6 +175,8 @@ public:
 	{
 		return _data[m0];
 	}
+
+	static const int chunk_size = n0;
 };
 
 template <typename Sample_T, int n0, int n1>
@@ -202,6 +204,8 @@ public:
 	{
 		return _data[m0*n1+m1];
 	}
+
+	static const int chunk_size = n0*n1;
 };
 
 template <typename Sample_T, int n0, int n1, int n2>
@@ -229,6 +233,7 @@ public:
 	{
 		return _data[m0*n0+m1*n1+m2];
 	}
+	static const int chunk_size = n0*n1*n2;
 };
 
 template <typename Sample_T, int n0>
@@ -446,6 +451,11 @@ std::map<INT_PTR, INT_PTR> T_allocator_N_16ba<T, N>::_T_align_map;
 template <typename T, int N>
 std::map<T*, size_t> T_allocator_N_16ba<T, N>::_T_size_map;
 
+typedef float SamplePairf[2];
+typedef double SamplePaird[2];
+
+typedef int smp_ofs_t;
+
 template <typename T>
 class T_source
 {
@@ -469,9 +479,17 @@ public:
 	{
 		return false;
 	}
-	virtual int length_samples()
+	struct pos_info
 	{
-		return -1;
+		smp_ofs_t samples;
+		int chunks;
+		int smp_ofs_in_chk;
+		double time;
+	};
+	virtual const pos_info& len()
+	{
+		pos_info p = {-1, -1, -1};
+		return p;
 	}
 };
 
@@ -494,11 +512,6 @@ public:
 	{
 		T_allocator<T>::free(_src->next());
 	}
-
-	virtual bool eof()
-	{
-		return _src->eof();
-	}
 };
 
 template <typename T>
@@ -518,11 +531,6 @@ public:
 		return _src->length_samples();
 	}
 };
-
-typedef float SamplePairf[2];
-typedef double SamplePaird[2];
-
-typedef int smp_ofs_t;
 
 /*
 SamplePairf& operator=(SamplePairf &lhs, float rhs)

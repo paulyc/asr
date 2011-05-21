@@ -94,10 +94,7 @@ public:
 	virtual void process()
 	{
 		Chunk_T *t = _src->next();
-		const int *n = t->sizes_as_array();
-		//for (int i = 0; i < n[0]; ++i)
-	//		fwrite(t->_data + i*2, sizeof(float), 1, _f);
-		fwrite(t->_data, 8, n[0]*n[1], _f);
+		fwrite(t->_data, 8, Chunk_T::chunk_size, _f);
 		T_allocator<Chunk_T>::free(t);
 	}
 };
@@ -153,7 +150,7 @@ public:
 	bool _resample;
 	float _resamplerate;
 	//lowpass_filter_td<fftwf_complex, default_internal_chunk_type, float> *_resample_filter;
-	lowpass_filter_td<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, double> *_resample_filter;
+	lowpass_filter_td<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, double> *_resample_filter;
 
 public: // was protected
 	void Init();
@@ -179,20 +176,20 @@ public: // was protected
 	long _bufSize;
 	double _outputTime;
 	my_wavfile_chunker *_src1;
-	wavfile_chunker_T_N<chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096, 1> *_src2;
-	BufferedStream<chunk_time_domain_2d<SamplePairf, 4096, 1>, SamplePairf, 4096> *_src_buf;
+	wavfile_chunker_T_N<chunk_time_domain_1d<SamplePairf, 4096>, 4096, 1> *_src2;
+	BufferedStream<chunk_time_domain_1d<SamplePairf, 4096>, SamplePairf> *_src_buf;
 	bool _src1_active;
 
 	SpeedParser2<BUFFERSIZE> _sp;
 	std::ofstream _log;
 
-	asio_source<short, SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096> *_my_source;
-	peak_detector<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096> *_my_pk_det;
-	controller<lowpass_filter_td<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, double>, 
-			   peak_detector<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096> 
+	asio_source<short, SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096> *_my_source;
+	peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096> *_my_pk_det;
+	controller<lowpass_filter_td<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, double>, 
+			   peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096> 
 			   > *_my_controller;
-	file_raw_output<chunk_time_domain_2d<SamplePairf, 4096, 1> > *_my_raw_output;
-	asio_sink<SamplePairf, short, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096, true> *_my_sink;
+	file_raw_output<chunk_time_domain_1d<SamplePairf, 4096> > *_my_raw_output;
+	asio_sink<SamplePairf, short, chunk_time_domain_1d<SamplePairf, 4096>, 4096, true> *_my_sink;
 };
 
 #endif // !defined(_IO_H)

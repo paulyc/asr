@@ -129,6 +129,27 @@ public:
 };
 
 template <typename T>
+class dBm : UnaryOperator<T>
+{
+public:
+	static void calc(T &result, const T &lhs)
+	{
+		result = 20*log10(lhs);
+	}
+};
+
+template <>
+class dBm<SamplePairf> : UnaryOperator<SamplePairf>
+{
+public:
+	static void calc(SamplePairf &result, const SamplePairf &lhs)
+	{
+		result[0] = 20.0f*log10f(lhs[0]);
+		result[1] = 20.0f*log10f(lhs[1]);
+	}
+};
+
+template <typename T>
 T sinc(T x);
 
 double delta(double x, double a);

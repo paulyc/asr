@@ -15,9 +15,13 @@ public:
 
 	  struct wav_height
 	  {
-		  wav_height() : top(0.0), bottom(0.0){}
-		  double top;
-		  double bottom;
+		  wav_height() : 
+			peak_top(0.0), avg_top(0.0)
+			,peak_bot(0.0), avg_bot(0.0){}
+		  double peak_top;
+		  double avg_top;
+		  double peak_bot;
+		  double avg_bot;
 	  };
 
   void set_width(int width)
@@ -29,6 +33,11 @@ public:
 	  }
 	  _width = width;
 	_wav_heights = new wav_height[_width];
+  }
+
+  void set_wav_heights()
+  {
+	  int chunks = _src->len().chunks;
   }
 
 protected:

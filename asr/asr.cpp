@@ -141,7 +141,7 @@ int main()
 	//init();
 	begin();
 #else
-	typedef chunk_time_domain_2d<SamplePairf, 4096, 1> c_T;
+	typedef chunk_time_domain_1d<SamplePairf, 4096> c_T;
 	//wavfile_chunker_T_N<c_T, 4096> wav_chunker(L"H:\\Music\\Gareth Emery - Metropolis (Original Mix).wav");
 	wavfile_chunker_T_N<c_T, 4096, 1> wav_chunker(L"F:\\My Music\\Flip & Fill - I Wanna Dance With Somebody (Resource Mix).wav");
 	lowpass_filter_td<SamplePairf, c_T, double> filt1(&wav_chunker, 22050.0, 44100.0, 44100.0);

@@ -17,11 +17,11 @@ class lowpass_coeff_tbl : public coeff_tbl<Precision_T, TblSz>
 {
 };
 
-template <typename Sample_T, typename Chunk_T, int chunk_size>
+template <typename Sample_T, typename Chunk_T>
 class full_wave_rectifier;
 
-template <typename Chunk_T, int chunk_size>
-class full_wave_rectifier<SamplePairf, Chunk_T, chunk_size> : public T_source<Chunk_T>, public T_sink<Chunk_T>
+template <typename Chunk_T>
+class full_wave_rectifier<SamplePairf, Chunk_T> : public T_source<Chunk_T>, public T_sink<Chunk_T>
 {
 public:
 	full_wave_rectifier(T_source<Chunk_T> *src) :
@@ -30,8 +30,8 @@ public:
 	}
 	Chunk_T *next()
 	{
-		chunk_time_domain_2d<SamplePairf, chunk_size, 1> *chk = _src->next();
-		for (SamplePairf *ptr = chk->_data, *end = ptr + chunk_size; ptr != end; ++ptr)
+		Chunk_T *chk = _src->next();
+		for (SamplePairf *ptr = chk->_data, *end = ptr + Chunk_T::chunk_size; ptr != end; ++ptr)
 		{
 			(*ptr)[0] = fabs((*ptr)[0]);
 			(*ptr)[1] = fabs((*ptr)[1]);
@@ -40,7 +40,7 @@ public:
 	}
 };
 
-template <typename Sample_T, typename Chunk_T, typename Precision_T=double, int Dim=2, int SampleBufSz=0x400>
+template <typename Sample_T, typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
 class filter_td_base : public T_source<Chunk_T>, public T_sink<Chunk_T>
 {
 protected:
@@ -85,8 +85,8 @@ protected:
 	}
 
 #if USE_BUFFER_MGR
-	BufferedStream<Chunk_T, Sample_T, 4096> *_buffered_stream;
-	BufferMgr<BufferedStream<Chunk_T, Sample_T, 4096>, SamplePairf> *_buffer_mgr;
+	BufferedStream<Chunk_T, Sample_T> *_buffered_stream;
+	BufferMgr<BufferedStream<Chunk_T, Sample_T>, SamplePairf> *_buffer_mgr;
 #endif
 
 public:
@@ -104,8 +104,8 @@ public:
 		_kwt = KaiserWindowTable<Precision_T>::get();
 
 #if USE_BUFFER_MGR
-		_buffered_stream = new BufferedStream<Chunk_T, Sample_T, 4096>(src);
-		_buffer_mgr = new BufferMgr<BufferedStream<Chunk_T, Sample_T, 4096>, SamplePairf>(_buffered_stream);
+		_buffered_stream = new BufferedStream<Chunk_T, Sample_T>(src);
+		_buffer_mgr = new BufferMgr<BufferedStream<Chunk_T, Sample_T>, SamplePairf>(_buffered_stream);
 		_input_sampling_period = Precision_T(1.0) / _input_sampling_rate;
 		set_output_sampling_frequency(output_rate);
 		return;
@@ -241,9 +241,8 @@ public:
 		_input_read = _input_chk->_data;
 
 		assert(_input_chk);
-		const int *input_chk_sizes = _input_chk->sizes_as_array();
-		_rows = input_chk_sizes[0];
-		_cols = input_chk_sizes[1];
+		_rows = Chunk_T::chunk_size;
+		_cols = 1;
 	//	_row_ly = _rows > _cols;
 	//	_stride = _row_ly ? _cols : 1;
 	//	_channels = _row_ly ? _cols : _rows;
@@ -388,7 +387,7 @@ public:
 		//if (dim == 2)
 		{
 			//_row_ly ? samples = n[0] : samples = n[1];
-			samples = n[0];
+			samples = Chunk_T::chunk_size;
 		}
 		t_diff = Precision_T(_sample_precision) * _input_sampling_period;
 		
@@ -477,7 +476,7 @@ public:
 	friend class Controller;
 };
 
-template <typename Sample_T, typename Chunk_T, typename Precision_T=double, int Dim=2, int SampleBufSz=0x400>
+template <typename Sample_T, typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
 class lowpass_filter_td : public filter_td_base<Sample_T, Chunk_T, Precision_T, Dim, SampleBufSz>
 {
 public:
@@ -492,7 +491,7 @@ protected:
 	}
 };
 
-template <typename Sample_T, typename Chunk_T, typename Precision_T=double, int Dim=2, int SampleBufSz=0x400>
+template <typename Sample_T, typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
 class highpass_filter_td : public filter_td_base<Sample_T, Chunk_T, Precision_T, Dim, SampleBufSz>
 {
 public:
