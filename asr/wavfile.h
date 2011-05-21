@@ -119,12 +119,17 @@ public:
 	void seek(int smp_ofs)
 	{
 		_eof = false;
-		_file->seek(_dataOfs + 2*sizeof(short)*smp_ofs);
+		_file->seek(_dataOfs + _fmtChk.nChannels*sizeof(short)*smp_ofs);
 	}
 	virtual void seek_chk(int chk_ofs)
 	{
 		smp_ofs_t smp_ofs = chk_ofs * chunk_size;
 		seek(smp_ofs);
+	}
+
+	int length_samples()
+	{
+		return _dataBytes / (_fmtChk.nChannels*sizeof(short));
 	}
 
 protected:

@@ -7,6 +7,8 @@
 #include <asio.h>
 #include <fftw3.h>
 
+#include "asr.h"
+
 const char* asio_error_str(ASIOError e);
 const char* asio_sampletype_str(ASIOSampleType t);
 
@@ -15,6 +17,115 @@ class Zero
 {
 public:
 	const static T val;
+	void set(T &t)
+	{
+		t = val;
+	}
+};
+
+template <typename T>
+class BinaryOperator
+{
+public:
+	static void calc(T &result, const T &lhs, const T &rhs);
+};
+
+template <typename T>
+class Sum : BinaryOperator<T>
+{
+public:
+	static void calc(T &result, const T &lhs, const T &rhs)
+	{
+		result = lhs + rhs;
+	}
+};
+
+template <>
+class Sum<SamplePairf> : public BinaryOperator<SamplePairf>
+{
+	static void calc(SamplePairf &result, const SamplePairf &lhs, const SamplePairf &rhs)
+	{
+		result[0] = lhs[0]+rhs[0];
+		result[1] = lhs[1]+rhs[1];
+	}
+};
+
+template <typename T>
+class Division : BinaryOperator<T>
+{
+public:
+	static void calc(T &result, const T &lhs, const T &rhs)
+	{
+		result = lhs / rhs;
+	}
+};
+
+template <>
+class Division<SamplePairf> : public BinaryOperator<SamplePairf>
+{
+	static void calc(SamplePairf &result, const SamplePairf &lhs, const SamplePairf &rhs)
+	{
+		result[0] = lhs[0]/rhs[0];
+		result[1] = lhs[1]/rhs[1];
+	}
+	static void calc(SamplePairf &result, const SamplePairf &lhs, float scalar)
+	{
+		result[0] = lhs[0]/scalar;
+		result[1] = lhs[1]/scalar;
+	}
+};
+
+template <typename T>
+class Product : BinaryOperator<T>
+{
+public:
+	static void calc(T &result, const T &lhs, const T &rhs)
+	{
+		result = lhs * rhs;
+	}
+};
+
+template <>
+class Product<SamplePairf> : public BinaryOperator<SamplePairf>
+{
+	static void calc(SamplePairf &result, const SamplePairf &lhs, const SamplePairf &rhs)
+	{
+		result[0] = lhs[0]*rhs[0];
+		result[1] = lhs[1]*rhs[1];
+	}
+	static void calc(SamplePairf &result, const SamplePairf &lhs, float scalar)
+	{
+		result[0] = lhs[0]*scalar;
+		result[1] = lhs[1]*scalar;
+	}
+};
+
+template <typename T>
+class UnaryOperator
+{
+public:
+	static void calc(T &result, const T &lhs);
+};
+
+template <typename T>
+class Log10 : UnaryOperator<T>
+{
+public:
+	static void calc(T &result, const T &lhs)
+	{
+		result = log10(lhs);
+	}
+};
+
+template <>
+class Log10<SamplePairf> : UnaryOperator<SamplePairf>
+{
+public:
+	static void calc(SamplePairf &result, const SamplePairf &lhs)
+	{
+		result[0] = log10f(lhs[0]);
+		result[1] = log10f(lhs[1]);
+	}
 };
 
 template <typename T>

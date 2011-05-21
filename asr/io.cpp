@@ -78,7 +78,7 @@ asio_source<Input_Sample_T, Output_Sample_T, Chunk_T, chunk_size>::~asio_source(
 template <>
 void asio_source<short, SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096>::have_data()
 {
-	size_t buf_sz = asio->_bufSize, to_write, loop_write;
+	size_t buf_sz = asio->_bufSize;
 	short *input0 = (short*)asio->_buffer_infos[0].buffers[asio->_doubleBufferIndex], 
 		*input1 = (short*)asio->_buffer_infos[1].buffers[asio->_doubleBufferIndex], 
 		*end0 = input0 + buf_sz, 
@@ -229,6 +229,7 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Init()
 		_my_controller = new controller<lowpass_filter_td<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, double>, 
 			   peak_detector<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096> 
 			   >;
+		new StreamMetadata<chunk_time_domain_2d<SamplePairf, 4096, 1>, SamplePairf, 4096>(_src_buf);
 #if CARE_ABOUT_INPUT
 		_my_source = new asio_source<short, SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096>;
 		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_2d<SamplePairf, 4096, 1>, 4096>(_my_source);

@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "util.h"
+
 template <typename Chunk_T, typename Sample_T>
 class CircularBuffer
 {
@@ -199,6 +201,80 @@ protected:
 
 	double _sample_rate;
 	double _sample_period;
+};
+
+template <typename Chunk_T, typename Sample_T, int chunk_size>
+class StreamMetadata
+{
+public:
+	struct ChunkMetadata
+	{
+		ChunkMetadata():valid(false){}
+		bool valid;
+		Sample_T abs_sum;
+		Sample_T avg;
+		Sample_T avg_db;
+	};
+
+	class iterator
+	{
+	public:
+		iterator(StreamMetadata p, int o, bool e=false):parent(p),ofs(o),eof(e){}
+		iterator& operator++()
+		{
+			++ofs;
+			return *this;
+		}
+		/*
+		ChunkMetadata& operator*()
+		{
+			return 
+			*/
+	private:
+		StreamMetadata *parent;
+		int ofs;
+		bool eof;
+	};
+
+	iterator begin()
+	{
+		return iterator(this, 0, false);
+	}
+	iterator end()
+	{
+		return iterator(this, 0, true);
+	}
+
+
+	StreamMetadata(BufferedStream<Chunk_T, Sample_T, chunk_size> *src) :
+	  _src(src)
+	  {
+	  }
+
+	const ChunkMetadata& get_metadata(int chk_ofs)
+	{
+		if (_chk_data.size() <= chk_ofs)
+			_chk_data.resize(chk_ofs*2);
+		ChunkMetadata &meta = _chk_data[chk_ofs];
+		if (!meta.valid)
+		{
+			Chunk_T *chk = _src->get_chunk(chk_ofs);
+			meta.abs_sum = Zero<Sample_T>::val;
+			for (Sample_T *data=chk->_data, *end=data+chunk_size;
+				data != end; ++data)
+			{
+				Sum<Sample_T>::calc(meta.abs_sum, meta.abs_sum, *data);
+			}
+			Division<Sample_T>::calc(meta.avg, meta.abs_sum, chunk_size);
+			Log10<Sample_T>::calc(meta.avg_db, meta.avg);
+			Product<Sample_T>::calc(meta.avg_db, meta.avg_db, 20);
+			meta.valid = true;
+		}
+		return meta;
+	}
+protected:
+	BufferedStream<Chunk_T, Sample_T, chunk_size> *_src;
+	std::vector<ChunkMetadata> _chk_data;
 };
 
 #endif // !defined(BUFFER_H)

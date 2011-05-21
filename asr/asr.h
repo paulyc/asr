@@ -450,6 +450,9 @@ template <typename T>
 class T_source
 {
 public:
+	virtual ~T_source()
+	{
+	}
 	virtual T* next()
 	{
 		return T_allocator<T>::alloc();
@@ -461,6 +464,14 @@ public:
 	virtual void seek_smp(int smp_ofs)
 	{
 		throw std::exception("not implemented");
+	}
+	virtual bool eof()
+	{
+		return false;
+	}
+	virtual int length_samples()
+	{
+		return -1;
 	}
 };
 
@@ -475,9 +486,36 @@ public:
 	{
 	}
 
+	virtual ~T_sink()
+	{
+	}
+
 	virtual void process()
 	{
 		T_allocator<T>::free(_src->next());
+	}
+
+	virtual bool eof()
+	{
+		return _src->eof();
+	}
+};
+
+template <typename T>
+class T_sink_source : public T_source<T>, public T_sink<T>
+{
+public:
+	T_sink_source(T_source<T> *src=0) :
+	  T_sink(src)
+	{
+	}
+	virtual bool eof()
+	{
+		return _src->eof();
+	}
+	virtual int length_samples()
+	{
+		return _src->length_samples();
 	}
 };
 

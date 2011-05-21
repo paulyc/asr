@@ -376,8 +376,7 @@ public:
 	
 	Chunk_T* next()
 	{
-		Precision_T t_diff, tm, t_input, t_input_tmp
-			;
+		Precision_T t_diff, tm, t_input;
 		Chunk_T *chk = T_allocator<Chunk_T>::alloc();
 		const int *n = chk->sizes_as_array();
 		int dim = chk->dim();
