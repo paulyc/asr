@@ -8,6 +8,8 @@ typedef T_allocator<my_chunk> my_allocator;
 typedef T_source<my_chunk> my_source;
 typedef T_sink<my_chunk> my_sink;
 
+typedef chunk_time_domain_1d<SamplePairf, 4096> chunk_t;
+
 typedef fftwf_complex default_internal_sample_type;
 typedef chunk_time_domain_2d<fftwf_complex, 2, BUFFERSIZE> default_internal_chunk_type;
 
@@ -21,7 +23,7 @@ typedef int_N_wavfile_chunker_T_base<int, BUFFERSIZE> my_wavfile_chunker_base;
 #endif
 #endif
 
-typedef wavfile_chunker_T_N<default_internal_chunk_type, BUFFERSIZE, 2> my_wavfile_chunker;
-typedef wavfile_chunker_T_N_base<default_internal_chunk_type, BUFFERSIZE, 2> my_wavfile_chunker_base;
+//typedef wavfile_chunker_T_N<default_internal_chunk_type, BUFFERSIZE, 2> my_wavfile_chunker;
+//typedef wavfile_chunker_T_N_base<default_internal_chunk_type, BUFFERSIZE, 2> my_wavfile_chunker_base;
 
 #endif // !defined(TYPE_H)

@@ -149,6 +149,30 @@ public:
 	}
 };
 
+template <typename Pair_T, typename From_T>
+inline void PairFromT(Pair_T &p, From_T s1, From_T s2);
+
+template <>
+inline void PairFromT(SamplePairf &p, short s1, short s2)
+{
+	if (s1 >= 0)
+	{
+		p[0] = s1 * (1.0f/float(SHRT_MAX));
+	}
+	else
+	{
+		p[0] = s1 * (-1.0f/float(SHRT_MIN));
+	}
+	if (s2 >= 0)
+	{
+		p[1] = s2 * (1.0f/float(SHRT_MAX));
+	}
+	else
+	{
+		p[1] = s2 * (-1.0f/float(SHRT_MIN));
+	}
+}
+
 template <typename T>
 T sinc(T x);
 

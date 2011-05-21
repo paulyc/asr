@@ -55,7 +55,7 @@ protected:
 	Input_Sample_T *_read;
 };
 
-template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T, int chunk_size>
+template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
 class asio_source : public T_source<Chunk_T>
 {
 public:
@@ -150,7 +150,7 @@ public:
 	bool _resample;
 	float _resamplerate;
 	//lowpass_filter_td<fftwf_complex, default_internal_chunk_type, float> *_resample_filter;
-	lowpass_filter_td<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, double> *_resample_filter;
+	lowpass_filter_td<SamplePairf, chunk_t, double> *_resample_filter;
 
 public: // was protected
 	void Init();
@@ -175,21 +175,22 @@ public: // was protected
 	ASIOChannelInfo *_output_channel_infos;
 	long _bufSize;
 	double _outputTime;
-	my_wavfile_chunker *_src1;
-	wavfile_chunker_T_N<chunk_time_domain_1d<SamplePairf, 4096>, 4096, 1> *_src2;
-	BufferedStream<chunk_time_domain_1d<SamplePairf, 4096>, SamplePairf> *_src_buf;
-	bool _src1_active;
+	//my_wavfile_chunker *_src1;
+	
+	wavfile_chunker<chunk_t, SamplePairf> *_src2;
+	BufferedStream<chunk_t, SamplePairf> *_src_buf;
+	bool _src_active;
 
 	SpeedParser2<BUFFERSIZE> _sp;
 	std::ofstream _log;
 
-	asio_source<short, SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096> *_my_source;
-	peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096> *_my_pk_det;
-	controller<lowpass_filter_td<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, double>, 
-			   peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096> 
+	asio_source<short, SamplePairf, chunk_t> *_my_source;
+	peak_detector<SamplePairf, chunk_t, 4096> *_my_pk_det;
+	controller<lowpass_filter_td<SamplePairf, chunk_t, double>, 
+			   peak_detector<SamplePairf, chunk_t, 4096> 
 			   > *_my_controller;
-	file_raw_output<chunk_time_domain_1d<SamplePairf, 4096> > *_my_raw_output;
-	asio_sink<SamplePairf, short, chunk_time_domain_1d<SamplePairf, 4096>, 4096, true> *_my_sink;
+	file_raw_output<chunk_t> *_my_raw_output;
+	asio_sink<SamplePairf, short, chunk_t, 4096, true> *_my_sink;
 };
 
 #endif // !defined(_IO_H)

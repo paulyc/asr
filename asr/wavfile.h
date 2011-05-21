@@ -37,11 +37,11 @@ inline const char * cwcs_to_ccs(const wchar_t *str)
 	return buf;
 }
 
-template <typename T, int chunk_size, int channels>
-class wavfile_chunker_T_N_base : public T_source<T>
+template <typename Chunk_T>
+class wavfile_chunker_base : public T_source<Chunk_T>
 {
 public:
-	wavfile_chunker_T_N_base(const wchar_t * filename) :
+	wavfile_chunker_base(const wchar_t * filename) :
 		_eof(false)
 	{
 		_file = new DiskFile(filename, L"rb");
@@ -101,21 +101,21 @@ public:
 		_dataBytes = ch.len;
 
 		_len.samples = _dataBytes / (_fmtChk.nChannels*sizeof(short));
-		_len.chunks = _len.samples / chunk_size + 1;
-		_len.smp_ofs_in_chk = _len.samples % chunk_size;
+		_len.chunks = _len.samples / Chunk_T::chunk_size + 1;
+		_len.smp_ofs_in_chk = _len.samples % Chunk_T::chunk_size;
 		_len.time = _len.samples / double(_fmtChk.sampleRate);
 	}
-	wavfile_chunker_T_N_base<T, chunk_size, channels>(GenericFile *file) :
+	wavfile_chunker_base(GenericFile *file) :
 		_file(file)
 	{
 	}
 
-	virtual ~wavfile_chunker_T_N_base()
+	virtual ~wavfile_chunker_base()
 	{
 		delete _file;
 	}
 
-	virtual T* next() = 0;
+	virtual Chunk_T* next() = 0;
 
 	void seek(int smp_ofs)
 	{
@@ -124,7 +124,7 @@ public:
 	}
 	virtual void seek_chk(int chk_ofs)
 	{
-		smp_ofs_t smp_ofs = chk_ofs * chunk_size;
+		smp_ofs_t smp_ofs = chk_ofs * Chunk_T::chunk_size;
 		seek(smp_ofs);
 	}
 
@@ -144,16 +144,47 @@ protected:
 	pos_info _len;
 };
 
-template <typename T, int chunk_size, int channels>
-class wavfile_chunker_T_N : public wavfile_chunker_T_N_base<T, chunk_size, channels>
+template <typename Chunk_T, typename Sample_Output_T>
+class wavfile_chunker : public wavfile_chunker_base<Chunk_T>
 {
 public:
-	wavfile_chunker_T_N(const wchar_t *filename) : 
-		wavfile_chunker_T_N_base<T, chunk_size, channels>(filename)
+	wavfile_chunker(const wchar_t *filename) : 
+		wavfile_chunker_base<Chunk_T>(filename)
 	{
 	}
 };
 
+template <typename Chunk_T>
+class wavfile_chunker<Chunk_T, SamplePairf> : public wavfile_chunker_base<Chunk_T>
+{
+public:
+	wavfile_chunker<Chunk_T, SamplePairf>(const wchar_t *filename) : 
+		wavfile_chunker_base<Chunk_T>(filename)
+	{
+	}
+	Chunk_T* next()
+	{
+		short buffer[2*Chunk_T::chunk_size], smp;
+		size_t bytes_to_read = _bytesPerSample*2*Chunk_T::chunk_size, rd;
+		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
+
+		rd = _file->read(buffer, 1, bytes_to_read);
+		if (rd < bytes_to_read)
+		{
+			_eof = true;
+			for (short *b=buffer+(bytes_to_read-rd)/sizeof(short); b < buffer+2*Chunk_T::chunk_size; ++b)
+				*b = 0;
+		}
+		for (int r=0; r < Chunk_T::chunk_size; ++r)
+		{
+			PairFromT<SamplePairf, short>(chk->_data[r], buffer[r*2], buffer[r*2+1]);
+		}
+		return chk;
+	}
+};
+
+
+/*
 template <int chunk_size, int channels>
 class wavfile_chunker_T_N<chunk_time_domain_2d<fftwf_complex, 2, chunk_size>, chunk_size, channels> : public wavfile_chunker_T_N_base<chunk_time_domain_2d<fftwf_complex, 2, chunk_size>, chunk_size, channels>
 {
@@ -187,6 +218,7 @@ public:
 		return chk;
 	}
 };
+*/
 /*
 //note: this has output interleaved, and only works for 16bit samples
 template <typename Output_T, int buffer_size, int channels>
@@ -242,59 +274,7 @@ public:
 	}
 };
 */
-template <int buffer_size, int channels>
-class wavfile_chunker_T_N<chunk_time_domain_1d<SamplePairf, buffer_size>, buffer_size, channels> : public wavfile_chunker_T_N_base<chunk_time_domain_1d<SamplePairf, buffer_size>, buffer_size, channels>
-{
-public:
-	double tm;
-	wavfile_chunker_T_N<chunk_time_domain_1d<SamplePairf, buffer_size>, buffer_size, channels>(const wchar_t *filename) : 
-		wavfile_chunker_T_N_base<chunk_time_domain_1d<SamplePairf, buffer_size>, buffer_size, channels>(filename),
-		tm(0.0)
-	{
-	}
-	chunk_time_domain_1d<SamplePairf, buffer_size>* next()
-	{
-		short buffer[2*buffer_size], smp;
-		size_t bytes_to_read = _bytesPerSample*2*buffer_size, rd;
-		chunk_time_domain_1d<SamplePairf, buffer_size>* chk = T_allocator<chunk_time_domain_1d<SamplePairf, buffer_size> >::alloc();
 
-		rd = _file->read(buffer, 1, bytes_to_read);
-		if (rd < bytes_to_read)
-		{
-			_eof = true;
-			for (short *b=buffer+(bytes_to_read-rd)/sizeof(short); b < buffer+2*buffer_size; ++b)
-				*b = 0;
-		}
-		for (int r=0; r < buffer_size; ++r)
-		{
-			for (int c=0; c < 2; ++c)
-			{
-			//	float &f = chk->dereference(r,c);
-			//	f = buffer[r*2+c] * (1.0f/float(0x7FFF));
-				smp = buffer[r*2+c];
-				if (smp >= 0)
-				{
-					chk->_data[r][c] = smp * (1.0f/float(SHRT_MAX));
-				}
-				else
-				{
-					chk->_data[r][c] = smp * (-1.0f/float(SHRT_MIN));
-				}
-			
-				if (chk->_data[r][c] > 1.0f || chk->_data[r][c] < -1.0f)
-				{
-					printf("input value is ending up as %f at tm %f\n", float(chk->_data[r][c]), tm);
-
-				}
-				float p = 2*M_PI*1000.0f*tm;
-				//chk->_data[r][c] = sin(p);
-			}
-			tm += 1./44100.0;
-		}
-
-		return chk;
-	}
-};
 /*
 template <typename T, int chunk_size>
 class wavfile_chunker_T_N : public wavfile_chunker_T_N_base<chunk_T_T_size<T, 2*chunk_size>, chunk_size>
