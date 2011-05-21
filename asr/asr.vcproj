@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;E:\My Documents\Visual Studio Projects\ASIOSDK2\common&quot;;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
+				AdditionalIncludeDirectories="E:\cygwin\home\haxor\pthreads.2;&quot;E:\My Documents\Visual Studio Projects\ASIOSDK2\common&quot;;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,9 +61,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libfftw3f-3.lib comctl32.lib Comdlg32.lib"
+				AdditionalDependencies="libfftw3f-3.lib comctl32.lib Comdlg32.lib pthreadVC2.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
+				AdditionalLibraryDirectories="E:\cygwin\home\haxor\pthreads.2;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
@@ -202,6 +202,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\decoder.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\dft.c"
 				>
 				<FileConfiguration
@@ -224,6 +228,18 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\filter.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\io.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\iTunesCOMInterface_i.c"
+				>
 			</File>
 			<File
 				RelativePath=".\main.cpp"
@@ -249,6 +265,14 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\ui.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\util.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -264,7 +288,47 @@
 				>
 			</File>
 			<File
+				RelativePath=".\buffer.h"
+				>
+			</File>
+			<File
+				RelativePath=".\config.h"
+				>
+			</File>
+			<File
+				RelativePath=".\controller.h"
+				>
+			</File>
+			<File
+				RelativePath=".\database.h"
+				>
+			</File>
+			<File
+				RelativePath=".\decoder.h"
+				>
+			</File>
+			<File
+				RelativePath=".\display.h"
+				>
+			</File>
+			<File
+				RelativePath=".\fftw.h"
+				>
+			</File>
+			<File
 				RelativePath=".\file.h"
+				>
+			</File>
+			<File
+				RelativePath=".\filter.h"
+				>
+			</File>
+			<File
+				RelativePath=".\io.h"
+				>
+			</File>
+			<File
+				RelativePath=".\iTunesCOMInterface.h"
 				>
 			</File>
 			<File
@@ -273,6 +337,18 @@
 			</File>
 			<File
 				RelativePath=".\speedparser.h"
+				>
+			</File>
+			<File
+				RelativePath=".\transform.h"
+				>
+			</File>
+			<File
+				RelativePath=".\type.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ui.h"
 				>
 			</File>
 			<File

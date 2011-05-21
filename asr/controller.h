@@ -1,0 +1,42 @@
+#ifndef _CONTROLLER_H
+#define _CONTROLLER_H
+
+#include <cstdio>
+
+#include "decoder.h"
+#include "filter.h"
+
+template <typename Filter_T, typename Decoder_T>
+class controller
+{
+public:
+	void process(Filter_T *filt, Decoder_T *dec)
+	{
+		if (dec->p_begin.mod != 0.0)
+		{
+			printf("mod %f\n", dec->p_begin.mod);
+			double freq = 44100.0 / (dec->p_begin.mod * (44100.0f /48000.0f));
+			printf("set freq %f\n", freq);
+			set_output_sampling_frequency(filt, freq);
+		}
+		if (dec->p_begin.valid)
+		{
+			double pos = dec->p_begin.tm - 2.0;
+			printf("set output time %f\n", pos);
+			set_output_time(filt, pos);
+			//p_begin.forward = b.forward;
+			dec->p_begin.valid = false;
+		}
+	}
+	void set_output_sampling_frequency(Filter_T *filt, double freq)
+	{
+		filt->set_output_sampling_frequency(freq);
+	}
+
+	void set_output_time(Filter_T *filt, double t)
+	{
+		filt->seek_time(t);
+	}
+};
+
+#endif // !defined(CONTROLLER_H)

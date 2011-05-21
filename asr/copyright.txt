@@ -1,0 +1,11 @@
+ASR - Digital Signal Processor
+
+
+Copyright (C) 2002-2010 Paul Ciarlo
+
+All Rights Reserved.
+
+No permission is granted to reproduce, to prepare derivative works, 
+to distribute copies, to perform publicly, to display 
+publicly, or to perform publicly by digital transmission the work without the 
+express written consent of the author(s).

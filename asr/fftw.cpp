@@ -30,28 +30,6 @@ double impulseResponsePeriod;
 double rho;
 double impulseResponseScale; // "maintains unity gain in the passband"
 
-double I_0(double z)
-{
-	double sum = 0.0;
-	double k = 0.0;
-	double kfact = 1.0;
-	double quarterzsquared = 0.25*z*z;
-	do
-	{
-		sum += pow(quarterzsquared, k) / (kfact*kfact);
-		k += 1.0;
-		kfact *= k;
-	} while (k < 30.0);
-	return sum;
-}
-
-inline double sinc(double t)
-{
-	if (t == 0.0) return 1.0;
-	double d = M_PI*t;
-	return sin(d)/d;
-}
-
 void BuildKaiserTable()
 {
 	double time;
@@ -83,7 +61,7 @@ void init()
 //	sampleP = 0;
 	alpha = 2.0;
 	pitimesalpha = M_PI*alpha;
-	d = I_0(pitimesalpha);
+	d = I_0<double>(pitimesalpha);
 	inversed = 1.0 / d;
 
 	inputSamplingFrequency = INPUT_FILE_SAMPLING_FREQUENCY;
@@ -112,7 +90,7 @@ void EvalSignal(double t_out, float * outputSamples, double t_in, float * inputS
 //	double invEndTime = 1.0 / endTime;
 	double invEndTime = 10000.0 / endTime;
 	assert(endTime < nInputSamples * inputSamplingPeriod);
-	double sampleTime, sampleScale, relativeTime, relativeFraction;
+	double sampleScale, relativeTime;
 
 	// go through samples following t_out
 	for (relativeTime = nextSampleTime - t_out; relativeTime < endTime; relativeTime += inputSamplingPeriod)
@@ -163,6 +141,7 @@ void myassert(bool cond)
 {
 	if (!cond)
 	{
+
 		fprintf(stderr, "assertion failed\n");
 		__asm {
 			int 3
@@ -182,15 +161,15 @@ void EvalSignalN<1>(double t_out, float * outputSamples, double t_in, float * in
 	double endTime = 13*impulseResponsePeriod; // for all time after endTime, we take impulse reponse to be 0
 //	double invEndTime = 1.0 / endTime;
 	double invEndTime = 10000.0 / endTime;
-//#define assert(x) { \
+/*#define assert(x) { \
 	if(!x){ \
 		__asm{int 3} \
 	}\
-}
+}*/
 #define assert(x) myassert(x)
 	assert(sampleIndex < nInputSamples);
 	assert(endTime < nInputSamples * inputSamplingPeriod);
-	double sampleTime, sampleScale, relativeTime, relativeFraction;
+	double sampleScale, relativeTime;
 
 	// go through samples following t_out
 	for (relativeTime = nextSampleTime - t_out; relativeTime < endTime; relativeTime += inputSamplingPeriod)
@@ -236,15 +215,15 @@ void EvalSignalN<4>(double t_out, float * outputSamples, double t_in, float * in
 	double endTime = 13*impulseResponsePeriod; // for all time after endTime, we take impulse reponse to be 0
 //	double invEndTime = 1.0 / endTime;
 	double invEndTime = 10000.0 / endTime;
-//#define assert(x) { \
+/*#define assert(x) { \
 	if(!x){ \
 		__asm{int 3} \
 	}\
-}
+}*/
 #define assert(x) myassert(x)
 	assert(sampleIndex < nInputSamples);
 	assert(endTime < nInputSamples * inputSamplingPeriod);
-	double sampleTime, sampleScale, relativeTime, relativeFraction;
+	double sampleScale, relativeTime;
 
 	// go through samples following t_out
 	for (relativeTime = nextSampleTime - t_out; relativeTime < endTime; relativeTime += inputSamplingPeriod)

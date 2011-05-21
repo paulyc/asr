@@ -29,9 +29,30 @@ public:
 		{
 		}
 	}
+	float phase(float x, float y)
+	{
+		if (x > 0.0f)
+			return atanf(y/x);
+		else if (x < 0.0f)
+		{
+			if (y >= 0.0f)
+				return atanf(y/x) + float(M_PI);
+			else
+				return atanf(y/x) - float(M_PI);
+		}
+		else
+		{
+			if (y > 0.0f)
+				return float(M_PI_2);
+			else if (y < 0.0f)
+				return -float(M_PI_2);
+			else
+				return float('NaN');
+		}
+	}
 	double Execute(/*float* data=NULL, int smp*/)
 	{
-		float x, y, y1, y2, y3, mag, maxL=0.0f, maxR=0.0f, dbin, fc, fcR, fcL;
+		float x, y, y1, y2, y3, mag, maxL=0.0f, maxR=0.0f, dbin, fc, fcR, fcL, phL, phR;
 		/*if (data) memcpy(_inBuf, data, sizeof(float) * chunk_size * 2);*/
 		fftwf_execute(_plan);
 		int i, maxLpos, maxRpos;
@@ -43,6 +64,7 @@ public:
 			if (mag > maxL)
 			{
 				maxL = mag;
+				phL = phase(x,y);
 				maxLpos = i;
 			}
 			x = _outBuf[i*2+1][0];
@@ -51,6 +73,7 @@ public:
 			if (mag > maxR)
 			{
 				maxR = mag;
+				phR = phase(x,y);
 				maxRpos = i;
 			}
 		}
@@ -74,7 +97,10 @@ public:
 		fcR = (float(maxRpos)+dbin)*(SAMPLERATE/chunk_size);
 		fc = (fcL+fcR)*0.5f;
 
-		return 1000.0/fc;
+		//printf("_speed %f fc %f magL %f magR %f phaseL - phaseR %f\n", 1000.0/fc, fc, maxL, maxR, phL- phR);
+		if (maxL < 1.0f)
+			return 0.0;
+		return 2000.0/fc;
 	}
 	~SpeedParser2()
 	{

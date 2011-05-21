@@ -1,91 +1,14 @@
 #ifndef _UTIL_H
 #define _UTIL_H
 
-const char* asio_error_str(ASIOError e)
-{
-	switch (e)
-	{
-	case 0: return "ASE_OK, This value will be returned whenever the call succeeded";
-	case 0x3f4847a0: return "ASE_SUCCESS, unique success return value for ASIOFuture calls";
-	case -1000: return "ASE_NotPresent, hardware input or output is not present or available";
-	case -999: return "ASE_HWMalfunction, hardware is malfunctioning (can be returned by any ASIO function)";
-	case -998: return "ASE_InvalidParameter, input parameter invalid";
-	case -997: return "ASE_InvalidMode, hardware is in a bad mode or used in a bad mode";
-	case -996: return "ASE_SPNotAdvancing, hardware is not running when sample position is inquired";
-	case -995: return "ASE_NoClock, sample clock or rate cannot be determined or is not present";
-	case -994: return "ASE_NoMemory, not enough memory for completing the request";
-	default: return "I dunno WTF happened but this isn't a valid ASIO error value";
-	}
-}
+#define _USE_MATH_DEFINES
+#include <cmath>
 
-const char* asio_sampletype_str(ASIOSampleType t)
-{
-	switch (t)
-	{
-	case 16: return "ASIOSTInt16LSB";
-	default: return "Unknown";
-/*	ASIOSTInt16MSB   = 0,
+#include <asio.h>
+#include <fftw3.h>
 
-	ASIOSTInt24MSB   = 1,		// used for 20 bits as well
-
-	ASIOSTInt32MSB   = 2,
-
-	ASIOSTFloat32MSB = 3,		// IEEE 754 32 bit float
-
-	ASIOSTFloat64MSB = 4,		// IEEE 754 64 bit double float
-
-
-
-	// these are used for 32 bit data buffer, with different alignment of the data inside
-
-	// 32 bit PCI bus systems can be more easily used with these
-
-	ASIOSTInt32MSB16 = 8,		// 32 bit data with 16 bit alignment
-
-	ASIOSTInt32MSB18 = 9,		// 32 bit data with 18 bit alignment
-
-	ASIOSTInt32MSB20 = 10,		// 32 bit data with 20 bit alignment
-
-	ASIOSTInt32MSB24 = 11,		// 32 bit data with 24 bit alignment
-
-	
-
-	ASIOSTInt16LSB   = 16,
-
-	ASIOSTInt24LSB   = 17,		// used for 20 bits as well
-
-	ASIOSTInt32LSB   = 18,
-
-	ASIOSTFloat32LSB = 19,		// IEEE 754 32 bit float, as found on Intel x86 architecture
-
-	ASIOSTFloat64LSB = 20, 		// IEEE 754 64 bit double float, as found on Intel x86 architecture
-
-
-
-	// these are used for 32 bit data buffer, with different alignment of the data inside
-
-	// 32 bit PCI bus systems can more easily used with these
-
-	ASIOSTInt32LSB16 = 24,		// 32 bit data with 18 bit alignment
-
-	ASIOSTInt32LSB18 = 25,		// 32 bit data with 18 bit alignment
-
-	ASIOSTInt32LSB20 = 26,		// 32 bit data with 20 bit alignment
-
-	ASIOSTInt32LSB24 = 27,		// 32 bit data with 24 bit alignment
-
-
-
-	//	ASIO DSD format.
-
-	ASIOSTDSDInt8LSB1   = 32,		// DSD 1 bit data, 8 samples per byte. First sample in Least significant bit.
-
-	ASIOSTDSDInt8MSB1   = 33,		// DSD 1 bit data, 8 samples per byte. First sample in Most significant bit.
-
-	ASIOSTDSDInt8NER8	= 40,		// DSD 8 bit data, 1 sample per byte. No Endianness required.
-	*/
-	}
-}
+const char* asio_error_str(ASIOError e);
+const char* asio_sampletype_str(ASIOSampleType t);
 
 template <typename T>
 class Zero
@@ -95,9 +18,90 @@ public:
 };
 
 template <typename T>
-const T Zero<T>::val = T(0);
+T sinc(T x);
 
-template <>
-const fftwf_complex Zero<fftwf_complex>::val = {0.0f, 0.0f};
+double delta(double x, double a);
+
+template <typename T>
+T I_0(T z);
+
+template <typename T>
+class KaiserWindowBase
+{
+public:
+	virtual T get(T x) = 0;
+};
+
+template <typename T, int TblSz=10000>
+class KaiserWindowTable : public KaiserWindowBase<T>
+{
+protected:
+	typedef T(*sqrt_func)(T);
+	KaiserWindowTable()
+	{
+		T time;
+		m_sqrt = get_sqrt_f();
+		m_alpha = T(2.0);
+		m_pitimesalpha = T(M_PI)*m_alpha;
+		m_d = I_0<T>(m_pitimesalpha);
+		m_inversed = T(1.0) / m_d;
+		for (int i = 0; i < TblSz; ++i)
+		{
+			time = i / T(TblSz);
+			m_kaiserTable[i] = I_0<T>(m_pitimesalpha*m_sqrt(1-time*time))*m_inversed;
+		}
+	}
+	sqrt_func get_sqrt_f();
+	static KaiserWindowTable *_inst;
+	T m_kaiserTable[TblSz];
+	T m_alpha;
+	T m_pitimesalpha;
+	T m_d;
+	T m_inversed;
+	sqrt_func m_sqrt;
+public:
+	static KaiserWindowTable* get()
+	{
+		if (!_inst)
+			_inst = new KaiserWindowTable;
+		return _inst;
+	}
+
+	T get(T x)
+	{
+		int indx = int((x < T(0.0)? -x : x)*T(TblSz));
+		if (indx >= TblSz)
+			indx = TblSz - 1;
+		return m_kaiserTable[indx];
+	}
+	T get_i(int i)
+	{
+		return m_kaiserTable[i];
+	}
+};
+
+template <typename T>
+class KaiserWindowCalc : public KaiserWindowBase<T>
+{
+public:
+	static T get(T x)
+	{
+	}
+};
+
+class OperationBase
+{
+public:
+	virtual void operator()() = 0;
+};
+
+template <typename T>
+const char *printfbuffer_format();
+
+template <typename T>
+void printfbuffer(T *buf, int len, const char *label=0);
+
+void copy_chunk_buffer();
+void buf_copy(char *buf_src, char *buf_dst, int num_items, int item_sz=1, int stride=1);
 
 #endif
