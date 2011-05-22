@@ -151,7 +151,7 @@ public:
 	bool _resample;
 	float _resamplerate;
 	//lowpass_filter_td<fftwf_complex, default_internal_chunk_type, float> *_resample_filter;
-	lowpass_filter_td<SamplePairf, chunk_t, double> *_resample_filter;
+	lowpass_filter_td<chunk_t, double> *_resample_filter;
 
 public: // was protected
 	void Init();
@@ -178,8 +178,8 @@ public: // was protected
 	double _outputTime;
 	//my_wavfile_chunker *_src1;
 	
-	wavfile_chunker<chunk_t, SamplePairf> *_src2;
-	BufferedStream<chunk_t, SamplePairf> *_src_buf;
+	wavfile_chunker<chunk_t> *_src2;
+	BufferedStream<chunk_t> *_src_buf;
 	bool _src_active;
 
 	SpeedParser2<BUFFERSIZE> _sp;
@@ -187,15 +187,14 @@ public: // was protected
 
 	asio_source<short, SamplePairf, chunk_t> *_my_source;
 	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *_my_pk_det;
-	typedef controller<lowpass_filter_td<SamplePairf, chunk_t, double>, 
+	typedef controller<lowpass_filter_td<chunk_t, double>, 
 		peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> 
 		> controller_t;
 	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_my_raw_output;
 	asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true> *_my_sink;
-	StreamMetadata<chunk_t, SamplePairf> *_meta;
-	typedef WavFormDisplay<StreamMetadata<chunk_t, SamplePairf>,
-		controller_t> display_t;
+	StreamMetadata<chunk_t> *_meta;
+	typedef WavFormDisplay<StreamMetadata<chunk_t>, controller_t> display_t;
 	display_t *_wav_display;
 };
 

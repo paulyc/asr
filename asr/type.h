@@ -3,11 +3,12 @@
 
 #include "wavfile.h"
 
+/*
 typedef chunk_T_T_size<int, 2*BUFFERSIZE> my_chunk;
 typedef T_allocator<my_chunk> my_allocator;
 typedef T_source<my_chunk> my_source;
 typedef T_sink<my_chunk> my_sink;
-
+*/
 typedef chunk_time_domain_1d<SamplePairf, 4096> chunk_t;
 
 typedef fftwf_complex default_internal_sample_type;

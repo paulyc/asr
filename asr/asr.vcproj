@@ -292,6 +292,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\chunk.h"
+				>
+			</File>
+			<File
 				RelativePath=".\config.h"
 				>
 			</File>
@@ -337,6 +341,10 @@
 			</File>
 			<File
 				RelativePath=".\speedparser.h"
+				>
+			</File>
+			<File
+				RelativePath=".\track.h"
 				>
 			</File>
 			<File

@@ -12,7 +12,7 @@ public:
 	CircularBuffer(T_source<Chunk_T> *src);
 };
 
-template <typename Chunk_T, typename Sample_T>
+template <typename Chunk_T>
 class BufferedStream : public T_source<Chunk_T>, T_sink<Chunk_T>
 {
 public:
@@ -53,7 +53,7 @@ public:
 		smp_ofs_t ofs_in_chk;
 		Chunk_T *chk = T_allocator<Chunk_T>::alloc(), *buf_chk = get_chunk(_chk_ofs);
 		int to_fill = Chunk_T::chunk_size, loop_fill;
-		Sample_T *to_ptr = chk->_data;
+		Chunk_T::sample_t *to_ptr = chk->_data;
 		while (to_fill > 0)
 		{
 			while (_smp_ofs < 0 && to_fill > 0)
@@ -68,7 +68,7 @@ public:
 				break;
 			ofs_in_chk = _smp_ofs % Chunk_T::chunk_size;
 			loop_fill = min(to_fill, Chunk_T::chunk_size - ofs_in_chk);
-			memcpy(to_ptr, buf_chk->_data + ofs_in_chk, loop_fill*sizeof(Sample_T));
+			memcpy(to_ptr, buf_chk->_data + ofs_in_chk, loop_fill*sizeof(Chunk_T::sample_t));
 			to_fill -= loop_fill;
 			to_ptr += loop_fill;
 			if (ofs_in_chk + loop_fill >= Chunk_T::chunk_size)
@@ -94,15 +94,16 @@ public:
 			_chk_ofs = smp_ofs / Chunk_T::chunk_size;
 	}
 
-	int get_samples(double tm, Sample_T *buf, int num)
+	int get_samples(double tm, typename Chunk_T::sample_t *buf, int num)
 	{
 		smp_ofs_t ofs = tm *44100.0;
 		return get_samples(ofs, buf, num);
 	}
-	int get_samples(smp_ofs_t ofs, Sample_T *buf, int num)
+	int get_samples(smp_ofs_t ofs, typename Chunk_T::sample_t *buf, int num)
 	{
 		while (ofs < 0 && num > 0)
 		{
+
 			(*buf)[0] = 0.0;
 			(*buf)[1] = 0.0;
 			++ofs;
@@ -125,7 +126,7 @@ public:
 			}
 
 			// copy bits
-			memcpy(buf, _chks[chk_ofs]->_data + smp_ofs, sizeof(Sample_T)*to_cpy);
+			memcpy(buf, _chks[chk_ofs]->_data + smp_ofs, sizeof(Chunk_T::sample_t)*to_cpy);
 
 			if (to_cpy == chk_left)
 			{
@@ -151,10 +152,12 @@ protected:
 	smp_ofs_t _smp_ofs;
 };
 
-template <typename Source_T, typename Sample_T, int BufSz=0x1000>
+template <typename Source_T, int BufSz=0x1000>
 class BufferMgr
 {
 public:
+	typedef typename Source_T::type::sample_t Sample_T;
+
 	BufferMgr(Source_T *src, double smp_rate=44100.0) :
 	  _src(src),
 	  _buffer_p(0),
@@ -215,10 +218,12 @@ protected:
 	double _sample_period;
 };
 
-template <typename Chunk_T, typename Sample_T>
+template <typename Chunk_T>
 class StreamMetadata
 {
 public:
+	typedef typename Chunk_T::sample_t Sample_T;
+
 	struct ChunkMetadata
 	{
 		ChunkMetadata():valid(false){}
@@ -260,7 +265,7 @@ public:
 	}
 
 
-	StreamMetadata(BufferedStream<Chunk_T, Sample_T> *src) :
+	StreamMetadata(BufferedStream<Chunk_T> *src) :
 	  _src(src),
 	  _chk_data(10000)
 	  {
@@ -299,7 +304,7 @@ public:
 		return meta;
 	}
 protected:
-	BufferedStream<Chunk_T, Sample_T> *_src;
+	BufferedStream<Chunk_T> *_src;
 	std::vector<ChunkMetadata> _chk_data;
 };
 

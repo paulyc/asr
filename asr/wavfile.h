@@ -141,10 +141,9 @@ protected:
 	long _dataOfs;
 	unsigned long _dataBytes;
 	bool _eof;
-	pos_info _len;
 };
 
-template <typename Chunk_T, typename Sample_Output_T>
+template <typename Chunk_T>
 class wavfile_chunker : public wavfile_chunker_base<Chunk_T>
 {
 public:
@@ -152,19 +151,10 @@ public:
 		wavfile_chunker_base<Chunk_T>(filename)
 	{
 	}
-};
 
-template <typename Chunk_T>
-class wavfile_chunker<Chunk_T, SamplePairf> : public wavfile_chunker_base<Chunk_T>
-{
-public:
-	wavfile_chunker<Chunk_T, SamplePairf>(const wchar_t *filename) : 
-		wavfile_chunker_base<Chunk_T>(filename)
-	{
-	}
 	Chunk_T* next()
 	{
-		short buffer[2*Chunk_T::chunk_size], smp;
+		short buffer[2*Chunk_T::chunk_size];
 		size_t bytes_to_read = _bytesPerSample*2*Chunk_T::chunk_size, rd;
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 
@@ -175,14 +165,10 @@ public:
 			for (short *b=buffer+(bytes_to_read-rd)/sizeof(short); b < buffer+2*Chunk_T::chunk_size; ++b)
 				*b = 0;
 		}
-		for (int r=0; r < Chunk_T::chunk_size; ++r)
-		{
-			PairFromT<SamplePairf, short>(chk->_data[r], buffer[r*2], buffer[r*2+1]);
-		}
+		chk->load_from(buffer);
 		return chk;
 	}
 };
-
 
 /*
 template <int chunk_size, int channels>

@@ -5,12 +5,19 @@
 #include <queue>
 #include <cassert>
 #include <exception>
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 #include <fftw3.h>
 
 #ifdef WIN32
 #include <windows.h>
 #endif
+
+typedef float SamplePairf[2];
+typedef double SamplePaird[2];
+
+typedef int smp_ofs_t;
 
 template <typename T> 
 const char* gettype();
@@ -22,6 +29,7 @@ const char* gettype();
 #define define_template_type_T_n(base,T,n,type) typedef base<T,n> type; typable(type)
 #define define_template_type_T_n_T(base,T1,n,T2,type) typedef base<T,n,T2> type; typable(type)
 
+/*
 template <typename T, int data_size_n, int pad_size_bytes>
 struct chunk_T_T_var_size
 {
@@ -36,271 +44,9 @@ struct chunk_T_T_size
 	T _data[data_size_n];
 };
 
-template <typename Sample_T>
-class chunk_freq_domain;
+*/
 
-template <typename Sample_T>
-class chunk_time_domain;
-
-template <typename Sample_T>
-class chunk_base
-{
-public:
-	chunk_base(Sample_T *input=0) :
-		_input_data(input),
-		_default_plan(0)
-	{
-	}
-
-//protected:
-	Sample_T *_data;
-	Sample_T *_input_data;
-	fftwf_plan _default_plan;
-//	static bool _initd;
-};
-
-//template <typename Sample_T>
-//bool chunk_base<Sample_T>::_initd = false;
-
-template <typename Sample_T>
-class chunk_base_domain : virtual public chunk_base<Sample_T>
-{
-public:
-	chunk_base_domain() :
-		chunk_base()
-	{
-		assert(_data);
-	}
-
-	chunk_base_domain(chunk_freq_domain<Sample_T> *chk) :
-		chunk_base(chk->_data)
-	{
-		assert(_data);
-		init_from_chunk(chk);
-	}
-
-	chunk_base_domain(chunk_time_domain<Sample_T> *chk) :
-		chunk_base(chk->_data)
-	{
-		assert(_data);
-		init_from_chunk(chk);
-	}
-	
-	virtual void init_from_chunk(chunk_freq_domain<Sample_T> *chk) = 0;
-	virtual void init_from_chunk(chunk_time_domain<Sample_T> *chk) = 0;
-
-protected:
-	void copy_from_chunk_transform(chunk_base_domain<Sample_T> *chk, int sign=FFTW_FORWARD)
-	{
-		assert(0);
-		/*
-		chunk_base_dim<Sample_T> *chk_dim = dynamic_cast<chunk_base_dim<Sample_T>*>(chk);
-		fftwf_plan p = fftwf_plan_dft(chk_dim->dim(), chk_dim->sizes_as_array(), (Sample_T*)chk->_data, _data, sign, FFTW_ESTIMATE);
-		fftwf_execute(p);
-		*/
-	}
-
-	void copy_from_chunk_direct(chunk_base_domain<Sample_T> *chk)
-	{
-		chunk_base_dim<Sample_T> *chk_dim = dynamic_cast<chunk_base_dim<Sample_T>*>(chk);
-		memcpy(_data, chk->_data, chk_dim->size_as_bytes());
-	}
-};
-
-template <typename Sample_T>
-class chunk_time_domain : public chunk_base_domain<Sample_T>
-{
-public:
-	void init_from_chunk(chunk_freq_domain<Sample_T> *chk)
-	{
-		copy_from_chunk_transform(chk, FFTW_BACKWARD);
-	}
-
-	void init_from_chunk(chunk_time_domain<Sample_T> *chk)
-	{
-		copy_from_chunk_direct(chk);
-	}
-};
-
-template <typename Sample_T>
-class chunk_freq_domain : public chunk_base_domain<Sample_T>
-{
-public:
-	void init_from_chunk(chunk_freq_domain<Sample_T> *chk)
-	{
-		copy_from_chunk_direct(chk);
-	}
-
-	void init_from_chunk(chunk_time_domain<Sample_T> *chk)
-	{
-		copy_from_chunk_transform(chk, FFTW_FORWARD);
-	}
-};
-
-template <typename Sample_T>
-class chunk_base_dim : virtual public chunk_base<Sample_T>
-{
-public:
-	virtual ~chunk_base_dim()
-	{
-		fftwf_free(_data);
-	}
-	virtual int dim() = 0;
-	virtual const int* sizes_as_array() = 0;
-	virtual size_t size_as_bytes() = 0;
-};
-
-template <typename Sample_T, int n0>
-class chunk_1d : public chunk_base_dim<Sample_T>
-{
-public:
-	chunk_1d()
-	{
-		_data = (Sample_T*)fftwf_malloc(size_as_bytes());
-	}
-	int dim()
-	{
-		return 1;
-	}
-	const int* sizes_as_array()
-	{
-		static int n[] = {n0};
-		return n;
-	}
-	size_t size_as_bytes()
-	{
-		return sizeof(Sample_T)*n0;
-	}
-	Sample_T& dereference(int m0)
-	{
-		return _data[m0];
-	}
-
-	static const int chunk_size = n0;
-};
-
-template <typename Sample_T, int n0, int n1>
-class chunk_2d : public chunk_base_dim<Sample_T>
-{
-public:
-	chunk_2d()
-	{
-		_data = (Sample_T*)fftwf_malloc(size_as_bytes());
-	}
-	int dim()
-	{
-		return 2;
-	}
-	const int* sizes_as_array()
-	{
-		static int n[] = {n0, n1};
-		return n;
-	}
-	size_t size_as_bytes()
-	{
-		return sizeof(Sample_T)*n0*n1;
-	}
-	Sample_T& dereference(int m0, int m1)
-	{
-		return _data[m0*n1+m1];
-	}
-
-	static const int chunk_size = n0*n1;
-};
-
-template <typename Sample_T, int n0, int n1, int n2>
-class chunk_3d : public chunk_base_dim<Sample_T>
-{
-public:
-	chunk_3d()
-	{
-		_data = (Sample_T*)fftwf_malloc(size_as_bytes());
-	}
-	int dim()
-	{
-		return 3;
-	}
-	const int* sizes_as_array()
-	{
-		static int n[] = {n0, n1, n2};
-		return n;
-	}
-	size_t size_as_bytes()
-	{
-		return sizeof(Sample_T)*n0*n1*n2;
-	}
-	Sample_T& dereference(int m0, int m1, int m2)
-	{
-		return _data[m0*n0+m1*n1+m2];
-	}
-	static const int chunk_size = n0*n1*n2;
-};
-
-template <typename Sample_T, int n0>
-class chunk_time_domain_1d : public chunk_time_domain<Sample_T>, public chunk_1d<Sample_T, n0>
-{
-public:
-	chunk_time_domain_1d() :
-		chunk_1d<Sample_T, n0>(),
-		chunk_time_domain<Sample_T>()
-	{
-	}
-};
-
-template <typename Sample_T, int n0>
-class chunk_freq_domain_1d : public chunk_freq_domain<Sample_T>, public chunk_1d<Sample_T, n0>
-{
-public:
-	chunk_freq_domain_1d() :
-		chunk_1d<Sample_T, n0>(),
-		chunk_freq_domain<Sample_T>()
-	{
-	}
-};
-
-template <typename Sample_T, int n0, int n1>
-class chunk_time_domain_2d : public chunk_time_domain<Sample_T>, public chunk_2d<Sample_T, n0, n1>
-{
-public:
-	chunk_time_domain_2d() :
-		chunk_2d<Sample_T, n0, n1>(),
-		chunk_time_domain<Sample_T>()
-	{
-	}
-};
-
-template <typename Sample_T, int n0, int n1>
-class chunk_freq_domain_2d : public chunk_freq_domain<Sample_T>, public chunk_2d<Sample_T, n0, n1>
-{
-public:
-	chunk_freq_domain_2d() :
-		chunk_2d<Sample_T, n0, n1>(),
-		chunk_freq_domain<Sample_T>()
-	{
-	}
-};
-
-template <typename Sample_T, int n0, int n1, int n2>
-class chunk_time_domain_3d : public chunk_time_domain<Sample_T>, public chunk_3d<Sample_T, n0, n1, n2>
-{
-public:
-	chunk_time_domain_3d() :
-		chunk_3d<Sample_T, n0, n1, n2>(),
-		chunk_time_domain<Sample_T>()
-	{
-	}
-};
-
-template <typename Sample_T, int n0, int n1, int n2>
-class chunk_freq_domain_3d : public chunk_freq_domain<Sample_T>, public chunk_3d<Sample_T, n0, n1, n2>
-{
-public:
-	chunk_freq_domain_3d() :
-		chunk_3d<Sample_T, n0, n1, n2>(),
-		chunk_freq_domain<Sample_T>()
-	{
-	}
-};
+#include "chunk.h"
 
 /*
 struct chunk_interleave_base
@@ -451,15 +197,11 @@ std::map<INT_PTR, INT_PTR> T_allocator_N_16ba<T, N>::_T_align_map;
 template <typename T, int N>
 std::map<T*, size_t> T_allocator_N_16ba<T, N>::_T_size_map;
 
-typedef float SamplePairf[2];
-typedef double SamplePaird[2];
-
-typedef int smp_ofs_t;
-
 template <typename T>
 class T_source
 {
 public:
+	typedef T type;
 	virtual ~T_source()
 	{
 	}
@@ -481,15 +223,16 @@ public:
 	}
 	struct pos_info
 	{
+		pos_info() : samples(-1), chunks(-1), smp_ofs_in_chk(-1), time(HUGE_VAL) {}
 		smp_ofs_t samples;
 		int chunks;
 		int smp_ofs_in_chk;
 		double time;
-	};
+	} _len;
+
 	virtual const pos_info& len()
 	{
-		pos_info p = {-1, -1, -1};
-		return p;
+		return _len;
 	}
 };
 
