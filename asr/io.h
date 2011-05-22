@@ -21,6 +21,7 @@
 #include "controller.h"
 #include "speedparser.h"
 #include "wavformdisplay.h"
+#include "track.h"
 
 extern IASIO * asiodrv;
 
@@ -150,8 +151,6 @@ public:
 	const wchar_t *_default_src;
 	bool _resample;
 	float _resamplerate;
-	//lowpass_filter_td<fftwf_complex, default_internal_chunk_type, float> *_resample_filter;
-	lowpass_filter_td<chunk_t, double> *_resample_filter;
 
 public: // was protected
 	void Init();
@@ -176,10 +175,6 @@ public: // was protected
 	ASIOChannelInfo *_output_channel_infos;
 	long _bufSize;
 	double _outputTime;
-	//my_wavfile_chunker *_src1;
-	
-	wavfile_chunker<chunk_t> *_src2;
-	BufferedStream<chunk_t> *_src_buf;
 	bool _src_active;
 
 	SpeedParser2<BUFFERSIZE> _sp;
@@ -193,9 +188,9 @@ public: // was protected
 	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_my_raw_output;
 	asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true> *_my_sink;
-	StreamMetadata<chunk_t> *_meta;
-	typedef WavFormDisplay<StreamMetadata<chunk_t>, controller_t> display_t;
-	display_t *_wav_display;
+
+	typedef SeekablePitchableFileSource<chunk_t> track_t;
+	track_t *_track1;
 };
 
 #endif // !defined(_IO_H)

@@ -15,6 +15,7 @@ HWND g_dlg = NULL;
 HBRUSH br;
 HPEN pen_lt;
 HPEN pen_dk;
+double last_time;
 
 INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
     UINT uMsg,
@@ -42,18 +43,18 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 			GetClientRect(h, &r);
 			width = r.right - r.left;
 			height = r.bottom - r.top;
-			if (width != asio->_wav_display->get_width())
+			if (width != asio->_track1->_display->get_width())
 			{
-				asio->_wav_display->set_width(width);
-				asio->_wav_display->set_wav_heights();
+				asio->_track1->_display->set_width(width);
+				asio->_track1->_display->set_wav_heights();
 			}
 			Rectangle(hdc, r.top, r.left, r.right, r.bottom);
 			//SetBkColor(hdc, RGB(255,255,255));
 
 			for (int p=0; p<width; ++p)
 			{
-				const ASIOThinger<SamplePairf, short>::display_t::wav_height &h =
-					asio->_wav_display->get_wav_height(p);
+				const ASIOThinger<SamplePairf, short>::track_t::display_t::wav_height &h =
+					asio->_track1->_display->get_wav_height(p);
 				int px_pk = (1.0-h.peak_top) * height / 2;
 				int px_avg = (1.0-h.avg_top) * height / 2;
 				int line_height = px_avg-px_pk;
@@ -80,14 +81,18 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 						printf("%d ", HIWORD(wParam));
 						val = 48000.0 / (1.0 + .001 * HIWORD(wParam) -0.05);
 						printf("%f\n", val);
-						asio->SetResamplerate(val); 
+						asio->_track1->set_output_sampling_frequency(val); 
 					}
 					else
 					{
 						printf("%d ", HIWORD(wParam));
 						val = 10*60*HIWORD(wParam)*0.01;
 						printf("%f\n", val);
-						asio->SetPos(val);
+						if (val != last_time) // debounce
+						{
+							asio->_track1->seek_time(val);
+							last_time = val;
+						}
 					}
 					break;
 			}
@@ -146,7 +151,8 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					//memset(&ofn, 0, sizeof(ofn));
 					if (GetOpenFileName(&ofn)) {
 						SetDlgItemText(hwndDlg, IDC_EDIT1, filepath);
-						asio->SetSrc(1, filepath);
+						asio->_track1->set_source_file(filepath);
+					//	asio->SetSrc(1, filepath);
 					}
 					return TRUE;
 				}

@@ -16,10 +16,21 @@ template <typename T>
 class Zero
 {
 public:
-	static T val;
+	const static T val;
 	static void set(T &t)
 	{
 		t = val;
+	}
+};
+
+template <>
+class Zero<SamplePairf>
+{
+public:
+	static void set(SamplePairf &t)
+	{
+		t[0] = 0.0f;
+		t[1] = 0.0f;
 	}
 };
 

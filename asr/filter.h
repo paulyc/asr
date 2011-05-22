@@ -118,7 +118,6 @@ public:
 
 	void seek_time(Precision_T t)
 	{
-		// dump sample buffer and fill again
 		_output_time = t;
 	}
 

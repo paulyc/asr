@@ -179,21 +179,10 @@ template <typename T>
 const T Zero<T>::val = T(0);
 
 template <>
-double Zero<double>::val = 0.0;
+const double Zero<double>::val = 0.0;
 
 template <>
-float Zero<float>::val = 0.0;
-
-template <>
-SamplePairf Zero<SamplePairf>::val = {0.0f, 0.0f};
-
-template <>
-SamplePaird Zero<SamplePaird>::val = {0.0, 0.0};
-
-/* redundant, same as SamplePairf
-template <>
-const fftwf_complex Zero<fftwf_complex>::val = {0.0f, 0.0f};
-*/
+const float Zero<float>::val = 0.0;
 
 void copy_chunk_buffer()
 {

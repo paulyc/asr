@@ -1,6 +1,7 @@
 #ifndef _WAVFORMDISPLAY_H
 #define _WAVFORMDISPLAY_H
 
+#include <pthread.h>
 #include "type.h"
 
 template <typename Source_T, typename Controller_T>
@@ -8,9 +9,9 @@ class WavFormDisplay
 {
 public:
 	WavFormDisplay(Source_T *src, Controller_T *controller, int width=100) :
-	  _src(src),
-		  _controller(controller),
-		  _wav_heights(0)
+		_src(src),
+		_controller(controller),
+		_wav_heights(0)
 	{
 		set_width(width);
 	}
@@ -43,7 +44,7 @@ public:
 	  return _width;
   }
 
-  void set_wav_heights()
+  void set_wav_heights(pthread_mutex_t *lock=0)
   {
 	  SamplePairf *s;
 	  int chunks = _src->len().chunks;
@@ -56,6 +57,8 @@ public:
 	  int chk = 0;
 	  for (int p = 0; p < _width; ++p)
 	  {
+		  if (lock)
+			  pthread_mutex_lock(lock);
 		  _wav_heights[p].avg_top = 0.0;
 		  for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
 		  {
@@ -67,6 +70,8 @@ public:
 		  Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
 		  if (repeat)
 			  --chk;
+		  if (lock)
+			  pthread_mutex_unlock(lock);
 	  }
   }
 
@@ -74,6 +79,10 @@ public:
   {
 	  assert(pixel<_width);
 	  return _wav_heights[pixel];
+  }
+
+  void repaint()
+  {
   }
 
 protected:

@@ -336,6 +336,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\loader.h"
+				>
+			</File>
+			<File
 				RelativePath=".\resource.h"
 				>
 			</File>

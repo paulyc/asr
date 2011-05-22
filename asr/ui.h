@@ -3,6 +3,15 @@
 
 #include "config.h"
 
+class GenericUI
+{
+public:
+	void repaint_wavform()
+	{
+	//	::SendMessage(
+	}
+};
+
 #if WINDOWS
 #include <commctrl.h>
 #include "resource.h"

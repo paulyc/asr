@@ -275,6 +275,35 @@ public:
 	}
 };
 
+template <typename T>
+class zero_source : public T_source<T>
+{
+protected:
+	zero_source() {}
+	static zero_source *_the_src;
+public:
+	static zero_source* get()
+	{
+		if (!_the_src)
+			_the_src = new zero_source;
+		return _the_src;
+	}
+
+	T* next()
+	{
+		T* chk = T_allocator<T>::alloc();
+		for (typename T::sample_t *smp = chk->_data, *end=smp+T::chunk_size;
+			smp != end; ++smp)
+		{
+			Zero<typename T::sample_t>::set(*smp);
+		}
+		return chk;
+	}
+};
+
+template <typename T>
+zero_source<T>* zero_source<T>::_the_src = 0;
+
 /*
 SamplePairf& operator=(SamplePairf &lhs, float rhs)
 {

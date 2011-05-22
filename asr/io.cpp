@@ -189,7 +189,6 @@ ASIOThinger<SamplePairf, short>::ASIOThinger() :
 	//_default_src(L"H:\\Music\\Super8 & Tab, Anton Sonin - Black Is The New Yellow (Activa Remix).wav"),
 	_resample(false),
 	_resamplerate(48000.0),
-	_resample_filter(0),
 	_buffer_infos(0),
 	_input_channel_infos(0),
 	_output_channel_infos(0),
@@ -219,15 +218,11 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Init()
 		_src1 = new int_N_wavfile_chunker_T_test<int, BUFFERSIZE>;
 		/*static_cast<int_N_wavfile_chunker_T_test<int, BUFFERSIZE>*>(_src1)->_file;*/
 #else
-		//_src1 = new my_wavfile_chunker(_default_src);
-		_src2 = new wavfile_chunker<chunk_t>(_default_src);
-		_src_buf = new BufferedStream<chunk_t>(_src2);
-		_resample_filter = new lowpass_filter_td<chunk_t, double>(_src_buf, 22050.0, 44100.0, 48000.0);
-		_my_sink = new asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true>(_resample_filter);
-		//_my_sink = new asio_sink<SamplePairf, short, chunk_time_domain_1d<SamplePairf, 4096>, 4096, true>(_src2);
 		_my_controller = new controller_t;
-		_meta = new StreamMetadata<chunk_t>(_src_buf);
-		_wav_display = new WavFormDisplay<StreamMetadata<chunk_t>, controller_t>(_meta, _my_controller);
+
+		_track1 = new SeekablePitchableFileSource<chunk_t>(_default_src);
+		_my_sink = new asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true>(_track1);
+
 #if CARE_ABOUT_INPUT
 		_my_source = new asio_source<short, SamplePairf, chunk_t>;
 		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>(_my_source);
@@ -708,24 +703,11 @@ void ASIOThinger<SamplePairf, short>::SetSrc(int ch, const wchar_t *fqpath)
 	bool was_active = _src_active;
 	if (was_active)
 		Stop();
-	delete _my_sink;
-	delete _resample_filter;
-	delete _src2;
-//	delete _src1;
-	
-	_my_sink = 0;
-	_resample_filter = 0;
-	_src2 = 0;
-//	_src1 = 0;
-	
 	try {
-//		_src1 = new my_wavfile_chunker(fqpath);
-		_src2 = new wavfile_chunker<chunk_t>(fqpath);
-		_resample_filter = new lowpass_filter_td<chunk_t, double>(_src2, 22050.0, 44100.0, 48000.0);
-		_my_sink = new asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true>(_resample_filter);
+		_track1->set_source_file(fqpath);
 	} catch (std::exception e) {
 	}
-	if (was_active && _src2)
+	if (was_active)
 		Start();
 }
 
@@ -808,9 +790,7 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Destroy()
 	}
 	CoUninitialize();
 
-//	delete _src1;
-	delete _src2;
-	//among others
+	delete _track1;
 
 	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::free(_inputBufL);
 	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::free(_inputBufR);
