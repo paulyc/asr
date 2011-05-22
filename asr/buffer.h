@@ -261,11 +261,12 @@ public:
 
 
 	StreamMetadata(BufferedStream<Chunk_T, Sample_T> *src) :
-	  _src(src)
+	  _src(src),
+	  _chk_data(10000)
 	  {
 	  }
 
-	const typename BufferedStream<Chunk_T, Sample_T>::pos_info& len()
+	const typename T_source<Chunk_T>::pos_info& len()
 	{
 		return _src->len();
 	}
@@ -275,17 +276,24 @@ public:
 		if (_chk_data.size() <= chk_ofs)
 			_chk_data.resize(chk_ofs*2);
 		ChunkMetadata &meta = _chk_data[chk_ofs];
+		Sample_T dabs;
 		if (!meta.valid)
 		{
 			Chunk_T *chk = _src->get_chunk(chk_ofs);
-			meta.abs_sum = Zero<Sample_T>::val;
+			meta.abs_sum[0] = 0.0f;
+			meta.abs_sum[1] = 0.0f;
+			meta.peak[0] = 0.0f;
+			meta.peak[1] = 0.0f;
 			for (Sample_T *data=chk->_data, *end=data+Chunk_T::chunk_size;
 				data != end; ++data)
 			{
-				Sum<Sample_T>::calc(meta.abs_sum, meta.abs_sum, *data);
+				Abs<Sample_T>::calc(dabs, *data);
+				Sum<Sample_T>::calc(meta.abs_sum, meta.abs_sum, dabs);
+				SetMax<Sample_T>::calc(meta.peak, dabs);
 			}
-			Division<Sample_T>::calc(meta.avg, meta.abs_sum, Chunk_T::chunk_size);
+			Quotient<Sample_T>::calc(meta.avg, meta.abs_sum, Chunk_T::chunk_size);
 			dBm<Sample_T>::calc(meta.avg_db, meta.avg);
+			dBm<Sample_T>::calc(meta.peak_db, meta.peak);
 			meta.valid = true;
 		}
 		return meta;

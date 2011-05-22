@@ -20,6 +20,7 @@
 #include "asiodrv.h"
 #include "controller.h"
 #include "speedparser.h"
+#include "wavformdisplay.h"
 
 extern IASIO * asiodrv;
 
@@ -185,12 +186,17 @@ public: // was protected
 	std::ofstream _log;
 
 	asio_source<short, SamplePairf, chunk_t> *_my_source;
-	peak_detector<SamplePairf, chunk_t, 4096> *_my_pk_det;
-	controller<lowpass_filter_td<SamplePairf, chunk_t, double>, 
-			   peak_detector<SamplePairf, chunk_t, 4096> 
-			   > *_my_controller;
+	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *_my_pk_det;
+	typedef controller<lowpass_filter_td<SamplePairf, chunk_t, double>, 
+		peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> 
+		> controller_t;
+	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_my_raw_output;
-	asio_sink<SamplePairf, short, chunk_t, 4096, true> *_my_sink;
+	asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true> *_my_sink;
+	StreamMetadata<chunk_t, SamplePairf> *_meta;
+	typedef WavFormDisplay<StreamMetadata<chunk_t, SamplePairf>,
+		controller_t> display_t;
+	display_t *_wav_display;
 };
 
 #endif // !defined(_IO_H)

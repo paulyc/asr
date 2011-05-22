@@ -16,8 +16,8 @@ template <typename T>
 class Zero
 {
 public:
-	const static T val;
-	void set(T &t)
+	static T val;
+	static void set(T &t)
 	{
 		t = val;
 	}
@@ -43,6 +43,7 @@ public:
 template <>
 class Sum<SamplePairf> : public BinaryOperator<SamplePairf>
 {
+public:
 	static void calc(SamplePairf &result, const SamplePairf &lhs, const SamplePairf &rhs)
 	{
 		result[0] = lhs[0]+rhs[0];
@@ -51,7 +52,7 @@ class Sum<SamplePairf> : public BinaryOperator<SamplePairf>
 };
 
 template <typename T>
-class Division : BinaryOperator<T>
+class Quotient : BinaryOperator<T>
 {
 public:
 	static void calc(T &result, const T &lhs, const T &rhs)
@@ -61,8 +62,9 @@ public:
 };
 
 template <>
-class Division<SamplePairf> : public BinaryOperator<SamplePairf>
+class Quotient<SamplePairf> : public BinaryOperator<SamplePairf>
 {
+public:
 	static void calc(SamplePairf &result, const SamplePairf &lhs, const SamplePairf &rhs)
 	{
 		result[0] = lhs[0]/rhs[0];
@@ -125,6 +127,51 @@ public:
 	{
 		result[0] = log10f(lhs[0]);
 		result[1] = log10f(lhs[1]);
+	}
+};
+
+template <typename T>
+class SetMax : UnaryOperator<T>
+{
+public:
+	static void calc(T &result, const T &lhs)
+	{
+		if (lhs > result)
+			result = lhs;
+	}
+};
+
+template <>
+class SetMax<SamplePairf> : UnaryOperator<SamplePairf>
+{
+public:
+	static void calc(SamplePairf &result, const SamplePairf &lhs)
+	{
+		if (lhs[0] > result[0])
+			result[0] = lhs[0];
+		if (lhs[1] > result[1])
+			result[1] = lhs[1];
+	}
+};
+
+template <typename T>
+class Abs : UnaryOperator<T>
+{
+public:
+	static void calc(T &result, const T &lhs)
+	{
+		result = abs(lhs);
+	}
+};
+
+template <>
+class Abs<SamplePairf> : UnaryOperator<SamplePairf>
+{
+public:
+	static void calc(SamplePairf &result, const SamplePairf &lhs)
+	{
+		result[0] = fabs(lhs[0]);
+		result[1] = fabs(lhs[1]);
 	}
 };
 

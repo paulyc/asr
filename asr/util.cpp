@@ -179,16 +179,16 @@ template <typename T>
 const T Zero<T>::val = T(0);
 
 template <>
-const double Zero<double>::val = 0.0;
+double Zero<double>::val = 0.0;
 
 template <>
-const float Zero<float>::val = 0.0;
+float Zero<float>::val = 0.0;
 
 template <>
-const SamplePairf Zero<SamplePairf>::val = {0.0f, 0.0f};
+SamplePairf Zero<SamplePairf>::val = {0.0f, 0.0f};
 
 template <>
-const SamplePaird Zero<SamplePaird>::val = {0.0, 0.0};
+SamplePaird Zero<SamplePaird>::val = {0.0, 0.0};
 
 /* redundant, same as SamplePairf
 template <>

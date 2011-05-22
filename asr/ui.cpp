@@ -12,41 +12,83 @@ extern ASIOThinger<SamplePairf, short> * asio;
 
 HWND g_dlg = NULL;
 
+HBRUSH br;
+HPEN pen_lt;
+HPEN pen_dk;
+
 INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
     UINT uMsg,
     WPARAM wParam,
     LPARAM lParam
 )
 {
+	PAINTSTRUCT ps;
+	HDC hdc;
+	RECT r;
+	HWND h;
+	int width, height;
+
 	switch (uMsg)
 	{
+		case WM_PAINT:
+			
+			 h = ::GetDlgItem(g_dlg, IDC_STATIC4);
+		//	printf("WM_PAINT %d, %d, %d, %d\n", hwndDlg, uMsg, wParam, lParam);
+			hdc = BeginPaint(h, &ps);
+			 
+			  
+			SelectObject(hdc, br);
+			
+			GetClientRect(h, &r);
+			width = r.right - r.left;
+			height = r.bottom - r.top;
+			if (width != asio->_wav_display->get_width())
+			{
+				asio->_wav_display->set_width(width);
+				asio->_wav_display->set_wav_heights();
+			}
+			Rectangle(hdc, r.top, r.left, r.right, r.bottom);
+			//SetBkColor(hdc, RGB(255,255,255));
+
+			for (int p=0; p<width; ++p)
+			{
+				const ASIOThinger<SamplePairf, short>::display_t::wav_height &h =
+					asio->_wav_display->get_wav_height(p);
+				int px_pk = (1.0-h.peak_top) * height / 2;
+				int px_avg = (1.0-h.avg_top) * height / 2;
+				int line_height = px_avg-px_pk;
+				
+				SelectObject(hdc, pen_lt);
+				MoveToEx(hdc, r.left+p, r.top+px_pk, NULL);
+				LineTo(hdc, r.left+p, r.top+px_avg);
+				SelectObject(hdc, pen_dk);
+				LineTo(hdc, r.left+p, r.top+height-px_avg);
+				SelectObject(hdc, pen_lt);
+				LineTo(hdc, r.left+p, r.top+height-px_pk);
+			}
+			
+			EndPaint(h, &ps);
+			return 0L;
 		case WM_HSCROLL:
 			switch (LOWORD(wParam))
 			{
 				case SB_THUMBPOSITION:
 				case SB_THUMBTRACK:
-					WORD foo = LOWORD(lParam);
-					foo = LOWORD(wParam);
-					foo = IDC_SLIDER3;
 					double val;
-				//	switch (LOWORD(wParam))
-				//	{
-				//	case 5:
+					if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER2))
+					{
 						printf("%d ", HIWORD(wParam));
-#if 0
 						val = 48000.0 / (1.0 + .001 * HIWORD(wParam) -0.05);
 						printf("%f\n", val);
 						asio->SetResamplerate(val); 
-#else
+					}
+					else
+					{
+						printf("%d ", HIWORD(wParam));
 						val = 10*60*HIWORD(wParam)*0.01;
 						printf("%f\n", val);
 						asio->SetPos(val);
-#endif
-						break;
-					//case 6:
-				//		break;
-				//	}
-					
+					}
 					break;
 			}
 			return TRUE;
@@ -113,12 +155,46 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 	return FALSE;
 }
 
+LRESULT CALLBACK CustomWndProc(HWND hwnd,
+    UINT uMsg,
+    WPARAM wParam,
+    LPARAM lParam
+)
+{
+	switch (uMsg)
+	{
+		case WM_PAINT:
+			printf("WM_PAINT %d, %d, %d, %d\n", hwnd, uMsg, wParam, lParam);
+			return TRUE;
+			break;
+	}
+	return FALSE;
+}
+
 void CreateUI()
 {
 	INITCOMMONCONTROLSEX iccx;
 	iccx.dwSize = sizeof(iccx);
 	iccx.dwICC = ICC_STANDARD_CLASSES;
 	InitCommonControlsEx(&iccx);
+	WNDCLASSEX wcx = {
+		sizeof(WNDCLASSEX),
+		CS_HREDRAW|CS_VREDRAW,
+		CustomWndProc,
+		0,
+		0,
+		::GetModuleHandle(NULL),
+		0,
+		0,
+		0,
+		0,
+		L"CustomClass",
+		0
+	};
+	//if (!RegisterClassEx(&wcx))
+	{
+	//	printf("Yo rcx error %d\n", GetLastError());
+	}
 	g_dlg = CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG1), NULL, MyDialogProc);
 	if (!g_dlg) {
 		//TCHAR foo[256];
@@ -129,11 +205,18 @@ void CreateUI()
 	}
 	SetDlgItemText(g_dlg, IDC_EDIT1, asio->_default_src);
 	ShowWindow(g_dlg, SW_SHOW);
+
+	//printf("static = %d\n", );
+	//::InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC), NULL, FALSE);
 }
 
 void MainLoop_Win32()
 {
 	CreateUI();
+
+	br = CreateSolidBrush(RGB(255,255,255));
+	pen_dk = CreatePen(PS_SOLID, 1, RGB(0,0,255));
+	pen_lt = CreatePen(PS_SOLID, 1, RGB(0,0,192));
 
 #if SLEEP
 	Sleep(10000);
@@ -154,6 +237,10 @@ void MainLoop_Win32()
 			DispatchMessage(&msg); 
 		} 
 	} 
+
+	DeleteObject(pen_dk);
+	DeleteObject(pen_lt);
+	DeleteObject(br);
 
 #endif // !SLEEP
 }

@@ -1,7 +1,9 @@
 #ifndef _WAVFORMDISPLAY_H
 #define _WAVFORMDISPLAY_H
 
-template <Source_T, Controller_T>
+#include "type.h"
+
+template <typename Source_T, typename Controller_T>
 class WavFormDisplay
 {
 public:
@@ -17,11 +19,12 @@ public:
 	  {
 		  wav_height() : 
 			peak_top(0.0), avg_top(0.0)
-			,peak_bot(0.0), avg_bot(0.0){}
+			//,peak_bot(0.0), avg_bot(0.0)
+			{}
 		  double peak_top;
 		  double avg_top;
-		  double peak_bot;
-		  double avg_bot;
+		//  double peak_bot;
+		//  double avg_bot;
 	  };
 
   void set_width(int width)
@@ -35,9 +38,42 @@ public:
 	_wav_heights = new wav_height[_width];
   }
 
+  int get_width()
+  {
+	  return _width;
+  }
+
   void set_wav_heights()
   {
+	  SamplePairf *s;
 	  int chunks = _src->len().chunks;
+	  //chunk_t *chk = _src->get_chunk(0);
+	  int chunks_per_pixel = chunks / _width;
+	  int chunks_per_pixel_rem = chunks % _width;
+	  bool repeat = chunks_per_pixel_rem > 0;
+	  if (repeat)
+		  ++chunks_per_pixel;
+	  int chk = 0;
+	  for (int p = 0; p < _width; ++p)
+	  {
+		  _wav_heights[p].avg_top = 0.0;
+		  for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
+		  {
+			  assert(chk < chunks);
+			const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
+			SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
+			Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
+		  }
+		  Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
+		  if (repeat)
+			  --chk;
+	  }
+  }
+
+  const wav_height& get_wav_height(int pixel)
+  {
+	  assert(pixel<_width);
+	  return _wav_heights[pixel];
   }
 
 protected:

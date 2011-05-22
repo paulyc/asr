@@ -225,10 +225,9 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Init()
 		_resample_filter = new lowpass_filter_td<SamplePairf, chunk_t, double>(_src_buf, 22050.0, 44100.0, 48000.0);
 		_my_sink = new asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true>(_resample_filter);
 		//_my_sink = new asio_sink<SamplePairf, short, chunk_time_domain_1d<SamplePairf, 4096>, 4096, true>(_src2);
-		_my_controller = new controller<lowpass_filter_td<SamplePairf, chunk_t, double>, 
-			peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> 
-			   >;
-		new StreamMetadata<chunk_t, SamplePairf>(_src_buf);
+		_my_controller = new controller_t;
+		_meta = new StreamMetadata<chunk_t, SamplePairf>(_src_buf);
+		_wav_display = new WavFormDisplay<StreamMetadata<chunk_t, SamplePairf>, controller_t>(_meta, _my_controller);
 #if CARE_ABOUT_INPUT
 		_my_source = new asio_source<short, SamplePairf, chunk_t>;
 		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>(_my_source);
