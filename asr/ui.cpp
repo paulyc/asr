@@ -15,25 +15,22 @@ HWND g_dlg = NULL;
 HBRUSH br;
 HPEN pen_lt;
 HPEN pen_dk;
+HPEN pen_yel;
 double last_time;
 
-INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
-    UINT uMsg,
-    WPARAM wParam,
-    LPARAM lParam
-)
+double playback_pos = 0.0;
+
+RECT r;
+
+void repaint()
 {
 	PAINTSTRUCT ps;
 	HDC hdc;
-	RECT r;
+	
 	HWND h;
 	int width, height;
 
-	switch (uMsg)
-	{
-		case WM_PAINT:
-			
-			 h = ::GetDlgItem(g_dlg, IDC_STATIC4);
+	 h = ::GetDlgItem(g_dlg, IDC_STATIC4);
 		//	printf("WM_PAINT %d, %d, %d, %d\n", hwndDlg, uMsg, wParam, lParam);
 			hdc = BeginPaint(h, &ps);
 			 
@@ -41,6 +38,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 			SelectObject(hdc, br);
 			
 			GetClientRect(h, &r);
+			
 			width = r.right - r.left;
 			height = r.bottom - r.top;
 			if (width != asio->_track1->_display->get_width())
@@ -67,9 +65,49 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				SelectObject(hdc, pen_lt);
 				LineTo(hdc, r.left+p, r.top+height-px_pk);
 			}
+
+			double len =  asio->_track1->len().time;
+			int px = int(playback_pos / len * double(width));
+			MoveToEx(hdc, r.left+px, r.top, NULL);
+			SelectObject(hdc, pen_yel);
+			LineTo(hdc, r.left+px, r.top+height);
 			
 			EndPaint(h, &ps);
+}
+
+void set_position(double tm)
+{
+	playback_pos = tm;
+	//if (asio)repaint();
+	InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC4), &r, TRUE);
+	if (asio)repaint();
+}
+
+INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
+    UINT uMsg,
+    WPARAM wParam,
+    LPARAM lParam
+)
+{
+	switch (uMsg)
+	{
+		case WM_PAINT:
+		{
+			repaint();
 			return 0L;
+		}
+		case WM_LBUTTONUP:
+		{
+			HWND h = GetDlgItem(g_dlg, IDC_STATIC4);
+			
+			break;
+		}
+		case WM_PARENTNOTIFY:
+		{
+			HWND h = GetDlgItem(g_dlg, IDC_STATIC4);
+			int x = IDC_STATIC4;
+			break;
+		}
 		case WM_HSCROLL:
 			switch (LOWORD(wParam))
 			{
@@ -167,11 +205,21 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
     LPARAM lParam
 )
 {
+	RECT r;
+	HDC hdc;
+	PAINTSTRUCT ps;
 	switch (uMsg)
 	{
 		case WM_PAINT:
 			printf("WM_PAINT %d, %d, %d, %d\n", hwnd, uMsg, wParam, lParam);
-			return TRUE;
+			hdc = BeginPaint(hwnd, &ps);
+			SelectObject(hdc, br);
+			
+			GetClientRect(hwnd, &r);
+			
+			Rectangle(hdc, r.top, r.left, r.right, r.bottom);
+			EndPaint(hwnd, &ps);
+			return 0;
 			break;
 	}
 	return FALSE;
@@ -197,10 +245,24 @@ void CreateUI()
 		L"CustomClass",
 		0
 	};
-	//if (!RegisterClassEx(&wcx))
+	if (!RegisterClassEx(&wcx))
 	{
-	//	printf("Yo rcx error %d\n", GetLastError());
+		printf("Yo rcx error %d\n", GetLastError());
 	}
+	HWND newwnd = CreateWindowEx(0,
+   L"CustomClass",
+   L"Hello",
+    0,
+    0,
+    0,
+    600,
+    100,
+    0,
+    0,
+    ::GetModuleHandle(NULL),
+    0);
+	int e = GetLastError();
+	ShowWindow(newwnd, SW_SHOW);
 	g_dlg = CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG1), NULL, MyDialogProc);
 	if (!g_dlg) {
 		//TCHAR foo[256];
@@ -223,6 +285,7 @@ void MainLoop_Win32()
 	br = CreateSolidBrush(RGB(255,255,255));
 	pen_dk = CreatePen(PS_SOLID, 1, RGB(0,0,255));
 	pen_lt = CreatePen(PS_SOLID, 1, RGB(0,0,192));
+	pen_yel = CreatePen(PS_SOLID, 1, RGB(255,255,0));
 
 #if SLEEP
 	Sleep(10000);
@@ -246,6 +309,7 @@ void MainLoop_Win32()
 
 	DeleteObject(pen_dk);
 	DeleteObject(pen_lt);
+	DeleteObject(pen_yel);
 	DeleteObject(br);
 
 #endif // !SLEEP

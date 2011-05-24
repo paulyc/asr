@@ -12,6 +12,8 @@ public:
 	}
 };
 
+void set_position(double tm);
+
 #if WINDOWS
 #include <commctrl.h>
 #include "resource.h"

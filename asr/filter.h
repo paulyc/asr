@@ -121,6 +121,11 @@ public:
 		_output_time = t;
 	}
 
+	Precision_T get_time()
+	{
+		return _output_time;
+	}
+
 	void set_cutoff(Precision_T f)
 	{
 		_cutoff = f;

@@ -6,6 +6,7 @@
 #include "wavfile.h"
 #include "buffer.h"
 #include "type.h"
+#include "ui.h"
 
 template <typename Chunk_T>
 class SeekablePitchableFileSource : public T_source<Chunk_T>
@@ -49,8 +50,18 @@ public:
 
 		_filename = filename;
 
-		_src = new wavfile_chunker<Chunk_T>(filename);
-		_src_buf = new BufferedStream<Chunk_T>(_src);
+		if (wcsstr(_filename, L".mp3") == _filename + wcslen(_filename) - 4)
+		{
+			_src = new mp3file_chunker<Chunk_T>(_filename);
+			_src_buf = new BufferedStream<Chunk_T>(_src);
+			_src_buf->load_complete();
+		}
+		else
+		{
+			_src = new wavfile_chunker<Chunk_T>(_filename);
+			_src_buf = new BufferedStream<Chunk_T>(_src);
+		}
+		
 		_meta = new StreamMetadata<Chunk_T>(_src_buf);
 		_resample_filter = new lowpass_filter_td<Chunk_T, double>(_src_buf, 22050.0, 44100.0, 48000.0);
 		_display = new WavFormDisplay<
@@ -71,6 +82,7 @@ public:
 		else
 			chk = _resample_filter->next(); // may want to critical section this
 		pthread_mutex_unlock(&_config_lock);
+		set_position(_resample_filter->get_time());
 		return chk;
 	}
 
@@ -89,6 +101,11 @@ public:
 	{
 		if (!_in_config && _resample_filter)
 			_resample_filter->seek_time(t);
+	}
+
+	const pos_info& len()
+	{
+		return _meta->len();
 	}
 
 protected:

@@ -42,7 +42,25 @@ public:
 			_chks.resize(chk_ofs*2, 0);
 		if (!_chks[chk_ofs])
 		{
-			_src->seek_chk(chk_ofs);
+			if (_src->_len.chunks != -1 && chk_ofs >= _src->_len.chunks)
+			{
+				_chks[chk_ofs] = zero_source<Chunk_T>::get()->next();
+			}
+			else
+			{
+				_src->seek_chk(chk_ofs);
+				_chks[chk_ofs] = _src->next();
+			}
+		}
+		return _chks[chk_ofs];
+	}
+
+	Chunk_T *next_chunk(int chk_ofs)
+	{
+		if (chk_ofs >= _chks.size())
+			_chks.resize(chk_ofs*2, 0);
+		if (!_chks[chk_ofs])
+		{
 			_chks[chk_ofs] = _src->next();
 		}
 		return _chks[chk_ofs];
@@ -144,6 +162,18 @@ public:
 	const pos_info& len()
 	{
 		return _src->len();
+	}
+
+	int load_complete()
+	{
+		int chk = 0;
+		for (; !_src->eof(); ++chk)
+		{
+			next_chunk(chk);
+		}
+		_len.chunks = chk-1;
+		_src->_len.chunks = chk-1;
+		return _len.chunks;
 	}
 
 protected:

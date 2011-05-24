@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="E:\cygwin\home\haxor\pthreads.2;&quot;E:\My Documents\Visual Studio Projects\ASIOSDK2\common&quot;;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
+				AdditionalIncludeDirectories="&quot;E:\cygwin\home\haxor\mycode\asr2\libmad-0.15.1b\msvc++&quot;;E:\cygwin\home\haxor\pthreads.2;&quot;E:\My Documents\Visual Studio Projects\ASIOSDK2\common&quot;;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,9 +61,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libfftw3f-3.lib comctl32.lib Comdlg32.lib pthreadVC2.lib"
+				AdditionalDependencies="libmad.lib libfftw3f-3.lib comctl32.lib Comdlg32.lib pthreadVC2.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="E:\cygwin\home\haxor\pthreads.2;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
+				AdditionalLibraryDirectories="&quot;E:\cygwin\home\haxor\mycode\asr2\libmad-0.15.1b\msvc++\Debug&quot;;E:\cygwin\home\haxor\pthreads.2;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				TargetMachine="1"
