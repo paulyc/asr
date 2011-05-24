@@ -11,7 +11,9 @@ public:
 	WavFormDisplay(Source_T *src, Controller_T *controller, int width=100) :
 		_src(src),
 		_controller(controller),
-		_wav_heights(0)
+		_wav_heights(0),
+		_center(0.5),
+		_zoom(1.0)
 	{
 		set_width(width);
 	}
@@ -44,6 +46,7 @@ public:
 	  return _width;
   }
 
+  // fix file not expected length!!
   void set_wav_heights(pthread_mutex_t *lock=0)
   {
 	  SamplePairf *s;
@@ -85,11 +88,23 @@ public:
   {
   }
 
+  void set_ctr(double c)
+  {
+	  _center = c;
+  }
+
+  void set_zoom(double z)
+  {
+	  _zoom = z;
+  }
+
 protected:
 	Source_T *_src;
 	Controller_T *_controller;
 	int _width;
 	wav_height *_wav_heights;
+	double _center;
+	double _zoom;
 };
 
 #endif // !defined(_WAVFORMDISPLAY_H)

@@ -18,9 +18,12 @@ HPEN pen_dk;
 HPEN pen_yel;
 double last_time;
 
-double playback_pos = 0.0;
+double coarse_val=48000.0, fine_val=0.0;
 
+double playback_pos = 0.0;
+int px = 0;
 RECT r;
+int width, height;
 
 void repaint()
 {
@@ -28,7 +31,8 @@ void repaint()
 	HDC hdc;
 	
 	HWND h;
-	int width, height;
+	
+	RECT r2;
 
 	 h = ::GetDlgItem(g_dlg, IDC_STATIC4);
 		//	printf("WM_PAINT %d, %d, %d, %d\n", hwndDlg, uMsg, wParam, lParam);
@@ -38,6 +42,8 @@ void repaint()
 			SelectObject(hdc, br);
 			
 			GetClientRect(h, &r);
+
+			//GetWindowRect(h, &r2);
 			
 			width = r.right - r.left;
 			height = r.bottom - r.top;
@@ -67,7 +73,7 @@ void repaint()
 			}
 
 			double len =  asio->_track1->len().time;
-			int px = int(playback_pos / len * double(width));
+			px = int(playback_pos / len * double(width));
 			MoveToEx(hdc, r.left+px, r.top, NULL);
 			SelectObject(hdc, pen_yel);
 			LineTo(hdc, r.left+px, r.top+height);
@@ -77,10 +83,18 @@ void repaint()
 
 void set_position(double tm)
 {
-	playback_pos = tm;
-	//if (asio)repaint();
-	InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC4), &r, TRUE);
-	if (asio)repaint();
+	if (asio)
+	{
+		playback_pos = tm;
+		double len =  asio->_track1->len().time;
+		int new_px = int(playback_pos / len * double(r.right - r.left));
+		//if (asio)repaint();
+		if (new_px != px)
+		{
+		InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC4), &r, TRUE);
+		repaint();
+		}
+	}
 }
 
 INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
@@ -99,7 +113,51 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 		case WM_LBUTTONUP:
 		{
 			HWND h = GetDlgItem(g_dlg, IDC_STATIC4);
-			
+			POINT p;
+			WINDOWINFO wi;
+		//	GetCurrentPositionEx(h, &p);
+		//	::GetWindowInfo(h, &wi);
+		//	35,131,438,52
+			//216,56
+		//	if (HIWORD(lParam) >= 35 || LOWORD(lParam) >= 131)
+			{
+				int y = LOWORD(lParam) - 56;
+				if (HIWORD(lParam) > 216 && HIWORD(lParam) < 216+height)
+				{
+					double f = double(y)/width;
+					if (f > 0.0)
+					{
+						printf("%f\n", f);
+						asio->_track1->seek_f(f);
+					}
+				}
+			//	printf("%d %d %d\n", HIWORD(lParam), LOWORD(lParam), y);
+			}
+			break;
+		}
+		case WM_RBUTTONUP:
+		{
+		//	HWND h = GetDlgItem(g_dlg, IDC_STATIC4);
+		//	POINT p;
+		//	WINDOWINFO wi;
+		//	GetCurrentPositionEx(h, &p);
+		//	::GetWindowInfo(h, &wi);
+		//	35,131,438,52
+			//216,56
+		//	if (HIWORD(lParam) >= 35 || LOWORD(lParam) >= 131)
+			{
+				int y = LOWORD(lParam) - 56;
+				if (HIWORD(lParam) > 216 && HIWORD(lParam) < 216+height)
+				{
+					double f = double(y)/width;
+					if (f > 0.0)
+					{
+						printf("cue %f\n", f);
+						asio->_track1->set_cuepoint(f);
+					}
+				}
+			//	printf("%d %d %d\n", HIWORD(lParam), LOWORD(lParam), y);
+			}
 			break;
 		}
 		case WM_PARENTNOTIFY:
@@ -116,21 +174,23 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					double val;
 					if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER2))
 					{
-						printf("%d ", HIWORD(wParam));
-						val = 48000.0 / (1.0 + .001 * HIWORD(wParam) -0.05);
-						printf("%f\n", val);
-						asio->_track1->set_output_sampling_frequency(val); 
+						printf("coarse %d ", HIWORD(wParam));
+						coarse_val = 48000.0 / (1.0 + .01 * HIWORD(wParam) -0.5);
+						printf("coarse_val %f\n", coarse_val);
+						asio->_track1->set_output_sampling_frequency(coarse_val+fine_val); 
 					}
 					else
 					{
-						printf("%d ", HIWORD(wParam));
-						val = 10*60*HIWORD(wParam)*0.01;
-						printf("%f\n", val);
-						if (val != last_time) // debounce
+						printf("fine %d ", HIWORD(wParam));
+						//val = 10*60*HIWORD(wParam)*0.01;
+						fine_val = 1000.0 -  20*HIWORD(wParam);
+						printf("fine_val %f\n", fine_val);
+						asio->_track1->set_output_sampling_frequency(coarse_val+fine_val); 
+					/*	if (val != last_time) // debounce
 						{
 							asio->_track1->seek_time(val);
 							last_time = val;
-						}
+						}*/
 					}
 					break;
 			}
@@ -193,6 +253,11 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					//	asio->SetSrc(1, filepath);
 					}
 					return TRUE;
+				}
+				case IDC_BUTTON4: // cue src 1
+				{
+					asio->_track1->goto_cuepoint();
+					break;
 				}
 			}
 	}

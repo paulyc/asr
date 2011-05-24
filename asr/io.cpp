@@ -221,7 +221,7 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Init()
 		_my_controller = new controller_t;
 
 		//_track1 = new SeekablePitchableFileSource<chunk_t>(_default_src);
-		_track1 = new SeekablePitchableFileSource<chunk_t>(L"F:\\My Music\\02-neo_cortex-elements_kb_project_remix-usf.mp3");
+		_track1 = new SeekablePitchableFileSource<chunk_t>(L"E:\\Contagion.wav");
 		_my_sink = new asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true>(_track1);
 
 #if CARE_ABOUT_INPUT

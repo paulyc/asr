@@ -19,7 +19,8 @@ public:
 		_src_buf(0),
 		_resample_filter(0),
 		_meta(0),
-		_display(0)
+		_display(0),
+		_cuepoint(0.0)
 	{
 		pthread_mutex_init(&_config_lock, 0);
 		if (filename)
@@ -94,7 +95,10 @@ public:
 	void set_output_sampling_frequency(double f)
 	{
 		if (!_in_config && _resample_filter)
+		{
+			printf("output mod %f\n", 48000.0/f);
 			_resample_filter->set_output_sampling_frequency(f);
+		}
 	}
 
 	void seek_time(double t)
@@ -106,6 +110,21 @@ public:
 	const pos_info& len()
 	{
 		return _meta->len();
+	}
+
+	void seek_f(double f)
+	{
+		_resample_filter->seek_time(f * len().time);
+	}
+
+	void set_cuepoint(double pos)
+	{
+		_cuepoint = pos;
+	}
+
+	void goto_cuepoint()
+	{
+		seek_f(_cuepoint);
 	}
 
 protected:
@@ -123,6 +142,7 @@ public:
 		SeekablePitchableFileSource<Chunk_T> 
 	> display_t;
 	display_t *_display;
+	double _cuepoint;
 };
 
 #endif // !defined(TRACK_H)
