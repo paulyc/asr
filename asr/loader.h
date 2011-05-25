@@ -31,23 +31,25 @@ protected:
 	{
 		job():done(false){}
 		bool done;
-		virtual void* do_it() = 0;
+		virtual void do_it() = 0;
 	};
 
 	template <typename Source_T>
 	struct generate_chunk_job : public job
 	{
 		Source_T *src;
-		Chunk_T *result;
+		Source_T::chunk_t *result;
 	};
 
 	struct load_track_job : public job
 	{
-		load_track_job(track_t *t):track(t){}
+		load_track_job(track_t *t, const wchar_t *f):track(t){}
 		track_t *track;
+		const wchar_t *file;
 		void do_it()
 		{
-			track->_display->set_wav_heights();
+			track->set_source_file(file);
+			done = true;
 		}
 	};
 
@@ -69,14 +71,14 @@ public:
 		pthread_create(&_tid, attr, threadproc, (void*)this);
 	}
 
-	void load_track_data(track_t *track)
+	void load_track_async(track_t *track, const wchar_t *file)
 	{
-		job *j = new load_track_job(track);
+		job *j = new load_track_job(track, file);
 		pthread_mutex_lock(&_job_lock);
 		_jobs.push(j);
 		pthread_cond_signal(&_job_rdy);
-		while (!j->done)
-			pthread_cond_wait(&_job_done, &_job_lock);
+	//	while (!j->done)
+	//		pthread_cond_wait(&_job_done, &_job_lock);
 	}
 
 	static void threadproc(void *arg)

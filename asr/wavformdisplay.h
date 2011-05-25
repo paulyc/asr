@@ -51,31 +51,69 @@ public:
   {
 	  SamplePairf *s;
 	  int chunks = _src->len().chunks;
+	  double left = _center - 0.5/_zoom;
+	  double right = _center + 0.5/_zoom;
+	  int left_chunk = left * chunks;
+	  int right_chunk = right * chunks;
 	  //chunk_t *chk = _src->get_chunk(0);
+	 // int chunks_per_pixel = (right_chunk-left_chunk) / _width;
 	  int chunks_per_pixel = chunks / _width;
-	  int chunks_per_pixel_rem = chunks % _width;
-	  bool repeat = chunks_per_pixel_rem > 0;
-	  if (repeat)
-		  ++chunks_per_pixel;
-	  int chk = 0;
-	  for (int p = 0; p < _width; ++p)
+	  double chunks_per_pixel_d = double(chunks) / _width;
+	  if (chunks_per_pixel > 0)
 	  {
-		  if (lock)
-			  pthread_mutex_lock(lock);
-		  _wav_heights[p].avg_top = 0.0;
-		  for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
-		  {
-			  assert(chk < chunks);
-			const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
-			SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
-			Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
-		  }
-		  Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
+		  int chunks_per_pixel_rem = chunks % _width;
+		  bool repeat = chunks_per_pixel_rem > 0;
 		  if (repeat)
-			  --chk;
-		  if (lock)
-			  pthread_mutex_unlock(lock);
+			  ++chunks_per_pixel;
+		  int chk = 0, end_chk;
+		  for (int p = 0; p < _width; ++p)
+		  {
+			  if (lock)
+				  pthread_mutex_lock(lock);
+			  _wav_heights[p].avg_top = 0.0;
+			  for (chk = p*chunks_per_pixel_d, end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
+			  {
+				  assert(chk < chunks);
+				const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
+				SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
+				Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
+			  }
+			  Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
+			  if (repeat)
+				  --chk;
+			  if (lock)
+				  pthread_mutex_unlock(lock);
+		  }
 	  }
+#if 0
+	  else
+	  {
+		  int left_sample = left * chunks * Source_T::chunk_t::chunk_size;
+		  int rt_sample = left * chunks * Source_T::chunk_t::chunk_size;
+		  int samples_per_pixel = rt_sample - left_sample;
+		  int chk = left_sample / chunks;
+		 int ofs = left_sample % chunks;
+		 for (int p = 0; p < _width; ++p)
+		  {
+			  if (lock)
+				  pthread_mutex_lock(lock);
+			  _wav_heights[p].avg_top = 0.0;
+			  for (; ofs < Source_T::chunk_t::chunk_size; ++ofs)
+			  //for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
+			  {
+				//  assert(chk < chunks);
+				const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
+				SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
+				Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
+			  }
+			  Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
+			  if (repeat)
+				  --chk;
+			  if (lock)
+				  pthread_mutex_unlock(lock);
+		  }
+	  }
+#endif
   }
 
   const wav_height& get_wav_height(int pixel)
@@ -95,7 +133,8 @@ public:
 
   void set_zoom(double z)
   {
-	  _zoom = z;
+	  if (z >= 1.0)
+		_zoom = z;
   }
 
 protected:
