@@ -81,9 +81,11 @@ public:
 		if (_in_config)
 			chk = zero_source<Chunk_T>::get()->next();
 		else
+		{
 			chk = _resample_filter->next(); // may want to critical section this
+			set_position(_resample_filter->get_time());
+		}
 		pthread_mutex_unlock(&_config_lock);
-		set_position(_resample_filter->get_time());
 		return chk;
 	}
 

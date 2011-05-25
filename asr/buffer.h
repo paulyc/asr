@@ -173,6 +173,9 @@ public:
 		}
 		_len.chunks = chk-1;
 		_src->_len.chunks = chk-1;
+		_src->_len.samples = _src->_len.chunks*Chunk_T::chunk_size;
+		_src->_len.smp_ofs_in_chk = _src->_len.samples % _src->_len.chunks;
+		_src->_len.time = _src->_len.samples/44100.0;
 		return _len.chunks;
 	}
 

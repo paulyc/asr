@@ -3,6 +3,8 @@
 
 #include <queue>
 
+#include <pthread.h>
+
 extern ASIOThinger<SamplePairf, short> * asio;
 
 /*
@@ -28,6 +30,7 @@ void asio_sink<SamplePairf, short, chunk_t, 4096, true>::process()
 		{
 			T_allocator<chunk_t>::free(_chk);
 			_chk = 0;
+
 			_chk = _src->next();
 			_read = _chk->_data;
 		}
