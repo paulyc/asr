@@ -55,11 +55,12 @@ public:
 	  double right = _center + 0.5/_zoom;
 	  int left_chunk = left * chunks;
 	  int right_chunk = right * chunks;
+	  chunks = right_chunk-left_chunk;
 	  //chunk_t *chk = _src->get_chunk(0);
 	 // int chunks_per_pixel = (right_chunk-left_chunk) / _width;
 	  int chunks_per_pixel = chunks / _width;
 	  double chunks_per_pixel_d = double(chunks) / _width;
-	  if (chunks_per_pixel > 0)
+	 // if (chunks_per_pixel > 0)
 	  {
 		  int chunks_per_pixel_rem = chunks % _width;
 		  bool repeat = chunks_per_pixel_rem > 0;
@@ -93,6 +94,7 @@ public:
 		  int samples_per_pixel = rt_sample - left_sample;
 		  int chk = left_sample / chunks;
 		 int ofs = left_sample % chunks;
+		 int chk, 
 		 for (int p = 0; p < _width; ++p)
 		  {
 			  if (lock)
