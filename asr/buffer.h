@@ -255,7 +255,10 @@ template <typename Chunk_T>
 class StreamMetadata
 {
 public:
+	typedef typename Chunk_T chunk_t;
 	typedef typename Chunk_T::sample_t Sample_T;
+
+	BufferedStream<Chunk_T> *getSrc(){return _src;}
 
 	struct ChunkMetadata
 	{
