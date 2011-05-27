@@ -20,7 +20,8 @@ public:
 	  T_sink(src),
 	  _chks(10000, 0),
 	  _chk_ofs(0),
-	  _smp_ofs(0)
+	  _smp_ofs(0),
+	  _chk_ofs_loading(0)
 	{
 		int chks = len().chunks;
 		if (chks != -1)
@@ -179,10 +180,26 @@ public:
 		return _len.chunks;
 	}
 
+	bool load_next()
+	{
+		if (_src->eof())
+		{
+			_len.chunks = _chk_ofs_loading-1;
+			_src->_len.chunks = _chk_ofs_loading-1;
+			_src->_len.samples = _src->_len.chunks*Chunk_T::chunk_size;
+			_src->_len.smp_ofs_in_chk = _src->_len.samples % _src->_len.chunks;
+			_src->_len.time = _src->_len.samples/44100.0;
+			return false;
+		}
+		next_chunk(_chk_ofs_loading++);
+		return true;
+	}
+
 protected:
 	std::vector<Chunk_T *> _chks;
 	int _chk_ofs;
 	smp_ofs_t _smp_ofs;
+	int _chk_ofs_loading;
 };
 
 template <typename Source_T, int BufSz=0x1000>
@@ -303,7 +320,8 @@ public:
 
 	StreamMetadata(BufferedStream<Chunk_T> *src) :
 	  _src(src),
-	  _chk_data(10000)
+	  _chk_data(10000),
+	  _chk_ofs(0)
 	  {
 	  }
 
@@ -342,6 +360,7 @@ public:
 protected:
 	BufferedStream<Chunk_T> *_src;
 	std::vector<ChunkMetadata> _chk_data;
+	int _chk_ofs;
 };
 
 #endif // !defined(BUFFER_H)

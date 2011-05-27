@@ -7,10 +7,12 @@
 #include "buffer.h"
 #include "type.h"
 #include "ui.h"
+#include "worker.h"
 
 template <typename Chunk_T>
 class SeekablePitchableFileSource : public T_source<Chunk_T>
 {
+	friend class Worker;
 public:
 	SeekablePitchableFileSource(const wchar_t *filename=0) :
 		_in_config(false),
@@ -55,7 +57,7 @@ public:
 		{
 			_src = new mp3file_chunker<Chunk_T>(_filename);
 			_src_buf = new BufferedStream<Chunk_T>(_src);
-			_src_buf->load_complete();
+		//	_src_buf->load_complete();
 		}
 		else
 		{
@@ -72,6 +74,8 @@ public:
 		pthread_mutex_lock(&_config_lock);
 		_in_config = false;
 		pthread_mutex_unlock(&_config_lock);
+
+		Worker::get()->do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this));
 	}
 
 	Chunk_T* next()
@@ -83,10 +87,15 @@ public:
 		else
 		{
 			chk = _resample_filter->next(); // may want to critical section this
-			set_position(_resample_filter->get_time());
+		//	render();
 		}
 		pthread_mutex_unlock(&_config_lock);
 		return chk;
+	}
+
+	void render()
+	{
+		set_position(_resample_filter->get_time(), true);
 	}
 
 	void set_pitch(double mod)

@@ -273,6 +273,10 @@
 				RelativePath=".\util.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\worker.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -336,10 +340,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\loader.h"
-				>
-			</File>
-			<File
 				RelativePath=".\resource.h"
 				>
 			</File>
@@ -373,6 +373,10 @@
 			</File>
 			<File
 				RelativePath=".\wavformdisplay.h"
+				>
+			</File>
+			<File
+				RelativePath=".\worker.h"
 				>
 			</File>
 		</Filter>

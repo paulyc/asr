@@ -5,21 +5,24 @@
 
 #include <pthread.h>
 
-#include "track.h"
+//#include "track.h"
 
 class Worker
 {
-protected:
+	//friend class Track;
+public:
 	static Worker *_instance;
 	Worker()
 	{
 		pthread_mutex_init(&_job_lock, 0);
 		pthread_cond_init(&_job_rdy, 0);
+		pthread_cond_init(&_job_done, 0);
 	}
 	~Worker()
 	{
-		pthread_mutex_destroy(&_job_lock);
+		pthread_cond_destroy(&_job_done);
 		pthread_cond_destroy(&_job_rdy);
+		pthread_mutex_destroy(&_job_lock);
 	}
 
 	pthread_t _tid;
@@ -31,59 +34,91 @@ protected:
 	{
 		job():done(false){}
 		bool done;
-		virtual void do_it() = 0;
+		virtual void do_it(){}
+		virtual void step(){}
 	};
 
-	template <typename Source_T>
+	/*template <typename Source_T>
 	struct generate_chunk_job : public job
 	{
 		Source_T *src;
 		Source_T::chunk_t *result;
-	};
+	};*/
 
+	template <typename Track_T>
 	struct load_track_job : public job
 	{
-		load_track_job(track_t *t, const wchar_t *f):track(t){}
-		track_t *track;
-		const wchar_t *file;
-		void do_it()
+		load_track_job(Track_T *t):track(t){
+			pthread_mutex_init(&_l, 0);
+			pthread_cond_init(&_next_step, 0);
+		}
+		Track_T *track;
+		//const wchar_t *file;
+		//void do_it()
+		//{
+		//	track->set_source_file(file);
+		//	done = true;
+		//}
+		pthread_mutex_t _l;
+		pthread_cond_t _next_step;
+		void step()
 		{
-			track->set_source_file(file);
-			done = true;
+			pthread_mutex_lock(&track->_config_lock);
+			if (track->len().samples < 0)
+			{
+				track->_src_buf->load_next();
+				pthread_mutex_unlock(&track->_config_lock);
+				return;
+			}
+			if (!track->_display->set_next_height())
+			{
+				done = true;
+				track->render();
+				printf("job done %p\n", this);
+			}
+			pthread_mutex_unlock(&track->_config_lock);
 		}
 	};
 
 	std::queue<job*> _critical_jobs;
 	std::queue<job*> _idle_jobs;
 public:
-	Worker* get()
+	static Worker* get()
 	{
 		if (!_instance)
 		{
 			_instance = new Worker;
+			_instance->spin();
 		}
 		return _instance;
 	}
-	typedef SeekablePitchableFileSource<chunk_t> track_t;
+	//typedef SeekablePitchableFileSource<chunk_t> track_t;
 
 	void spin()
 	{
-		pthread_create(&_tid, attr, threadproc, (void*)this);
+		pthread_create(&_tid, 0, threadproc, (void*)this);
 	}
 
-	void load_track_async(track_t *track, const wchar_t *file)
+	void do_job(job *j, bool sync=false, bool critical=false)
 	{
-		job *j = new load_track_job(track, file);
+		printf("doing job %p\n", j);
 		pthread_mutex_lock(&_job_lock);
-		_jobs.push(j);
+		if (critical)
+			_critical_jobs.push(j);
+		else
+			_idle_jobs.push(j);
+
 		pthread_cond_signal(&_job_rdy);
-	//	while (!j->done)
-	//		pthread_cond_wait(&_job_done, &_job_lock);
+		if (sync)
+			while (!j->done)
+				pthread_cond_wait(&_job_done, &_job_lock);
+		pthread_mutex_unlock(&_job_lock);
 	}
 
-	static void threadproc(void *arg)
+	static void* threadproc(void *arg)
 	{
-		dynamic_cast<Worker*>(arg)->thread();
+		static_cast<Worker*>(arg)->thread();
+		return 0;
 	}
 
 	void thread()
@@ -98,6 +133,7 @@ public:
 				_critical_jobs.pop();
 				pthread_mutex_unlock(&_job_lock);
 				cr_j->do_it();
+				delete cr_j;
 				cr_j = 0;
 				pthread_cond_signal(&_job_done);
 				pthread_mutex_lock(&_job_lock);
@@ -105,10 +141,11 @@ public:
 			
 			if (id_j)
 			{
-				pthread_mutex_unlock(&_job_done);
+				pthread_mutex_unlock(&_job_lock);
 				id_j->step();
 				if (id_j->done)
 				{
+					delete id_j;
 					id_j = 0;
 					pthread_cond_signal(&_job_done);
 				}
@@ -124,6 +161,7 @@ public:
 				else
 				{
 					pthread_cond_wait(&_job_rdy, &_job_lock);
+					pthread_mutex_unlock(&_job_lock);
 				}
 			}
 		}

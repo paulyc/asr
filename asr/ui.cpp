@@ -81,7 +81,7 @@ void repaint()
 			EndPaint(h, &ps);
 }
 
-void set_position(double tm)
+void set_position(double tm, bool invalidate)
 {
 	if (asio)
 	{
@@ -89,7 +89,7 @@ void set_position(double tm)
 		double len =  asio->_track1->len().time;
 		int new_px = int(playback_pos / len * double(r.right - r.left));
 		//if (asio)repaint();
-		if (new_px != px)
+		if (new_px != px || invalidate)
 		{
 		InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC4), &r, TRUE);
 		repaint();

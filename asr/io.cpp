@@ -241,7 +241,7 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Init()
 	LoadDriver();
 	//return;
 	_inputBufTime = -13*INPUT_PERIOD;
-
+#if 0
 	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::alloc_info info;
 	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::alloc(&info);
 	_inputBufL = info.ptr;
@@ -253,6 +253,7 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Init()
 	_bufRBegin = _inputBufR;
 	_bufLEnd = _bufLBegin;
 	_bufREnd = _bufRBegin;
+#endif
 	/*while (_bufLEnd < _bufLBegin + 20)
 	{
 		(*_bufLEnd)[0] = 0.0f;
@@ -796,6 +797,6 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Destroy()
 
 	delete _track1;
 
-	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::free(_inputBufL);
-	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::free(_inputBufR);
+//	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::free(_inputBufL);
+//	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::free(_inputBufR);
 }

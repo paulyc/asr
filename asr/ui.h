@@ -12,7 +12,7 @@ public:
 	}
 };
 
-void set_position(double tm);
+void set_position(double tm, bool invalidate);
 
 #if WINDOWS
 #include <commctrl.h>

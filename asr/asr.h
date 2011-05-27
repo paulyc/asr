@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include <fftw3.h>
+#include <pthread.h>
 
 #ifdef WIN32
 #include <windows.h>
@@ -71,25 +72,47 @@ template <typename T>
 class T_allocator
 {
 protected:
-	static std::queue<T*> _T_queue;
+	T_allocator()
+	{
+		pthread_mutex_init(&_lock, 0);
+	}
+	static T_allocator* _instance;
+	std::queue<T*> _T_queue;
+	pthread_mutex_t _lock;
 public:
+	static T_allocator* get()
+	{
+		if (!_instance)
+			_instance = new T_allocator;
+		return _instance;
+	}
 	~T_allocator<T>() // no virtual destruct?
 	{
+		pthread_mutex_lock(&_lock);
 		while (!_T_queue.empty())
 		{
 			delete _T_queue.front();
 			_T_queue.pop();
 		}
+		pthread_mutex_unlock(&_lock);
+		pthread_mutex_destroy(&_lock);
 	}
 
 	static T* alloc()
 	{
-		if (_T_queue.empty())
-			return new T;
+		T_allocator<T> *i = get();
+		pthread_mutex_lock(&i->_lock);
+		if (i->_T_queue.empty())
+		{
+			T *t = new T;
+			pthread_mutex_unlock(&i->_lock);
+			return t;
+		}
 		else
 		{
-			T* t = _T_queue.front();
-			_T_queue.pop();
+			T* t = i->_T_queue.front();
+			i->_T_queue.pop();
+			pthread_mutex_unlock(&i->_lock);
 			return t;
 		}
 	}
@@ -97,10 +120,15 @@ public:
 	static void free(T* t)
 	{
 		if (t)
-			_T_queue.push(t);
+		{
+			T_allocator<T> *i = get();
+			pthread_mutex_lock(&i->_lock);
+			i->_T_queue.push(t);
+			pthread_mutex_unlock(&i->_lock);
+		}
 	}
 };
-
+#if 0
 
 template <typename T, int N>
 class T_allocator_N : public T_allocator<T>
@@ -187,15 +215,24 @@ public:
 	}
 };
 
-
-template <typename T>
-std::queue<T*> T_allocator<T>::_T_queue;
-
 template <typename T, int N>
 std::map<INT_PTR, INT_PTR> T_allocator_N_16ba<T, N>::_T_align_map;
 
 template <typename T, int N>
 std::map<T*, size_t> T_allocator_N_16ba<T, N>::_T_size_map;
+
+#endif
+
+template <typename T>
+T_allocator<T>* T_allocator<T>::_instance = 0;
+
+//template <typename T>
+//std::queue<T*> T_allocator<T>::_T_queue;
+
+//template <typename T>
+//pthread_mutex_t T_allocator<T>::_lock = 0;
+
+
 
 template <typename T>
 class T_source
