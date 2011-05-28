@@ -8,7 +8,7 @@ template <typename Source_T, typename Controller_T>
 class WavFormDisplay
 {
 public:
-	WavFormDisplay(Source_T *src, Controller_T *controller, int width=100) :
+	WavFormDisplay(Source_T *src, Controller_T *controller, int width=0) :
 		_src(src),
 		_controller(controller),
 		_wav_heights(0),

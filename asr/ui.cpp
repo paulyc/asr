@@ -7,10 +7,12 @@ extern ASIOThinger<SamplePairf, short> * asio;
 
 #if WINDOWS
 #include <commctrl.h>
+#include <wingdi.h>
 #include "resource.h"
 #define SLEEP 0
 
 HWND g_dlg = NULL;
+HWND g_newwnd = NULL;
 
 HBRUSH br;
 HPEN pen_lt;
@@ -27,58 +29,62 @@ int width, height;
 
 void repaint()
 {
-	PAINTSTRUCT ps;
+	//PAINTSTRUCT ps;
 	HDC hdc;
 	
 	HWND h;
 	
 	RECT r2;
+	if (!asio->_track1->loaded())
+		return;
 
 	 h = ::GetDlgItem(g_dlg, IDC_STATIC4);
-		//	printf("WM_PAINT %d, %d, %d, %d\n", hwndDlg, uMsg, wParam, lParam);
-			hdc = BeginPaint(h, &ps);
-			 
-			  
-			SelectObject(hdc, br);
-			
-			GetClientRect(h, &r);
+//	printf("WM_PAINT %d, %d, %d, %d\n", hwndDlg, uMsg, wParam, lParam);
+	hdc = GetDC(h);
+	  
+	SelectObject(hdc, br);
+	
+	GetClientRect(h, &r);
 
-			//GetWindowRect(h, &r2);
-			
-			width = r.right - r.left;
-			height = r.bottom - r.top;
-			if (width != asio->_track1->_display->get_width())
-			{
-				asio->_track1->_display->set_width(width);
-				asio->_track1->_display->set_wav_heights();
-			}
-			Rectangle(hdc, r.top, r.left, r.right, r.bottom);
-			//SetBkColor(hdc, RGB(255,255,255));
+	//GetWindowRect(h, &r2);
+	
+	width = r.right - r.left;
+	height = r.bottom - r.top;
+	// cant do this here it too slow
+	if (width != asio->_track1->get_display_width())
+	{
+		asio->_track1->set_display_width(width);
+		asio->_track1->set_wav_heights();
+	}
+	Rectangle(hdc, r.top, r.left, r.right, r.bottom);
+	//SetBkColor(hdc, RGB(255,255,255));
 
-			for (int p=0; p<width; ++p)
-			{
-				const ASIOThinger<SamplePairf, short>::track_t::display_t::wav_height &h =
-					asio->_track1->_display->get_wav_height(p);
-				int px_pk = (1.0-h.peak_top) * height / 2;
-				int px_avg = (1.0-h.avg_top) * height / 2;
-				int line_height = px_avg-px_pk;
-				
-				SelectObject(hdc, pen_lt);
-				MoveToEx(hdc, r.left+p, r.top+px_pk, NULL);
-				LineTo(hdc, r.left+p, r.top+px_avg);
-				SelectObject(hdc, pen_dk);
-				LineTo(hdc, r.left+p, r.top+height-px_avg);
-				SelectObject(hdc, pen_lt);
-				LineTo(hdc, r.left+p, r.top+height-px_pk);
-			}
+	for (int p=0; p<width; ++p)
+	{
+		const ASIOThinger<SamplePairf, short>::track_t::display_t::wav_height &h =
+			asio->_track1->_display->get_wav_height(p);
+		int px_pk = (1.0-h.peak_top) * height / 2;
+		int px_avg = (1.0-h.avg_top) * height / 2;
+		int line_height = px_avg-px_pk;
+		
+		SelectObject(hdc, pen_lt);
+		MoveToEx(hdc, r.left+p, r.top+px_pk, NULL);
+		LineTo(hdc, r.left+p, r.top+px_avg);
+		SelectObject(hdc, pen_dk);
+		LineTo(hdc, r.left+p, r.top+height-px_avg);
+		SelectObject(hdc, pen_lt);
+		LineTo(hdc, r.left+p, r.top+height-px_pk);
+	}
 
-			double len =  asio->_track1->len().time;
-			px = int(playback_pos / len * double(width));
-			MoveToEx(hdc, r.left+px, r.top, NULL);
-			SelectObject(hdc, pen_yel);
-			LineTo(hdc, r.left+px, r.top+height);
-			
-			EndPaint(h, &ps);
+	double len =  asio->_track1->len().time;
+	px = int(playback_pos / len * double(width));
+	MoveToEx(hdc, r.left+px, r.top, NULL);
+	SelectObject(hdc, pen_yel);
+	LineTo(hdc, r.left+px, r.top+height);
+
+//	SwapBuffers(hdc);
+	
+	ReleaseDC(h, hdc);
 }
 
 void set_position(double tm, bool invalidate)
@@ -91,8 +97,10 @@ void set_position(double tm, bool invalidate)
 		//if (asio)repaint();
 		if (new_px != px || invalidate)
 		{
-		InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC4), &r, TRUE);
-		repaint();
+		//InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC4), NULL, TRUE);
+		//	UpdateWindow(::GetDlgItem(g_dlg, IDC_STATIC4));
+	//		InvalidateRect(g_dlg, NULL, TRUE);
+			repaint();
 		}
 	}
 }
@@ -107,7 +115,8 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 	{
 		case WM_PAINT:
 		{
-			repaint();
+			asio->_track1->lockedcall(repaint);
+			//repaint();
 			return 0L;
 		}
 		case WM_LBUTTONUP:
@@ -275,9 +284,13 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
 	PAINTSTRUCT ps;
 	switch (uMsg)
 	{
+		case WM_CREATE:
+			return 0;
+			break;
 		case WM_PAINT:
 			printf("WM_PAINT %d, %d, %d, %d\n", hwnd, uMsg, wParam, lParam);
 			hdc = BeginPaint(hwnd, &ps);
+		//	wglCreateContext(hdc);
 			SelectObject(hdc, br);
 			
 			GetClientRect(hwnd, &r);
@@ -287,11 +300,12 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
 			return 0;
 			break;
 	}
-	return FALSE;
+	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 void CreateUI()
 {
+#if 0
 	INITCOMMONCONTROLSEX iccx;
 	iccx.dwSize = sizeof(iccx);
 	iccx.dwICC = ICC_STANDARD_CLASSES;
@@ -310,24 +324,32 @@ void CreateUI()
 		L"CustomClass",
 		0
 	};
-	if (!RegisterClassEx(&wcx))
+	ATOM a;
+	if (!(a=RegisterClassEx(&wcx)))
 	{
 		printf("Yo rcx error %d\n", GetLastError());
 	}
-	HWND newwnd = CreateWindowEx(0,
-   L"CustomClass",
+	g_newwnd = CreateWindowEx(WS_EX_OVERLAPPEDWINDOW|WS_EX_COMPOSITED,
+   (LPCWSTR)a,
    L"Hello",
-    0,
+    WS_OVERLAPPEDWINDOW,
     0,
     0,
     600,
-    100,
+    600,
     0,
     0,
     ::GetModuleHandle(NULL),
     0);
 	int e = GetLastError();
-	ShowWindow(newwnd, SW_SHOW);
+	ShowWindow(g_newwnd, SW_SHOW);
+	UpdateWindow(g_newwnd);
+#endif
+
+	HWND button = CreateWindowEx(0, L"Button", L"Text", BS_PUSHBUTTON|BS_TEXT|WS_TABSTOP|WS_CHILD|WS_VISIBLE, 100, 100, 100, 100, g_newwnd, 0, ::GetModuleHandle(NULL),
+    0);
+//	ShowWindow(button, SW_SHOW);
+	
 	g_dlg = CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG1), NULL, MyDialogProc);
 	if (!g_dlg) {
 		//TCHAR foo[256];
@@ -339,6 +361,25 @@ void CreateUI()
 	SetDlgItemText(g_dlg, IDC_EDIT1, asio->_default_src);
 	ShowWindow(g_dlg, SW_SHOW);
 
+	/*
+	HDC hdc = GetDC(GetDlgItem(g_dlg, IDC_STATIC));
+	PIXELFORMATDESCRIPTOR pfd = {
+		sizeof(PIXELFORMATDESCRIPTOR),
+		1,
+		PFD_DRAW_TO_WINDOW|PFD_DOUBLEBUFFER,
+		24,
+		0,0,0,0,0,0,
+		0,
+		0,
+		0,
+		0,
+		0,0,0,0,
+		32,0,0,PFD_MAIN_PLANE,0,0,0,0
+	};
+	int ipf = ChoosePixelFormat(hdc, &pfd);
+	SetPixelFormat(hdc, ipf, &pfd);
+	ReleaseDC(GetDlgItem(g_dlg, IDC_STATIC), hdc);
+*/
 	//printf("static = %d\n", );
 	//::InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC), NULL, FALSE);
 }

@@ -49,7 +49,15 @@ public:
 			}
 			else
 			{
-				_src->seek_chk(chk_ofs);
+				// possible race condition where mp3 chunk not loaded
+				try
+				{
+					_src->seek_chk(chk_ofs);
+				} 
+				catch (std::exception &e)
+				{
+					return zero_source<Chunk_T>::get()->next();
+				}
 				_chks[chk_ofs] = _src->next();
 			}
 		}

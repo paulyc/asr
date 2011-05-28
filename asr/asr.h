@@ -271,6 +271,11 @@ public:
 	{
 		return _len;
 	}
+
+	virtual float maxval()
+	{
+		return 1.0f;
+	}
 };
 
 template <typename T>
@@ -336,6 +341,7 @@ public:
 		}
 		return chk;
 	}
+	typedef typename T chunk_t;
 };
 
 template <typename T>

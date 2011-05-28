@@ -63,6 +63,8 @@ protected:
 
 	Precision_T _t_diff;
 
+	Precision_T _output_scale;
+
 	//int _stride;
 	//int _channels;
 	int _rows;
@@ -90,6 +92,7 @@ public:
 		_cutoff(cutoff),
 		_sample_precision(_default_sample_precision),
 		_input_sampling_rate(input_rate),
+		_output_scale(Precision_T(1.0)),
 		_output_time(Precision_T(0.0))
 	{
 		Sample_T *end;
@@ -113,7 +116,13 @@ public:
 		//_impulse_response_period = Precision_T(1.0) / _impulse_response_frequency;
 		
 		_rho = _output_sampling_rate / _input_sampling_rate;
-		_impulse_response_scale = min(Precision_T(1.0), _rho);
+		_impulse_response_scale = _output_scale*min(Precision_T(1.0), _rho);
+	}
+
+	void set_output_scale(Precision_T s)
+	{
+		_output_scale = s;
+		_impulse_response_scale = _output_scale*min(Precision_T(1.0), _rho);
 	}
 
 	void seek_time(Precision_T t)
@@ -182,6 +191,7 @@ public:
 		}
 	}
 	friend class Controller;
+	typedef typename Chunk_T chunk_t;
 };
 
 template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>

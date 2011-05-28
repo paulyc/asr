@@ -194,7 +194,8 @@ public:
 	mp3file_chunker(const wchar_t * filename) :
 		file_chunker(filename),
 		_smp_read(0),
-		_eof(false)
+		_eof(false),
+		_max(0.0f)
 	{
 		mad_stream_init(&_stream);
 		mad_frame_init(&_frame);
@@ -225,6 +226,11 @@ public:
 					(*smp_out)[1] = (float)mad_f_todouble(_synth.pcm.samples[1][_smp_read]);
 				else
 					(*smp_out)[1] = (*smp_out)[0];
+
+				if (fabs((*smp_out)[0]) > _max)
+					_max = fabs((*smp_out)[0]);
+				if (fabs((*smp_out)[1]) > _max)
+					_max = fabs((*smp_out)[1]);
 			}
 		}
 		if (smp_out == smp_end)
@@ -286,6 +292,12 @@ public:
 					(*smp_out)[1] = (float)mad_f_todouble(_synth.pcm.samples[1][_smp_read]);
 				else
 					(*smp_out)[1] = (*smp_out)[0];
+				
+				if (fabs((*smp_out)[0]) > _max)
+					_max = fabs((*smp_out)[0]);
+				if (fabs((*smp_out)[1]) > _max)
+					_max = fabs((*smp_out)[1]);
+
 				++n;
 			}
 		} while (n == 0 || smp_out < smp_end);
@@ -297,6 +309,10 @@ public:
 	bool eof()
 	{
 		return _eof;
+	}
+	float maxval()
+	{
+		return _max;
 	}
 private:
 	const static int INPUT_BUFFER_SIZE = 5*8192;
@@ -310,6 +326,8 @@ private:
 	unsigned short _smp_read;
 
 	bool _eof;
+
+	float _max;
 };
 
 /*

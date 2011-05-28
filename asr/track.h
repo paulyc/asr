@@ -26,12 +26,14 @@ public:
 		_cuepoint(0.0)
 	{
 		pthread_mutex_init(&_config_lock, 0);
+		pthread_mutex_init(&_worker_lock, 0);
 		if (filename)
 			set_source_file(filename);
 	}
 
 	virtual ~SeekablePitchableFileSource()
 	{
+		pthread_mutex_destroy(&_worker_lock);
 		pthread_mutex_destroy(&_config_lock);
 	}
 
@@ -39,6 +41,7 @@ public:
 	{
 		pthread_mutex_lock(&_config_lock);
 		_in_config = true;
+		_loaded = false;
 		pthread_mutex_unlock(&_config_lock);
 
 		delete _display;
@@ -76,22 +79,78 @@ public:
 		_in_config = false;
 		pthread_mutex_unlock(&_config_lock);
 
-		Worker::get()->do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this));
+		pthread_mutex_lock(&_worker_lock);
+		Worker *w = Worker::get();
+		pthread_mutex_unlock(&_worker_lock);
+		w->do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this));
 	}
 
 	Chunk_T* next()
 	{
 		Chunk_T *chk;
+
 		pthread_mutex_lock(&_config_lock);
 		if (_in_config || _paused)
+		{
 			chk = zero_source<Chunk_T>::get()->next();
+			/*
+
+		pthread_mutex_unlock(&_config_lock);
+
+		pthread_mutex_lock(&_worker_lock);
+		Worker *w = Worker::get();
+		pthread_mutex_unlock(&_worker_lock);
+
+		w->do_job(
+				new Worker::generate_chunk_job<zero_source<Chunk_T> >(
+					zero_source<Chunk_T>::get(), &chk),
+				true, true);*/
+		}
 		else
 		{
-			chk = _resample_filter->next(); // may want to critical section this
+			chk = _resample_filter->next();
+			render();
+			/*
+		pthread_mutex_unlock(&_config_lock);
+
+		pthread_mutex_lock(&_worker_lock);
+		Worker *w = Worker::get();
+		pthread_mutex_unlock(&_worker_lock);
+		w->do_job(
+				new Worker::generate_chunk_job<lowpass_filter_td<Chunk_T, double> >(
+					_resample_filter, &chk), 
+				true, true);
+
+		pthread_mutex_lock(&_config_lock);
+			set_position(_resample_filter->get_time(), true);
+			pthread_mutex_unlock(&_config_lock);
 		//	render();
+		*/
 		}
 		pthread_mutex_unlock(&_config_lock);
 		return chk;
+	}
+
+	int get_display_width()
+	{
+	//	pthread_mutex_lock(&_config_lock);
+		int w=_display->get_width();
+	//	pthread_mutex_unlock(&_config_lock);
+		return w;
+	}
+
+	void set_display_width(int width)
+	{
+	//	pthread_mutex_lock(&_config_lock);
+		_display->set_width(width);
+	//	pthread_mutex_unlock(&_config_lock);
+	}
+
+	void set_wav_heights()
+	{
+		pthread_mutex_unlock(&_config_lock);
+		_display->set_wav_heights(&_config_lock);
+		pthread_mutex_lock(&_config_lock);
 	}
 
 	bool pause_play()
@@ -112,13 +171,22 @@ public:
 		}
 		if (!_display->set_next_height())
 		{
+			_loaded = true;
 			render();
+			_resample_filter->set_output_scale(1.0f / _src->maxval());
 			pthread_mutex_unlock(&_config_lock);
 			return false;
 		}
-		render();
+	//	render();
 		pthread_mutex_unlock(&_config_lock);
 		return true;
+	}
+
+	void lockedcall(void(*f)())
+	{
+		pthread_mutex_lock(&_config_lock);
+		f();
+		pthread_mutex_unlock(&_config_lock);
 	}
 
 	void render()
@@ -142,18 +210,25 @@ public:
 
 	void seek_time(double t)
 	{
+		pthread_mutex_lock(&_config_lock);
 		if (!_in_config && _resample_filter)
 			_resample_filter->seek_time(t);
+		render();
+		pthread_mutex_unlock(&_config_lock);
+	}
+
+	void seek_f(double f)
+	{
+		pthread_mutex_lock(&_config_lock);
+		if (!_in_config && _resample_filter && len().samples > 0)
+			_resample_filter->seek_time(f * len().time);
+		render();
+		pthread_mutex_unlock(&_config_lock);
 	}
 
 	const pos_info& len()
 	{
 		return _meta->len();
-	}
-
-	void seek_f(double f)
-	{
-		_resample_filter->seek_time(f * len().time);
 	}
 
 	void set_cuepoint(double pos)
@@ -166,8 +241,14 @@ public:
 		seek_f(_cuepoint);
 	}
 
+	bool loaded()
+	{
+		return _loaded;
+	}
+
 protected:
 	pthread_mutex_t _config_lock;
+	pthread_mutex_t _worker_lock;
 	bool _in_config;
 	const wchar_t *_filename;
 	bool _paused;
@@ -183,6 +264,7 @@ public:
 	> display_t;
 	display_t *_display;
 	double _cuepoint;
+	bool _loaded;
 };
 
 #endif // !defined(TRACK_H)
