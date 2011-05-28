@@ -17,6 +17,7 @@ public:
 	SeekablePitchableFileSource(const wchar_t *filename=0) :
 		_in_config(false),
 		_filename(0),
+		_paused(false),
 		_src(0),
 		_src_buf(0),
 		_resample_filter(0),
@@ -82,7 +83,7 @@ public:
 	{
 		Chunk_T *chk;
 		pthread_mutex_lock(&_config_lock);
-		if (_in_config)
+		if (_in_config || _paused)
 			chk = zero_source<Chunk_T>::get()->next();
 		else
 		{
@@ -91,6 +92,33 @@ public:
 		}
 		pthread_mutex_unlock(&_config_lock);
 		return chk;
+	}
+
+	bool pause_play()
+	{
+		pthread_mutex_lock(&_config_lock);
+		_paused = !_paused;
+		pthread_mutex_unlock(&_config_lock);
+	}
+
+	bool load_step()
+	{
+		pthread_mutex_lock(&_config_lock);
+		if (len().samples < 0)
+		{
+			_src_buf->load_next();
+			pthread_mutex_unlock(&_config_lock);
+			return true;
+		}
+		if (!_display->set_next_height())
+		{
+			render();
+			pthread_mutex_unlock(&_config_lock);
+			return false;
+		}
+		render();
+		pthread_mutex_unlock(&_config_lock);
+		return true;
 	}
 
 	void render()
@@ -142,6 +170,7 @@ protected:
 	pthread_mutex_t _config_lock;
 	bool _in_config;
 	const wchar_t *_filename;
+	bool _paused;
 public:
 	T_source<Chunk_T> *_src;
 	BufferedStream<Chunk_T> *_src_buf;

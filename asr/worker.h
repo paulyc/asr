@@ -12,7 +12,8 @@ class Worker
 	//friend class Track;
 public:
 	static Worker *_instance;
-	Worker()
+	Worker() :
+		_blockOnCritical(true)
 	{
 		pthread_mutex_init(&_job_lock, 0);
 		pthread_cond_init(&_job_rdy, 0);
@@ -61,27 +62,20 @@ public:
 		//}
 		pthread_mutex_t _l;
 		pthread_cond_t _next_step;
+		bool _deleteme;
 		void step()
 		{
-			pthread_mutex_lock(&track->_config_lock);
-			if (track->len().samples < 0)
-			{
-				track->_src_buf->load_next();
-				pthread_mutex_unlock(&track->_config_lock);
-				return;
-			}
-			if (!track->_display->set_next_height())
+			if (!track->load_step())
 			{
 				done = true;
-				track->render();
 				printf("job done %p\n", this);
 			}
-			pthread_mutex_unlock(&track->_config_lock);
 		}
 	};
 
 	std::queue<job*> _critical_jobs;
 	std::queue<job*> _idle_jobs;
+	bool _blockOnCritical;
 public:
 	static Worker* get()
 	{
@@ -102,6 +96,7 @@ public:
 	void do_job(job *j, bool sync=false, bool critical=false)
 	{
 		printf("doing job %p\n", j);
+		j->_deleteme = !sync;
 		pthread_mutex_lock(&_job_lock);
 		if (critical)
 			_critical_jobs.push(j);
@@ -110,8 +105,11 @@ public:
 
 		pthread_cond_signal(&_job_rdy);
 		if (sync)
+		{
 			while (!j->done)
 				pthread_cond_wait(&_job_done, &_job_lock);
+			delete j;
+		}
 		pthread_mutex_unlock(&_job_lock);
 	}
 
@@ -131,12 +129,15 @@ public:
 			{
 				cr_j = _critical_jobs.front();
 				_critical_jobs.pop();
-				pthread_mutex_unlock(&_job_lock);
+				if (!_blockOnCritical)
+					pthread_mutex_unlock(&_job_lock);
 				cr_j->do_it();
-				delete cr_j;
+				if (cr_j->_deleteme)
+					delete cr_j;
 				cr_j = 0;
 				pthread_cond_signal(&_job_done);
-				pthread_mutex_lock(&_job_lock);
+				if (!_blockOnCritical)
+					pthread_mutex_lock(&_job_lock);
 			}
 			
 			if (id_j)
@@ -145,7 +146,8 @@ public:
 				id_j->step();
 				if (id_j->done)
 				{
-					delete id_j;
+					if (id_j->_deleteme)
+						delete id_j;
 					id_j = 0;
 					pthread_cond_signal(&_job_done);
 				}
