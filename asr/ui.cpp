@@ -139,6 +139,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 			{
 				lastx=buttonx;
 				lasty=buttony;
+				asio->_track1->lock_pos(lastx-56);
 			}
 			break;
 		}
@@ -166,6 +167,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 			//	printf("%d %d %d\n", HIWORD(lParam), LOWORD(lParam), y);
 			}
 			mousedown = false;
+			asio->_track1->unlock_pos();
 			break;
 		}
 		case WM_MOUSEMOVE:
@@ -178,8 +180,12 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 			{
 				if (dy)
 				{
-					printf("hello %d\n",dy);
 					asio->_track1->zoom_px(dy);
+				}
+				if (dx)
+				{
+					asio->_track1->move_px(dx);
+					asio->_track1->lock_pos(LOWORD(lParam)-56);
 				}
 				lastx =LOWORD(lParam);
 				lasty =HIWORD(lParam);

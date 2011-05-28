@@ -17,7 +17,8 @@ public:
 		_zoom(1.0),
 		_indx(0),
 		_left(0.0),
-		_right(1.0)
+		_right(1.0),
+		_pos_locked(false)
 	{
 		set_width(width);
 	}
@@ -209,8 +210,8 @@ public:
 		 for (int p = 0; p < _width; ++p)
 		  {
 			  double smp_l = left_sample + p*samples_per_pixel_d;
-			  chk = int(smp_l) / chunks;
-			  ofs = int(smp_l) % chunks;
+			  chk = int(smp_l) / Source_T::chunk_t::chunk_size;
+			  ofs = int(smp_l) % Source_T::chunk_t::chunk_size;
 			  
 			  if (lock)
 				  pthread_mutex_lock(lock);
@@ -220,8 +221,7 @@ public:
 			  while (smp < num_smp)
 			  {
 				  Source_T::chunk_t *the_chk = _src->getSrc()->get_chunk(chk);
-				  for (; ofs < Source_T::chunk_t::chunk_size && smp < num_smp; ++smp)
-				  //for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
+				  for (; ofs < Source_T::chunk_t::chunk_size && smp < num_smp; ++ofs, ++smp)
 				  {
 					  _wav_heights[p].avg_top += fabs(the_chk->_data[ofs][0]);
 					  _wav_heights[p].peak_top = max(fabs(the_chk->_data[ofs][0]), _wav_heights[p].peak_top);
@@ -229,10 +229,6 @@ public:
 				//	const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				//	SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
 				//	Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
-					//  int smp_b = int(smp_total);
-					//  px_total += pixels_per_sample_d;
-					//  if (int(px_total) > smp_b)
-					  ++ofs;
 				  }
 				  if (smp < num_smp)
 				  {
@@ -262,30 +258,78 @@ public:
 
   void set_ctr(double c)
   {
-	  _center = c;
-	  _indx = 0;
-	  _left = _center - 0.5/_zoom;
-	  _right = _center + 0.5/_zoom;
+	  if (c - 0.5/_zoom >= 0.0 && c + 0.5/_zoom <= 1.0)
+	  {
+			_center = c;
+		  //else
+		//	  _center = 1.0;
+		  _indx = 0;
+		  _left = _center - 0.5/_zoom;
+		  _right = _center + 0.5/_zoom;
+	  }
+  }
+
+  void recenter()
+  {
+	  if (_center - 0.5/_zoom < 0.0)
+	  {
+		  _center = 0.5/_zoom;
+	  }
+	  else if (_center + 0.5/_zoom > 1.0)
+	  {
+		  _center = 1.0 - 0.5/_zoom;
+	  }
   }
 
   void set_zoom(double z)
   {
+	  double oldz = _zoom;
 	  if (z >= 1.0)
 		_zoom = z;
 	  else
 		  _zoom=1.0;
+	  if (_pos_locked)
+	  {
+		  double oldp = (_right - _left) * (double(_lock_px)/_width);
+		  double oldpz = oldp * oldz;
+		  double oldpzw = oldpz /_zoom;
+		//  double newwidth = 1.0/_zoom;
+		  double newleft = _left + oldp - oldpzw;
+		  double newright = newleft + 1.0/_zoom;
+		  _center = newleft + 0.5/_zoom;
+	  }
+	  recenter();
 	  _indx = 0;
-	  _left = _center - 0.5/_zoom;
-	  _right = _center + 0.5/_zoom;
+		_left = _center - 0.5/_zoom;
+		_right = _center + 0.5/_zoom;
 	  printf("z %f\n",_zoom);
   }
 
   void zoom_px(int dz)
   {
 	  if (dz>0)
-		set_zoom(pow(0.95,dz)*_zoom);
+		set_zoom(pow(0.97,dz)*_zoom);
 	  else
-		  set_zoom(pow(1.05,-dz)*_zoom);
+		  set_zoom(pow(1.03,-dz)*_zoom);
+  }
+
+  void move_px(int dz)
+  {
+	  if (dz>0)
+		set_ctr(_center - dz*(_right-_left)/_width);
+	  else
+		  set_ctr(_center -dz*(_right-_left)/_width);
+  }
+
+  void lock_pos(int y)
+  {
+	  _lock_px = y;
+	  _pos_locked = true;
+  }
+
+  void unlock_pos()
+  {
+	  _pos_locked = false;
   }
 
 protected:
@@ -298,6 +342,8 @@ protected:
 	int _indx;
 	double _left;
 	double _right;
+	bool _pos_locked;
+	int _lock_px;
 };
 
 #endif // !defined(_WAVFORMDISPLAY_H)

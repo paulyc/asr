@@ -134,6 +134,16 @@ public:
 	//	pthread_mutex_unlock(&_config_lock);
 	}
 
+	void lock_pos(int y)
+	{
+		_display->lock_pos(y);
+	}
+
+	void unlock_pos()
+	{
+		_display->unlock_pos();
+	}
+
 	void set_wav_heights(bool unlock=true)
 	{
 		if (unlock)
@@ -182,6 +192,16 @@ public:
 	void zoom_px(int d)
 	{
 		_display->zoom_px(d);
+		set_wav_heights(false);
+
+		pthread_mutex_lock(&_config_lock);
+		render();
+		pthread_mutex_unlock(&_config_lock);
+	}
+
+	void move_px(int d)
+	{
+		_display->move_px(d);
 		set_wav_heights(false);
 
 		pthread_mutex_lock(&_config_lock);
