@@ -3,6 +3,7 @@
 
 #include <pthread.h>
 #include "type.h"
+#include "ui.h"
 
 template <typename Source_T, typename Controller_T>
 class WavFormDisplay
@@ -75,6 +76,7 @@ public:
 //			  if (lock)
 //				  pthread_mutex_lock(lock);
 			  h.avg_top = 0.0;
+			  h.peak_top = 0.0;
 			  for (chk = _indx*chunks_per_pixel_d, end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
 			  {
 				  assert(chk < chunks);
@@ -143,41 +145,51 @@ public:
 		++_indx;
 		return true;
   }
-
+#if 0
+	void set_wav_heights(pthread_mutex_t *lock=0)
+	{
+		if (lock)
+			pthread_mutex_lock(lock);
+		_indx=0;
+		while (set_next_height())
+			;
+		if (lock)
+			pthread_mutex_unlock(lock);
+	}
+#else
   // fix file not expected length!!
   void set_wav_heights(pthread_mutex_t *lock=0)
   {
 	  SamplePairf *s;
-	  int chunks = _src->len().chunks;
-	  int left_chunk = _left * chunks;
-	  int right_chunk = _right * chunks;
-	  chunks = right_chunk-left_chunk;
+	  int chunks_total = _src->len().chunks;
+	  int left_chunk = _left * chunks_total;
+	  int right_chunk = _right * chunks_total;
+	  int chunks = right_chunk-left_chunk;
 	  //chunk_t *chk = _src->get_chunk(0);
 	 // int chunks_per_pixel = (right_chunk-left_chunk) / _width;
-	  int chunks_per_pixel = chunks / _width;
+	//  int chunks_per_pixel = chunks / _width;
 	  double chunks_per_pixel_d = double(chunks) / _width;
-	  if (chunks_per_pixel_d > 2.0)
+	  int chunks_per_pixel = max(1, int(chunks_per_pixel_d));
+	  if (chunks_per_pixel_d > 1.0)
 	  {
-		  int chunks_per_pixel_rem = chunks % _width;
-		  bool repeat = chunks_per_pixel_rem > 0;
-		  if (repeat)
-			  ++chunks_per_pixel;
-		  int chk = 0, end_chk;
+		  
 		  for (int p = 0; p < _width; ++p)
 		  {
+			  int chk = left_chunk + p*chunks_per_pixel_d;
 			  if (lock)
 				  pthread_mutex_lock(lock);
+			  _wav_heights[p].peak_top = 0.0;
 			  _wav_heights[p].avg_top = 0.0;
-			  for (chk = p*chunks_per_pixel_d, end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
+			  for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
 			  {
-				  assert(chk < chunks);
+				  assert(chk < chunks_total);
 				const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
 				Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
 			  }
 			  Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
-			  if (repeat)
-				  --chk;
+			//  if (repeat)
+			//	  --chk;
 			  if (lock)
 				  pthread_mutex_unlock(lock);
 		  }
@@ -189,21 +201,26 @@ public:
 		  int rt_sample = _right * chunks * Source_T::chunk_t::chunk_size;
 		  int samples_per_pixel = (rt_sample - left_sample) / _width;
 		  double samples_per_pixel_d = double(rt_sample - left_sample) / _width;
+		  double pixels_per_sample_d = 1.0/samples_per_pixel_d;
 		  int chk = left_sample / chunks;
-		 int ofs = left_sample % chunks;
+		 int ofs = left_sample % chunks, num_smp = max(1,int(samples_per_pixel_d));
 		 double smp_total = 0.0;
 		 //int chk, 
 		 for (int p = 0; p < _width; ++p)
 		  {
+			  double smp_l = left_sample + p*samples_per_pixel_d;
+			  chk = int(smp_l) / chunks;
+			  ofs = int(smp_l) % chunks;
+			  
 			  if (lock)
 				  pthread_mutex_lock(lock);
 			  _wav_heights[p].avg_top = 0.0;
 			  _wav_heights[p].peak_top = 0.0;
 			  int smp = 0;
-			  while (smp < samples_per_pixel_d)
+			  while (smp < num_smp)
 			  {
 				  Source_T::chunk_t *the_chk = _src->getSrc()->get_chunk(chk);
-				  for (; ofs < Source_T::chunk_t::chunk_size && smp < samples_per_pixel_d; ++smp)
+				  for (; ofs < Source_T::chunk_t::chunk_size && smp < num_smp; ++smp)
 				  //for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
 				  {
 					  _wav_heights[p].avg_top += fabs(the_chk->_data[ofs][0]);
@@ -212,12 +229,12 @@ public:
 				//	const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				//	SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
 				//	Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
-					  int smp_b = int(smp_total);
-					  smp_total += samples_per_pixel_d;
-					  if (int(smp_total) > smp_b)
-						  ++ofs;
+					//  int smp_b = int(smp_total);
+					//  px_total += pixels_per_sample_d;
+					//  if (int(px_total) > smp_b)
+					  ++ofs;
 				  }
-				  if (smp < samples_per_pixel_d)
+				  if (smp < num_smp)
 				  {
 					ofs = 0;
 					++chk;
@@ -232,7 +249,7 @@ public:
 		  }
 	  }
   }
-
+#endif
   const wav_height& get_wav_height(int pixel)
   {
 	  assert(pixel<_width);
@@ -255,9 +272,20 @@ public:
   {
 	  if (z >= 1.0)
 		_zoom = z;
+	  else
+		  _zoom=1.0;
 	  _indx = 0;
 	  _left = _center - 0.5/_zoom;
 	  _right = _center + 0.5/_zoom;
+	  printf("z %f\n",_zoom);
+  }
+
+  void zoom_px(int dz)
+  {
+	  if (dz>0)
+		set_zoom(pow(0.95,dz)*_zoom);
+	  else
+		  set_zoom(pow(1.05,-dz)*_zoom);
   }
 
 protected:

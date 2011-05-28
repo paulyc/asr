@@ -15,11 +15,24 @@ public:
 	Worker() :
 		_blockOnCritical(true)
 	{
+		
+	}
+	~Worker()
+	{
+		
+	}
+
+	static void init()
+	{
 		pthread_mutex_init(&_job_lock, 0);
 		pthread_cond_init(&_job_rdy, 0);
 		pthread_cond_init(&_job_done, 0);
+
+		(new Worker)->spin();
+		(new Worker)->spin();
 	}
-	~Worker()
+
+	static void destroy()
 	{
 		pthread_cond_destroy(&_job_done);
 		pthread_cond_destroy(&_job_rdy);
@@ -27,9 +40,6 @@ public:
 	}
 
 	pthread_t _tid;
-	pthread_mutex_t _job_lock;
-	pthread_cond_t _job_rdy;
-	pthread_cond_t _job_done;
 
 	struct job
 	{
@@ -84,10 +94,16 @@ public:
 		}
 	};
 
-	std::queue<job*> _critical_jobs;
-	std::queue<job*> _idle_jobs;
+	static pthread_mutex_t _job_lock;
+	static pthread_cond_t _job_rdy;
+	static pthread_cond_t _job_done;
+
+	static std::queue<job*> _critical_jobs;
+	static std::queue<job*> _idle_jobs;
+	static pthread_once_t once_control; 
 	bool _blockOnCritical;
 public:
+	/*
 	static Worker* get() // not threadsafe!!
 	{
 		if (!_instance)
@@ -97,6 +113,7 @@ public:
 		}
 		return _instance;
 	}
+	*/
 	//typedef SeekablePitchableFileSource<chunk_t> track_t;
 
 	void spin()
@@ -104,8 +121,9 @@ public:
 		pthread_create(&_tid, 0, threadproc, (void*)this);
 	}
 
-	void do_job(job *j, bool sync=false, bool critical=false)
+	static void do_job(job *j, bool sync=false, bool critical=false)
 	{
+		pthread_once(&once_control, init);
 		printf("doing job %p (%s) sync %d critical %d\n", j, j->_name, sync, critical);
 		j->_deleteme = !sync;
 		pthread_mutex_lock(&_job_lock);
@@ -187,6 +205,7 @@ public:
 				}
 			}
 		}
+		delete this;
 	}
 };
 

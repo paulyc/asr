@@ -26,14 +26,12 @@ public:
 		_cuepoint(0.0)
 	{
 		pthread_mutex_init(&_config_lock, 0);
-		pthread_mutex_init(&_worker_lock, 0);
 		if (filename)
 			set_source_file(filename);
 	}
 
 	virtual ~SeekablePitchableFileSource()
 	{
-		pthread_mutex_destroy(&_worker_lock);
 		pthread_mutex_destroy(&_config_lock);
 	}
 
@@ -79,10 +77,7 @@ public:
 		_in_config = false;
 		pthread_mutex_unlock(&_config_lock);
 
-		pthread_mutex_lock(&_worker_lock);
-		Worker *w = Worker::get();
-		pthread_mutex_unlock(&_worker_lock);
-		w->do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this));
+		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this));
 	}
 
 	Chunk_T* next()
@@ -97,11 +92,7 @@ public:
 
 		pthread_mutex_unlock(&_config_lock);
 
-		pthread_mutex_lock(&_worker_lock);
-		Worker *w = Worker::get();
-		pthread_mutex_unlock(&_worker_lock);
-
-		w->do_job(
+		Worker::do_job(
 				new Worker::generate_chunk_job<zero_source<Chunk_T> >(
 					zero_source<Chunk_T>::get(), &chk),
 				true, true);*/
@@ -113,10 +104,7 @@ public:
 			/*
 		pthread_mutex_unlock(&_config_lock);
 
-		pthread_mutex_lock(&_worker_lock);
-		Worker *w = Worker::get();
-		pthread_mutex_unlock(&_worker_lock);
-		w->do_job(
+		Worker::do_job(
 				new Worker::generate_chunk_job<lowpass_filter_td<Chunk_T, double> >(
 					_resample_filter, &chk), 
 				true, true);
@@ -146,11 +134,13 @@ public:
 	//	pthread_mutex_unlock(&_config_lock);
 	}
 
-	void set_wav_heights()
+	void set_wav_heights(bool unlock=true)
 	{
-		pthread_mutex_unlock(&_config_lock);
+		if (unlock)
+			pthread_mutex_unlock(&_config_lock);
 		_display->set_wav_heights(&_config_lock);
-		pthread_mutex_lock(&_config_lock);
+		if (unlock)
+			pthread_mutex_lock(&_config_lock);
 	}
 
 	bool pause_play()
@@ -186,6 +176,16 @@ public:
 	{
 		pthread_mutex_lock(&_config_lock);
 		f();
+		pthread_mutex_unlock(&_config_lock);
+	}
+
+	void zoom_px(int d)
+	{
+		_display->zoom_px(d);
+		set_wav_heights(false);
+
+		pthread_mutex_lock(&_config_lock);
+		render();
 		pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -236,6 +236,11 @@ public:
 		_cuepoint = pos;
 	}
 
+	double get_cuepoint()
+	{
+		return _cuepoint;
+	}
+
 	void goto_cuepoint()
 	{
 		seek_f(_cuepoint);
@@ -248,7 +253,6 @@ public:
 
 protected:
 	pthread_mutex_t _config_lock;
-	pthread_mutex_t _worker_lock;
 	bool _in_config;
 	const wchar_t *_filename;
 	bool _paused;

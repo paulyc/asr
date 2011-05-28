@@ -18,14 +18,17 @@ HBRUSH br;
 HPEN pen_lt;
 HPEN pen_dk;
 HPEN pen_yel;
+HPEN pen_oran;
 double last_time;
 
 double coarse_val=48000.0, fine_val=0.0;
 
 double playback_pos = 0.0;
-int px = 0;
+int px = 0, cpx;
 RECT r;
 int width, height;
+
+bool mousedown=false;
 
 void repaint()
 {
@@ -82,6 +85,11 @@ void repaint()
 	SelectObject(hdc, pen_yel);
 	LineTo(hdc, r.left+px, r.top+height);
 
+	cpx = int(asio->_track1->get_cuepoint() * double(width));
+	MoveToEx(hdc, r.left+cpx, r.top, NULL);
+	SelectObject(hdc, pen_oran);
+	LineTo(hdc, r.left+cpx, r.top+height);
+
 //	SwapBuffers(hdc);
 	
 	ReleaseDC(h, hdc);
@@ -105,6 +113,8 @@ void set_position(double tm, bool invalidate)
 	}
 }
 
+int buttonx,buttony,lastx,lasty;
+
 INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
     UINT uMsg,
     WPARAM wParam,
@@ -119,6 +129,19 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 			//repaint();
 			return 0L;
 		}
+		case WM_LBUTTONDOWN:
+		{
+			buttonx = LOWORD(lParam);
+			buttony = HIWORD(lParam);
+			mousedown = HIWORD(lParam) > 216 && HIWORD(lParam) < 216+height &&
+				LOWORD(lParam) >= 56 && LOWORD(lParam) <= 56+width;
+			if (mousedown)
+			{
+				lastx=buttonx;
+				lasty=buttony;
+			}
+			break;
+		}
 		case WM_LBUTTONUP:
 		{
 			HWND h = GetDlgItem(g_dlg, IDC_STATIC4);
@@ -128,19 +151,38 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 		//	::GetWindowInfo(h, &wi);
 		//	35,131,438,52
 			//216,56
-		//	if (HIWORD(lParam) >= 35 || LOWORD(lParam) >= 131)
+			if (HIWORD(lParam) == buttony && LOWORD(lParam) == buttonx)
 			{
 				int y = LOWORD(lParam) - 56;
 				if (HIWORD(lParam) > 216 && HIWORD(lParam) < 216+height)
 				{
 					double f = double(y)/width;
-					if (f > 0.0)
+					if (f >= 0.0 && f <= 1.0)
 					{
 						printf("%f\n", f);
 						asio->_track1->seek_f(f);
 					}
 				}
 			//	printf("%d %d %d\n", HIWORD(lParam), LOWORD(lParam), y);
+			}
+			mousedown = false;
+			break;
+		}
+		case WM_MOUSEMOVE:
+		{
+		//	printf("WM_MOUSEMOVE %d %d %x %x\n", hwndDlg,uMsg,wParam,lParam);
+			int dx = LOWORD(lParam)-lastx;
+			int dy = HIWORD(lParam)-lasty;
+
+			if (mousedown)
+			{
+				if (dy)
+				{
+					printf("hello %d\n",dy);
+					asio->_track1->zoom_px(dy);
+				}
+				lastx =LOWORD(lParam);
+				lasty =HIWORD(lParam);
 			}
 			break;
 		}
@@ -159,7 +201,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				if (HIWORD(lParam) > 216 && HIWORD(lParam) < 216+height)
 				{
 					double f = double(y)/width;
-					if (f > 0.0)
+					if (f >= 0.0 && f <= 1.0)
 					{
 						printf("cue %f\n", f);
 						asio->_track1->set_cuepoint(f);
@@ -392,6 +434,7 @@ void MainLoop_Win32()
 	pen_dk = CreatePen(PS_SOLID, 1, RGB(0,0,255));
 	pen_lt = CreatePen(PS_SOLID, 1, RGB(0,0,192));
 	pen_yel = CreatePen(PS_SOLID, 1, RGB(255,255,0));
+	pen_oran = CreatePen(PS_SOLID, 1, RGB(255,128,0));
 
 #if SLEEP
 	Sleep(10000);
@@ -416,6 +459,7 @@ void MainLoop_Win32()
 	DeleteObject(pen_dk);
 	DeleteObject(pen_lt);
 	DeleteObject(pen_yel);
+	DeleteObject(pen_oran);
 	DeleteObject(br);
 
 #endif // !SLEEP
