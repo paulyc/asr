@@ -14,7 +14,7 @@ class SeekablePitchableFileSource : public T_source<Chunk_T>
 {
 	friend class Worker;
 public:
-	SeekablePitchableFileSource(const wchar_t *filename=0) :
+	SeekablePitchableFileSource(int track_id, const wchar_t *filename=0) :
 		_in_config(false),
 		_filename(0),
 		_paused(false),
@@ -23,7 +23,8 @@ public:
 		_resample_filter(0),
 		_meta(0),
 		_display(0),
-		_cuepoint(0.0)
+		_cuepoint(0.0),
+		_track_id(track_id)
 	{
 		pthread_mutex_init(&_config_lock, 0);
 		if (filename)
@@ -153,11 +154,12 @@ public:
 			pthread_mutex_lock(&_config_lock);
 	}
 
-	bool pause_play()
+	bool play_pause()
 	{
 		pthread_mutex_lock(&_config_lock);
 		_paused = !_paused;
 		pthread_mutex_unlock(&_config_lock);
+		return _paused;
 	}
 
 	bool load_step()
@@ -182,10 +184,10 @@ public:
 		return true;
 	}
 
-	void lockedcall(void(*f)())
+	void lockedcall(void(*f)(int))
 	{
 		pthread_mutex_lock(&_config_lock);
-		f();
+		f(_track_id);
 		pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -211,7 +213,7 @@ public:
 
 	void render()
 	{
-		set_position(_resample_filter->get_time(), true);
+		set_position(_display->get_display_pos(_resample_filter->get_time()), true);
 	}
 
 	void set_pitch(double mod)
@@ -246,6 +248,11 @@ public:
 		pthread_mutex_unlock(&_config_lock);
 	}
 
+	double get_display_time(double f)
+	{
+		return _display->get_display_time(f);
+	}
+
 	const pos_info& len()
 	{
 		return _meta->len();
@@ -261,9 +268,16 @@ public:
 		return _cuepoint;
 	}
 
+	double get_cuepoint_pos()
+	{
+		return _display->get_display_pos(_cuepoint);
+	}
+
 	void goto_cuepoint()
 	{
-		seek_f(_cuepoint);
+		double t = _resample_filter->get_time();
+		if (t <= _cuepoint || t - 0.3 > _cuepoint) //debounce (?)
+			seek_time(_cuepoint);
 	}
 
 	bool loaded()
@@ -289,6 +303,7 @@ public:
 	display_t *_display;
 	double _cuepoint;
 	bool _loaded;
+	int _track_id;
 };
 
 #endif // !defined(TRACK_H)

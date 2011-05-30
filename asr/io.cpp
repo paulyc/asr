@@ -5,7 +5,7 @@
 
 #include <pthread.h>
 
-extern ASIOThinger<SamplePairf, short> * asio;
+extern ASIOProcessor<SamplePairf, short> * asio;
 
 /*
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T, int chunk_size>
@@ -183,7 +183,7 @@ long asioMessage(long selector, long value, void *message, double *opt)
 }
 
 template <>
-ASIOThinger<SamplePairf, short>::ASIOThinger() :
+ASIOProcessor<SamplePairf, short>::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
 	_default_src(L"F:\\My Music\\Flip & Fill - I Wanna Dance With Somebody (Resource Mix).wav"),
@@ -205,13 +205,13 @@ ASIOThinger<SamplePairf, short>::ASIOThinger() :
 }
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-ASIOThinger<Input_Buffer_T, Output_Buffer_T>::~ASIOThinger()
+ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::~ASIOProcessor()
 {
 	Destroy();
 }
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Init()
+void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 {
 	ASIOError e;
 	long minSize, maxSize, preferredSize, granularity;
@@ -224,7 +224,9 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Init()
 		_my_controller = new controller_t;
 
 		//_track1 = new SeekablePitchableFileSource<chunk_t>(_default_src);
-		_track1 = new SeekablePitchableFileSource<chunk_t>(L"E:\\Contagion.wav");
+		_track1 = new SeekablePitchableFileSource<chunk_t>(1, _default_src);
+		_tracks.push_back(_track1);
+		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2));
 		_my_sink = new asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true>(_track1);
 
 #if CARE_ABOUT_INPUT
@@ -343,7 +345,7 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Init()
 }
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-ASIOError ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Start()
+ASIOError ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Start()
 {
 	_running = true;
 	_src_active = true;
@@ -351,7 +353,7 @@ ASIOError ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Start()
 }
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-ASIOError ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Stop()
+ASIOError ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Stop()
 {
 	_running = false;
 	_src_active = false;
@@ -359,12 +361,12 @@ ASIOError ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Stop()
 }
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::CopyBuffer(Output_Buffer_T *bufOut, Input_Buffer_T *copyFromBuf, Input_Buffer_T *copyFromEnd, float resamplerate)
+void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::CopyBuffer(Output_Buffer_T *bufOut, Input_Buffer_T *copyFromBuf, Input_Buffer_T *copyFromEnd, float resamplerate)
 {
 }
 
 template <>
-void ASIOThinger<fftwf_complex, short>::CopyBuffer(short *bufOut, fftwf_complex *copyFromBuf, fftwf_complex *copyFromEnd, float resamplerate)
+void ASIOProcessor<fftwf_complex, short>::CopyBuffer(short *bufOut, fftwf_complex *copyFromBuf, fftwf_complex *copyFromEnd, float resamplerate)
 {
 	short *bufEnd = bufOut + BUFFERSIZE;
 	float myPeriod = 1.0f / resamplerate, smpOut;
@@ -392,7 +394,7 @@ void ASIOThinger<fftwf_complex, short>::CopyBuffer(short *bufOut, fftwf_complex 
 }
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::ProcessInput()
+void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::ProcessInput()
 {
 	// comment out speedparser stuff, now in decoder
 	/*
@@ -431,7 +433,7 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::ProcessInput()
 }
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
+void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
 	/*int *bufL, *bufR;
 	double dt = 1.0 / 96000.0;
@@ -513,7 +515,7 @@ static float * LoadHelp(float *toBuf, int *fromBuf)
 #endif
 {
 #ifdef _DEBUG
-	printf("ASIOThinger::LoadHelp(%p, %p)\n", toBuf, fromBuf);
+	printf("ASIOProcessor::LoadHelp(%p, %p)\n", toBuf, fromBuf);
 #endif
 
 #if C_LOOPS 
@@ -589,10 +591,10 @@ end1:
 }
 
 template <>
-void ASIOThinger<fftwf_complex, short>::CheckBuffers(float resamplerate)
+void ASIOProcessor<fftwf_complex, short>::CheckBuffers(float resamplerate)
 {
 #ifdef _DEBUG
-	printf("ASIOThinger::CheckBuffers(%p, %f)\n", this, resamplerate);
+	printf("ASIOProcessor::CheckBuffers(%p, %f)\n", this, resamplerate);
 #endif
 	double endInputTime = _inputBufTime + (_bufLEnd - _bufLBegin) / 44100.0;
 	double endResampleTime = _outputTime + (BUFFERSIZE+15) / resamplerate;
@@ -703,7 +705,7 @@ void ASIOThinger<fftwf_complex, short>::CheckBuffers(float resamplerate)
 }
 
 template <>
-void ASIOThinger<SamplePairf, short>::SetSrc(int ch, const wchar_t *fqpath)
+void ASIOProcessor<SamplePairf, short>::SetSrc(int ch, const wchar_t *fqpath)
 {
 	bool was_active = _src_active;
 	if (was_active)
@@ -717,7 +719,7 @@ void ASIOThinger<SamplePairf, short>::SetSrc(int ch, const wchar_t *fqpath)
 }
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::LoadDriver()
+void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::LoadDriver()
 {
 #if WINDOWS
 #define ASIODRV_DESC		L"description"
@@ -777,7 +779,7 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::LoadDriver()
 }
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Destroy()
+void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Destroy()
 {
 	ASIOError e;
 	if (_running)
@@ -795,7 +797,11 @@ void ASIOThinger<Input_Buffer_T, Output_Buffer_T>::Destroy()
 	}
 	CoUninitialize();
 
-	delete _track1;
+	for (std::vector<track_t*>::iterator i = _tracks.begin(); i != _tracks.end(); i++)
+	{
+		delete (*i);
+	}
+	_tracks.resize(0);
 
 //	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::free(_inputBufL);
 //	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::free(_inputBufR);

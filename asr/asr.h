@@ -2,6 +2,7 @@
 #define _ASR_H
 
 #include <map>
+#include <hash_map>
 #include <queue>
 #include <cassert>
 #include <exception>
@@ -80,6 +81,13 @@ protected:
 	static std::queue<T*> _T_queue;
 	static pthread_mutex_t _lock;
 	static pthread_once_t once_control; 
+	struct t_info
+	{
+		const char *file;
+		int line;
+		bool free;
+	};
+//	static std::hash_map<T*, t_info> _info_map;
 public:
 	~T_allocator<T>() // no virtual destruct?
 	{
@@ -91,6 +99,16 @@ public:
 		}
 		pthread_mutex_unlock(&_lock);
 		pthread_mutex_destroy(&_lock);
+	}
+
+	static T* alloc_from(const char *file, int line)
+	{
+		printf("%s %d\n", file, line);
+		T *t = alloc();
+		_info_map[t].free = false;
+		_info_map[t].file = file;
+		_info_map[t].line = line;
+		return ;
 	}
 
 	static T* alloc()
@@ -122,6 +140,7 @@ public:
 		}
 	}
 };
+//#define alloc() alloc_from(__FILE__, __LINE__)
 #if 0
 
 template <typename T, int N>

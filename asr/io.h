@@ -39,7 +39,7 @@ void sampleRateDidChange(ASIOSampleRate sRate);
 long asioMessage(long selector, long value, void *message, double *opt);
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-class ASIOThinger;
+class ASIOProcessor;
 
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T, int chunk_size, bool interleaved_input=true>
 class asio_sink : public T_sink<Chunk_T>
@@ -118,11 +118,24 @@ public:
 #define INPUT_PERIOD (1.0/44100.0)
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
-class ASIOThinger
+class ASIOProcessor
 {
 public:
-	ASIOThinger();
-	virtual ~ASIOThinger();
+	struct sound_stream
+	{
+		sound_stream(int chan){}
+		int num_channels() { return nChannels; }
+		int nChannels;
+		int buffer_sz;
+	};
+	struct input : public sound_stream
+	{
+	};
+	struct output : public sound_stream
+	{
+	};
+	ASIOProcessor();
+	virtual ~ASIOProcessor();
 
 	ASIOError Start();
 	ASIOError Stop();
@@ -143,6 +156,12 @@ public:
 	void SetPos(double tm)
 	{
 		_my_controller->set_output_time(_resample_filter, tm);
+	}
+
+	typedef SeekablePitchableFileSource<chunk_t> track_t;
+	track_t* GetTrack(int t_id)
+	{
+		return _tracks[t_id-1];
 	}
 
 	long _doubleBufferIndex;
@@ -189,7 +208,7 @@ public: // was protected
 	file_raw_output<chunk_t> *_my_raw_output;
 	asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true> *_my_sink;
 
-	typedef SeekablePitchableFileSource<chunk_t> track_t;
+	std::vector<track_t*> _tracks;
 	track_t *_track1;
 };
 

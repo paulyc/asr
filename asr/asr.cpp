@@ -35,12 +35,15 @@ const char* gettype() { return "T"; }
 typable(float)
 typable(double)
 
-ASIOThinger<SamplePairf, short> * asio = NULL;
+ASIOProcessor<SamplePairf, short> * asio = 0;
+GenericUI *ui = 0;
 
 void begin()
 {
-	asio = new ASIOThinger<SamplePairf, short>;
-
+	asio = new ASIOProcessor<SamplePairf, short>;
+#if WINDOWS
+	ui = new Win32UI<ASIOProcessor<SamplePairf, short> >(asio);
+#endif
 #if RUN
 	asio->Start();
 	//ASIOStart();
@@ -57,6 +60,7 @@ void end()
 	//ASIOStop();
 	asio->Stop();
 #endif
+	delete ui;
 	delete asio;
 }
 
@@ -113,8 +117,8 @@ void testf()
 			tmp[i] = BUFFERSIZE/2 - i;
 			fprintf(output, "%d ", tmp[i]);
 		}
-		fprintf(output, "\ncalling ASIOThinger::LoadHelp\n");
-		end = ASIOThinger::LoadHelp(buffer, tmp);
+		fprintf(output, "\ncalling ASIOProcessor::LoadHelp\n");
+		end = ASIOProcessor::LoadHelp(buffer, tmp);
 		for (int i=0;i<BUFFERSIZE;++i)
 		{
 			fprintf(output, "%f ", buffer[i]);

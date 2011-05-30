@@ -305,6 +305,17 @@ public:
 	  printf("z %f\n",_zoom);
   }
 
+	double get_display_time(double f)
+	{
+		return (_left+f*(_right-_left))*_src->len().time;
+	}
+
+	double get_display_pos(double tm)
+	{
+		double d = tm/_src->len().time;
+		return (d - _left)/(_right-_left);
+	}
+
   void zoom_px(int dz)
   {
 	  if (dz>0)
