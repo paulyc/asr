@@ -14,6 +14,8 @@ class SeekablePitchableFileSource : public T_source<Chunk_T>
 {
 	friend class Worker;
 public:
+	typedef type chunk_t;
+
 	SeekablePitchableFileSource(int track_id, const wchar_t *filename=0) :
 		_in_config(false),
 		_filename(0),

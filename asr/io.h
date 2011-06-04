@@ -221,7 +221,7 @@ public: // was protected
 	asio_sink<chunk_t, short> *_my_sink;
 
 	std::vector<track_t*> _tracks;
-	track_t *_track1;
+	mixer<track_t> *_mixer;
 };
 
 #endif // !defined(_IO_H)

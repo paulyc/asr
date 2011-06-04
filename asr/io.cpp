@@ -219,9 +219,7 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 	try {
 		_my_controller = new controller_t;
 
-		//_track1 = new SeekablePitchableFileSource<chunk_t>(_default_src);
-		_track1 = new SeekablePitchableFileSource<chunk_t>(1, _default_src);
-		_tracks.push_back(_track1);
+		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(1, _default_src));
 		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2, _default_src));
 
 #if CARE_ABOUT_INPUT
@@ -308,7 +306,8 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 #endif
 
-	_my_sink = new asio_sink<chunk_t, short>(_track1, 
+	_mixer = new mixer<track_t>(_tracks[0], _tracks[1]);
+	_my_sink = new asio_sink<chunk_t, short>(_mixer, 
 		(short**)_buffer_infos[2].buffers, 
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);

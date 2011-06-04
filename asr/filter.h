@@ -7,6 +7,63 @@
 #include <fstream>
 #include <iostream>
 
+template <typename Source_T>
+class mixer : public T_source<typename Source_T::chunk_t>
+{
+public:
+	mixer(Source_T *src1, Source_T *src2) :
+		_src1(src1),
+		_src2(src2)
+	{
+		set_mix(50);
+	}
+
+	typename Source_T::chunk_t *next()
+	{
+		typename Source_T::chunk_t *chk1 = _src1->next(),
+			*chk2 = _src2->next(), 
+			*chk_out = T_allocator<typename Source_T::chunk_t>::alloc();
+		typename Source_T::chunk_t::sample_t *s1 = chk1->_data,
+			*s2 = chk2->_data, *sout = chk_out->_data, 
+			*send = sout + Source_T::chunk_t::chunk_size;
+		for (; sout != send; ++s1, ++s2, ++sout)
+		{
+			(*sout)[0] = (*s1)[0]*_src1_mul + (*s2)[0]*_src2_mul;
+			(*sout)[1] = (*s1)[1]*_src1_mul + (*s2)[1]*_src2_mul;
+		//	Product<typename Source_T::chunk_t::sample_t>::calc(*s1, *s1, _src1_mul);
+		//	Product<typename Source_T::chunk_t::sample_t>::calc(*s2, *s2, _src2_mul);
+		//	Sum<typename Source_T::chunk_t::sample_t>::calc(*sout, *s1, *s2);
+		}
+		T_allocator<typename Source_T::chunk_t>::free(chk1);
+		T_allocator<typename Source_T::chunk_t>::free(chk2);
+		return chk_out;
+	}
+
+	// 0 <= m <= 100
+	void set_mix(int m)
+	{
+		if (m == 50)
+			_src1_mul = _src2_mul = pow(10.0, -3.0/20.0);
+		else if (m < 50)
+		{
+			_src1_mul = pow(10.0, -m/50.0*3.0/20.0);
+			_src2_mul = pow(10.0, (-100.0 + m/.515)/20.0);
+		}
+		else
+		{
+			_src2_mul = pow(10.0, -(100-m)/50.0*3.0/20.0);
+			_src1_mul = pow(10.0, (-100.0 + (100-m)/.515)/20.0);
+		}
+	}
+
+protected:
+	Source_T *_src1;
+	Source_T *_src2;
+
+	double _src1_mul;
+	double _src2_mul;
+};
+
 template <typename Precision_T, int TblSz=512*27>
 class coeff_tbl
 {
@@ -49,7 +106,11 @@ protected:
 	Precision_T _cutoff;
 	
 	const static int _default_sample_precision = 13;
+	const static int _default_tbl_precision = 512;
+	const static int _default_tbl_size = 2*_default_tbl_precision*_default_sample_precision;
 	int _sample_precision;
+	int _tbl_precision;
+	int _tbl_size;
 	Precision_T _input_sampling_rate;
 	Precision_T _output_sampling_rate;
 	Precision_T _output_time;
@@ -86,6 +147,8 @@ protected:
 	BufferedStream<Chunk_T> *_buffered_stream;
 	BufferMgr<BufferedStream<Chunk_T> > *_buffer_mgr;
 
+	Precision_T _coeff_tbl[_default_tbl_size];
+
 public:
 	filter_td_base(T_source<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
 		T_sink<Chunk_T>(src),
@@ -117,12 +180,25 @@ public:
 		
 		_rho = _output_sampling_rate / _input_sampling_rate;
 		_impulse_response_scale = _output_scale*min(Precision_T(1.0), _rho);
+		fill_coeff_tbl();
+	}
+
+	void fill_coeff_tbl()
+	{
+		Precision_T t_diff = Precision_T(_sample_precision) * _input_sampling_period;
+		Precision_T t = -t_diff;
+		for (int i=0; i < _default_tbl_size; ++i)
+		{
+			_coeff_tbl[i] = _impulse_response_scale * _h(t) * _kwt->get(t/_t_diff);
+			t += 2.0*t_diff / (_default_tbl_size);
+		}
 	}
 
 	void set_output_scale(Precision_T s)
 	{
 		_output_scale = s;
 		_impulse_response_scale = _output_scale*min(Precision_T(1.0), _rho);
+		fill_coeff_tbl();
 	}
 
 	void seek_time(Precision_T t)
@@ -142,6 +218,7 @@ public:
 		_impulse_response_period = Precision_T(1.0) / _impulse_response_frequency;
 	//	_rho = _output_sampling_rate / _input_sampling_rate;
 		_impulse_response_scale = min(_impulse_response_frequency / _input_sampling_rate, _rho);
+		fill_coeff_tbl();
 	}
 
 	/*
@@ -178,7 +255,10 @@ public:
 			Precision_T mul;
 			for (Sample_T *conv_end = conv_ptr + (_sample_precision*2); conv_ptr != conv_end; ++conv_ptr)
 			{
-				mul = _impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/_t_diff);
+			//	mul = _impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/_t_diff);
+				int indx = 512*13+int(512*13*(t_input-_output_time)/_t_diff);
+				assert(indx >= 0 && indx < 512*26);
+				mul = _coeff_tbl[indx];
 				acc[0] += (*conv_ptr)[0] * mul;
 				acc[1] += (*conv_ptr)[1] * mul;
 				
