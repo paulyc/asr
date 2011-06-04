@@ -2,6 +2,7 @@
 #define _UI_H
 
 #include "config.h"
+#include "io.h"
 
 class GenericUI
 {
@@ -27,7 +28,38 @@ protected:
 	IO_T *_io;
 };
 
-void set_position(double tm, bool invalidate);
+struct UIWavform
+{
+	//UIWavform(int id, int x, int y, int width, int height)
+	//{
+	//}
+	UIWavform() :
+playback_pos(0.0),
+px(0),cpx(0), mousedown(false) {}
+	double playback_pos;
+	int px, cpx;
+	RECT r;
+	RECT windowr;
+	int width(){return r.right - r.left;}
+	int height(){return r.bottom - r.top;}
+
+	bool mousedown;
+};
+
+struct UIButton
+{
+};
+
+struct UITrack
+{
+	//UITrack(int x, int y, int width, int height
+	UITrack() : coarse_val(48000.0), fine_val(0.0){}
+	UIWavform wave;
+	double coarse_val;
+	double fine_val;
+};
+
+void set_position(void *t, double tm, bool invalidate);
 
 #if WINDOWS
 #include <commctrl.h>

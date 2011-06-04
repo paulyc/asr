@@ -213,7 +213,7 @@ public:
 
 	void render()
 	{
-		set_position(_display->get_display_pos(_resample_filter->get_time()), true);
+		set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
 	}
 
 	void set_pitch(double mod)

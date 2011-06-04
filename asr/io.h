@@ -41,20 +41,25 @@ long asioMessage(long selector, long value, void *message, double *opt);
 template <typename Input_Buffer_T, typename Output_Buffer_T>
 class ASIOProcessor;
 
-template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T, int chunk_size, bool interleaved_input=true>
+template <typename Chunk_T, typename Output_Sample_T>
 class asio_sink : public T_sink<Chunk_T>
 {
 public:
-	asio_sink(T_source<Chunk_T> *src) :
-	  T_sink<Chunk_T>(src)
+	asio_sink(T_source<Chunk_T> *src, Output_Sample_T **bufs1, Output_Sample_T **bufs2, long bufSz) :
+	  T_sink<Chunk_T>(src),
+	  _buf_size(bufSz)
 	{
 		_chk = _src->next();
 		_read = _chk->_data;
+		_buffers[0] = bufs1;
+		_buffers[1] = bufs2;
 	}
-	void process();
+	void process(int dbIndex);
 protected:
 	Chunk_T *_chk;
-	Input_Sample_T *_read;
+	typename Chunk_T::sample_t *_read;
+	Output_Sample_T **_buffers[2];
+	long _buf_size;
 };
 
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
@@ -117,6 +122,17 @@ public:
 #define RUN 0
 #define INPUT_PERIOD (1.0/44100.0)
 
+#if 0
+template <typename T, int n>
+class vector_n
+{
+	vector_n(
+	T operator[]
+private:
+	T _items[n];
+};
+#endif
+
 template <typename Input_Buffer_T, typename Output_Buffer_T>
 class ASIOProcessor
 {
@@ -124,8 +140,8 @@ public:
 	struct sound_stream
 	{
 		sound_stream(int chan){}
-		int num_channels() { return nChannels; }
-		int nChannels;
+		virtual int num_channels() = 0;
+	//	int nChannels;
 		int buffer_sz;
 	};
 	struct input : public sound_stream
@@ -140,11 +156,7 @@ public:
 	ASIOError Start();
 	ASIOError Stop();
 
-	void CopyBuffer(Output_Buffer_T *bufOut, Input_Buffer_T *copyFromBuf, Input_Buffer_T *copyFromEnd, float resamplerate);
-	
 	void BufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
-
-	void CheckBuffers(float resamplerate);
 	void SetSrc(int ch, const wchar_t *fqpath);
 
 	void SetResamplerate(double rate)
@@ -206,7 +218,7 @@ public: // was protected
 		> controller_t;
 	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_my_raw_output;
-	asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true> *_my_sink;
+	asio_sink<chunk_t, short> *_my_sink;
 
 	std::vector<track_t*> _tracks;
 	track_t *_track1;

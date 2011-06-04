@@ -1,10 +1,8 @@
 #include "ui.h"
-#include "io.h"
 
 #include <cstdio>
 
 extern ASIOProcessor<SamplePairf, short> * asio;
-
 typedef ASIOProcessor<SamplePairf, short>::track_t track_t;
 
 #if WINDOWS
@@ -23,38 +21,54 @@ HPEN pen_yel;
 HPEN pen_oran;
 double last_time;
 
-double coarse_val=48000.0, fine_val=0.0;
+UITrack tracks[2];
 
-double playback_pos = 0.0;
-int px = 0, cpx;
-RECT r;
-int width, height;
+/*
+Suppose you are using GDI to do all the drawing, then you should create a memory device context, do all your drawing in this memory device context and the last step is to blit this memorydc to the screen.
 
-bool mousedown=false;
+(in the code below, hDC is the handle to your DC on the screen):
+
+HDC memDC = CreateCompatibleDC(hDC);
+HBITMAP hMemBmp = CreateCompatibleBitmap(hDC, iWidth, iHeight);
+HBITMAP hOldBmp = SelectObject(memDC, hMemBmp);
+
+// Now do all your drawing in memDC instead of in hDC!
+
+
+// As a last step copy the memdc to the hdc
+BitBlt(hDC, 0, 0, iWidth, iHeight, memDC, 0, 0, SRCCOPY);
+
+// Always select the old bitmap back into the device context
+SelectObject(memDC, hOldBmp);
+DeleteObject(hMemBmp);
+DeleteDC(memDC);
+*/
 
 void repaint(int t_id=1)
 {
 	//PAINTSTRUCT ps;
 	HDC hdc;
 	HWND h;
-	RECT r2;
-	track_t *track = asio->GetTrack(1);
+	track_t *track = asio->GetTrack(t_id);
+	UITrack *uit = tracks+t_id-1;
+	int width, height;
+	RECT &r = uit->wave.r;
 
 	if (!track->loaded())
 		return;
 
-	 h = ::GetDlgItem(g_dlg, IDC_STATIC4);
+	h = ::GetDlgItem(g_dlg, t_id == 1 ? IDC_STATIC4 : IDC_STATIC5);
 //	printf("WM_PAINT %d, %d, %d, %d\n", hwndDlg, uMsg, wParam, lParam);
 	hdc = GetDC(h);
 	  
 	SelectObject(hdc, br);
 	
-	GetClientRect(h, &r);
+	//GetClientRect(h, &r);
 
 	//GetWindowRect(h, &r2);
 	
-	width = r.right - r.left;
-	height = r.bottom - r.top;
+	width = uit->wave.width();
+	height = uit->wave.height();
 	// cant do this here it too slow
 	if (width != track->get_display_width())
 	{
@@ -83,41 +97,42 @@ void repaint(int t_id=1)
 
 	double len = track->len().time;
 	//px = int(playback_pos / len * double(width));
-	if (playback_pos >= 0.0 && playback_pos <= 1.0)
+	if (uit->wave.playback_pos >= 0.0 && uit->wave.playback_pos <= 1.0)
 	{
-		px = playback_pos * width;
-		MoveToEx(hdc, r.left+px, r.top, NULL);
+		uit->wave.px = uit->wave.playback_pos * width;
+		MoveToEx(hdc, r.left+uit->wave.px, r.top, NULL);
 		SelectObject(hdc, pen_yel);
-		LineTo(hdc, r.left+px, r.top+height);
+		LineTo(hdc, r.left+uit->wave.px, r.top+height);
 	}
 
-	cpx = int(track->get_cuepoint_pos() * double(width));
-	MoveToEx(hdc, r.left+cpx, r.top, NULL);
+	uit->wave.cpx = int(track->get_cuepoint_pos() * double(width));
+	MoveToEx(hdc, r.left+uit->wave.cpx, r.top, NULL);
 	SelectObject(hdc, pen_oran);
-	LineTo(hdc, r.left+cpx, r.top+height);
+	LineTo(hdc, r.left+uit->wave.cpx, r.top+height);
 
 //	SwapBuffers(hdc);
 	
 	ReleaseDC(h, hdc);
 }
 
-void set_position(double p, bool invalidate)
+void set_position(void *t, double p, bool invalidate)
 {
 	if (asio)
 	{
+		UITrack *uit = (t == asio->GetTrack(1) ? tracks : tracks+1);
 		//if (p >= 0.0 && p <= 1.0)
 		//{
-			playback_pos = p;
+			uit->wave.playback_pos = p;
 		//}
 		//double len =  asio->_track1->len().time;
-		int new_px = p*width;
+		int new_px = p*uit->wave.width();
 		//if (asio)repaint();
-		if ((new_px != px && new_px >=0 && new_px < width) || invalidate)
+		if ((new_px != uit->wave.px && new_px >=0 && new_px < uit->wave.width()) || invalidate)
 		{
 		//InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC4), NULL, TRUE);
 		//	UpdateWindow(::GetDlgItem(g_dlg, IDC_STATIC4));
 	//		InvalidateRect(g_dlg, NULL, TRUE);
-			repaint();
+			repaint(uit-tracks+1);
 		}
 	}
 }
@@ -134,34 +149,54 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 	{
 		case WM_PAINT:
 		{
-			asio->_track1->lockedcall(repaint);
-			//repaint();
+			asio->GetTrack(1)->lockedcall(repaint);
+			asio->GetTrack(2)->lockedcall(repaint);
 			return 0L;
 		}
 		case WM_LBUTTONDOWN:
 		{
 			buttonx = LOWORD(lParam);
-			buttony = HIWORD(lParam);
-			mousedown = buttony >= 180 && buttony < 180+height &&
-				buttonx >= 14 && buttonx < 14+width;
-			if (mousedown)
+			buttony = HIWORD(lParam)+45;
+			
+			tracks[0].wave.mousedown = buttony >= tracks[0].wave.windowr.top && buttony < tracks[0].wave.windowr.bottom &&
+				buttonx >= tracks[0].wave.windowr.left && buttonx < tracks[0].wave.windowr.right;
+			if (tracks[0].wave.mousedown)
 			{
 				lastx=buttonx;
 				lasty=buttony;
-				asio->_track1->lock_pos(lastx-7);
+				asio->GetTrack(1)->lock_pos(lastx-tracks[0].wave.windowr.left);
+			}
+
+			tracks[1].wave.mousedown = buttony >= tracks[1].wave.windowr.top && buttony < tracks[1].wave.windowr.bottom &&
+				buttonx >= tracks[1].wave.windowr.left && buttonx < tracks[1].wave.windowr.right;
+			if (tracks[1].wave.mousedown)
+			{
+				lastx=buttonx;
+				lasty=buttony;
+				asio->GetTrack(2)->lock_pos(lastx-tracks[1].wave.windowr.left);
 			}
 			break;
 		}
 		case WM_LBUTTONDBLCLK:
 		{
-			int y = LOWORD(lParam) - 14;
-			if (HIWORD(lParam) >= 180 && HIWORD(lParam) < 180+height)
+			buttonx = LOWORD(lParam);
+			buttony = HIWORD(lParam)+45;
+			if (buttony >= tracks[0].wave.windowr.top && buttony < tracks[0].wave.windowr.bottom)
 			{
-				double f = double(y)/width;
+				double f = double(buttonx - tracks[0].wave.windowr.left)/tracks[0].wave.width();
 				if (f >= 0.0 && f <= 1.0)
 				{
 					printf("%f\n", f);
-					asio->_track1->seek_time(asio->_track1->get_display_time(f));
+					asio->GetTrack(1)->seek_time(asio->GetTrack(1)->get_display_time(f));
+				}
+			}
+			else if (buttony >= tracks[1].wave.windowr.top && buttony < tracks[1].wave.windowr.bottom)
+			{
+				double f = double(buttonx - tracks[1].wave.windowr.left)/tracks[1].wave.width();
+				if (f >= 0.0 && f <= 1.0)
+				{
+					printf("%f\n", f);
+					asio->GetTrack(2)->seek_time(asio->GetTrack(2)->get_display_time(f));
 				}
 			}
 			break;
@@ -189,29 +224,47 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				}
 			//	printf("%d %d %d\n", HIWORD(lParam), LOWORD(lParam), y);
 			}
-		*/	mousedown = false;
-			asio->_track1->unlock_pos();
+		*/	tracks[0].wave.mousedown = false;
+			tracks[1].wave.mousedown = false;
+			asio->GetTrack(1)->unlock_pos();
+			asio->GetTrack(2)->unlock_pos();
 			break;
 		}
 		case WM_MOUSEMOVE:
 		{
+			buttonx = LOWORD(lParam);
+			buttony = HIWORD(lParam)+45;
 		//	printf("WM_MOUSEMOVE %d %d %x %x\n", hwndDlg,uMsg,wParam,lParam);
-			int dx = LOWORD(lParam)-lastx;
-			int dy = HIWORD(lParam)-lasty;
+			int dx = buttonx-lastx;
+			int dy = buttony-lasty;
 
-			if (mousedown)
+			if (tracks[0].wave.mousedown)
 			{
 				if (dy)
 				{
-					asio->_track1->zoom_px(dy);
+					asio->GetTrack(1)->zoom_px(dy);
 				}
 				if (dx)
 				{
-					asio->_track1->move_px(dx);
-					asio->_track1->lock_pos(LOWORD(lParam)-56);
+					asio->GetTrack(1)->move_px(dx);
+					asio->GetTrack(1)->lock_pos(buttonx-tracks[0].wave.windowr.left);
 				}
-				lastx =LOWORD(lParam);
-				lasty =HIWORD(lParam);
+				lastx =buttonx;
+				lasty =buttony;
+			}
+			else if (tracks[1].wave.mousedown)
+			{
+				if (dy)
+				{
+					asio->GetTrack(2)->zoom_px(dy);
+				}
+				if (dx)
+				{
+					asio->GetTrack(2)->move_px(dx);
+					asio->GetTrack(2)->lock_pos(buttonx-tracks[1].wave.windowr.left);
+				}
+				lastx =buttonx;
+				lasty =buttony;
 			}
 			break;
 		}
@@ -225,25 +278,29 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 		//	35,131,438,52
 			//216,56
 		//	if (HIWORD(lParam) >= 35 || LOWORD(lParam) >= 131)
+			buttonx = LOWORD(lParam);
+			buttony = HIWORD(lParam)+45;
 			{
-				int y = LOWORD(lParam) - 56;
-				if (HIWORD(lParam) > 216 && HIWORD(lParam) < 216+height)
+				if (buttony > tracks[0].wave.windowr.top && buttony < tracks[0].wave.windowr.bottom)
 				{
-					double f = double(y)/width;
+					double f = double(buttonx - tracks[0].wave.windowr.left)/tracks[0].wave.width();
 					if (f >= 0.0 && f <= 1.0)
 					{
 						printf("cue %f\n", f);
-						asio->GetTrack(1)->set_cuepoint(asio->_track1->get_display_time(f));
+						asio->GetTrack(1)->set_cuepoint(asio->GetTrack(1)->get_display_time(f));
+					}
+				}
+				else if (buttony > tracks[1].wave.windowr.top && buttony < tracks[1].wave.windowr.bottom)
+				{
+					double f = double(buttonx - tracks[1].wave.windowr.left)/tracks[1].wave.width();
+					if (f >= 0.0 && f <= 1.0)
+					{
+						printf("cue %f\n", f);
+						asio->GetTrack(2)->set_cuepoint(asio->GetTrack(2)->get_display_time(f));
 					}
 				}
 			//	printf("%d %d %d\n", HIWORD(lParam), LOWORD(lParam), y);
 			}
-			break;
-		}
-		case WM_PARENTNOTIFY:
-		{
-			HWND h = GetDlgItem(g_dlg, IDC_STATIC4);
-			int x = IDC_STATIC4;
 			break;
 		}
 		case WM_HSCROLL:
@@ -255,22 +312,32 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER2))
 					{
 						printf("coarse %d ", HIWORD(wParam));
-						coarse_val = 48000.0 / (1.0 + .01 * HIWORD(wParam) -0.5);
-						printf("coarse_val %f\n", coarse_val);
-						asio->GetTrack(1)->set_output_sampling_frequency(coarse_val+fine_val); 
+						tracks[0].coarse_val = 48000.0 / (1.0 + .01 * HIWORD(wParam) -0.5);
+						printf("coarse_val %f\n", tracks[0].coarse_val);
+						asio->GetTrack(1)->set_output_sampling_frequency(tracks[0].coarse_val+tracks[0].fine_val); 
 					}
-					else
+					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER3))
 					{
 						printf("fine %d ", HIWORD(wParam));
 						//val = 10*60*HIWORD(wParam)*0.01;
-						fine_val = 1000.0 -  20*HIWORD(wParam);
-						printf("fine_val %f\n", fine_val);
-						asio->GetTrack(1)->set_output_sampling_frequency(coarse_val+fine_val); 
-					/*	if (val != last_time) // debounce
-						{
-							asio->_track1->seek_time(val);
-							last_time = val;
-						}*/
+						tracks[0].fine_val = 1000.0 -  20*HIWORD(wParam);
+						printf("fine_val %f\n", tracks[0].fine_val);
+						asio->GetTrack(1)->set_output_sampling_frequency(tracks[0].coarse_val+tracks[0].fine_val); 
+					}
+					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER4))
+					{
+						printf("coarse %d ", HIWORD(wParam));
+						tracks[1].coarse_val = 48000.0 / (1.0 + .01 * HIWORD(wParam) -0.5);
+						printf("coarse_val %f\n", tracks[1].coarse_val);
+						asio->GetTrack(2)->set_output_sampling_frequency(tracks[1].coarse_val+tracks[1].fine_val); 
+					}
+					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER5))
+					{
+						printf("fine %d ", HIWORD(wParam));
+						//val = 10*60*HIWORD(wParam)*0.01;
+						tracks[1].fine_val = 1000.0 -  20*HIWORD(wParam);
+						printf("fine_val %f\n", tracks[1].fine_val);
+						asio->GetTrack(2)->set_output_sampling_frequency(tracks[1].coarse_val+tracks[1].fine_val); 
 					}
 					break;
 			}
@@ -290,7 +357,8 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON2:
 					asio->Stop();
 					return TRUE;
-				case IDC_BUTTON3: // load src 1
+				case IDC_BUTTON3: // load src
+				case IDC_BUTTON6:
 				{
 					TCHAR filepath[256] = {0};
 					TCHAR filetitle[256];
@@ -328,20 +396,22 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					};
 					//memset(&ofn, 0, sizeof(ofn));
 					if (GetOpenFileName(&ofn)) {
-						SetDlgItemText(hwndDlg, IDC_EDIT1, filepath);
-						asio->GetTrack(1)->set_source_file(filepath);
+						SetDlgItemText(hwndDlg, LOWORD(wParam)==IDC_BUTTON3 ? IDC_EDIT1 : IDC_EDIT2, filepath);
+						asio->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->set_source_file(filepath);
 					//	asio->SetSrc(1, filepath);
 					}
 					return TRUE;
 				}
-				case IDC_BUTTON4: // cue src 1
+				case IDC_BUTTON4: // cue src
+				case IDC_BUTTON7:
 				{
-					asio->GetTrack(1)->goto_cuepoint();
+					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON4 ? 1 : 2)->goto_cuepoint();
 					break;
 				}
-				case IDC_BUTTON5: // play/pause 1
+				case IDC_BUTTON5: // play/pause
+				case IDC_BUTTON8:
 				{
-					asio->GetTrack(1)->play_pause();
+					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON5 ? 1 : 2)->play_pause();
 					break;
 				}
 			}
@@ -436,6 +506,14 @@ void CreateUI()
 	}
 	SetDlgItemText(g_dlg, IDC_EDIT1, asio->_default_src);
 	ShowWindow(g_dlg, SW_SHOW);
+
+	HWND h;
+	for (int t=0; t < 2; ++t)
+	{
+		h = ::GetDlgItem(g_dlg, t == 0 ? IDC_STATIC4 : IDC_STATIC5);
+		GetClientRect(h, &tracks[t].wave.r);
+		GetWindowRect(h, &tracks[t].wave.windowr);
+	}
 
 	/*
 	HDC hdc = GetDC(GetDlgItem(g_dlg, IDC_STATIC));

@@ -17,13 +17,13 @@ void asio_sink<Input_Sample_T, Output_Sample_T, Chunk_T, chunk_size, false>::pro
 }
 */
 
-template <>
-void asio_sink<SamplePairf, short, chunk_t, 4096, true>::process()
+template <typename Chunk_T, typename Output_Sample_T>
+void asio_sink<Chunk_T, Output_Sample_T>::process(int dbIndex)
 {
-	size_t to_write = asio->_bufSize, loop_write, written=0;
+	size_t to_write = _buf_size, loop_write, written=0;
 	int stride = 2;
-	short *write, *end_write;
-	SamplePairf *read;
+	Output_Sample_T *write, *end_write;
+	typename Chunk_T::sample_t *read;
 	while (to_write > 0)
 	{
 		if (_read - _chk->_data >= chunk_t::chunk_size)
@@ -35,27 +35,27 @@ void asio_sink<SamplePairf, short, chunk_t, 4096, true>::process()
 			_read = _chk->_data;
 		}
 		loop_write = min(to_write, chunk_t::chunk_size - (_read - _chk->_data));
-		for (write = (short*)asio->_buffer_infos[2].buffers[asio->_doubleBufferIndex] + written,
+		for (write = _buffers[0][dbIndex] + written,
 			end_write = write + loop_write,
 			read = _read;
 			write != end_write;
 			++write, ++read)
 		{
 			if ((*read)[0] < 0.0f)
-				*write = short(max(-1.0f, (*read)[0]) * -SHRT_MIN);
+				*write = Output_Sample_T(max(-1.0f, (*read)[0]) * -SHRT_MIN);
 			else
-				*write = short(min(1.0f, (*read)[0]) * SHRT_MAX);
+				*write = Output_Sample_T(min(1.0f, (*read)[0]) * SHRT_MAX);
 		}
-		for (write = (short*)asio->_buffer_infos[3].buffers[asio->_doubleBufferIndex] + written,
+		for (write = _buffers[1][dbIndex] + written,
 			end_write = write + loop_write,
 			read = _read;
 			write != end_write;
 			++write, ++read)
 		{
 			if ((*read)[1] < 0.0f)
-				*write = short(max(-1.0f, (*read)[1]) * -SHRT_MIN);
+				*write = Output_Sample_T(max(-1.0f, (*read)[1]) * -SHRT_MIN);
 			else
-				*write = short(min(1.0f, (*read)[1]) * SHRT_MAX);
+				*write = Output_Sample_T(min(1.0f, (*read)[1]) * SHRT_MAX);
 		}
 		_read += loop_write;
 		to_write -= loop_write;
@@ -217,23 +217,17 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 	long minSize, maxSize, preferredSize, granularity;
 
 	try {
-#if TEST2
-		_src1 = new int_N_wavfile_chunker_T_test<int, BUFFERSIZE>;
-		/*static_cast<int_N_wavfile_chunker_T_test<int, BUFFERSIZE>*>(_src1)->_file;*/
-#else
 		_my_controller = new controller_t;
 
 		//_track1 = new SeekablePitchableFileSource<chunk_t>(_default_src);
 		_track1 = new SeekablePitchableFileSource<chunk_t>(1, _default_src);
 		_tracks.push_back(_track1);
-		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2));
-		_my_sink = new asio_sink<SamplePairf, short, chunk_t, chunk_t::chunk_size, true>(_track1);
+		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2, _default_src));
 
 #if CARE_ABOUT_INPUT
 		_my_source = new asio_source<short, SamplePairf, chunk_t>;
 		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>(_my_source);
 		_my_raw_output = new file_raw_output<chunk_t>(_my_pk_det);
-#endif
 #endif
 	} catch (std::exception e) {
 		throw e;
@@ -241,28 +235,6 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 
 	CoInitialize(0);
 	LoadDriver();
-	//return;
-	_inputBufTime = -13*INPUT_PERIOD;
-#if 0
-	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::alloc_info info;
-	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::alloc(&info);
-	_inputBufL = info.ptr;
-	_inputBufLEffectiveSize = info.sz;
-	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::alloc(&info);
-	_inputBufR = info.ptr;
-	_inputBufREffectiveSize = info.sz;
-	_bufLBegin = _inputBufL;
-	_bufRBegin = _inputBufR;
-	_bufLEnd = _bufLBegin;
-	_bufREnd = _bufRBegin;
-#endif
-	/*while (_bufLEnd < _bufLBegin + 20)
-	{
-		(*_bufLEnd)[0] = 0.0f;
-		(*_bufLEnd++)[1] = 0.0f;
-		(*_bufREnd)[0] = 0.0f;
-		(*_bufREnd++)[1] = 0.0f;
-	}*/
 
 	_drv_info.asioVersion = 2;
 	_drv_info.sysRef = 0;
@@ -335,6 +307,12 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 	_bufSize = preferredSize;
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 #endif
+
+	_my_sink = new asio_sink<chunk_t, short>(_track1, 
+		(short**)_buffer_infos[2].buffers, 
+		(short**)_buffer_infos[3].buffers,
+		_bufSize);
+
 	ASIOSampleRate r;
 /*		ASIOSampleType t;
 	r = 44100.0;
@@ -360,144 +338,33 @@ ASIOError ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Stop()
 	return ASIOStop();
 }
 
-template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::CopyBuffer(Output_Buffer_T *bufOut, Input_Buffer_T *copyFromBuf, Input_Buffer_T *copyFromEnd, float resamplerate)
-{
-}
-
-template <>
-void ASIOProcessor<fftwf_complex, short>::CopyBuffer(short *bufOut, fftwf_complex *copyFromBuf, fftwf_complex *copyFromEnd, float resamplerate)
-{
-	short *bufEnd = bufOut + BUFFERSIZE;
-	float myPeriod = 1.0f / resamplerate, smpOut;
-	while (bufOut < bufEnd)
-	{
-#if 0
-		if (_resample)
-		{
-			EvalSignalN<1>(_outputTime, &smpOut, _inputBufTime, copyFromBuf, _bufLEnd - _bufLBegin);
-		}
-		else
-#endif
-		{
-			smpOut = (*_bufLBegin++)[0];
-			_inputBufTime += myPeriod;
-		}
-		assert(_bufLBegin <= _bufLEnd);
-		//_log << smpOut << ' ';
-		if (smpOut < 0.0f)
-			*bufOut++ = short(smpOut * -SHRT_MIN);
-		else
-			*bufOut++ = short(smpOut * SHRT_MAX);
-		_outputTime += myPeriod;
-	}
-}
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
 void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::ProcessInput()
 {
-	// comment out speedparser stuff, now in decoder
-	/*
-	float *myBuf = _sp._inBuf;
-	short val;
-	for (int i=0; i<_bufSize; ++i){
-		val = ((short*)_buffer_infos[0].buffers[_doubleBufferIndex])[i];
-		if (val >= 0)
-			myBuf[i*2] = val / float(SHRT_MAX);
-		else
-			myBuf[i*2] = val / float(-SHRT_MIN);
-		val = ((short*)_buffer_infos[1].buffers[_doubleBufferIndex])[i];
-		if (val >= 0)
-			myBuf[i*2+1] = val / float(SHRT_MAX);
-		else		
-			myBuf[i*2+1] = val / float(-SHRT_MIN);
-	}
-	_speed = _sp.Execute();
-	*/
 	if (_my_source)
 	{
-	//	printf("have data\n");
 		_my_source->have_data();
 		while (_my_source->chunk_ready())
 		{
-		//	printf("process\n");
 			_my_raw_output->process();
 			_my_controller->process(_resample_filter, _my_pk_det);
 		}
 		_speed = _my_pk_det->p_begin.mod;
 	}
-	//printf("_speed %f\n", _speed);
-	//_log << _speed << "\n";
-	//if (_speed < .9 || _speed > 1.1)
-	//_speed = 1.0;
 }
 
 template <typename Input_Buffer_T, typename Output_Buffer_T>
 void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
-	/*int *bufL, *bufR;
-	double dt = 1.0 / 96000.0;
-	int val;
-	//output
-	bufL = (int*)_buffer_infos[2].buffers[doubleBufferIndex];
-	bufR = (int*)_buffer_infos[3].buffers[doubleBufferIndex];
-	for (int i=0; i<_bufSize; ++i){
-		val = (int)(INT_MAX * sin(2.0*M_PI*440.0*_outputTime));
-		bufL[i] = val;
-		bufR[i] = val;
-		_outputTime += dt;
-	}*/
-	// process input
-	//my_chunk *chk = my_allocator::alloc();
-	//memcpy(chk->_data, 
-	//printf("BufferSwitch\n");
 	_doubleBufferIndex = doubleBufferIndex;
+
 #if CARE_ABOUT_INPUT
 	this->ProcessInput();
-	
-	//?
-	//double sp = _speed * (48000.0f/44100.0f);
-	//_resamplerate = (48000.0 - 4800.0) + (sp * 9600.0);
-
-	/* done in controller now
-	double sp = _speed * (44100.0f /48000.0f);
-	_resamplerate = 44100.0 / sp;
-	*/
-#endif
-	
+#endif	
 
 #if DO_OUTPUT
-	/* done in controller now
-	_resample_filter->set_output_sampling_frequency(_resamplerate);
-	*/
-	_my_sink->process();
-	return;
-//	CheckBuffers(resamplerate);
-
-//	double tt = _outputTime;
-//	CopyBuffer((short*)_buffer_infos[2].buffers[doubleBufferIndex], _bufLBegin, _bufLEnd, resamplerate);
-
-//	_outputTime = tt;
-//	CopyBuffer((short*)_buffer_infos[3].buffers[doubleBufferIndex], _bufRBegin, _bufREnd, resamplerate);
-#endif
-#if TEST2
-	BufferT* b;
-	long i;
-	//_log << "Left buffer contents:" << std::endl;
-	b=(BufferT*)_buffer_infos[2].buffers[doubleBufferIndex];
-	for (i=0; i<_bufSize; ++i)
-	{
-	//	_log << b[i] << ' ';
-		b[i] = 0;
-	}
-	//_log << "\nRight buffer contents:" << std::endl;
-	b=(BufferT*)_buffer_infos[3].buffers[doubleBufferIndex];
-	for (i=0; i<_bufSize; ++i)
-	{
-	//	_log << b[i] << ' ';
-		b[i] = 0;
-	}
-	//_log << std::endl;
+	_my_sink->process(_doubleBufferIndex);
 #endif
 
 
@@ -591,127 +458,13 @@ end1:
 }
 
 template <>
-void ASIOProcessor<fftwf_complex, short>::CheckBuffers(float resamplerate)
-{
-#ifdef _DEBUG
-	printf("ASIOProcessor::CheckBuffers(%p, %f)\n", this, resamplerate);
-#endif
-	double endInputTime = _inputBufTime + (_bufLEnd - _bufLBegin) / 44100.0;
-	double endResampleTime = _outputTime + (BUFFERSIZE+15) / resamplerate;
-	if (endResampleTime > endInputTime) {
-		if (_outputTime < endInputTime) {
-			int offset = int((_outputTime - _inputBufTime)*44100.0);
-			fftwf_complex * moveFrom = _inputBufL + offset - 20;
-		//	assert(moveFrom >= _inputBufL && moveFrom < _inputBufL + inputBuffersize);
-			if (moveFrom > _inputBufL)
-			{
-				int sz = _bufLEnd - moveFrom;
-				if (sz > 0)
-				{
-					while (sz%4)
-					{
-						if (moveFrom > _inputBufL)
-						{
-							--moveFrom;
-							++sz;
-						}
-						else
-						{
-							++sz;
-						}
-					}
-					assert(moveFrom >= _inputBufL && moveFrom + sz < (fftwf_complex*)((char*)_inputBufL + _inputBufLEffectiveSize));
-					memmove(_inputBufL, moveFrom, sz * sizeof(fftwf_complex));
-					_inputBufTime += (_bufLEnd - _bufLBegin - sz - 20) / 44100.0;
-					_bufLBegin = _inputBufL;
-					_bufLEnd = _bufLBegin + sz;
-					
-				}
-			}
-		
-		
-			moveFrom = _inputBufR + offset - 20;
-		//	assert(moveFrom >= _inputBufR && moveFrom < _inputBufR + inputBuffersize);
-			if (moveFrom > _inputBufR)
-			{
-				int sz = _bufREnd - moveFrom;
-				if (sz > 0)
-				{
-					while (sz%4)
-					{
-						if (moveFrom > _inputBufR)
-						{
-							--moveFrom;
-							++sz;
-						}
-						else
-						{
-							++sz;
-						}
-					}
-					assert(moveFrom >= _inputBufR && moveFrom + sz < (fftwf_complex*)((char*)_inputBufR + _inputBufREffectiveSize));
-					memmove(_inputBufR, moveFrom, sz * sizeof(fftwf_complex));
-					_bufRBegin = _inputBufR;
-					_bufREnd = _bufRBegin + sz;
-				}
-			}
-		} else {
-			_inputBufTime += (_bufLEnd - _bufLBegin) / 44100.0;
-			_bufLEnd = _bufLBegin = _inputBufL;
-			_bufREnd = _bufRBegin = _inputBufR;
-		}
-
-		// then load new data
-#if !USE_SSE2 && !NON_SSE_INTS
-		//short *tmpL = T_allocator_N_16ba<short, BUFFERSIZE>::alloc(), 
-		//	  *tmpR = T_allocator_N_16ba<short, BUFFERSIZE>::alloc(), 
-		//	  val;
-#else
-		//int *tmpL = T_allocator_N_16ba<int, BUFFERSIZE>::alloc(), 
-		//	*tmpR = T_allocator_N_16ba<int, BUFFERSIZE>::alloc(), 
-		//	val;
-#endif
-		//_src1->ld_data(tmpL, tmpR);
-		//_bufLEnd = LoadHelp(_bufLEnd, tmpL);
-		//_bufREnd = LoadHelp(_bufREnd, tmpR);
-
-		// do the same thing to next data
-		//_src1->ld_data(tmpL, tmpR);
-		//_bufLEnd = LoadHelp(_bufLEnd, tmpL);
-		//_bufREnd = LoadHelp(_bufREnd, tmpR);
-		chunk_time_domain_2d<fftwf_complex, 2, BUFFERSIZE>* chk = 0;
-	//	chk = _src1->next();
-		_bufLEnd = _bufLBegin;
-		_bufREnd = _bufRBegin;
-		for (int i=0; i<BUFFERSIZE; ++i)
-		{
-			fftwf_complex &com = chk->dereference(0,i);
-			(*_bufLEnd)[0] = com[0];
-			(*_bufLEnd++)[1] = com[1];
-			fftwf_complex &com1 = chk->dereference(1,i);
-			(*_bufREnd)[0] = com1[0];
-			(*_bufREnd++)[1] = com1[1];
-		}
-		T_allocator<chunk_time_domain_2d<fftwf_complex, 2, BUFFERSIZE> >::free(chk);
-
-#if !USE_SSE2 && !NON_SSE_INTS
-		//T_allocator_N_16ba<short, BUFFERSIZE>::free(tmpL);
-		//T_allocator_N_16ba<short, BUFFERSIZE>::free(tmpR);
-#else
-		//T_allocator_N_16ba<int, BUFFERSIZE>::free(tmpL);
-		//T_allocator_N_16ba<int, BUFFERSIZE>::free(tmpR);
-#endif
-	}
-}
-
-template <>
 void ASIOProcessor<SamplePairf, short>::SetSrc(int ch, const wchar_t *fqpath)
 {
 	bool was_active = _src_active;
 	if (was_active)
 		Stop();
 	try {
-		_track1->set_source_file(fqpath);
+		_tracks[ch-1]->set_source_file(fqpath);
 	} catch (std::exception e) {
 	}
 	if (was_active)
@@ -802,7 +555,4 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Destroy()
 		delete (*i);
 	}
 	_tracks.resize(0);
-
-//	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::free(_inputBufL);
-//	T_allocator_N_16ba<Input_Buffer_T, inputBuffersize>::free(_inputBufR);
 }
