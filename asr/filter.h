@@ -179,7 +179,7 @@ public:
 		//_impulse_response_period = Precision_T(1.0) / _impulse_response_frequency;
 		
 		_rho = _output_sampling_rate / _input_sampling_rate;
-		_impulse_response_scale = _output_scale*min(Precision_T(1.0), _rho);
+		_impulse_response_scale = min(Precision_T(1.0), _rho);
 		fill_coeff_tbl();
 	}
 
@@ -189,7 +189,7 @@ public:
 		Precision_T t = -t_diff;
 		for (int i=0; i < _default_tbl_size; ++i)
 		{
-			_coeff_tbl[i] = _impulse_response_scale * _h(t) * _kwt->get(t/_t_diff);
+			_coeff_tbl[i] = _output_scale*_impulse_response_scale * _h(t) * _kwt->get(t/_t_diff);
 			t += 2.0*t_diff / (_default_tbl_size);
 		}
 	}
@@ -197,7 +197,7 @@ public:
 	void set_output_scale(Precision_T s)
 	{
 		_output_scale = s;
-		_impulse_response_scale = _output_scale*min(Precision_T(1.0), _rho);
+		_impulse_response_scale = min(Precision_T(1.0), _rho);
 		fill_coeff_tbl();
 	}
 
