@@ -339,6 +339,10 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 						printf("fine_val %f\n", tracks[1].fine_val);
 						asio->GetTrack(2)->set_output_sampling_frequency(tracks[1].coarse_val+tracks[1].fine_val); 
 					}
+					else
+					{
+						asio->SetMix(HIWORD(wParam));
+					}
 					break;
 			}
 			return TRUE;

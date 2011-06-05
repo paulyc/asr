@@ -176,6 +176,11 @@ public:
 		return _tracks[t_id-1];
 	}
 
+	void SetMix(int m)
+	{
+		_mixer->set_mix(m);
+	}
+
 	long _doubleBufferIndex;
 	bool _running;
 	double _speed;
