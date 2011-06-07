@@ -312,9 +312,14 @@ public:
 	{
 	}
 
-	virtual void process()
+	virtual void process(bool freeme=true)
 	{
-		T_allocator<T>::free(_src->next());
+		process(_src->next(), freeme);
+	}
+
+	virtual void process(T *t, bool freeme=true)
+	{
+		if (freeme) T_allocator<T>::free(t);
 	}
 };
 

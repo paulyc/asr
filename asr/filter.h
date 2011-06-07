@@ -4,18 +4,24 @@
 #include "util.h"
 #include "buffer.h"
 
+#include <set>
 #include <fstream>
 #include <iostream>
+#include <map>
+
+template <typename Source_T, int channels=2>
+class mixer : public T_source<typename Source_T::chunk_t>
+{
+};
 
 template <typename Source_T>
-class mixer : public T_source<typename Source_T::chunk_t>
+class mixer<Source_T, 2> : public T_source<typename Source_T::chunk_t>
 {
 public:
 	mixer(Source_T *src1, Source_T *src2) :
 		_src1(src1),
 		_src2(src2)
 	{
-		set_mix(50);
 	}
 
 	typename Source_T::chunk_t *next()
@@ -39,6 +45,24 @@ public:
 		return chk_out;
 	}
 
+protected:
+	Source_T *_src1;
+	Source_T *_src2;
+
+	double _src1_mul;
+	double _src2_mul;
+};
+
+template <typename Source_T>
+class xfader : public mixer<Source_T, 2>
+{
+public:
+	xfader(Source_T *src1, Source_T *src2) :
+		mixer(src1, src2)
+	{
+		set_mix(50);
+	}
+
 	// 0 <= m <= 100
 	void set_mix(int m)
 	{
@@ -55,13 +79,77 @@ public:
 			_src1_mul = pow(10.0, (-100.0 + (100-m)/.515)/20.0);
 		}
 	}
-
 protected:
-	Source_T *_src1;
-	Source_T *_src2;
+};
 
-	double _src1_mul;
-	double _src2_mul;
+template <typename Chunk_T>
+class static_mixer
+{
+public:
+	struct input
+	{
+		Chunk_T *chk;
+		double mul;
+	};
+	static void mix2(Chunk_T *out, Chunk_T *in1, Chunk_T *in2, double mul1=1.0, double mul2=1.0)
+	{
+		typename Chunk_T::sample_t *s1 = in1->_data,
+			*s2 = in2->_data, *sout = out->_data, 
+			*send = sout + Chunk_T::chunk_size;
+		for (; sout != send; ++s1, ++s2, ++sout)
+		{
+			(*sout)[0] = (*s1)[0]*mul1 + (*s2)[0]*mul2;
+			(*sout)[1] = (*s1)[1]*mul1 + (*s2)[1]*mul2;
+		}
+	}
+};
+
+template <typename Source_T, typename Sink_T>
+class multiplexer
+{
+public:
+	multiplexer(){}
+	void map(Source_T *input, Sink_T *output)
+	{
+		//_inputs_to_outputs.insert(std::pair<Source_T*,Sink_T*>(input, output));
+	}
+	void unmap_input(Source_T *input)
+	{
+		_iomap.erase(input);
+	}
+	void unmap_output(Sink_T *output)
+	{
+	}
+	void process()
+	{
+		//for each input, process chunk on each output
+		
+		for (std::set<Source_T*>::iterator i = _src_set.begin(); i != _src_set.end(); ++i)
+		{
+			_chk_map[*i] = (*i)->next();
+		}
+
+		for (std::map<Sink_T*, std::list<Source_T*> >::iterator mi = _io_map.begin(); mi != _io_map.end(); ++mi)
+		{
+			typename Source_T::chunk_t *out = T_allocator<typename Source_T::chunk_t>::alloc();
+			for (int ofs = 0; ofs < Source_T::chunk_t::chunk_size; ++ofs)
+			{
+				out->_data[ofs] = 0.0;
+			}
+			for (std::list<Source_T*>::iterator si = mi->second.begin(); si != mi->second.end(); ++si)
+			{
+				for (int ofs = 0; ofs < Source_T::chunk_t::chunk_size; ++ofs)
+				{
+					out->_data[ofs] += _chk_map[*si]->_data[ofs];
+				}
+			}
+			mi->first->process(out);
+		}
+	}
+protected:
+	std::set<Source_T*> _src_set;
+	std::map<Sink_T*, std::list<Source_T*> > _io_map;
+	std::map<Source_T*, typename Source_T::chunk_t> _chk_map;
 };
 
 template <typename Precision_T, int TblSz=512*27>

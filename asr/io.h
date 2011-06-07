@@ -178,7 +178,7 @@ public:
 
 	void SetMix(int m)
 	{
-		_mixer->set_mix(m);
+		_master->set_mix(m);
 	}
 
 	long _doubleBufferIndex;
@@ -226,7 +226,9 @@ public: // was protected
 	asio_sink<chunk_t, short> *_my_sink;
 
 	std::vector<track_t*> _tracks;
-	mixer<track_t> *_mixer;
+	xfader<track_t> *_master;
+	xfader<track_t> *_cue;
+	xfader<track_t> *_aux;
 };
 
 #endif // !defined(_IO_H)

@@ -306,8 +306,8 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 #endif
 
-	_mixer = new mixer<track_t>(_tracks[0], _tracks[1]);
-	_my_sink = new asio_sink<chunk_t, short>(_mixer, 
+	_master = new xfader<track_t>(_tracks[0], _tracks[1]);
+	_my_sink = new asio_sink<chunk_t, short>(_master, 
 		(short**)_buffer_infos[2].buffers, 
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);
