@@ -340,6 +340,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\meta.h"
+				>
+			</File>
+			<File
 				RelativePath=".\resource.h"
 				>
 			</File>

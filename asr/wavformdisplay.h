@@ -161,7 +161,6 @@ public:
   // fix file not expected length!!
   void set_wav_heights(pthread_mutex_t *lock=0)
   {
-	  SamplePairf *s;
 	  int chunks_total = _src->len().chunks;
 	  int left_chunk = _left * chunks_total;
 	  int right_chunk = _right * chunks_total;

@@ -9,6 +9,42 @@
 #include <iostream>
 #include <map>
 
+template <typename Source_T>
+class gain : public T_source<typename Source_T::chunk_t>, public T_sink<typename Source_T::chunk_t>
+{
+public:
+	gain(Source_T *src) :
+		T_sink(src),
+		_gain(1.0)
+		{
+		}
+
+	void set_gain(double g)
+	{
+		_gain = g;
+	}
+
+	void set_gain_db(double g_db)
+	{
+		dBm<double>::calc(_gain, g_db);
+	}
+
+	typename Source_T::chunk_t *next()
+	{
+		typename Source_T::chunk_t *chk = _src->next();
+		for (typename Source_T::chunk_t::sample_t *s = chk->_data, 
+			*end = s + Source_T::chunk_t::chunk_size; s != end; ++s)
+		{
+			(*s)[0] *= _gain;
+			(*s)[1] *= _gain;
+		}
+		return chk;
+	}
+protected:
+	double _gain;
+};
+
+
 template <typename Source_T, int channels=2>
 class mixer : public T_source<typename Source_T::chunk_t>
 {
@@ -66,17 +102,22 @@ public:
 	// 0 <= m <= 100
 	void set_mix(int m)
 	{
-		if (m == 50)
-			_src1_mul = _src2_mul = pow(10.0, -3.0/20.0);
+		if (m == 0)
+		{
+			_src1_mul = 1.0;
+			_src2_mul = 0.0;
+		}
+		else if (m == 50)
+			_src1_mul = _src2_mul = 1.0;
 		else if (m < 50)
 		{
-			_src1_mul = pow(10.0, -m/50.0*3.0/20.0);
-			_src2_mul = pow(10.0, (-100.0 + m/.515)/20.0);
+			_src1_mul = 1.0;
+			_src2_mul = pow(10.0, (-80.0 + m/.6125)/20.0);
 		}
 		else
 		{
-			_src2_mul = pow(10.0, -(100-m)/50.0*3.0/20.0);
-			_src1_mul = pow(10.0, (-100.0 + (100-m)/.515)/20.0);
+			_src2_mul = 1.0;
+			_src1_mul = pow(10.0, (-80.0 + (100-m)/.6125)/20.0);
 		}
 	}
 protected:
@@ -105,25 +146,33 @@ public:
 };
 
 template <typename Source_T, typename Sink_T>
-class multiplexer
+class io_matrix
 {
 public:
-	multiplexer(){}
+	io_matrix(){}
 	void map(Source_T *input, Sink_T *output)
 	{
 		//_inputs_to_outputs.insert(std::pair<Source_T*,Sink_T*>(input, output));
+		_src_set.insert(input);
+		_io_map[output].push_back(input);
 	}
 	void unmap_input(Source_T *input)
 	{
-		_iomap.erase(input);
+		_src_set.erase(input);
+		for (std::map<Sink_T*, std::list<Source_T*> >::iterator i = _io_map.begin();
+			i != _io_map.end(); ++i)
+		{
+			i->second.erase(input);
+		}
+		_chk_map.erase(input);
 	}
 	void unmap_output(Sink_T *output)
 	{
+		_io_map.erase(output);
 	}
 	void process()
 	{
 		//for each input, process chunk on each output
-		
 		for (std::set<Source_T*>::iterator i = _src_set.begin(); i != _src_set.end(); ++i)
 		{
 			_chk_map[*i] = (*i)->next();
@@ -145,11 +194,16 @@ public:
 			}
 			mi->first->process(out);
 		}
+
+		for (std::set<Source_T*>::iterator i = _src_set.begin(); i != _src_set.end(); ++i)
+		{
+			T_allocator<typename Source_T::chunk_t>::free(_chk_map[*i]);
+		}
 	}
 protected:
 	std::set<Source_T*> _src_set;
 	std::map<Sink_T*, std::list<Source_T*> > _io_map;
-	std::map<Source_T*, typename Source_T::chunk_t> _chk_map;
+	std::map<Source_T*, typename Source_T::chunk_t*> _chk_map;
 };
 
 template <typename Precision_T, int TblSz=512*27>
@@ -246,8 +300,6 @@ public:
 		_output_scale(Precision_T(1.0)),
 		_output_time(Precision_T(0.0))
 	{
-		Sample_T *end;
-
 		_kwt = KaiserWindowTable<Precision_T>::get();
 
 		_buffer_mgr = new BufferMgr<BufferedStream<Chunk_T> >(src);
@@ -433,310 +485,5 @@ protected:
 	Sample_T *_tap_buffer;
 	KaiserWindowTable<Precision_T> *_kwt;
 };
-
-// legacy ;-)
-#if 0
-template <typename Chunk_T, typename Precision_T=double>
-class filter_td_unmanaged : public filter_td_base<Chunk_T>
-{
-	typedef typename Chunk_T::sample_t Sample_T;
-
-	Sample_T *_smp_buf;
-	
-	Sample_T *_smp_buf_write;
-	Precision_T _t_smp_buf_write;
-	
-	Sample_T *_smp_buf_read;
-	Precision_T _t_smp_buf_rd;
-	
-	Chunk_T *_input_chk;
-	Sample_T *_input_read;
-public:
-	~filter_td_unmanaged()
-	{
-		T_allocator<Chunk_T>::free(_input_chk);
-		delete [] _smp_buf;
-	}
-
-	void init() // call after parent constructor
-	{
-		load_chunk();
-
-		_smp_buf = new Sample_T[SampleBufSz];
-		_smp_buf_read = _smp_buf;
-		_smp_buf_write = _smp_buf;
-
-		// fill input buffer
-		//for (int ch = 0; ch < _channels; ++ch)
-		{
-			//Zero beginning
-			//if (_row_ly)
-			{
-				for (end = _smp_buf_write + 4 * _sample_precision; _smp_buf_write != end; ++_smp_buf_write)
-				{
-					(*_smp_buf_write)[0] = 0.0f;
-					(*_smp_buf_write)[1] = 0.0f;
-				}
-			}
-			/*else
-			{
-				for (ptr = _smp_buf + ch * _cols, end = ptr + 4*
-					_sample_precision; ptr != end; )
-				{
-					(*ptr)[0] = Zero<Sample_T>::val;
-					(*ptr++)[0] = Zero<Sample_T>::val;
-				}
-			}*/
-		}
-
-		//_t_smp_buf_write = Precision_T(_sample_precision) * _input_sampling_period;
-		_t_smp_buf_write = 0;
-		_t_smp_buf_rd = - Precision_T(_sample_precision) * 4* _input_sampling_period;
-		//printf("write ofs %d read ofs %d\n", _smp_buf_write_ofs, _smp_buf_read_ofs);
-		check_buffer();
-		//printf("write ofs %d read ofs %d\n", _smp_buf_write_ofs, _smp_buf_read_ofs);
-		
-		//set_cutoff(cutoff);
-	}
-
-	void load_chunk()
-	{
-		T_allocator<Chunk_T>::free(_input_chk);
-		_input_chk = 0;
-		_input_chk = _src->next();
-		_input_read = _input_chk->_data;
-
-		assert(_input_chk);
-		_rows = Chunk_T::chunk_size;
-		_cols = 1;
-	//	_row_ly = _rows > _cols;
-	//	_stride = _row_ly ? _cols : 1;
-	//	_channels = _row_ly ? _cols : _rows;
-	}
-
-	void load_from_input(size_t to_write)
-	{
-		Sample_T *end_write;
-		size_t loop_write;
-		// consume from input chunk
-	//	if (_row_ly)
-		{
-			loop_write = min(_rows - (_input_read - _input_chk->_data), to_write);
-		}
-	//	else
-	//	{
-	//		loop_write = min(_cols - _input_read_ofs, to_write);
-	//	}
-		if (loop_write == 0)
-		{
-			load_chunk();
-			loop_write = min(_rows - (_input_read - _input_chk->_data), to_write);
-		}
-		//for (int ch = 0; ch < _channels; ++ch)
-		{
-			//if (_row_ly)
-			{
-				assert(loop_write > 0);
-				for (end_write = _smp_buf_write + loop_write; _smp_buf_write != end_write; )
-				{
-					(*_smp_buf_write)[0] = (*_input_read)[0];
-					(*_smp_buf_write++)[1] = (*_input_read++)[1];
-				}
-			}
-			/*else
-			{
-				assert(0);
-				for (write = _smp_buf + _smp_buf_write_ofs + _rows*ch, 
-					read = _input_chk->_data + _input_read_ofs + _rows*ch,
-					end_write = write + loop_write;
-					write != end_write; )
-				{
-					*write++ = *read++;
-				}
-			}*/
-		}
-		//_smp_buf_write_ofs += loop_write;
-		//_input_read_ofs += loop_write;
-		_t_smp_buf_write += _input_sampling_period * Precision_T(loop_write);
-		if (loop_write < to_write)
-		{
-			load_chunk();
-			load_from_input(to_write - loop_write);
-		}
-	}
-
-	void check_buffer()
-	{
-	//	Precision_T t_end_need = _t_smp_buf_rd + 16*_sample_precision * _input_sampling_period;
-		size_t to_write;
-		//printf("check_buffer 
-		Precision_T tm_stop_rding = _output_time - 4 *_sample_precision * _input_sampling_period;
-		assert(_t_smp_buf_rd < _t_smp_buf_write);
-		
-		while (_t_smp_buf_rd < tm_stop_rding && _smp_buf_read < _smp_buf_write)
-		{
-			++_smp_buf_read;
-			_t_smp_buf_rd += _input_sampling_period;
-			
-		}
-		Precision_T tm_stop_writing = _output_time + 4 *_sample_precision* _input_sampling_period;
-		Precision_T tm_foo = _t_smp_buf_rd + _input_sampling_period*(_smp_buf_write-_smp_buf_read);
-//		assert(_smp_buf_read_ofs <= _smp_buf_write_ofs - 26);
-		//printf("tm_stop_rding %f tm_stop_writing %f\n", tm_stop_rding, tm_stop_writing);
-		while (_t_smp_buf_write < tm_stop_writing)
-		{
-			
-			// check if there is any space left in sample buffer
-			to_write = SampleBufSz - (_smp_buf_write - _smp_buf);
-			/*printf("loading smp_buf at _output_time %f (_t_smp_buf_write - _t_smp_buf_read) %f (_smp_buf_write_ofs-_smp_buf_read_ofs) %d to_write %d _smp_buf_read_ofs %d _smp_buf_write_ofs %d t_x %f\n", 
-				_output_time, _t_smp_buf_write - _t_smp_buf_rd, 
-				(_smp_buf_write_ofs-_smp_buf_read_ofs), to_write, _smp_buf_read_ofs, _smp_buf_write_ofs , 
-				_t_smp_buf_write-_t_smp_buf_rd-(_smp_buf_write_ofs-_smp_buf_read_ofs)*_input_sampling_period);
-			*/
-			assert(to_write >= 0);
-			if (to_write > 0)
-			{
-				load_from_input(to_write);
-			}
-			else // buffer is full, move end to beginning
-			{
-				//printf("moving %d-%d\n", _smp_buf_read_ofs, _smp_buf_write_ofs);
-				//if (_row_ly)
-				{
-					Sample_T *to=_smp_buf, *from=_smp_buf_read;
-					size_t bytes = (_smp_buf_write-_smp_buf_read)*sizeof(Sample_T);
-					//assert(_cols==_channels);
-					memmove(to, from, bytes);
-				}
-				/*else
-				{
-					for (int ch = 0; ch < _channels; ++ch)
-					{
-						assert(0); //bad, fix as above
-						//memmove(_smp_buf + ch*_cols, 
-						//_smp_buf + (ch+1)*_cols - 2*_sample_precision, 
-						//2*_sample_precision*sizeof(Sample_T));
-					}
-				}
-				printf("write ofs was %d now %d\n", _smp_buf_write_ofs, _smp_buf_write_ofs-_smp_buf_read_ofs);
-				printf("read ofs was %d now 0\n", _smp_buf_read_ofs);
-				*/
-				_smp_buf_write = _smp_buf+(_smp_buf_write-_smp_buf_read);
-				_smp_buf_read = _smp_buf;
-			}
-		}
-	}
-
-	void seek_time(Precision_T t)
-	{
-		// dump sample buffer and fill again
-		filter_td_base::seek_time(t);
-
-		Precision_T tm_start = t - 4 *_sample_precision * _input_sampling_period;
-		smp_ofs_t smp_start = (int)(tm_start * _input_sampling_rate);
-		_src->seek_smp(smp_start);
-		load_chunk();
-		_smp_buf_read = _smp_buf;
-		_t_smp_buf_rd = tm_start;
-		int to_write = min(SampleBufSz, _rows);
-		memcpy(_smp_buf, _input_read, to_write*sizeof(Sample_T));
-		_smp_buf_write = _smp_buf + to_write;
-		_input_read += to_write;
-		_t_smp_buf_write = _t_smp_buf_rd + _input_sampling_period * to_write;
-	}
-
-	Chunk_T* next()
-	{
-		Precision_T t_diff, t_input;
-		Chunk_T *chk = T_allocator<Chunk_T>::alloc();
-		const int *n = chk->sizes_as_array();
-		int dim = chk->dim();
-
-		assert(dim == Dim);
-		Sample_T *smp, *end, *conv_ptr, *conv_ptr_tmp;
-		size_t samples;
-		Precision_T window_len = Precision_T(2*_sample_precision) * _impulse_response_period;
-		//if (dim == 2)
-		{
-			//_row_ly ? samples = n[0] : samples = n[1];
-			samples = Chunk_T::chunk_size;
-		}
-		t_diff = Precision_T(_sample_precision) * _input_sampling_period;
-		
-//		if (_row_ly)
-		{
-			for (smp = chk->_data, end = smp + samples; smp != end; ++smp)
-			{
-				//float smp_buf_end = _t_smp_buf_rd + (_smp_buf_write_ofs-_smp_buf_read_ofs) * _input_sampling_period;
-				//assert(smp_buf_end == _t_smp_buf_write);
-				check_buffer();
-				
-
-				tm = _output_time - t_diff;
-				t_input = _t_smp_buf_rd;
-				assert(t_input <= tm);
-				conv_ptr = _smp_buf_read;
-				while (t_input < tm)
-				{
-					++conv_ptr;
-					t_input += _input_sampling_period;
-				}
-
-				//assert (tm >= _t_smp_buf_rd);
-				
-/*
-				while (_t_smp_buf_rd < t_input - 10*_input_sampling_period)
-				{
-					++_smp_buf_read_ofs;
-					_t_smp_buf_rd += _input_sampling_period;
-				}*/
-				assert(t_input > _t_smp_buf_rd);
-				assert(conv_ptr >= _smp_buf_read);
-				/*while (tm > _t_smp_buf_rd)
-				{
-					++_smp_buf_read_ofs;
-					_t_smp_buf_rd += _input_sampling_period;
-				}*/
-
-				
-				//conv_ptr_tmp = conv_ptr;
-				//t_input_tmp = t_input;
-				
-				//for (int ch = 0; ch < _channels; ++ch)
-				{
-					Precision_T acc[2] = {0.0, 0.0};
-				//	acc = Sample_T(0.0);
-				//	assert(_t_smp_buf_rd < _output_time);
-				//	tm = _t_smp_buf_rd - _output_time;
-				//	conv_ptr = conv_ptr_tmp+ch;
-				//	t_input = t_input_tmp;
-				//	int before =0,same=0,after=0;
-				//	printf("ch\n");
-					Precision_T mul;
-					for (Sample_T *conv_end = conv_ptr + (_sample_precision*2); conv_ptr != conv_end; ++conv_ptr)
-					{
-						//printf("t_input %f t_output %f %f += %f * %f * %f * %f\n", t_input, _output_time, acc, *conv_ptr, _impulse_response_scale, sinc<Precision_T>(_impulse_response_frequency*(t_input-_output_time)), _kwt.get((t_input-_output_time)/t_diff));
-						mul = _impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
-						acc[0] += (*conv_ptr)[0] * mul;
-						acc[1] += (*conv_ptr)[1] * mul;
-					
-						t_input += _input_sampling_period;
-					}
-
-					(*smp)[0] = (float)acc[0];
-					(*smp)[1] = (float)acc[1];
-				}
-				_output_time += _output_sampling_period;
-				
-			}
-		}
-	//	else
-	//	{
-	//		assert(0);
-	//	}
-		return chk;
-	}
-};
-#endif
 
 #endif // !defined(_FILTER_H)

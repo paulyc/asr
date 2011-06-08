@@ -203,28 +203,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 		}
 		case WM_LBUTTONUP:
 		{
-			HWND h = GetDlgItem(g_dlg, IDC_STATIC4);
-			POINT p;
-			WINDOWINFO wi;
-		//	GetCurrentPositionEx(h, &p);
-		//	::GetWindowInfo(h, &wi);
-		//	35,131,438,52
-			//216,56
-		/*	if (HIWORD(lParam) == buttony && LOWORD(lParam) == buttonx)
-			{
-				int y = LOWORD(lParam) - 56;
-				if (HIWORD(lParam) > 216 && HIWORD(lParam) < 216+height)
-				{
-					double f = double(y)/width;
-					if (f >= 0.0 && f <= 1.0)
-					{
-						printf("%f\n", f);
-						asio->_track1->seek_time(asio->_track1->get_display_time(f));
-					}
-				}
-			//	printf("%d %d %d\n", HIWORD(lParam), LOWORD(lParam), y);
-			}
-		*/	tracks[0].wave.mousedown = false;
+			tracks[0].wave.mousedown = false;
 			tracks[1].wave.mousedown = false;
 			asio->GetTrack(1)->unlock_pos();
 			asio->GetTrack(2)->unlock_pos();
@@ -308,7 +287,6 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 			{
 				case SB_THUMBPOSITION:
 				case SB_THUMBTRACK:
-					double val;
 					if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER2))
 					{
 						printf("coarse %d ", HIWORD(wParam));
