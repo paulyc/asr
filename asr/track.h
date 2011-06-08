@@ -35,6 +35,18 @@ public:
 
 	virtual ~SeekablePitchableFileSource()
 	{
+		pthread_mutex_lock(&_config_lock);
+		delete _display;
+		_display = 0;
+		delete _resample_filter;
+		_resample_filter = 0;
+		delete _meta;
+		_meta = 0;
+		delete _src_buf;
+		_src_buf = 0;
+		delete _src;
+		_src = 0;
+		pthread_mutex_unlock(&_config_lock);
 		pthread_mutex_destroy(&_config_lock);
 	}
 

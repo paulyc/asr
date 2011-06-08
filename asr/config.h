@@ -46,4 +46,6 @@
 
 #define USE_BUFFER_MGR 1
 
+#define DEBUG_ALLOCATOR 0
+
 #endif // !defined(_CONFIG_H)

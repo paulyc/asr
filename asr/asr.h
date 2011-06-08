@@ -81,13 +81,14 @@ protected:
 	static std::queue<T*> _T_queue;
 	static pthread_mutex_t _lock;
 	static pthread_once_t once_control; 
+#if DEBUG_ALLOCATOR
 	struct t_info
 	{
 		const char *file;
 		int line;
-		bool free;
 	};
-//	static std::hash_map<T*, t_info> _info_map;
+	static stdext::hash_map<T*, t_info> _info_map;
+#endif
 public:
 	~T_allocator<T>() // no virtual destruct?
 	{
@@ -103,12 +104,11 @@ public:
 
 	static T* alloc_from(const char *file, int line)
 	{
-		printf("%s %d\n", file, line);
+		//printf("%s %d\n", file, line);
 		T *t = alloc();
-		_info_map[t].free = false;
 		_info_map[t].file = file;
 		_info_map[t].line = line;
-		return ;
+		return t;
 	}
 
 	static T* alloc()
@@ -125,6 +125,7 @@ public:
 		{
 			T* t = _T_queue.front();
 			_T_queue.pop();
+			t->add_ref();
 			pthread_mutex_unlock(&_lock);
 			return t;
 		}
@@ -134,13 +135,43 @@ public:
 	{
 		if (t)
 		{
-			pthread_mutex_lock(&_lock);
-			_T_queue.push(t);
-			pthread_mutex_unlock(&_lock);
+			if (t->release() == 0)
+			{
+				pthread_mutex_lock(&_lock);
+				_T_queue.push(t);
+				pthread_mutex_unlock(&_lock);
+			}
 		}
 	}
+
+#if DEBUG_ALLOCATOR
+	static void dump_leaks()
+	{
+		for (stdext::hash_map<T*, t_info>::iterator i = _info_map.begin();
+			i != _info_map.end(); ++i)
+		{
+			if (i->first->_refs > 0)
+			{
+				printf("%p allocated %s:%d count %d\n", i->first, 
+					i->second.file, 
+					i->second.line, 
+					i->first->_refs);
+			}
+		}
+	}
+#else
+	static void dump_leaks()
+	{
+	}
+#endif
 };
-//#define alloc() alloc_from(__FILE__, __LINE__)
+#if DEBUG_ALLOCATOR
+template <typename T>
+stdext::hash_map<T*, typename T_allocator<T>::t_info> T_allocator<T>::_info_map;
+
+#define alloc() alloc_from(__FILE__, __LINE__)
+#endif
+
 #if 0
 
 template <typename T, int N>

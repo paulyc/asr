@@ -238,7 +238,7 @@ protected:
 	Precision_T _coeff_tbl[_default_tbl_size];
 
 public:
-	filter_td_base(T_source<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
+	filter_td_base(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
 		T_sink<Chunk_T>(src),
 		_cutoff(cutoff),
 		_sample_precision(_default_sample_precision),
@@ -250,8 +250,7 @@ public:
 
 		_kwt = KaiserWindowTable<Precision_T>::get();
 
-		_buffered_stream = new BufferedStream<Chunk_T>(src);
-		_buffer_mgr = new BufferMgr<BufferedStream<Chunk_T> >(_buffered_stream);
+		_buffer_mgr = new BufferMgr<BufferedStream<Chunk_T> >(src);
 		_input_sampling_period = Precision_T(1.0) / _input_sampling_rate;
 		set_output_sampling_frequency(output_rate);
 	}
@@ -366,7 +365,7 @@ template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBu
 class lowpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim, SampleBufSz>
 {
 public:
-	lowpass_filter_td(T_source<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
+	lowpass_filter_td(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
 		filter_td_base(src, cutoff, input_rate, output_rate)
 	{
 	}
@@ -381,7 +380,7 @@ template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBu
 class highpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim, SampleBufSz>
 {
 public:
-	highpass_filter_td(T_source<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
+	highpass_filter_td(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
 		filter_td_base(src, cutoff, input_rate, output_rate)
 	{
 	}

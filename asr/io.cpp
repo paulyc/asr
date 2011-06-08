@@ -554,4 +554,7 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Destroy()
 		delete (*i);
 	}
 	_tracks.resize(0);
+	delete _my_sink;
+
+	T_allocator<chunk_t>::dump_leaks();
 }

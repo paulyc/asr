@@ -54,6 +54,10 @@ public:
 		_buffers[0] = bufs1;
 		_buffers[1] = bufs2;
 	}
+	virtual ~asio_sink()
+	{
+		T_allocator<Chunk_T>::free(_chk);
+	}
 	void process(int dbIndex);
 protected:
 	Chunk_T *_chk;

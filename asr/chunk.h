@@ -1,6 +1,31 @@
 #ifndef _CHUNK_H
 #define _CHUNK_H
 
+struct countable
+{
+	countable() : _refs(1) {}
+	int _refs;
+	int add_ref() { return ++_refs; }
+	int release() { return --_refs; }
+#if DEBUG_ALLOCATOR
+	struct owner
+	{
+		owner(const char *c, const char *f, int l) :
+			_class(c),
+			file(f),
+			line(l) {}
+		const char *_class;
+		const char *file;
+		int line;
+	};
+	std::list<owner> _owners;
+#endif
+};
+
+#if DEBUG_ALLOCATOR
+#define chown(objp, klass) ((objp)->_owners.push_back(owner((klass), __FILE__, __LINE__)))
+#endif
+
 template <typename Sample_T>
 class chunk_freq_domain;
 
@@ -8,10 +33,11 @@ template <typename Sample_T>
 class chunk_time_domain;
 
 template <typename Sample_T>
-class chunk_base
+class chunk_base : public countable
 {
 public:
 	chunk_base(Sample_T *input=0) :
+	    countable(),
 		_input_data(input),
 		_default_plan(0)
 	{
