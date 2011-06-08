@@ -226,13 +226,19 @@ public: // was protected
 		peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> 
 		> controller_t;
 	controller_t *_my_controller;
-	file_raw_output<chunk_t> *_my_raw_output;
-	asio_sink<chunk_t, short> *_my_sink;
+	file_raw_output<chunk_t> *_file_out;
+	asio_sink<chunk_t, short> *_main_out;
 
 	std::vector<track_t*> _tracks;
 	xfader<track_t> *_master;
 	xfader<track_t> *_cue;
 	xfader<track_t> *_aux;
+
+	io_matrix<track_t, bus<chunk_t> > _bus_matrix;
+	bus<chunk_t> *_master_bus;
+	bus<chunk_t> *_cue_bus;
+	bus<chunk_t> *_aux_bus;
+	io_matrix<bus<chunk_t>, T_sink<chunk_t> > _output_matrix;
 };
 
 #endif // !defined(_IO_H)

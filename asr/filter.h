@@ -9,6 +9,29 @@
 #include <iostream>
 #include <map>
 
+template <typename Chunk_T>
+class bus : public T_source<Chunk_T>, public T_sink<Chunk_T>
+{
+public:
+	typedef Chunk_T chunk_t;
+	bus(T_source<Chunk_T> *src) :
+	  T_sink(src), _c(0) {}
+	void process()
+	{
+		_c = _src->next();
+	}
+	void process(Chunk_T *chk)
+	{
+		_c = chk;
+	}
+	Chunk_T *next()
+	{
+		return _c;
+	}
+protected:
+	Chunk_T *_c;
+};
+
 template <typename Source_T>
 class gain : public T_source<typename Source_T::chunk_t>, public T_sink<typename Source_T::chunk_t>
 {

@@ -199,7 +199,7 @@ ASIOProcessor<SamplePairf, short>::ASIOProcessor() :
 	_src_active(false),
 	_log("mylog.txt"),
 	_my_source(0),
-	_my_sink(0)
+	_main_out(0)
 {
 	Init();
 }
@@ -307,7 +307,7 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 #endif
 
 	_master = new xfader<track_t>(_tracks[0], _tracks[1]);
-	_my_sink = new asio_sink<chunk_t, short>(_master, 
+	_main_out = new asio_sink<chunk_t, short>(_master, 
 		(short**)_buffer_infos[2].buffers, 
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);
@@ -363,7 +363,7 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBuf
 #endif	
 
 #if DO_OUTPUT
-	_my_sink->process(_doubleBufferIndex);
+	_main_out->process(_doubleBufferIndex);
 #endif
 
 
@@ -554,7 +554,7 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Destroy()
 		delete (*i);
 	}
 	_tracks.resize(0);
-	delete _my_sink;
+	delete _main_out;
 
 	T_allocator<chunk_t>::dump_leaks();
 }
