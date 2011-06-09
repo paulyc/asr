@@ -9,29 +9,6 @@
 #include <iostream>
 #include <map>
 
-template <typename Chunk_T>
-class bus : public T_source<Chunk_T>, public T_sink<Chunk_T>
-{
-public:
-	typedef Chunk_T chunk_t;
-	bus(T_source<Chunk_T> *src) :
-	  T_sink(src), _c(0) {}
-	void process()
-	{
-		_c = _src->next();
-	}
-	void process(Chunk_T *chk)
-	{
-		_c = chk;
-	}
-	Chunk_T *next()
-	{
-		return _c;
-	}
-protected:
-	Chunk_T *_c;
-};
-
 template <typename Source_T>
 class gain : public T_source<typename Source_T::chunk_t>, public T_sink<typename Source_T::chunk_t>
 {
@@ -116,6 +93,7 @@ template <typename Source_T>
 class xfader : public mixer<Source_T, 2>
 {
 public:
+	typedef typename Source_T::chunk_t chunk_t;
 	xfader(Source_T *src1, Source_T *src2) :
 		mixer(src1, src2)
 	{
@@ -169,10 +147,10 @@ public:
 };
 
 template <typename Source_T, typename Sink_T>
-class io_matrix
+class io_matrix : public T_sink<typename Source_T::chunk_t>
 {
 public:
-	io_matrix(){}
+	io_matrix():T_sink(0){}
 	void map(Source_T *input, Sink_T *output)
 	{
 		//_inputs_to_outputs.insert(std::pair<Source_T*,Sink_T*>(input, output));
@@ -192,8 +170,40 @@ public:
 	void unmap_output(Sink_T *output)
 	{
 		_io_map.erase(output);
+		remap_inputs();
 	}
-	void process()
+	void remap_inputs()
+	{
+		_chk_map.clear();
+		_src_set.clear();
+		for (std::map<Sink_T*, std::list<Source_T*> >::iterator mi = _io_map.begin(); mi != _io_map.end(); ++mi)
+		{
+			for (std::list<Source_T*>::iterator i = mi->second.begin(); i != mi->second.end(); ++i)
+			{
+				_src_set.insert(*i);
+			}
+		}
+	}
+	void unmap(Source_T *input, Sink_T *output)
+	{
+		bool still_has_input = false;
+		for (std::map<Sink_T*, std::list<Source_T*> >::iterator mi = _io_map.begin(); mi != _io_map.end(); ++mi)
+		{
+			if (mi->second.find(input))
+			{
+				if (mi->first == output)
+					mi->second.erase(input);
+				else
+					still_has_input = true;
+			}
+		}
+		if (!still_has_input)
+		{
+			_src_set.erase(input);
+			_chk_map.erase(input);
+		}
+	}
+	void process(bool freeme=true)
 	{
 		//for each input, process chunk on each output
 		for (std::set<Source_T*>::iterator i = _src_set.begin(); i != _src_set.end(); ++i)
@@ -206,16 +216,19 @@ public:
 			typename Source_T::chunk_t *out = T_allocator<typename Source_T::chunk_t>::alloc();
 			for (int ofs = 0; ofs < Source_T::chunk_t::chunk_size; ++ofs)
 			{
-				out->_data[ofs] = 0.0;
+				out->_data[ofs][0] = 0.0;
+				out->_data[ofs][1] = 0.0;
 			}
 			for (std::list<Source_T*>::iterator si = mi->second.begin(); si != mi->second.end(); ++si)
 			{
 				for (int ofs = 0; ofs < Source_T::chunk_t::chunk_size; ++ofs)
 				{
-					out->_data[ofs] += _chk_map[*si]->_data[ofs];
+					out->_data[ofs][0] += _chk_map[*si]->_data[ofs][0];
+					out->_data[ofs][1] += _chk_map[*si]->_data[ofs][1];
 				}
 			}
 			mi->first->process(out);
+		//	_out_q[mi->first].push_back(out);
 		}
 
 		for (std::set<Source_T*>::iterator i = _src_set.begin(); i != _src_set.end(); ++i)
@@ -223,10 +236,41 @@ public:
 			T_allocator<typename Source_T::chunk_t>::free(_chk_map[*i]);
 		}
 	}
+/*	typename Source_T::chunk_t* next(Sink_T *_this)
+	{
+		typename Source_T::chunk_t* chk = _out_q[_this].front();
+		_out_q[_this].pop();
+		return chk;
+	}*/
 protected:
 	std::set<Source_T*> _src_set;
 	std::map<Sink_T*, std::list<Source_T*> > _io_map;
 	std::map<Source_T*, typename Source_T::chunk_t*> _chk_map;
+	//std::map<Sink_T*, std::queue<typename Source_T::chunk_t*> > _out_q;
+};
+
+template <typename Chunk_T>
+class bus : public T_source<Chunk_T>, public T_sink<Chunk_T>
+{
+public:
+	typedef Chunk_T chunk_t;
+	bus(T_sink<Chunk_T> *p) :
+	  _parent(p) {}
+	void process(Chunk_T *chk)
+	{
+		_chks.push(chk);
+	}
+	Chunk_T *next()
+	{
+		if (_chks.empty())
+			_parent->process();
+		Chunk_T *chk = _chks.front();
+		_chks.pop();
+		return chk;
+	}
+protected:
+	T_sink<Chunk_T> *_parent;
+	std::queue<Chunk_T*> _chks;
 };
 
 template <typename Precision_T, int TblSz=512*27>

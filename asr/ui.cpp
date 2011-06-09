@@ -327,8 +327,44 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 		case WM_COMMAND: 
             switch (LOWORD(wParam)) 
             { 
-				
-                case IDOK:
+			/*	case IDC_CHECK1:
+					if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED)
+						asio->_bus_matrix.map(asio->GetTrack(1), asio->_master_bus);
+					else
+						asio->_bus_matrix.unmap(asio->GetTrack(1), asio->_master_bus);
+					return TRUE;
+				case IDC_CHECK2:
+					if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED)
+						asio->_bus_matrix.map(asio->GetTrack(1), asio->_cue_bus);
+					else
+						asio->_bus_matrix.unmap(asio->GetTrack(1), asio->_cue_bus);
+					return TRUE;
+				case IDC_CHECK5:
+					if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED)
+						asio->_bus_matrix.map(asio->GetTrack(1), asio->_aux_bus);
+					else
+						asio->_bus_matrix.unmap(asio->GetTrack(1), asio->_aux_bus);
+					return TRUE;
+				case IDC_CHECK3:
+					if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED)
+						asio->_bus_matrix.map(asio->GetTrack(2), asio->_master_bus);
+					else
+						asio->_bus_matrix.unmap(asio->GetTrack(2), asio->_master_bus);
+					return TRUE;
+				case IDC_CHECK4:
+					if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED)
+						asio->_bus_matrix.map(asio->GetTrack(2), asio->_cue_bus);
+					else
+						asio->_bus_matrix.unmap(asio->GetTrack(2), asio->_cue_bus);
+					return TRUE;
+				case IDC_CHECK6:
+					if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED)
+						asio->_bus_matrix.map(asio->GetTrack(2), asio->_aux_bus);
+					else
+						asio->_bus_matrix.unmap(asio->GetTrack(2), asio->_aux_bus);
+					return TRUE;
+					*/
+				case IDOK:
 					DestroyWindow(hwndDlg);
 					g_dlg = NULL;
 					PostMessage(NULL, WM_QUIT, 0, 0);
@@ -518,6 +554,10 @@ void CreateUI()
 */
 	//printf("static = %d\n", );
 	//::InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC), NULL, FALSE);
+	HWND hwndCombo = ::GetDlgItem(g_dlg, IDC_COMBO1);
+	SendMessage(hwndCombo, CB_ADDSTRING, 0, (LPARAM)L"Master");
+	SendMessage(hwndCombo, CB_ADDSTRING, 0, (LPARAM)L"Cue");
+	SendMessage(hwndCombo, CB_ADDSTRING, 0, (LPARAM)L"Aux");
 }
 
 void MainLoop_Win32()

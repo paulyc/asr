@@ -26,7 +26,7 @@ void asio_sink<Chunk_T, Output_Sample_T>::process(int dbIndex)
 	typename Chunk_T::sample_t *read;
 	while (to_write > 0)
 	{
-		if (_read - _chk->_data >= chunk_t::chunk_size)
+		if (!_chk || _read - _chk->_data >= chunk_t::chunk_size)
 		{
 			T_allocator<chunk_t>::free(_chk);
 			_chk = 0;
@@ -306,11 +306,14 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 #endif
 
+	_bus_matrix = new io_matrix<xfader<track_t>, bus<chunk_t> >;
 	_master = new xfader<track_t>(_tracks[0], _tracks[1]);
-	_main_out = new asio_sink<chunk_t, short>(_master, 
+	_master_bus = new bus<chunk_t>(_bus_matrix);
+	_main_out = new asio_sink<chunk_t, short>(_master_bus, 
 		(short**)_buffer_infos[2].buffers, 
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);
+	_bus_matrix->map(_master, _master_bus);
 
 	ASIOSampleRate r;
 /*		ASIOSampleType t;

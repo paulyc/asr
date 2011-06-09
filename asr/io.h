@@ -49,8 +49,10 @@ public:
 	  T_sink<Chunk_T>(src),
 	  _buf_size(bufSz)
 	{
-		_chk = _src->next();
-		_read = _chk->_data;
+	//	_chk = _src->next();
+	//	_read = _chk->_data;
+		_chk = 0;
+		_read = 0;
 		_buffers[0] = bufs1;
 		_buffers[1] = bufs2;
 	}
@@ -234,7 +236,7 @@ public: // was protected
 	xfader<track_t> *_cue;
 	xfader<track_t> *_aux;
 
-	io_matrix<track_t, bus<chunk_t> > _bus_matrix;
+	io_matrix<xfader<track_t>, bus<chunk_t> > *_bus_matrix;
 	bus<chunk_t> *_master_bus;
 	bus<chunk_t> *_cue_bus;
 	bus<chunk_t> *_aux_bus;
