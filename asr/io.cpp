@@ -306,14 +306,15 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 #endif
 
-	_bus_matrix = new io_matrix<xfader<track_t>, bus<chunk_t> >;
-	_master = new xfader<track_t>(_tracks[0], _tracks[1]);
+	_bus_matrix = new io_matrix<track_t, bus<chunk_t> >;
+//	_master = new xfader<track_t>(_tracks[0], _tracks[1]);
 	_master_bus = new bus<chunk_t>(_bus_matrix);
 	_main_out = new asio_sink<chunk_t, short>(_master_bus, 
 		(short**)_buffer_infos[2].buffers, 
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);
-	_bus_matrix->map(_master, _master_bus);
+	_bus_matrix->map(_tracks[0], _master_bus);
+	_bus_matrix->map(_tracks[1], _master_bus);
 
 	ASIOSampleRate r;
 /*		ASIOSampleType t;
@@ -558,6 +559,8 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Destroy()
 	}
 	_tracks.resize(0);
 	delete _main_out;
+	delete _master_bus;
+	delete _bus_matrix;
 
 	T_allocator<chunk_t>::dump_leaks();
 }

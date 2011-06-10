@@ -113,12 +113,12 @@ public:
 		else if (m < 50)
 		{
 			_src1_mul = 1.0;
-			_src2_mul = pow(10.0, (-80.0 + m/.6125)/20.0);
+			_src2_mul = pow(10.0, (-60.0 + m/.8166)/20.0);
 		}
 		else
 		{
 			_src2_mul = 1.0;
-			_src1_mul = pow(10.0, (-80.0 + (100-m)/.6125)/20.0);
+			_src1_mul = pow(10.0, (-60.0 + (100-m)/.8166)/20.0);
 		}
 	}
 protected:
@@ -151,11 +151,15 @@ class io_matrix : public T_sink<typename Source_T::chunk_t>
 {
 public:
 	io_matrix():T_sink(0){}
-	void map(Source_T *input, Sink_T *output)
+	void map(Source_T *input, Sink_T *output, double gain=1.0)
 	{
-		//_inputs_to_outputs.insert(std::pair<Source_T*,Sink_T*>(input, output));
 		_src_set.insert(input);
 		_io_map[output].push_back(input);
+		set_gain(input, output, gain);
+	}
+	void set_gain(Source_T *input, Sink_T *output, double gain=1.0)
+	{
+		_gain_map[std::pair<Source_T*, Sink_T*>(input, output)] = gain;
 	}
 	void unmap_input(Source_T *input)
 	{
@@ -163,7 +167,7 @@ public:
 		for (std::map<Sink_T*, std::list<Source_T*> >::iterator i = _io_map.begin();
 			i != _io_map.end(); ++i)
 		{
-			i->second.erase(input);
+			i->second.remove(input);
 		}
 		_chk_map.erase(input);
 	}
@@ -184,15 +188,49 @@ public:
 			}
 		}
 	}
+	// 0 <= m <= 100
+	void xfade_2(int m, Source_T *in1, Source_T *in2, Sink_T *out)
+	{
+		if (m == 0)
+		{
+			set_gain(in1, out, 1.0);
+			set_gain(in2, out, 0.0);
+		}
+		else if (m == 50)
+		{
+			set_gain(in1, out, 1.0);
+			set_gain(in2, out, 1.0);
+		}
+		else if (m < 50)
+		{
+			set_gain(in1, out, 1.0);
+			set_gain(in2, out, pow(10.0, (-30.0 + m/1.633)/20.0));
+		}
+		else
+		{
+			set_gain(in2, out, 1.0);
+			set_gain(in1, out, pow(10.0, (-30.0 + (100-m)/1.633)/20.0));
+		}
+	}
 	void unmap(Source_T *input, Sink_T *output)
 	{
 		bool still_has_input = false;
 		for (std::map<Sink_T*, std::list<Source_T*> >::iterator mi = _io_map.begin(); mi != _io_map.end(); ++mi)
 		{
-			if (mi->second.find(input))
+			bool has = false;
+			for (std::list<Source_T*>::iterator li = mi->second.begin();
+				li != mi->second.end(); ++li)
+			{
+				if (*li == input)
+				{
+					has = true;
+					break;
+				}
+			}
+			if (has)
 			{
 				if (mi->first == output)
-					mi->second.erase(input);
+					mi->second.remove(input);
 				else
 					still_has_input = true;
 			}
@@ -221,10 +259,11 @@ public:
 			}
 			for (std::list<Source_T*>::iterator si = mi->second.begin(); si != mi->second.end(); ++si)
 			{
+				double gain = _gain_map[std::pair<Source_T*, Sink_T*>(*si, mi->first)];
 				for (int ofs = 0; ofs < Source_T::chunk_t::chunk_size; ++ofs)
 				{
-					out->_data[ofs][0] += _chk_map[*si]->_data[ofs][0];
-					out->_data[ofs][1] += _chk_map[*si]->_data[ofs][1];
+					out->_data[ofs][0] += _chk_map[*si]->_data[ofs][0] * gain;
+					out->_data[ofs][1] += _chk_map[*si]->_data[ofs][1] * gain;
 				}
 			}
 			mi->first->process(out);
@@ -246,6 +285,7 @@ protected:
 	std::set<Source_T*> _src_set;
 	std::map<Sink_T*, std::list<Source_T*> > _io_map;
 	std::map<Source_T*, typename Source_T::chunk_t*> _chk_map;
+	std::map<std::pair<Source_T*,Sink_T*>, double> _gain_map;
 	//std::map<Sink_T*, std::queue<typename Source_T::chunk_t*> > _out_q;
 };
 

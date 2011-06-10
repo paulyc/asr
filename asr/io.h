@@ -184,7 +184,8 @@ public:
 
 	void SetMix(int m)
 	{
-		_master->set_mix(m);
+	//	_master->set_mix(m);
+		_bus_matrix->xfade_2(m, _tracks[0], _tracks[1], _master_bus);
 	}
 
 	long _doubleBufferIndex;
@@ -236,7 +237,7 @@ public: // was protected
 	xfader<track_t> *_cue;
 	xfader<track_t> *_aux;
 
-	io_matrix<xfader<track_t>, bus<chunk_t> > *_bus_matrix;
+	io_matrix<track_t, bus<chunk_t> > *_bus_matrix;
 	bus<chunk_t> *_master_bus;
 	bus<chunk_t> *_cue_bus;
 	bus<chunk_t> *_aux_bus;
