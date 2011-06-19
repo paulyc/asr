@@ -17,8 +17,8 @@ void asio_sink<Input_Sample_T, Output_Sample_T, Chunk_T, chunk_size, false>::pro
 }
 */
 
-template <typename Chunk_T, typename Output_Sample_T>
-void asio_sink<Chunk_T, Output_Sample_T>::process(int dbIndex)
+template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
+void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process(int dbIndex)
 {
 	size_t to_write = _buf_size, loop_write, written=0;
 	int stride = 2;
@@ -31,7 +31,9 @@ void asio_sink<Chunk_T, Output_Sample_T>::process(int dbIndex)
 			T_allocator<chunk_t>::free(_chk);
 			_chk = 0;
 
-			_chk = _src->next();
+			pthread_mutex_lock(&_src_lock);
+			_chk = _src_t->next();
+			pthread_mutex_unlock(&_src_lock);
 			_read = _chk->_data;
 		}
 		loop_write = min(to_write, chunk_t::chunk_size - (_read - _chk->_data));
@@ -306,15 +308,24 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 #endif
 
-	_bus_matrix = new io_matrix<track_t, bus<chunk_t> >;
-//	_master = new xfader<track_t>(_tracks[0], _tracks[1]);
-	_master_bus = new bus<chunk_t>(_bus_matrix);
-	_main_out = new asio_sink<chunk_t, short>(_master_bus, 
+//	_bus_matrix = new io_matrix<track_t, bus<chunk_t> >;
+	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
+	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
+//	_master_bus = new bus<chunk_t>(_bus_matrix);
+//	_cue_bus = new bus<chunk_t>(_bus_matrix);
+//	_aux_bus = new bus<chunk_t>(_bus_matrix);
+	//_main_out = new asio_sink<chunk_t, bus<chunk_t>, short>(_master_bus, 
+	_main_out = new asio_sink<chunk_t, chk_mgr, short>(&_main_mgr,
 		(short**)_buffer_infos[2].buffers, 
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);
-	_bus_matrix->map(_tracks[0], _master_bus);
-	_bus_matrix->map(_tracks[1], _master_bus);
+	_file_out = new file_raw_output<chunk_t>(_master_bus, "out.raw");
+//	_bus_matrix->map(_tracks[0], _master_bus);
+//	_bus_matrix->map(_tracks[1], _master_bus);
+//	_master_bus->map_output(_main_out);
+
+	_main_src = _master_xfader;
+	_file_src = 0;
 
 	ASIOSampleRate r;
 /*		ASIOSampleType t;
@@ -367,6 +378,26 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBuf
 #endif	
 
 #if DO_OUTPUT
+	if (_main_mgr._c == 0)
+	{
+		chunk_t *chk1 = _tracks[0]->next();
+		chk1->add_ref();
+		chunk_t *chk2 = _tracks[1]->next();
+		chk2->add_ref();
+		chunk_t *out = _main_src->next(chk1, chk2);
+		_main_mgr._c = out;
+		if (_file_src == _main_src) 
+		{
+			out->add_ref();
+			_file_out->process(out);
+		}
+		else if (_file_src)
+		{
+			_file_out->process(_file_src->next(chk1, chk2));
+		}
+	}
+	
+	//chunk_t *cue_chk = _cue->next(chk1, chk2);
 	_main_out->process(_doubleBufferIndex);
 #endif
 
@@ -559,8 +590,10 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Destroy()
 	}
 	_tracks.resize(0);
 	delete _main_out;
-	delete _master_bus;
-	delete _bus_matrix;
+//	delete _aux_bus;
+//	delete _cue_bus;
+//	delete _master_bus;
+//	delete _bus_matrix;
 
 	T_allocator<chunk_t>::dump_leaks();
 }

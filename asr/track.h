@@ -96,7 +96,7 @@ public:
 		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this));
 	}
 
-	Chunk_T* next()
+	Chunk_T* next(void *dummy=0)
 	{
 		Chunk_T *chk;
 

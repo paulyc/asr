@@ -317,9 +317,13 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 						printf("fine_val %f\n", tracks[1].fine_val);
 						asio->GetTrack(2)->set_output_sampling_frequency(tracks[1].coarse_val+tracks[1].fine_val); 
 					}
-					else
+					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER1))
 					{
 						asio->SetMix(HIWORD(wParam));
+					}
+					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER8))
+					{
+						asio->_cue->set_mix(HIWORD(wParam));
 					}
 					break;
 			}
@@ -430,6 +434,49 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON8:
 				{
 					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON5 ? 1 : 2)->play_pause();
+					break;
+				}
+				case IDC_COMBO1:
+				case IDC_COMBO2:
+				{
+					switch(HIWORD(wParam))
+					{
+						case CBN_CLOSEUP:
+						{
+						//	T_sink_sourceable<chunk_t> *output;
+						//	if (LOWORD(wParam)==IDC_COMBO1)
+						//		output = asio->_main_out;
+						//	else
+						//		output = asio->_file_out;
+							LRESULT foo = SendMessage(GetDlgItem(g_dlg, LOWORD(wParam)), CB_GETCURSEL, 0, 0);
+							switch (foo)
+							{
+							case 0:
+								//output->set_source(asio->_master_bus);
+								if (LOWORD(wParam)==IDC_COMBO1)
+									asio->_main_src = asio->_master_xfader;
+								else
+									asio->_file_src = 0;
+								break;
+							case 1:
+								if (LOWORD(wParam)==IDC_COMBO1)
+									asio->_main_src = asio->_cue;
+								else
+									asio->_file_src = asio->_master_xfader;
+								break;
+							case 2:
+								if (LOWORD(wParam)==IDC_COMBO1)
+									asio->_main_src = asio->_aux;
+								else
+									asio->_file_src = asio->_cue;
+								break;
+							case 3:
+								asio->_file_src = asio->_aux;
+								break;
+							}
+							break;
+						}
+					}
 					break;
 				}
 			}
@@ -555,9 +602,20 @@ void CreateUI()
 	//printf("static = %d\n", );
 	//::InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC), NULL, FALSE);
 	HWND hwndCombo = ::GetDlgItem(g_dlg, IDC_COMBO1);
+//	RECT r = {0, 0, 
+//	SendMessage(hwndCombo, CB_GETDROPPEDCONTROLRECT, 0, (LPARAM)&rect);
 	SendMessage(hwndCombo, CB_ADDSTRING, 0, (LPARAM)L"Master");
 	SendMessage(hwndCombo, CB_ADDSTRING, 0, (LPARAM)L"Cue");
 	SendMessage(hwndCombo, CB_ADDSTRING, 0, (LPARAM)L"Aux");
+	SendMessage(hwndCombo, CB_SETCURSEL, 0, 0);
+	hwndCombo = ::GetDlgItem(g_dlg, IDC_COMBO2);
+	SendMessage(hwndCombo, CB_ADDSTRING, 0, (LPARAM)L"");
+	SendMessage(hwndCombo, CB_ADDSTRING, 0, (LPARAM)L"Master");
+	SendMessage(hwndCombo, CB_ADDSTRING, 0, (LPARAM)L"Cue");
+	SendMessage(hwndCombo, CB_ADDSTRING, 0, (LPARAM)L"Aux");
+	SendMessage(hwndCombo, CB_SETCURSEL, 0, 0);
+	SendMessage(GetDlgItem(g_dlg, IDC_CHECK1), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
+	SendMessage(GetDlgItem(g_dlg, IDC_CHECK3), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
 }
 
 void MainLoop_Win32()

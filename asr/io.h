@@ -41,13 +41,14 @@ long asioMessage(long selector, long value, void *message, double *opt);
 template <typename Input_Buffer_T, typename Output_Buffer_T>
 class ASIOProcessor;
 
-template <typename Chunk_T, typename Output_Sample_T>
-class asio_sink : public T_sink<Chunk_T>
+template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
+class asio_sink : public T_sink_sourceable<Chunk_T>
 {
 public:
-	asio_sink(T_source<Chunk_T> *src, Output_Sample_T **bufs1, Output_Sample_T **bufs2, long bufSz) :
-	  T_sink<Chunk_T>(src),
-	  _buf_size(bufSz)
+	asio_sink(Source_T *src, Output_Sample_T **bufs1, Output_Sample_T **bufs2, long bufSz) :
+	  T_sink_sourceable<Chunk_T>(src),
+	  _buf_size(bufSz),
+	  _src_t(src)
 	{
 	//	_chk = _src->next();
 	//	_read = _chk->_data;
@@ -66,6 +67,7 @@ protected:
 	typename Chunk_T::sample_t *_read;
 	Output_Sample_T **_buffers[2];
 	long _buf_size;
+	Source_T *_src_t;
 };
 
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
@@ -86,13 +88,13 @@ protected:
 };
 
 template <typename Chunk_T>
-class file_raw_output : public T_sink<Chunk_T>
+class file_raw_output : public T_sink_sourceable<Chunk_T>
 {
 protected:
 	FILE *_f;
 public:
 	file_raw_output(T_source<Chunk_T> *src, const char *filename="output.raw") :
-	  T_sink(src),
+	  T_sink_sourceable(src),
 	  _f(fopen(filename, "wb"))
 	{
 	}
@@ -104,9 +106,9 @@ public:
 	  {
 		  return feof(_f);
 	  }
-	virtual void process()
+	virtual void process(Chunk_T *t)
 	{
-		Chunk_T *t = _src->next();
+		//Chunk_T *t = _src->next();
 		fwrite(t->_data, 8, Chunk_T::chunk_size, _f);
 		T_allocator<Chunk_T>::free(t);
 	}
@@ -156,6 +158,19 @@ public:
 	struct output : public sound_stream
 	{
 	};
+	struct chk_mgr : public T_source<chunk_t>
+	{
+		chk_mgr():_c(0){}
+		chunk_t* _c;
+		chunk_t* next()
+		{
+			assert(_c);
+			chunk_t *r = _c;
+			_c = 0;
+			return r;
+		}
+	} _main_mgr;
+	
 	ASIOProcessor();
 	virtual ~ASIOProcessor();
 
@@ -184,8 +199,8 @@ public:
 
 	void SetMix(int m)
 	{
-	//	_master->set_mix(m);
-		_bus_matrix->xfade_2(m, _tracks[0], _tracks[1], _master_bus);
+		_master_xfader->set_mix(m);
+	//	_bus_matrix->xfade_2(m, _tracks[0], _tracks[1], _master_bus);
 	}
 
 	long _doubleBufferIndex;
@@ -230,10 +245,10 @@ public: // was protected
 		> controller_t;
 	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_file_out;
-	asio_sink<chunk_t, short> *_main_out;
+	asio_sink<chunk_t, chk_mgr, short> *_main_out;
 
 	std::vector<track_t*> _tracks;
-	xfader<track_t> *_master;
+	xfader<track_t> *_master_xfader;
 	xfader<track_t> *_cue;
 	xfader<track_t> *_aux;
 
@@ -242,6 +257,9 @@ public: // was protected
 	bus<chunk_t> *_cue_bus;
 	bus<chunk_t> *_aux_bus;
 	io_matrix<bus<chunk_t>, T_sink<chunk_t> > _output_matrix;
+
+	xfader<track_t> *_main_src;
+	xfader<track_t> *_file_src;
 };
 
 #endif // !defined(_IO_H)

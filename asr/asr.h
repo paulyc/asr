@@ -355,6 +355,29 @@ public:
 };
 
 template <typename T>
+class T_sink_sourceable : public T_sink<T>
+{
+public:
+	T_sink_sourceable(T_source<T> *src) :
+	  T_sink(src)
+	{
+		pthread_mutex_init(&_src_lock, 0);
+	}
+	virtual ~T_sink_sourceable()
+	{
+		pthread_mutex_destroy(&_src_lock);
+	}
+	void set_source(T_source<T> *src)
+	{
+		pthread_mutex_lock(&_src_lock);
+		_src = src;
+		pthread_mutex_unlock(&_src_lock);
+	}
+protected:
+	pthread_mutex_t _src_lock;
+};
+
+template <typename T>
 class T_sink_source : public T_source<T>, public T_sink<T>
 {
 public:

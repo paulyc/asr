@@ -60,10 +60,10 @@ public:
 	{
 	}
 
-	typename Source_T::chunk_t *next()
+	typename Source_T::chunk_t *next(typename Source_T::chunk_t *chk1, typename Source_T::chunk_t *chk2)
 	{
-		typename Source_T::chunk_t *chk1 = _src1->next(),
-			*chk2 = _src2->next(), 
+		typename Source_T::chunk_t //*chk1 = _src1->next(),
+			//*chk2 = _src2->next(), 
 			*chk_out = T_allocator<typename Source_T::chunk_t>::alloc();
 		typename Source_T::chunk_t::sample_t *s1 = chk1->_data,
 			*s2 = chk2->_data, *sout = chk_out->_data, 
@@ -151,11 +151,12 @@ class io_matrix : public T_sink<typename Source_T::chunk_t>
 {
 public:
 	io_matrix():T_sink(0){}
-	void map(Source_T *input, Sink_T *output, double gain=1.0)
+	void map(Source_T *input, Sink_T *output)
 	{
 		_src_set.insert(input);
-		_io_map[output].push_back(input);
-		set_gain(input, output, gain);
+		_io_map[output].insert(input);
+		if (_gain_map.find(std::pair<Source_T*, Sink_T*>(input, output)) != _gain_map.end())
+			set_gain(input, output, 1.0);
 	}
 	void set_gain(Source_T *input, Sink_T *output, double gain=1.0)
 	{
@@ -164,10 +165,10 @@ public:
 	void unmap_input(Source_T *input)
 	{
 		_src_set.erase(input);
-		for (std::map<Sink_T*, std::list<Source_T*> >::iterator i = _io_map.begin();
+		for (std::map<Sink_T*, std::set<Source_T*> >::iterator i = _io_map.begin();
 			i != _io_map.end(); ++i)
 		{
-			i->second.remove(input);
+			i->second.erase(input);
 		}
 		_chk_map.erase(input);
 	}
@@ -180,9 +181,9 @@ public:
 	{
 		_chk_map.clear();
 		_src_set.clear();
-		for (std::map<Sink_T*, std::list<Source_T*> >::iterator mi = _io_map.begin(); mi != _io_map.end(); ++mi)
+		for (std::map<Sink_T*, std::set<Source_T*> >::iterator mi = _io_map.begin(); mi != _io_map.end(); ++mi)
 		{
-			for (std::list<Source_T*>::iterator i = mi->second.begin(); i != mi->second.end(); ++i)
+			for (std::set<Source_T*>::iterator i = mi->second.begin(); i != mi->second.end(); ++i)
 			{
 				_src_set.insert(*i);
 			}
@@ -215,10 +216,10 @@ public:
 	void unmap(Source_T *input, Sink_T *output)
 	{
 		bool still_has_input = false;
-		for (std::map<Sink_T*, std::list<Source_T*> >::iterator mi = _io_map.begin(); mi != _io_map.end(); ++mi)
+		for (std::map<Sink_T*, std::set<Source_T*> >::iterator mi = _io_map.begin(); mi != _io_map.end(); ++mi)
 		{
 			bool has = false;
-			for (std::list<Source_T*>::iterator li = mi->second.begin();
+			for (std::set<Source_T*>::iterator li = mi->second.begin();
 				li != mi->second.end(); ++li)
 			{
 				if (*li == input)
@@ -230,7 +231,7 @@ public:
 			if (has)
 			{
 				if (mi->first == output)
-					mi->second.remove(input);
+					mi->second.erase(input);
 				else
 					still_has_input = true;
 			}
@@ -246,10 +247,10 @@ public:
 		//for each input, process chunk on each output
 		for (std::set<Source_T*>::iterator i = _src_set.begin(); i != _src_set.end(); ++i)
 		{
-			_chk_map[*i] = (*i)->next();
+			_chk_map[*i] = (*i)->next(this);
 		}
 
-		for (std::map<Sink_T*, std::list<Source_T*> >::iterator mi = _io_map.begin(); mi != _io_map.end(); ++mi)
+		for (std::map<Sink_T*, std::set<Source_T*> >::iterator mi = _io_map.begin(); mi != _io_map.end(); ++mi)
 		{
 			typename Source_T::chunk_t *out = T_allocator<typename Source_T::chunk_t>::alloc();
 			for (int ofs = 0; ofs < Source_T::chunk_t::chunk_size; ++ofs)
@@ -257,7 +258,7 @@ public:
 				out->_data[ofs][0] = 0.0;
 				out->_data[ofs][1] = 0.0;
 			}
-			for (std::list<Source_T*>::iterator si = mi->second.begin(); si != mi->second.end(); ++si)
+			for (std::set<Source_T*>::iterator si = mi->second.begin(); si != mi->second.end(); ++si)
 			{
 				double gain = _gain_map[std::pair<Source_T*, Sink_T*>(*si, mi->first)];
 				for (int ofs = 0; ofs < Source_T::chunk_t::chunk_size; ++ofs)
@@ -283,7 +284,7 @@ public:
 	}*/
 protected:
 	std::set<Source_T*> _src_set;
-	std::map<Sink_T*, std::list<Source_T*> > _io_map;
+	std::map<Sink_T*, std::set<Source_T*> > _io_map;
 	std::map<Source_T*, typename Source_T::chunk_t*> _chk_map;
 	std::map<std::pair<Source_T*,Sink_T*>, double> _gain_map;
 	//std::map<Sink_T*, std::queue<typename Source_T::chunk_t*> > _out_q;
@@ -298,19 +299,39 @@ public:
 	  _parent(p) {}
 	void process(Chunk_T *chk)
 	{
-		_chks.push(chk);
+		for (std::map<T_sink<Chunk_T>*, std::queue<Chunk_T*> >::iterator i = _chks_map.begin();
+			i != _chks_map.end(); ++i)
+		{
+			i->second.push(chk);
+			chk->add_ref();
+		}
+		T_allocator<Chunk_T>::free(chk);
 	}
-	Chunk_T *next()
+	void map_output(T_sink<Chunk_T> *out)
 	{
-		if (_chks.empty())
+		if (_chks_map.find(out) == _chks_map.end())
+			_chks_map[out] = std::queue<Chunk_T*>();
+	}
+	void unmap_output(T_sink<Chunk_T> *out)
+	{
+		_chks_map.erase(out);
+	}
+	void unmap_outputs()
+	{
+		_chks_map.clear();
+	}
+	Chunk_T *next(T_sink<Chunk_T> *caller)
+	{
+		Chunk_T *chk;
+		if (_chks_map[caller].empty())
 			_parent->process();
-		Chunk_T *chk = _chks.front();
-		_chks.pop();
+		chk = _chks_map[caller].front();
+		_chks_map[caller].pop();
 		return chk;
 	}
 protected:
 	T_sink<Chunk_T> *_parent;
-	std::queue<Chunk_T*> _chks;
+	std::map<T_sink<Chunk_T>*, std::queue<Chunk_T*> > _chks_map;
 };
 
 template <typename Precision_T, int TblSz=512*27>
