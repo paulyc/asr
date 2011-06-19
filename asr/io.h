@@ -260,6 +260,8 @@ public: // was protected
 
 	xfader<track_t> *_main_src;
 	xfader<track_t> *_file_src;
+
+	pthread_mutex_t _io_lock;
 };
 
 #endif // !defined(_IO_H)

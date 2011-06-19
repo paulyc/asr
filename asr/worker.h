@@ -69,7 +69,7 @@ public:
 	template <typename Track_T>
 	struct load_track_job : public job
 	{
-		load_track_job(Track_T *t):track(t){
+		load_track_job(Track_T *t, pthread_mutex_t *l):track(t),_lock(l){
 			_name="load track";
 			pthread_mutex_init(&_l, 0);
 			pthread_cond_init(&_next_step, 0);
@@ -83,10 +83,11 @@ public:
 		//	done = true;
 		//}
 		pthread_mutex_t _l;
+		pthread_mutex_t *_lock;
 		pthread_cond_t _next_step;
 		void step()
 		{
-			if (!track->load_step())
+			if (!track->load_step(_lock))
 			{
 				done = true;
 				printf("job done %p\n", this);

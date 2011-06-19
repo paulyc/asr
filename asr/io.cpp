@@ -218,11 +218,13 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 	ASIOError e;
 	long minSize, maxSize, preferredSize, granularity;
 
+	pthread_mutex_init(&_io_lock, 0);
+
 	try {
 		_my_controller = new controller_t;
 
-		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(1, _default_src));
-		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2, _default_src));
+		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(1, _default_src, &_io_lock));
+		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2, _default_src, &_io_lock));
 
 #if CARE_ABOUT_INPUT
 		_my_source = new asio_source<short, SamplePairf, chunk_t>;
@@ -371,6 +373,7 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::ProcessInput()
 template <typename Input_Buffer_T, typename Output_Buffer_T>
 void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
+	pthread_mutex_lock(&_io_lock);
 	_doubleBufferIndex = doubleBufferIndex;
 
 #if CARE_ABOUT_INPUT
@@ -414,6 +417,7 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBuf
 	memcpy(_buffer_infos[2].buffers[doubleBufferIndex], _buffer_infos[0].buffers[doubleBufferIndex], BUFFERSIZE*sizeof(short));
 	memcpy(_buffer_infos[3].buffers[doubleBufferIndex], _buffer_infos[1].buffers[doubleBufferIndex], BUFFERSIZE*sizeof(short));
 #endif
+	pthread_mutex_unlock(&_io_lock);
 }
 
 #if !USE_SSE2 && !NON_SSE_INTS
@@ -505,7 +509,7 @@ void ASIOProcessor<SamplePairf, short>::SetSrc(int ch, const wchar_t *fqpath)
 	if (was_active)
 		Stop();
 	try {
-		_tracks[ch-1]->set_source_file(fqpath);
+		_tracks[ch-1]->set_source_file(fqpath, &_io_lock);
 	} catch (std::exception e) {
 	}
 	if (was_active)
@@ -590,6 +594,8 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Destroy()
 		asiodrv = 0;
 	}
 	CoUninitialize();
+
+	pthread_mutex_destroy(&_io_lock);
 
 	for (std::vector<track_t*>::iterator i = _tracks.begin(); i != _tracks.end(); i++)
 	{

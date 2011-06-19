@@ -16,7 +16,7 @@ class SeekablePitchableFileSource : public T_source<Chunk_T>
 public:
 	typedef type chunk_t;
 
-	SeekablePitchableFileSource(int track_id, const wchar_t *filename=0) :
+	SeekablePitchableFileSource(int track_id, const wchar_t *filename=0, pthread_mutex_t *lock=0) :
 		_in_config(false),
 		_filename(0),
 		_paused(true),
@@ -31,7 +31,7 @@ public:
 	{
 		pthread_mutex_init(&_config_lock, 0);
 		if (filename)
-			set_source_file(filename);
+			set_source_file(filename, lock);
 	}
 
 	virtual ~SeekablePitchableFileSource()
@@ -51,7 +51,7 @@ public:
 		pthread_mutex_destroy(&_config_lock);
 	}
 
-	void set_source_file(const wchar_t *filename)
+	void set_source_file(const wchar_t *filename, pthread_mutex_t *lock)
 	{
 		pthread_mutex_lock(&_config_lock);
 		_in_config = true;
@@ -59,16 +59,28 @@ public:
 		_paused = true;
 		pthread_mutex_unlock(&_config_lock);
 
+		pthread_mutex_lock(lock);
 		delete _display;
 		_display = 0;
+		pthread_mutex_unlock(lock);
+		pthread_mutex_lock(lock);
 		delete _resample_filter;
 		_resample_filter = 0;
+		pthread_mutex_unlock(lock);
+		pthread_mutex_lock(lock);
 		delete _meta;
 		_meta = 0;
+		pthread_mutex_unlock(lock);
+		pthread_mutex_lock(lock);
 		delete _src_buf;
 		_src_buf = 0;
+		pthread_mutex_unlock(lock);
+		pthread_mutex_lock(lock);
 		delete _src;
 		_src = 0;
+		pthread_mutex_unlock(lock);
+
+		pthread_mutex_lock(lock);
 
 		_filename = filename;
 
@@ -83,6 +95,9 @@ public:
 			_src = new wavfile_chunker<Chunk_T>(_filename);
 			_src_buf = new BufferedStream<Chunk_T>(_src);
 		}
+
+		pthread_mutex_unlock(lock);
+		pthread_mutex_lock(lock);
 		
 		_meta = new StreamMetadata<Chunk_T>(_src_buf);
 		_resample_filter = new lowpass_filter_td<Chunk_T, double>(_src_buf, 22050.0, 44100.0, 48000.0);
@@ -91,18 +106,22 @@ public:
 			StreamMetadata<Chunk_T>, 
 			SeekablePitchableFileSource<Chunk_T> >(_meta, this);
 
+		pthread_mutex_unlock(lock);
+		pthread_mutex_lock(lock);
+
 		pthread_mutex_lock(&_config_lock);
 		_in_config = false;
 		pthread_mutex_unlock(&_config_lock);
 
-		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this));
+		pthread_mutex_unlock(lock);
+
+		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
 	}
 
 	Chunk_T* next(void *dummy=0)
 	{
 		Chunk_T *chk;
 
-		pthread_mutex_lock(&_config_lock);
 		if (_in_config || _paused)
 		{
 			chk = zero_source<Chunk_T>::get()->next();
@@ -117,7 +136,9 @@ public:
 		}
 		else
 		{
+			pthread_mutex_lock(&_config_lock);
 			chk = _resample_filter->next();
+			pthread_mutex_unlock(&_config_lock);
 			render();
 			/*
 		pthread_mutex_unlock(&_config_lock);
@@ -133,7 +154,7 @@ public:
 		//	render();
 		*/
 		}
-		pthread_mutex_unlock(&_config_lock);
+		
 		return chk;
 	}
 
@@ -179,23 +200,28 @@ public:
 		return _paused;
 	}
 
-	bool load_step()
+	bool load_step(pthread_mutex_t *lock)
 	{
 		pthread_mutex_lock(&_config_lock);
 		if (len().samples < 0)
 		{
-			_src_buf->load_next();
+			pthread_mutex_lock(lock);
+			_src_buf->load_next(lock);
+			pthread_mutex_unlock(lock);
 			pthread_mutex_unlock(&_config_lock);
 			return true;
 		}
+		pthread_mutex_lock(lock);
 		if (!_display->set_next_height())
 		{
+			pthread_mutex_unlock(lock);
 			_loaded = true;
 			render();
 			_resample_filter->set_output_scale(1.0f / _src->maxval());
 			pthread_mutex_unlock(&_config_lock);
 			return false;
 		}
+		pthread_mutex_unlock(lock);
 	//	render();
 		pthread_mutex_unlock(&_config_lock);
 		return true;
@@ -240,11 +266,13 @@ public:
 
 	void set_output_sampling_frequency(double f)
 	{
+		pthread_mutex_lock(&_config_lock);
 		if (!_in_config && _resample_filter)
 		{
 			printf("output mod %f\n", 48000.0/f);
 			_resample_filter->set_output_sampling_frequency(f);
 		}
+		pthread_mutex_unlock(&_config_lock);
 	}
 
 	void seek_time(double t)

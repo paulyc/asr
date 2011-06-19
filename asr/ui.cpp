@@ -54,6 +54,8 @@ void repaint(int t_id=1)
 	int width, height;
 	RECT &r = uit->wave.r;
 
+//	pthread_mutex_lock(&asio->_io_lock);
+
 	if (!track->loaded())
 		return;
 
@@ -80,6 +82,11 @@ void repaint(int t_id=1)
 
 	for (int p=0; p<width; ++p)
 	{
+		if (p%(width/10) == 0) 
+		{
+		//	pthread_mutex_unlock(&asio->_io_lock);
+		//	pthread_mutex_lock(&asio->_io_lock);
+		}
 		const ASIOProcessor<SamplePairf, short>::track_t::display_t::wav_height &h =
 			track->_display->get_wav_height(p);
 		int px_pk = (1.0-h.peak_top) * height / 2;
@@ -113,6 +120,8 @@ void repaint(int t_id=1)
 //	SwapBuffers(hdc);
 	
 	ReleaseDC(h, hdc);
+
+//	pthread_mutex_unlock(&asio->_io_lock);
 }
 
 void set_position(void *t, double p, bool invalidate)
@@ -446,7 +455,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					//memset(&ofn, 0, sizeof(ofn));
 					if (GetOpenFileName(&ofn)) {
 						SetDlgItemText(hwndDlg, LOWORD(wParam)==IDC_BUTTON3 ? IDC_EDIT1 : IDC_EDIT2, filepath);
-						asio->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->set_source_file(filepath);
+						asio->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->set_source_file(filepath, &asio->_io_lock);
 					//	asio->SetSrc(1, filepath);
 					}
 					return TRUE;
