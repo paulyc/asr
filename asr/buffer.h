@@ -2,6 +2,7 @@
 #define _BUFFER_H
 
 #include <vector>
+#include <pthread.h>
 
 #include "util.h"
 
@@ -26,10 +27,16 @@ public:
 		int chks = len().chunks;
 		if (chks != -1)
 			_chks.resize(chks, 0);
+		pthread_mutex_init(&_buffer_lock, 0);
+		pthread_mutex_init(&_src_lock, 0);
+		pthread_mutex_init(&_data_lock, 0);
 	}
 
 	~BufferedStream()
 	{
+		pthread_mutex_destroy(&_data_lock);
+		pthread_mutex_destroy(&_src_lock);
+		pthread_mutex_destroy(&_buffer_lock);
 		std::vector<Chunk_T *>::iterator i;
 		for (i = _chks.begin(); i != _chks.end(); ++i)
 		{
@@ -39,40 +46,60 @@ public:
 
 	Chunk_T *get_chunk(int chk_ofs)
 	{
+		pthread_mutex_lock(&_buffer_lock);
 		if (chk_ofs >= _chks.size())
 			_chks.resize(chk_ofs*2, 0);
 		if (!_chks[chk_ofs])
 		{
+			pthread_mutex_unlock(&_buffer_lock);
 			if (_src->_len.chunks != -1 && chk_ofs >= _src->_len.chunks)
 			{
-				_chks[chk_ofs] = zero_source<Chunk_T>::get()->next();
+				Chunk_T *c = zero_source<Chunk_T>::get()->next();
+				pthread_mutex_lock(&_buffer_lock);
+				_chks[chk_ofs] = c;
 			}
 			else
 			{
 				// possible race condition where mp3 chunk not loaded
 				try
 				{
+					pthread_mutex_lock(&_src_lock);
 					_src->seek_chk(chk_ofs);
 				} 
 				catch (std::exception &e)
 				{
+					pthread_mutex_unlock(&_src_lock);
 					return zero_source<Chunk_T>::get()->next();
 				}
-				_chks[chk_ofs] = _src->next();
+				Chunk_T *c = _src->next();
+				pthread_mutex_unlock(&_src_lock);
+				pthread_mutex_lock(&_buffer_lock);
+				_chks[chk_ofs] = c;
 			}
 		}
-		return _chks[chk_ofs];
+		Chunk_T *r = _chks[chk_ofs];
+		pthread_mutex_unlock(&_buffer_lock);
+		return r;
 	}
 
 	Chunk_T *next_chunk(int chk_ofs)
 	{
+		Chunk_T *c;
+		pthread_mutex_lock(&_buffer_lock);
 		if (chk_ofs >= _chks.size())
 			_chks.resize(chk_ofs*2, 0);
 		if (!_chks[chk_ofs])
 		{
-			_chks[chk_ofs] = _src->next();
+			pthread_mutex_unlock(&_buffer_lock);
+			pthread_mutex_lock(&_src_lock);
+			c = _src->next();
+			pthread_mutex_unlock(&_src_lock);
+			pthread_mutex_lock(&_buffer_lock);
+			_chks[chk_ofs] = c;
 		}
-		return _chks[chk_ofs];
+		c = _chks[chk_ofs];
+		pthread_mutex_unlock(&_buffer_lock);
+		return c;
 	}
 
 	Chunk_T *next()
@@ -81,6 +108,7 @@ public:
 		Chunk_T *chk = T_allocator<Chunk_T>::alloc(), *buf_chk = get_chunk(_chk_ofs);
 		int to_fill = Chunk_T::chunk_size, loop_fill;
 		Chunk_T::sample_t *to_ptr = chk->_data;
+		pthread_mutex_lock(&_data_lock);
 		while (to_fill > 0)
 		{
 			while (_smp_ofs < 0 && to_fill > 0)
@@ -103,7 +131,7 @@ public:
 			ofs_in_chk = (ofs_in_chk + loop_fill) % Chunk_T::chunk_size;
 			_smp_ofs += loop_fill;
 		}
-		
+		pthread_mutex_unlock(&_data_lock);
 		return chk;
 	}
 
@@ -114,11 +142,13 @@ public:
 
 	void seek_smp(smp_ofs_t smp_ofs)
 	{
+		pthread_mutex_lock(&_data_lock);
 		_smp_ofs = smp_ofs;
 		if (_smp_ofs < 0)
 			_chk_ofs = 0;
 		else
 			_chk_ofs = smp_ofs / Chunk_T::chunk_size;
+		pthread_mutex_unlock(&_data_lock);
 	}
 
 	int get_samples(double tm, typename Chunk_T::sample_t *buf, int num)
@@ -130,7 +160,6 @@ public:
 	{
 		while (ofs < 0 && num > 0)
 		{
-
 			(*buf)[0] = 0.0;
 			(*buf)[1] = 0.0;
 			++ofs;
@@ -144,16 +173,23 @@ public:
 		{
 			chk_left = 4096 - smp_ofs;
 			to_cpy = min(chk_left, num);
+			pthread_mutex_lock(&_buffer_lock);
 			if (chk_ofs >= _chks.size())
 				_chks.resize(chk_ofs*2, 0);
 			if (!_chks[chk_ofs])
 			{
+				pthread_mutex_unlock(&_buffer_lock);
+				pthread_mutex_lock(&_src_lock);
 				_src->seek_chk(chk_ofs);
-				_chks[chk_ofs] = _src->next();
+				Chunk_T *c = _src->next();
+				pthread_mutex_unlock(&_src_lock);
+				pthread_mutex_lock(&_buffer_lock);
+				_chks[chk_ofs] = c;
 			}
 
 			// copy bits
 			memcpy(buf, _chks[chk_ofs]->_data + smp_ofs, sizeof(Chunk_T::sample_t)*to_cpy);
+			pthread_mutex_unlock(&_buffer_lock);
 
 			if (to_cpy == chk_left)
 			{
@@ -181,10 +217,12 @@ public:
 			next_chunk(chk);
 		}
 		_len.chunks = chk-1;
+		pthread_mutex_lock(&_src_lock);
 		_src->_len.chunks = chk-1;
 		_src->_len.samples = _src->_len.chunks*Chunk_T::chunk_size;
 		_src->_len.smp_ofs_in_chk = _src->_len.samples % _src->_len.chunks;
 		_src->_len.time = _src->_len.samples/44100.0;
+		pthread_mutex_unlock(&_src_lock);
 		return _len.chunks;
 	}
 
@@ -193,10 +231,12 @@ public:
 		if (_src->eof())
 		{
 			_len.chunks = _chk_ofs_loading-1;
+			pthread_mutex_lock(&_src_lock);
 			_src->_len.chunks = _chk_ofs_loading-1;
 			_src->_len.samples = _src->_len.chunks*Chunk_T::chunk_size;
 			_src->_len.smp_ofs_in_chk = _src->_len.samples % _src->_len.chunks;
 			_src->_len.time = _src->_len.samples/44100.0;
+			pthread_mutex_unlock(&_src_lock);
 			return false;
 		}
 		next_chunk(_chk_ofs_loading++);
@@ -208,6 +248,9 @@ protected:
 	int _chk_ofs;
 	smp_ofs_t _smp_ofs;
 	int _chk_ofs_loading;
+	pthread_mutex_t _buffer_lock;
+	pthread_mutex_t _src_lock;
+	pthread_mutex_t _data_lock;
 };
 
 template <typename Source_T, int BufSz=0x1000>

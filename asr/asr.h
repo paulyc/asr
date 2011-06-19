@@ -105,20 +105,22 @@ public:
 	static T* alloc_from(const char *file, int line)
 	{
 		//printf("%s %d\n", file, line);
-		T *t = alloc();
+		pthread_mutex_lock(&_lock);
+		T *t = alloc(false);
 		_info_map[t].file = file;
 		_info_map[t].line = line;
+		pthread_mutex_unlock(&_lock);
 		return t;
 	}
 
-	static T* alloc()
+	static T* alloc(bool lock=true)
 	{
 		pthread_once(&once_control, init);
-		pthread_mutex_lock(&_lock);
+		if (lock) pthread_mutex_lock(&_lock);
 		if (_T_queue.empty())
 		{
 			T *t = new T;
-			pthread_mutex_unlock(&_lock);
+			if (lock) pthread_mutex_unlock(&_lock);
 			return t;
 		}
 		else
@@ -126,7 +128,7 @@ public:
 			T* t = _T_queue.front();
 			_T_queue.pop();
 			t->add_ref();
-			pthread_mutex_unlock(&_lock);
+			if (lock) pthread_mutex_unlock(&_lock);
 			return t;
 		}
 	}
@@ -401,12 +403,18 @@ class zero_source : public T_source<T>
 protected:
 	zero_source() {}
 	static zero_source *_the_src;
+	static pthread_once_t _once_control;
 public:
 	static zero_source* get()
 	{
+		pthread_once(&_once_control, init);
+		return _the_src;
+	}
+
+	static void init()
+	{
 		if (!_the_src)
 			_the_src = new zero_source;
-		return _the_src;
 	}
 
 	T* next()
@@ -424,6 +432,9 @@ public:
 
 template <typename T>
 zero_source<T>* zero_source<T>::_the_src = 0;
+
+template <typename T>
+pthread_once_t zero_source<T>::_once_control = PTHREAD_ONCE_INIT;
 
 /*
 SamplePairf& operator=(SamplePairf &lhs, float rhs)

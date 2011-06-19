@@ -285,36 +285,53 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 		case WM_HSCROLL:
 			switch (LOWORD(wParam))
 			{
+				wchar_t buf[64];
 				case SB_THUMBPOSITION:
 				case SB_THUMBTRACK:
 					if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER2))
 					{
-						printf("coarse %d ", HIWORD(wParam));
+					//	printf("coarse %d ", HIWORD(wParam));
 						tracks[0].coarse_val = 48000.0 / (1.0 + .01 * HIWORD(wParam) -0.5);
-						printf("coarse_val %f\n", tracks[0].coarse_val);
+					//	printf("coarse_val %f\n", tracks[0].coarse_val);
+						double val = 48000.0 / (tracks[0].coarse_val+tracks[0].fine_val) - 1.0;
+						printf("track 1: %f\n", val);
+						wsprintf(buf, L"%f", val);
+						SetDlgItemTextW(hwndDlg, IDC_EDIT3, buf);
 						asio->GetTrack(1)->set_output_sampling_frequency(tracks[0].coarse_val+tracks[0].fine_val); 
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER3))
 					{
-						printf("fine %d ", HIWORD(wParam));
+					//	printf("fine %d ", HIWORD(wParam));
 						//val = 10*60*HIWORD(wParam)*0.01;
 						tracks[0].fine_val = 1000.0 -  20*HIWORD(wParam);
-						printf("fine_val %f\n", tracks[0].fine_val);
+					//	printf("fine_val %f\n", tracks[0].fine_val);
+						double val = 48000.0 / (tracks[0].coarse_val+tracks[0].fine_val) - 1.0;
+						printf("track 1: %f\n", val);
+						wsprintf(buf, L"%f", val);
+						SetDlgItemTextW(hwndDlg, IDC_EDIT3, buf);
 						asio->GetTrack(1)->set_output_sampling_frequency(tracks[0].coarse_val+tracks[0].fine_val); 
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER4))
 					{
-						printf("coarse %d ", HIWORD(wParam));
+					//	printf("coarse %d ", HIWORD(wParam));
 						tracks[1].coarse_val = 48000.0 / (1.0 + .01 * HIWORD(wParam) -0.5);
-						printf("coarse_val %f\n", tracks[1].coarse_val);
+					//	printf("coarse_val %f\n", tracks[1].coarse_val);
+						double val = 48000.0 / (tracks[1].coarse_val+tracks[1].fine_val) - 1.0;
+						printf("track 2: %f\n", val);
+						wsprintf(buf, L"%f", val);
+						SetDlgItemTextW(hwndDlg, IDC_EDIT4, buf);
 						asio->GetTrack(2)->set_output_sampling_frequency(tracks[1].coarse_val+tracks[1].fine_val); 
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER5))
 					{
-						printf("fine %d ", HIWORD(wParam));
+					//	printf("fine %d ", HIWORD(wParam));
 						//val = 10*60*HIWORD(wParam)*0.01;
 						tracks[1].fine_val = 1000.0 -  20*HIWORD(wParam);
-						printf("fine_val %f\n", tracks[1].fine_val);
+					//	printf("fine_val %f\n", tracks[1].fine_val);
+						double val = 48000.0 / (tracks[1].coarse_val+tracks[1].fine_val) - 1.0;
+						printf("track 2: %f\n", val);
+						wsprintf(buf, L"%f", val);
+						SetDlgItemTextW(hwndDlg, IDC_EDIT4, buf);
 						asio->GetTrack(2)->set_output_sampling_frequency(tracks[1].coarse_val+tracks[1].fine_val); 
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER1))
@@ -324,6 +341,16 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER8))
 					{
 						asio->_cue->set_mix(HIWORD(wParam));
+					}
+					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER6))
+					{
+						asio->_master_xfader->set_gain(1, HIWORD(wParam)/100.);
+						asio->_cue->set_gain(1, HIWORD(wParam)/100.);
+					}
+					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER7))
+					{
+						asio->_master_xfader->set_gain(2, HIWORD(wParam)/100.);
+						asio->_cue->set_gain(2, HIWORD(wParam)/100.);
 					}
 					break;
 			}
@@ -434,6 +461,18 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON8:
 				{
 					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON5 ? 1 : 2)->play_pause();
+					break;
+				}
+				case IDC_BUTTON9:
+				case IDC_BUTTON11:
+				{
+					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON9 ? 1 : 2)->set_pitchpoint();
+					break;
+				}
+				case IDC_BUTTON10:
+				case IDC_BUTTON12:
+				{
+					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->goto_pitchpoint();
 					break;
 				}
 				case IDC_COMBO1:

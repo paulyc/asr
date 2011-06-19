@@ -390,10 +390,17 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBuf
 		{
 			out->add_ref();
 			_file_out->process(out);
+			T_allocator<chunk_t>::free(chk1);
+			T_allocator<chunk_t>::free(chk2);
 		}
 		else if (_file_src)
 		{
 			_file_out->process(_file_src->next(chk1, chk2));
+		}
+		else
+		{
+			T_allocator<chunk_t>::free(chk1);
+			T_allocator<chunk_t>::free(chk2);
 		}
 	}
 	

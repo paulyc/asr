@@ -19,14 +19,15 @@ public:
 	SeekablePitchableFileSource(int track_id, const wchar_t *filename=0) :
 		_in_config(false),
 		_filename(0),
-		_paused(false),
+		_paused(true),
 		_src(0),
 		_src_buf(0),
 		_resample_filter(0),
 		_meta(0),
 		_display(0),
 		_cuepoint(0.0),
-		_track_id(track_id)
+		_track_id(track_id),
+		_pitchpoint(48000.0)
 	{
 		pthread_mutex_init(&_config_lock, 0);
 		if (filename)
@@ -55,6 +56,7 @@ public:
 		pthread_mutex_lock(&_config_lock);
 		_in_config = true;
 		_loaded = false;
+		_paused = true;
 		pthread_mutex_unlock(&_config_lock);
 
 		delete _display;
@@ -300,6 +302,21 @@ public:
 		return _loaded;
 	}
 
+	void set_pitchpoint()
+	{
+		_pitchpoint = _resample_filter->get_output_sampling_frequency();
+	}
+
+	double get_pitchpoint()
+	{
+		return _pitchpoint;
+	}
+
+	void goto_pitchpoint()
+	{
+		_resample_filter->set_output_sampling_frequency(_pitchpoint);
+	}
+
 protected:
 	pthread_mutex_t _config_lock;
 	bool _in_config;
@@ -319,6 +336,7 @@ public:
 	double _cuepoint;
 	bool _loaded;
 	int _track_id;
+	double _pitchpoint;
 };
 
 #endif // !defined(TRACK_H)

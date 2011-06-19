@@ -56,7 +56,11 @@ class mixer<Source_T, 2> : public T_source<typename Source_T::chunk_t>
 public:
 	mixer(Source_T *src1, Source_T *src2) :
 		_src1(src1),
-		_src2(src2)
+		_src2(src2),
+		_src1_mul(1.0),
+		_src2_mul(1.0),
+		_src1_gain(1.0),
+		_src2_gain(1.0)
 	{
 	}
 
@@ -81,12 +85,22 @@ public:
 		return chk_out;
 	}
 
+	virtual void set_gain(int src, double gain)
+	{
+		if (src == 1)
+			_src1_gain = gain;
+		else
+			_src2_gain = gain;
+	}
+
 protected:
 	Source_T *_src1;
 	Source_T *_src2;
 
 	double _src1_mul;
 	double _src2_mul;
+	double _src1_gain;
+	double _src2_gain;
 };
 
 template <typename Source_T>
@@ -101,27 +115,47 @@ public:
 	}
 
 	// 0 <= m <= 100
-	void set_mix(int m)
+	// -1 means keep it
+	void set_mix(int m=-1)
 	{
+		if (m == -1)
+			m = _m;
+		else
+			_m = m;
+
 		if (m == 0)
 		{
-			_src1_mul = 1.0;
+			_src1_mul = _src1_gain;
 			_src2_mul = 0.0;
 		}
 		else if (m == 50)
-			_src1_mul = _src2_mul = 1.0;
+		{
+			_src1_mul = _src1_gain;
+			_src2_mul = _src2_gain;
+		}
 		else if (m < 50)
 		{
-			_src1_mul = 1.0;
-			_src2_mul = pow(10.0, (-60.0 + m/.8166)/20.0);
+			_src1_mul = _src1_gain;
+			_src2_mul = pow(10.0, (-30.0 + m/1.633)/20.0)*_src2_gain;
+		}
+		else if (m != 100)
+		{
+			_src2_mul = _src2_gain;
+			_src1_mul = pow(10.0, (-30.0 + (100-m)/1.633)/20.0)*_src1_gain;
 		}
 		else
 		{
-			_src2_mul = 1.0;
-			_src1_mul = pow(10.0, (-60.0 + (100-m)/.8166)/20.0);
+			_src2_mul = _src2_gain;
+			_src1_mul = 0.0;
 		}
 	}
+	void set_gain(int src, double gain)
+	{
+		mixer<Source_T, 2>::set_gain(src, gain);
+		set_mix();
+	}
 protected:
+	int _m;
 };
 
 template <typename Chunk_T>
@@ -448,6 +482,11 @@ public:
 		_rho = _output_sampling_rate / _input_sampling_rate;
 		_impulse_response_scale = min(Precision_T(1.0), _rho);
 		fill_coeff_tbl();
+	}
+
+	Precision_T get_output_sampling_frequency()
+	{
+		return _output_sampling_rate;
 	}
 
 	void fill_coeff_tbl()
