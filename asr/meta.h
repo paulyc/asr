@@ -2,36 +2,116 @@
 #define _META_H
 
 template <typename Source_T>
-class MipMapLevel
+class MipMap
 {
 public:
 	typedef typename Source_T::chunk_t::sample_t sample_t;
-
-	MipMapLevel(Source_T *src, int level) :
-		_src(src)
+	class Level 
 	{
-		_smp_per_mip = pow(2, level);
-	}
+	public:
+		Level(int mips, int smps) :
+			_map(mips),
+			_smpno(0)
+		{
+			_smp_per_mip = double(smps)/double(mips);
+			_write_iter = _map.begin();
+		}
 
-	struct mip
-	{
-		sample_t abs_sum;
-		sample_t avg;
-		sample_t avg_db;
-		sample_t peak_hi;
-		sample_t peak_lo;
-		sample_t peak_hi_db;
-		sample_t peak_lo_db;
+		struct mip
+		{
+			mip()
+			{
+				abs_sum[0] = 0.0f;
+				abs_sum[1] = 0.0f;
+				peak_hi[0] = 0.0f;
+				peak_hi[1] = 0.0f;
+				peak_lo[0] = 0.0f;
+				peak_lo[1] = 0.0f;
+			}
+			typename MipMap::sample_t abs_sum;
+			typename MipMap::sample_t avg;
+			typename MipMap::sample_t avg_db;
+			typename MipMap::sample_t peak_hi;
+			typename MipMap::sample_t peak_lo;
+			typename MipMap::sample_t peak_hi_db;
+			typename MipMap::sample_t peak_lo_db;
+		};
+
+		void process_next(typename Source_T::chunk_t *chk)
+		{
+			mip &m = *_write_iter;
+			for (typename MipMap::sample_t *smp = chk->_data, 
+				*end = smp+Source_T::chunk_t::chunk_size;
+				smp != end; ++smp)
+			{
+				if (_smpno > _smp_per_mip)
+				{
+					m.avg[0] = m.abs_sum[0] / Source_T::chunk_t::chunk_size;
+					m.avg[1] = m.abs_sum[1] / Source_T::chunk_t::chunk_size;
+					dBm::calc(m.avg_db, m.avg);
+					dBm::calc(m.peak_hi_db, m.peak_hi);
+					Abs::calc(m.peak_lo_db, m.peak_lo);
+					dBm::calc(m.peak_lo_db, m.peak_lo_db);
+
+					_smpno = 0;
+					++_write_iter;
+					assert(_write_iter != _map.end());
+					m = *_write_iter;
+				}
+				m.abs_sum[0] += fabs((*smp)[0]);
+				m.abs_sum[1] += fabs((*smp)[1]);
+				m.peak_hi[0] = max(m.peak_hi[0], (*smp)[0]);
+				m.peak_hi[1] = max(m.peak_hi[1], (*smp)[1]);
+				m.peak_lo[0] = min(m.peak_lo[0], (*smp)[0]);
+				m.peak_lo[1] = min(m.peak_lo[1], (*smp)[1]);
+			}
+		}
+
+		double _smp_per_mip;
+		typename std::vector<mip> _map;
+		typename std::vector<mip>::iterator _write_iter;
+		int _smpno;
 	};
 
-	void process_next(typename Source_T::chunk_t *chk)
+	MipMap(BufferedStream<typename Source_T::chunk_t> *src, int levels, int displayWidth, pthread_mutex_t *lock) :
+		_src(src)
 	{
+		int chunks = src->len().chunks;
+		int smps = src->len().samples;
+		assert(chunks != -1 && smps != -1);
+		for (int mips = displayWidth, l = 0; l < levels; ++l, mips *= 2)
+		{
+			pthread_mutex_lock(lock);
+			_levels.push_back(new Level(mips, smps));
+			pthread_mutex_unlock(lock);
+		}
+
+		for (int chk = 0; chk < chunks ++chk)
+		{
+			typename Source_T::chunk_t *chk = _src->get_chunk(chk);
+			for (std::vector<Level*>::iterator i = _levels.begin(); i != _levels.end(); ++i)
+			{
+				pthread_mutex_lock(lock);
+				(*i)->process_next(chk);
+				pthread_mutex_unlock(lock);
+			}
+		}
+	}
+
+	~MipMap()
+	{
+		for (std::vector<Level*>::iterator i = _levels.begin(); i != _levels.end(); ++i)
+			delete (*i);
+	}
+
+	Level* GetLevel(int l)
+	{
+		return _levels[l];
 	}
 
 protected:
-	Source_T *_src;
-	int _smp_per_mip;
-	std::vector<mip> _map;
+	BufferedStream<typename Source_T::chunk_t> *_src;
+	std::vector<Level*> _levels;
 };
 
 template <typename Chunk_T>
