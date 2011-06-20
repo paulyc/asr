@@ -303,8 +303,8 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 						tracks[0].coarse_val = 48000.0 / (1.0 + .01 * HIWORD(wParam) -0.5);
 					//	printf("coarse_val %f\n", tracks[0].coarse_val);
 						double val = 48000.0 / (tracks[0].coarse_val+tracks[0].fine_val) - 1.0;
-						printf("track 1: %f\n", val);
-						wsprintf(buf, L"%f", val);
+						printf("track 1: %f\n", val*100.0);
+						swprintf(buf, L"%.02f%%", val*100.0);
 						SetDlgItemTextW(hwndDlg, IDC_EDIT3, buf);
 						asio->GetTrack(1)->set_output_sampling_frequency(tracks[0].coarse_val+tracks[0].fine_val); 
 					}
@@ -315,8 +315,8 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 						tracks[0].fine_val = 1000.0 -  20*HIWORD(wParam);
 					//	printf("fine_val %f\n", tracks[0].fine_val);
 						double val = 48000.0 / (tracks[0].coarse_val+tracks[0].fine_val) - 1.0;
-						printf("track 1: %f\n", val);
-						wsprintf(buf, L"%f", val);
+						printf("track 1: %f\n", val*100.0);
+						swprintf(buf, L"%.02f%%", val*100.0);
 						SetDlgItemTextW(hwndDlg, IDC_EDIT3, buf);
 						asio->GetTrack(1)->set_output_sampling_frequency(tracks[0].coarse_val+tracks[0].fine_val); 
 					}
@@ -326,8 +326,8 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 						tracks[1].coarse_val = 48000.0 / (1.0 + .01 * HIWORD(wParam) -0.5);
 					//	printf("coarse_val %f\n", tracks[1].coarse_val);
 						double val = 48000.0 / (tracks[1].coarse_val+tracks[1].fine_val) - 1.0;
-						printf("track 2: %f\n", val);
-						wsprintf(buf, L"%f", val);
+						printf("track 2: %f\n", val*100.0);
+						swprintf(buf, L"%.02f%%", val*100.0);
 						SetDlgItemTextW(hwndDlg, IDC_EDIT4, buf);
 						asio->GetTrack(2)->set_output_sampling_frequency(tracks[1].coarse_val+tracks[1].fine_val); 
 					}
@@ -338,8 +338,8 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 						tracks[1].fine_val = 1000.0 -  20*HIWORD(wParam);
 					//	printf("fine_val %f\n", tracks[1].fine_val);
 						double val = 48000.0 / (tracks[1].coarse_val+tracks[1].fine_val) - 1.0;
-						printf("track 2: %f\n", val);
-						wsprintf(buf, L"%f", val);
+						printf("track 2: %f\n", val*100.0);
+						swprintf(buf, L"%.02f%%", val*100.0);
 						SetDlgItemTextW(hwndDlg, IDC_EDIT4, buf);
 						asio->GetTrack(2)->set_output_sampling_frequency(tracks[1].coarse_val+tracks[1].fine_val); 
 					}
@@ -481,7 +481,11 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON10:
 				case IDC_BUTTON12:
 				{
+					TCHAR buf[64];
 					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->goto_pitchpoint();
+					swprintf(buf, L"%.02f%%", (48000.0 / asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->get_pitchpoint() - 1.0)*100.0);
+					SetDlgItemText(g_dlg, LOWORD(wParam)==IDC_BUTTON10 ? IDC_EDIT3 : IDC_EDIT4, 
+						buf);
 					break;
 				}
 				case IDC_COMBO1:
