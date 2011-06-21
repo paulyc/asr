@@ -23,31 +23,10 @@ double last_time;
 
 UITrack tracks[2];
 
-/*
-Suppose you are using GDI to do all the drawing, then you should create a memory device context, do all your drawing in this memory device context and the last step is to blit this memorydc to the screen.
-
-(in the code below, hDC is the handle to your DC on the screen):
-
-HDC memDC = CreateCompatibleDC(hDC);
-HBITMAP hMemBmp = CreateCompatibleBitmap(hDC, iWidth, iHeight);
-HBITMAP hOldBmp = SelectObject(memDC, hMemBmp);
-
-// Now do all your drawing in memDC instead of in hDC!
-
-
-// As a last step copy the memdc to the hdc
-BitBlt(hDC, 0, 0, iWidth, iHeight, memDC, 0, 0, SRCCOPY);
-
-// Always select the old bitmap back into the device context
-SelectObject(memDC, hOldBmp);
-DeleteObject(hMemBmp);
-DeleteDC(memDC);
-*/
-
 void repaint(int t_id=1)
 {
 	//PAINTSTRUCT ps;
-	HDC hdc;
+	HDC hdc, hdc_old;
 	HWND h;
 	track_t *track = asio->GetTrack(t_id);
 	UITrack *uit = tracks+t_id-1;
@@ -62,15 +41,23 @@ void repaint(int t_id=1)
 	h = ::GetDlgItem(g_dlg, t_id == 1 ? IDC_STATIC4 : IDC_STATIC5);
 //	printf("WM_PAINT %d, %d, %d, %d\n", hwndDlg, uMsg, wParam, lParam);
 	hdc = GetDC(h);
-	  
-	SelectObject(hdc, br);
-	
+
 	//GetClientRect(h, &r);
 
 	//GetWindowRect(h, &r2);
 	
 	width = uit->wave.width();
 	height = uit->wave.height();
+
+	HDC memDC = CreateCompatibleDC(hdc);
+	HBITMAP hMemBmp = CreateCompatibleBitmap(hdc, width, height);
+	HBITMAP hOldBmp = (HBITMAP)SelectObject(memDC, hMemBmp);
+
+	hdc_old = hdc;
+	hdc = memDC;
+
+	SelectObject(hdc, br);
+
 	// cant do this here it too slow
 	if (width != track->get_display_width())
 	{
@@ -117,9 +104,13 @@ void repaint(int t_id=1)
 	SelectObject(hdc, pen_oran);
 	LineTo(hdc, r.left+uit->wave.cpx, r.top+height);
 
-//	SwapBuffers(hdc);
+	BitBlt(hdc_old, 0, 0, width, height, memDC, 0, 0, SRCCOPY);
+
+	SelectObject(memDC, hOldBmp);
+	DeleteObject(hMemBmp);
+	DeleteDC(memDC);
 	
-	ReleaseDC(h, hdc);
+	ReleaseDC(h, hdc_old);
 
 //	pthread_mutex_unlock(&asio->_io_lock);
 }
