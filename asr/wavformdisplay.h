@@ -18,9 +18,16 @@ public:
 		_indx(0),
 		_left(0.0),
 		_right(1.0),
-		_pos_locked(false)
+		_pos_locked(false),
+		_level(0)
 	{
 		set_width(width);
+	}
+
+	virtual ~WavFormDisplay()
+	{
+		delete [] _wav_heights;
+		  _wav_heights = 0;
 	}
 
 	  struct wav_height
@@ -31,7 +38,7 @@ public:
 			{}
 		  double peak_top;
 		  double avg_top;
-		//  double peak_bot;
+		  double peak_bot;
 		//  double avg_bot;
 	  };
 
@@ -52,8 +59,9 @@ public:
 	  return _width;
   }
   
-	bool set_next_height()
+	virtual bool set_next_height()
 	{
+#if !USE_NEW_WAVE
 		if (_indx >= _width)
 			return false;
 
@@ -145,9 +153,11 @@ public:
 
 		++_indx;
 		return true;
+#endif
+		return false;
   }
 #if 0
-	void set_wav_heights(pthread_mutex_t *lock=0)
+	virtual void set_wav_heights(pthread_mutex_t *lock=0)
 	{
 		if (lock)
 			pthread_mutex_lock(lock);
@@ -159,8 +169,9 @@ public:
 	}
 #else
   // fix file not expected length!!
-  void set_wav_heights(pthread_mutex_t *lock=0)
+  virtual void set_wav_heights(pthread_mutex_t *lock=0)
   {
+#if !USE_NEW_WAVE
 	  int chunks_total = _src->len().chunks;
 	  int left_chunk = _left * chunks_total;
 	  int right_chunk = _right * chunks_total;
@@ -243,9 +254,10 @@ public:
 				  pthread_mutex_unlock(lock);
 		  }
 	  }
+#endif
   }
 #endif
-  const wav_height& get_wav_height(int pixel)
+  virtual const wav_height& get_wav_height(int pixel)
   {
 	  assert(pixel<_width);
 	  return _wav_heights[pixel];
@@ -302,6 +314,7 @@ public:
 		_left = _center - 0.5/_zoom;
 		_right = _center + 0.5/_zoom;
 	  printf("z %f\n",_zoom);
+	  _level = min(log(_zoom) / log(2.0), 8);
   }
 
 	double get_display_time(double f)
@@ -354,6 +367,44 @@ protected:
 	double _right;
 	bool _pos_locked;
 	int _lock_px;
+	int _level;
+};
+
+template <typename Map_T, typename Source_T, typename Controller_T>
+class WavFormDisplay2 : public WavFormDisplay<Source_T, Controller_T>
+{
+public:
+	WavFormDisplay2(Source_T *src, Map_T *map, int width) :
+		WavFormDisplay(src,0,width),
+		_map(map)
+	{
+		_width = width;
+	}
+
+	virtual bool set_next_height()
+	{
+		return false;
+	}
+
+	virtual void set_wav_heights(pthread_mutex_t *lock=0)
+	{
+	}
+
+	virtual const wav_height& get_wav_height(int pixel)
+	{
+		int level_mips = pow(2.0, _level) * _width;
+		int l_indx = _level > 0 ? _left * level_mips : 0;
+		const typename Map_T::Level::mip& m = _map->GetLevel(_level)->get_mip(l_indx+pixel);
+		_this_height.avg_top = (m.avg[0]+m.avg[1])*0.5;
+		_this_height.peak_top = max(m.peak_hi[0], m.peak_hi[1]);
+		_this_height.peak_bot = min(m.peak_lo[0], m.peak_lo[1]);
+		return _this_height;
+	}
+
+protected:
+	Map_T *_map;
+	typename Map_T::Level *_l;
+	wav_height _this_height;
 };
 
 #endif // !defined(_WAVFORMDISPLAY_H)

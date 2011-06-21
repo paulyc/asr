@@ -665,6 +665,11 @@ void MainLoop_Win32()
 {
 	CreateUI();
 
+#if USE_NEW_WAVE
+	asio->GetTrack(1)->set_display_width(tracks[0].wave.width());
+	asio->GetTrack(2)->set_display_width(tracks[1].wave.width());
+#endif
+
 	br = CreateSolidBrush(RGB(255,255,255));
 	pen_dk = CreatePen(PS_SOLID, 1, RGB(0,0,255));
 	pen_lt = CreatePen(PS_SOLID, 1, RGB(0,0,192));

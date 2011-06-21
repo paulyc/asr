@@ -46,16 +46,17 @@ public:
 			{
 				if (_smpno > _smp_per_mip)
 				{
-					m.avg[0] = m.abs_sum[0] / Source_T::chunk_t::chunk_size;
-					m.avg[1] = m.abs_sum[1] / Source_T::chunk_t::chunk_size;
-					dBm::calc(m.avg_db, m.avg);
-					dBm::calc(m.peak_hi_db, m.peak_hi);
-					Abs::calc(m.peak_lo_db, m.peak_lo);
-					dBm::calc(m.peak_lo_db, m.peak_lo_db);
+					m.avg[0] = m.abs_sum[0] / _smpno;
+					m.avg[1] = m.abs_sum[1] / _smpno;
+					dBm<typename MipMap::sample_t>::calc(m.avg_db, m.avg);
+					dBm<typename MipMap::sample_t>::calc(m.peak_hi_db, m.peak_hi);
+					Abs<typename MipMap::sample_t>::calc(m.peak_lo_db, m.peak_lo);
+					dBm<typename MipMap::sample_t>::calc(m.peak_lo_db, m.peak_lo_db);
 
 					_smpno = 0;
 					++_write_iter;
-					assert(_write_iter != _map.end());
+					if (_write_iter == _map.end())
+						return;
 					m = *_write_iter;
 				}
 				m.abs_sum[0] += fabs((*smp)[0]);
@@ -64,7 +65,13 @@ public:
 				m.peak_hi[1] = max(m.peak_hi[1], (*smp)[1]);
 				m.peak_lo[0] = min(m.peak_lo[0], (*smp)[0]);
 				m.peak_lo[1] = min(m.peak_lo[1], (*smp)[1]);
+				++_smpno;
 			}
+		}
+
+		const mip& get_mip(int indx)
+		{
+			return _map[indx];
 		}
 
 		double _smp_per_mip;
@@ -86,9 +93,10 @@ public:
 			pthread_mutex_unlock(lock);
 		}
 
-		for (int chk = 0; chk < chunks ++chk)
+		for (int c = 0; c < chunks; ++c)
 		{
-			typename Source_T::chunk_t *chk = _src->get_chunk(chk);
+			printf("chunk %d of %d\n", c, chunks);
+			typename Source_T::chunk_t *chk = _src->get_chunk(c);
 			for (std::vector<Level*>::iterator i = _levels.begin(); i != _levels.end(); ++i)
 			{
 				pthread_mutex_lock(lock);

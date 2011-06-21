@@ -27,7 +27,11 @@ public:
 		_display(0),
 		_cuepoint(0.0),
 		_track_id(track_id),
-		_pitchpoint(48000.0)
+		_pitchpoint(48000.0),
+		_display_width(-1)
+#if USE_NEW_WAVE
+		,_mip_map(0)
+#endif
 	{
 		pthread_mutex_init(&_config_lock, 0);
 		if (filename)
@@ -39,6 +43,10 @@ public:
 		pthread_mutex_lock(&_config_lock);
 		delete _display;
 		_display = 0;
+#if USE_NEW_WAVE
+		delete _mip_map;
+		_mip_map = 0;
+#endif
 		delete _resample_filter;
 		_resample_filter = 0;
 		delete _meta;
@@ -63,6 +71,12 @@ public:
 		delete _display;
 		_display = 0;
 		pthread_mutex_unlock(lock);
+#if USE_NEW_WAVE
+		pthread_mutex_lock(lock);
+		delete _mip_map;
+		_mip_map = 0;
+		pthread_mutex_unlock(lock);
+#endif
 		pthread_mutex_lock(lock);
 		delete _resample_filter;
 		_resample_filter = 0;
@@ -99,12 +113,16 @@ public:
 		pthread_mutex_unlock(lock);
 		pthread_mutex_lock(lock);
 		
+#if !USE_NEW_WAVE
 		_meta = new StreamMetadata<Chunk_T>(_src_buf);
+#endif
 		_resample_filter = new lowpass_filter_td<Chunk_T, double>(_src_buf, 22050.0, 44100.0, 48000.0);
 		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
+#if !USE_NEW_WAVE
 		_display = new WavFormDisplay<
 			StreamMetadata<Chunk_T>, 
 			SeekablePitchableFileSource<Chunk_T> >(_meta, this);
+#endif
 
 		pthread_mutex_unlock(lock);
 		pthread_mutex_lock(lock);
@@ -169,7 +187,11 @@ public:
 	void set_display_width(int width)
 	{
 	//	pthread_mutex_lock(&_config_lock);
+#if USE_NEW_WAVE
+		_display_width = width;
+#else
 		_display->set_width(width);
+#endif
 	//	pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -203,7 +225,11 @@ public:
 	bool load_step(pthread_mutex_t *lock)
 	{
 		pthread_mutex_lock(&_config_lock);
+#if USE_NEW_WAVE
+		if (_src_buf->len().samples < 0)
+#else
 		if (len().samples < 0)
+#endif
 		{
 			pthread_mutex_lock(lock);
 			_src_buf->load_next(lock);
@@ -211,6 +237,7 @@ public:
 			pthread_mutex_unlock(&_config_lock);
 			return true;
 		}
+#if !USE_NEW_WAVE
 		pthread_mutex_lock(lock);
 		if (!_display->set_next_height())
 		{
@@ -222,6 +249,24 @@ public:
 			return false;
 		}
 		pthread_mutex_unlock(lock);
+#else
+		do
+		{
+			pthread_mutex_unlock(&_config_lock);
+			pthread_mutex_lock(&_config_lock);
+		} while (_display_width == -1);
+
+		_mip_map = new MipMap<BufferedStream<Chunk_T> >(_src_buf, 8, _display_width, lock);
+		_display = new WavFormDisplay2<MipMap<BufferedStream<Chunk_T> >,
+			T_source<Chunk_T>, 
+		SeekablePitchableFileSource<Chunk_T> >(_src_buf, _mip_map, _display_width);
+		_loaded = true;
+		render();
+		_resample_filter->set_output_scale(1.0f / _src->maxval());
+		pthread_mutex_unlock(&_config_lock);
+		return false;
+#endif
+		
 	//	render();
 		pthread_mutex_unlock(&_config_lock);
 		return true;
@@ -293,6 +338,14 @@ public:
 		pthread_mutex_unlock(&_config_lock);
 	}
 
+	void nudge_time(double dt)
+	{
+		pthread_mutex_lock(&_config_lock);
+		if (!_in_config && _resample_filter)
+			_resample_filter->seek_time(_resample_filter->get_time()+dt);
+		pthread_mutex_unlock(&_config_lock);
+	}
+
 	double get_display_time(double f)
 	{
 		return _display->get_display_time(f);
@@ -300,7 +353,7 @@ public:
 
 	const pos_info& len()
 	{
-		return _meta->len();
+		return _src_buf->len();
 	}
 
 	void set_cuepoint(double pos)
@@ -356,15 +409,25 @@ public:
 	lowpass_filter_td<Chunk_T, double> *_resample_filter;
 	StreamMetadata<Chunk_T> *_meta;
 
+#if USE_NEW_WAVE
+	typedef WavFormDisplay2<MipMap<BufferedStream<Chunk_T> >,
+			T_source<Chunk_T>, 
+		SeekablePitchableFileSource<Chunk_T> > display_t;
+#else
 	typedef WavFormDisplay<
 		StreamMetadata<Chunk_T>, 
 		SeekablePitchableFileSource<Chunk_T> 
 	> display_t;
+#endif
 	display_t *_display;
 	double _cuepoint;
 	bool _loaded;
 	int _track_id;
 	double _pitchpoint;
+	int _display_width;
+#if USE_NEW_WAVE
+	MipMap<BufferedStream<Chunk_T> > *_mip_map;
+#endif
 };
 
 #endif // !defined(TRACK_H)

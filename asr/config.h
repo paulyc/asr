@@ -47,5 +47,6 @@
 #define USE_BUFFER_MGR 1
 
 #define DEBUG_ALLOCATOR 0
+#define USE_NEW_WAVE 0
 
 #endif // !defined(_CONFIG_H)

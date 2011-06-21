@@ -17,6 +17,8 @@ template <typename Chunk_T>
 class BufferedStream : public T_source<Chunk_T>, T_sink<Chunk_T>
 {
 public:
+	typedef Chunk_T chunk_t;
+
 	BufferedStream(T_source<Chunk_T> *src, bool preload=true) :
 	  T_sink(src),
 	  _chks(10000, 0),
