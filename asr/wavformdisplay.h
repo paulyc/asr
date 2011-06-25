@@ -181,6 +181,7 @@ public:
 	//  int chunks_per_pixel = chunks / _width;
 	  double chunks_per_pixel_d = double(chunks) / _width;
 	  int chunks_per_pixel = max(1, int(chunks_per_pixel_d));
+	  printf("cpp %f\n", chunks_per_pixel_d);
 	  if (chunks_per_pixel_d > 1.0)
 	  {
 		  
@@ -207,6 +208,7 @@ public:
 	  }
 	  else
 	  {
+		  // slow.
 		  chunks = _src->len().chunks;
 		  int left_sample = _left * chunks * Source_T::chunk_t::chunk_size;
 		  int rt_sample = _right * chunks * Source_T::chunk_t::chunk_size;

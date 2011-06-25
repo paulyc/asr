@@ -286,12 +286,14 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 			switch (LOWORD(wParam))
 			{
 				wchar_t buf[64];
-				case SB_THUMBPOSITION:
-				case SB_THUMBTRACK:
+				case TB_THUMBPOSITION:
+				case TB_THUMBTRACK:
+				case TB_ENDTRACK:
 					if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER2))
 					{
+						DWORD dwPos = SendMessage((HWND)lParam, TBM_GETPOS, 0, 0); 
 					//	printf("coarse %d ", HIWORD(wParam));
-						tracks[0].coarse_val = 48000.0 / (1.0 + .01 * HIWORD(wParam) -0.5);
+						tracks[0].coarse_val = 48000.0 / (1.0 + .0004 * dwPos -0.2);
 					//	printf("coarse_val %f\n", tracks[0].coarse_val);
 						double val = 48000.0 / (tracks[0].coarse_val+tracks[0].fine_val) - 1.0;
 						printf("track 1: %f\n", val*100.0);
@@ -301,9 +303,10 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER3))
 					{
+						DWORD dwPos = SendMessage((HWND)lParam, TBM_GETPOS, 0, 0); 
 					//	printf("fine %d ", HIWORD(wParam));
 						//val = 10*60*HIWORD(wParam)*0.01;
-						tracks[0].fine_val = 1000.0 -  20*HIWORD(wParam);
+						tracks[0].fine_val = 800.0 -  1.6*dwPos;
 					//	printf("fine_val %f\n", tracks[0].fine_val);
 						double val = 48000.0 / (tracks[0].coarse_val+tracks[0].fine_val) - 1.0;
 						printf("track 1: %f\n", val*100.0);
@@ -313,8 +316,9 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER4))
 					{
+						DWORD dwPos = SendMessage((HWND)lParam, TBM_GETPOS, 0, 0); 
 					//	printf("coarse %d ", HIWORD(wParam));
-						tracks[1].coarse_val = 48000.0 / (1.0 + .01 * HIWORD(wParam) -0.5);
+						tracks[1].coarse_val = 48000.0 / (1.0 + .0004 * dwPos -0.2);
 					//	printf("coarse_val %f\n", tracks[1].coarse_val);
 						double val = 48000.0 / (tracks[1].coarse_val+tracks[1].fine_val) - 1.0;
 						printf("track 2: %f\n", val*100.0);
@@ -324,9 +328,10 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER5))
 					{
+						DWORD dwPos = SendMessage((HWND)lParam, TBM_GETPOS, 0, 0); 
 					//	printf("fine %d ", HIWORD(wParam));
 						//val = 10*60*HIWORD(wParam)*0.01;
-						tracks[1].fine_val = 1000.0 -  20*HIWORD(wParam);
+						tracks[1].fine_val = 800.0 -  1.6*dwPos;
 					//	printf("fine_val %f\n", tracks[1].fine_val);
 						double val = 48000.0 / (tracks[1].coarse_val+tracks[1].fine_val) - 1.0;
 						printf("track 2: %f\n", val*100.0);
@@ -336,21 +341,30 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER1))
 					{
-						asio->SetMix(HIWORD(wParam));
+						DWORD dwPos = SendMessage((HWND)lParam, TBM_GETPOS, 0, 0); 
+					//	printf("dwPos %d\n", dwPos);
+						asio->SetMix(dwPos);
+						break; 
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER8))
 					{
-						asio->_cue->set_mix(HIWORD(wParam));
+						DWORD dwPos = SendMessage((HWND)lParam, TBM_GETPOS, 0, 0); 
+						asio->_cue->set_mix(dwPos);
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER6))
 					{
-						asio->_master_xfader->set_gain(1, HIWORD(wParam)/100.);
-						asio->_cue->set_gain(1, HIWORD(wParam)/100.);
+					//	TCHAR buf[64];
+					//	swprintf(buf, L"%.02f dB", (48000.0 / asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->get_pitchpoint() - 1.0)*100.0);
+					//	SetDlgItemText(g_dlg, LOWORD(wParam)==IDC_BUTTON10 ? IDC_EDIT3 : IDC_EDIT4, buf);
+						DWORD dwPos = SendMessage((HWND)lParam, TBM_GETPOS, 0, 0); 
+						asio->_master_xfader->set_gain(1, dwPos/800.);
+						asio->_cue->set_gain(1, dwPos/800.);
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER7))
 					{
-						asio->_master_xfader->set_gain(2, HIWORD(wParam)/100.);
-						asio->_cue->set_gain(2, HIWORD(wParam)/100.);
+						DWORD dwPos = SendMessage((HWND)lParam, TBM_GETPOS, 0, 0); 
+						asio->_master_xfader->set_gain(2, dwPos/800.);
+						asio->_cue->set_gain(2, dwPos/800.);
 					}
 					break;
 			}
@@ -659,6 +673,30 @@ void CreateUI()
 	SendMessage(hwndCombo, CB_SETCURSEL, 0, 0);
 	SendMessage(GetDlgItem(g_dlg, IDC_CHECK1), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
 	SendMessage(GetDlgItem(g_dlg, IDC_CHECK3), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
+	HWND hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER1);
+	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
+	//SendMessage(hwndSlider, TBM_SETPOS, TRUE, 500); 
+	hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER8);
+	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
+	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 1000); 
+	hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER2);
+	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
+	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 500); 
+	hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER3);
+	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
+	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 500); 
+	hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER4);
+	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
+	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 500); 
+	hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER5);
+	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
+	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 500); 
+	hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER6);
+	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
+	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 800); 
+	hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER7);
+	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
+	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 800); 
 }
 
 void MainLoop_Win32()

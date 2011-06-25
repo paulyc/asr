@@ -128,20 +128,20 @@ public:
 			_src1_mul = _src1_gain;
 			_src2_mul = 0.0;
 		}
-		else if (m == 50)
+		else if (m == 500)
 		{
 			_src1_mul = _src1_gain;
 			_src2_mul = _src2_gain;
 		}
-		else if (m < 50)
+		else if (m < 500)
 		{
 			_src1_mul = _src1_gain;
-			_src2_mul = pow(10.0, (-30.0 + m/1.633)/20.0)*_src2_gain;
+			_src2_mul = pow(10.0, (-30.0 + m/16.33)/20.0)*_src2_gain;
 		}
-		else if (m != 100)
+		else if (m != 1000)
 		{
 			_src2_mul = _src2_gain;
-			_src1_mul = pow(10.0, (-30.0 + (100-m)/1.633)/20.0)*_src1_gain;
+			_src1_mul = pow(10.0, (-30.0 + (1000-m)/16.33)/20.0)*_src1_gain;
 		}
 		else
 		{
