@@ -151,36 +151,6 @@ public:
 		} subband[10];
 	};
 
-	class iterator
-	{
-	public:
-		iterator(StreamMetadata p, int o, bool e=false):parent(p),ofs(o),eof(e){}
-		iterator& operator++()
-		{
-			++ofs;
-			return *this;
-		}
-		/*
-		ChunkMetadata& operator*()
-		{
-			return 
-			*/
-	private:
-		StreamMetadata *parent;
-		int ofs;
-		bool eof;
-	};
-
-	iterator begin()
-	{
-		return iterator(this, 0, false);
-	}
-	iterator end()
-	{
-		return iterator(this, 0, true);
-	}
-
-
 	StreamMetadata(BufferedStream<Chunk_T> *src) :
 	  _src(src),
 	  _chk_data(10000),

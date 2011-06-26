@@ -142,7 +142,8 @@ void Win32UI<ASIOProcessor<SamplePairf, short> >::set_position(void *t, double p
 		//InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC4), NULL, TRUE);
 		//	UpdateWindow(::GetDlgItem(g_dlg, IDC_STATIC4));
 	//		InvalidateRect(g_dlg, NULL, TRUE);
-			render(uit-tracks+1);
+		//	render(uit-tracks+1);
+			_want_render = true;
 		}
 	}
 }

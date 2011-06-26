@@ -141,14 +141,6 @@ public:
 		if (_in_config || _paused)
 		{
 			chk = zero_source<Chunk_T>::get()->next();
-			/*
-
-		pthread_mutex_unlock(&_config_lock);
-
-		Worker::do_job(
-				new Worker::generate_chunk_job<zero_source<Chunk_T> >(
-					zero_source<Chunk_T>::get(), &chk),
-				true, true);*/
 		}
 		else
 		{
@@ -156,19 +148,6 @@ public:
 			chk = _resample_filter->next();
 			pthread_mutex_unlock(&_config_lock);
 			render();
-			/*
-		pthread_mutex_unlock(&_config_lock);
-
-		Worker::do_job(
-				new Worker::generate_chunk_job<lowpass_filter_td<Chunk_T, double> >(
-					_resample_filter, &chk), 
-				true, true);
-
-		pthread_mutex_lock(&_config_lock);
-			set_position(_resample_filter->get_time(), true);
-			pthread_mutex_unlock(&_config_lock);
-		//	render();
-		*/
 		}
 		
 		return chk;
@@ -294,6 +273,8 @@ public:
 	void render()
 	{
 		asio->get_ui()->set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
+		if (asio->get_ui()->want_render())
+			Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
 	}
 
 	void set_pitch(double mod)

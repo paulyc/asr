@@ -314,6 +314,7 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 //	_bus_matrix = new io_matrix<track_t, bus<chunk_t> >;
 	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
 	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
+	_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
 //	_master_bus = new bus<chunk_t>(_bus_matrix);
 //	_cue_bus = new bus<chunk_t>(_bus_matrix);
 //	_aux_bus = new bus<chunk_t>(_bus_matrix);

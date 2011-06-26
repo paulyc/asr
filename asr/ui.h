@@ -13,21 +13,24 @@ public:
 	virtual void set_track_filename(int t) = 0;
 	virtual void set_position(void *t, double tm, bool invalidate) = 0;
 	virtual void set_clip(int) = 0;
+	virtual bool want_render() = 0;
 };
 
 template <typename IO_T>
 class Win32UI : public GenericUI
 {
 public:
-	Win32UI(IO_T *io):_io(io){}
+	Win32UI(IO_T *io):_io(io),_want_render(false){}
 	virtual void create();
 	virtual void main_loop();
 	virtual void render(int);
 	virtual void set_track_filename(int t){}
 	virtual void set_position(void *t, double tm, bool invalidate);
 	virtual void set_clip(int);
+	virtual bool want_render(){ bool r = _want_render; _want_render = false; return r; }
 protected:
 	IO_T *_io;
+	bool _want_render;
 };
 
 struct UIWavform
