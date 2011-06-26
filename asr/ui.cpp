@@ -364,22 +364,27 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER6))
 					{
-					//	TCHAR buf[64];
-					//	swprintf(buf, L"%.02f dB", (48000.0 / asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->get_pitchpoint() - 1.0)*100.0);
-					//	SetDlgItemText(g_dlg, LOWORD(wParam)==IDC_BUTTON10 ? IDC_EDIT3 : IDC_EDIT4, buf);
 						DWORD dwPos = SendMessage((HWND)lParam, TBM_GETPOS, 0, 0); 
+						TCHAR buf[64];
+						swprintf(buf, L"%.02f dB", 20.0*log(dwPos/800.));
+						SetDlgItemText(g_dlg, IDC_EDIT5, buf);
 						asio->_master_xfader->set_gain(1, dwPos/800.);
 						asio->_cue->set_gain(1, dwPos/800.);
 					}
 					else if ((HWND)lParam == ::GetDlgItem(hwndDlg, IDC_SLIDER7))
 					{
 						DWORD dwPos = SendMessage((HWND)lParam, TBM_GETPOS, 0, 0); 
+						TCHAR buf[64];
+						swprintf(buf, L"%.02f dB", 20.0*log(dwPos/800.));
+						SetDlgItemText(g_dlg, IDC_EDIT6, buf);
 						asio->_master_xfader->set_gain(2, dwPos/800.);
 						asio->_cue->set_gain(2, dwPos/800.);
 					}
 					break;
 			}
 			return TRUE;
+		case WM_KEYUP:
+			break;
 		case WM_COMMAND: 
             switch (LOWORD(wParam)) 
             { 
@@ -510,20 +515,23 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON16:
 				{
 					int t_id = LOWORD(wParam)==IDC_BUTTON13||LOWORD(wParam)==IDC_BUTTON14 ? 1 : 2;
-					double dt = LOWORD(wParam)==IDC_BUTTON13 || LOWORD(wParam)==IDC_BUTTON15 ? -0.01 : 0.01;
+					double dt = LOWORD(wParam)==IDC_BUTTON13 || LOWORD(wParam)==IDC_BUTTON15 ? -0.1 : 0.1;
 					asio->GetTrack(t_id)->nudge_time(dt);
 					break;
 				}
-			/*	case IDC_BUTTON17:
+				case IDC_BUTTON17:
 				case IDC_BUTTON18:
 				case IDC_BUTTON19:
 				case IDC_BUTTON20:
 				{
+					TCHAR buf[64];
 					int t_id = LOWORD(wParam)==IDC_BUTTON17||LOWORD(wParam)==IDC_BUTTON18 ? 1 : 2;
-					double dp = LOWORD(wParam)==IDC_BUTTON17 || LOWORD(wParam)==IDC_BUTTON19 ? -0.01 : 0.01;
+					double dp = LOWORD(wParam)==IDC_BUTTON17 || LOWORD(wParam)==IDC_BUTTON19 ? -0.0001 : 0.0001;
 					asio->GetTrack(t_id)->nudge_pitch(dp);
+					swprintf(buf, L"%.02f%%",  (asio->GetTrack(t_id)->get_pitch() - 1.)*100.);
+					SetDlgItemTextW(hwndDlg, t_id==1?IDC_EDIT3:IDC_EDIT4, buf);
 					break;
-				}*/
+				}
 				case IDC_COMBO1:
 				case IDC_COMBO2:
 				{
@@ -730,6 +738,8 @@ void Win32UI<ASIOProcessor<SamplePairf, short> >::create()
 	hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER7);
 	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
 	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 800); 
+	SetDlgItemText(g_dlg, IDC_EDIT5, L"0.00 dB");
+	SetDlgItemText(g_dlg, IDC_EDIT6, L"0.00 dB");
 }
 
 template <>

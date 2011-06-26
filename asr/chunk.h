@@ -38,8 +38,7 @@ class chunk_base : public countable
 public:
 	chunk_base(Sample_T *input=0) :
 	    countable(),
-		_input_data(input),
-		_default_plan(0)
+		_input_data(input)
 	{
 	}
 
@@ -48,7 +47,7 @@ public:
 //protected:
 	Sample_T *_data;
 	Sample_T *_input_data;
-	fftwf_plan _default_plan;
+//	fftwf_plan _default_plan;
 //	static bool _initd;
 };
 
@@ -85,12 +84,9 @@ public:
 protected:
 	void copy_from_chunk_transform(chunk_base_domain<Sample_T> *chk, int sign=FFTW_FORWARD)
 	{
-		assert(0);
-		/*
-		chunk_base_dim<Sample_T> *chk_dim = dynamic_cast<chunk_base_dim<Sample_T>*>(chk);
-		fftwf_plan p = fftwf_plan_dft(chk_dim->dim(), chk_dim->sizes_as_array(), (Sample_T*)chk->_data, _data, sign, FFTW_ESTIMATE);
-		fftwf_execute(p);
-		*/
+		//	fftwf_execute_dft_r2c(
+     //     const fftw_plan p,
+     //     double *in, fftw_complex *out);
 	}
 
 	void copy_from_chunk_direct(chunk_base_domain<Sample_T> *chk)
@@ -149,7 +145,15 @@ class chunk_1d : public chunk_base_dim<Sample_T>
 public:
 	chunk_1d()
 	{
-		_data = (Sample_T*)fftwf_malloc(size_as_bytes());
+		_data = (Sample_T*)fftwf_malloc(size_as_bytes()+n0*sizeof(Sample_T)); // padding for inplace DFT
+		if (!_plan)
+		{
+			_plan = fftwf_plan_dft_r2c_2d(4096, 2,
+				(float*)_data, (fftwf_complex*)_data, FFTW_MEASURE);
+			_iplan = fftwf_plan_dft_c2r_2d(4096, 2,
+				(fftwf_complex*)_data, (float*)_data, FFTW_MEASURE);
+		}
+		_domain = time;
 	}
 	int dim()
 	{
@@ -169,8 +173,30 @@ public:
 		return _data[m0];
 	}
 
+	enum { time, freq } _domain;
+
+	void inplace_dft()
+	{
+		fftwf_execute_dft_r2c(_plan, (float*)_data, (fftwf_complex*)_data);
+		_domain = freq;
+	}
+
+	void inplace_idft()
+	{
+		fftwf_execute_dft_c2r(_iplan, (fftwf_complex*)_data, (float*)_data);
+		_domain = time;
+	}
+
 	static const int chunk_size = n0;
+	static fftwf_plan _plan;
+	static fftwf_plan _iplan;
 };
+
+template <typename Sample_T, int n0>
+fftwf_plan chunk_1d<Sample_T, n0>::_plan = 0;
+
+template <typename Sample_T, int n0>
+fftwf_plan chunk_1d<Sample_T, n0>::_iplan = 0;
 
 template <typename Sample_T, int n0, int n1>
 class chunk_2d : public chunk_base_dim<Sample_T>
@@ -255,6 +281,19 @@ public:
 			PairFromT<SamplePairf, Src_T>(_data[r], buf[r*2], buf[r*2+1]);
 		}
 	}
+#if 0
+	template <unsigned int bytes_per_sample>
+	void load_from_buffer(char *buf)
+	{
+		char *b = buf;
+		const unsigned int mask = (unsigned int)0xFFFFFFFF >> (4 - bytes_per_sample)*8;
+		for (int r=0; r < chunk_size; ++r)
+		{
+			PairFromT<SamplePairf, int>(_data[r], *((int*)b) & mask, *((int*)(b+_bytes_per_sample)) & mask);
+			b += 2*bytes_per_sample;
+		}
+	}
+#endif
 };
 
 template <typename Sample_T, int n0>
@@ -266,6 +305,8 @@ public:
 		chunk_freq_domain<Sample_T>()
 	{
 	}
+
+	static fftwf_plan _plan;
 };
 
 template <typename Sample_T, int n0, int n1>

@@ -19,6 +19,9 @@
 typedef float SamplePairf[2];
 typedef double SamplePaird[2];
 
+typedef fftwf_complex ComplexPairf[2];
+typedef fftw_complex ComplexPaird[2];
+
 typedef int smp_ofs_t;
 
 template <typename T> 
@@ -309,6 +312,10 @@ public:
 	virtual bool eof()
 	{
 		return false;
+	}
+	virtual double sample_rate()
+	{
+		return 44100.0;
 	}
 	struct pos_info
 	{

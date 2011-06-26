@@ -113,7 +113,7 @@ public:
 		pthread_mutex_unlock(lock);
 		pthread_mutex_lock(lock);
 		
-		_resample_filter = new lowpass_filter_td<Chunk_T, double>(_src_buf, 22050.0, 44100.0, 48000.0);
+		_resample_filter = new lowpass_filter_td<Chunk_T, double>(_src_buf, 22050.0, _src->sample_rate(), 48000.0);
 		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
 #if !USE_NEW_WAVE
 		_meta = new StreamMetadata<Chunk_T>(_src_buf);
@@ -282,6 +282,11 @@ public:
 		set_output_sampling_frequency(48000.0/mod);
 	}
 
+	double get_pitch()
+	{
+		return 48000.0/_resample_filter->get_output_sampling_frequency();
+	}
+
 	void set_output_sampling_frequency(double f)
 	{
 		pthread_mutex_lock(&_config_lock);
@@ -291,6 +296,11 @@ public:
 			_resample_filter->set_output_sampling_frequency(f);
 		}
 		pthread_mutex_unlock(&_config_lock);
+	}
+
+	double get_output_sampling_frequency(double f)
+	{
+		return _resample_filter->get_output_sampling_frequency();
 	}
 
 	void seek_time(double t)
@@ -313,10 +323,12 @@ public:
 
 	void nudge_time(double dt)
 	{
-		pthread_mutex_lock(&_config_lock);
-		if (!_in_config && _resample_filter)
-			_resample_filter->seek_time(_resample_filter->get_time()+dt);
-		pthread_mutex_unlock(&_config_lock);
+		_resample_filter->seek_time(_resample_filter->get_time()+dt);
+	}
+
+	void nudge_pitch(double dp)
+	{
+		set_pitch(get_pitch()+dp);
 	}
 
 	double get_display_time(double f)

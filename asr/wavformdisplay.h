@@ -219,7 +219,7 @@ public:
 	  }
 	  else
 	  {
-		  // slow.
+		  // slow for higher values of chunks per pixel
 		  chunks = _src->len().chunks;
 		  int left_sample = _left * chunks * Source_T::chunk_t::chunk_size;
 		  int rt_sample = _right * chunks * Source_T::chunk_t::chunk_size;

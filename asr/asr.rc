@@ -127,21 +127,6 @@ BEGIN
     CONTROL         "Clip",IDC_CHECK8,"Button",BS_AUTOCHECKBOX | BS_LEFTTEXT | WS_TABSTOP,302,205,27,10
 END
 
-IDD_DIALOG2 DIALOGEX 0, 0, 316, 180
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Dialog"
-FONT 8, "MS Shell Dlg", 400, 0, 0x1
-BEGIN
-    DEFPUSHBUTTON   "Quit",IDOK,205,159,50,14
-    PUSHBUTTON      "Start",IDC_BUTTON1,84,49,50,14
-    PUSHBUTTON      "Stop",IDC_BUTTON2,85,73,50,14
-    LTEXT           "Speed Modifier",IDC_STATIC,204,21,48,8
-    GROUPBOX        "Static",IDC_STATIC,21,97,256,27
-    LTEXT           "Src 1",IDC_STATIC,31,108,47,10
-    PUSHBUTTON      "Load 1",IDC_BUTTON3,219,105,50,14
-    EDITTEXT        IDC_EDIT1,99,105,107,14,ES_AUTOHSCROLL | ES_READONLY,WS_EX_ACCEPTFILES
-END
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -157,14 +142,6 @@ BEGIN
         RIGHTMARGIN, 572
         TOPMARGIN, 7
         BOTTOMMARGIN, 394
-    END
-
-    IDD_DIALOG2, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 309
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 173
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -199,6 +176,13 @@ BEGIN
 0x7541, 0x0078, 
     0
 END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////

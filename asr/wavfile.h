@@ -67,6 +67,21 @@ public:
 		file_chunker(filename),
 		_eof(false)
 	{
+		load_header(filename);
+	}
+	wavfile_chunker_base(GenericFile *file) :
+		file_chunker(file),
+		_eof(false)
+	{
+		load_header(L"GenericFile");
+	}
+
+	virtual ~wavfile_chunker_base()
+	{
+	}
+
+	void load_header(const wchar_t * filename)
+	{
 		_file->read(&_riffHdr, sizeof(_riffHdr), 1);
 		if (_riffHdr.riff != 'FFIR' || _riffHdr.fileid != 'EVAW')
 		{
@@ -122,14 +137,10 @@ public:
 		_dataOfs = _file->tell();
 		_dataBytes = ch.len;
 
-		_len.samples = _dataBytes / (_fmtChk.nChannels*sizeof(short));
+		_len.samples = _dataBytes / (_fmtChk.nChannels*_bytesPerSample);
 		_len.chunks = _len.samples / Chunk_T::chunk_size + 1;
 		_len.smp_ofs_in_chk = _len.samples % Chunk_T::chunk_size;
 		_len.time = _len.samples / double(_fmtChk.sampleRate);
-	}
-	wavfile_chunker_base(GenericFile *file) :
-		file_chunker(file)
-	{
 	}
 
 	virtual Chunk_T* next() = 0;
@@ -137,7 +148,7 @@ public:
 	void seek(int smp_ofs)
 	{
 		_eof = false;
-		_file->seek(_dataOfs + _fmtChk.nChannels*sizeof(short)*smp_ofs);
+		_file->seek(_dataOfs + _fmtChk.nChannels*_bytesPerSample*smp_ofs);
 	}
 	virtual void seek_chk(int chk_ofs)
 	{
@@ -148,6 +159,11 @@ public:
 	const pos_info& len()
 	{
 		return _len;
+	}
+
+	virtual double sample_rate()
+	{
+		return double(_fmtChk.sampleRate);
 	}
 
 protected:
@@ -167,24 +183,33 @@ public:
 	wavfile_chunker(const wchar_t *filename) : 
 		wavfile_chunker_base<Chunk_T>(filename)
 	{
+		// one chunk of data+padding
+		_buffer = new char[_bytesPerSample*_fmtChk.nChannels*Chunk_T::chunk_size+4];
+	}
+
+	virtual ~wavfile_chunker()
+	{
+		delete _buffer;
 	}
 
 	Chunk_T* next()
 	{
-		short buffer[2*Chunk_T::chunk_size];
-		size_t bytes_to_read = _bytesPerSample*2*Chunk_T::chunk_size, rd;
+		size_t bytes_to_read = _bytesPerSample*_fmtChk.nChannels*Chunk_T::chunk_size, rd;
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 
-		rd = _file->read(buffer, 1, bytes_to_read);
+		rd = _file->read(_buffer, 1, bytes_to_read);
 		if (rd < bytes_to_read)
 		{
 			_eof = true;
-			for (short *b=buffer+(bytes_to_read-rd)/sizeof(short); b < buffer+2*Chunk_T::chunk_size; ++b)
+			for (short *b=(short*)_buffer+(bytes_to_read-rd)/_bytesPerSample; 
+				b < (short*)_buffer+_fmtChk.nChannels*Chunk_T::chunk_size; ++b)
 				*b = 0;
 		}
-		chk->load_from(buffer);
+		chk->load_from<short>((short*)_buffer);
 		return chk;
 	}
+protected:
+	char *_buffer;
 };
 
 template <typename Chunk_T>
@@ -195,7 +220,8 @@ public:
 		file_chunker(filename),
 		_smp_read(0),
 		_eof(false),
-		_max(0.0f)
+		_max(0.0f),
+		_sample_rate(44100.0)
 	{
 		mad_stream_init(&_stream);
 		mad_frame_init(&_frame);
@@ -281,6 +307,8 @@ public:
 						throw std::exception("fatal error during MPEG decoding");
 			}
 
+			_sample_rate = (double)_frame.header.samplerate;
+
 			mad_timer_add(&_timer, _frame.header.duration);
 			
 			mad_synth_frame(&_synth, &_frame);
@@ -314,6 +342,10 @@ public:
 	{
 		return _max;
 	}
+	virtual double sample_rate()
+	{
+		return _sample_rate;
+	}
 private:
 	const static int INPUT_BUFFER_SIZE = 5*8192;
 	mad_stream _stream;
@@ -328,6 +360,7 @@ private:
 	bool _eof;
 
 	float _max;
+	double _sample_rate;
 };
 
 #include <FLAC/stream_decoder.h>
@@ -340,7 +373,53 @@ public:
 		file_chunker(filename),
 		_decoder(0)
 	{
+		if((_decoder = FLAC__stream_decoder_new()) == NULL) {
+			delete _file;
+			_file = 0;
+			throw std::exception("ERROR: allocating decoder");
+		}
+
+		if(FLAC__stream_decoder_init_FILE(_decoder, 
+			_file, write_callback, metadata_callback, 
+			error_callback, (void*)this) != FLAC__STREAM_DECODER_INIT_STATUS_OK)
+		{
+			delete _file;
+			_file = 0;
+			throw std::exception("ERROR: initializing decoder");
+		}
+
+		FLAC__stream_decoder_process_until_end_of_metadata(_decoder);
 	}
+
+	virtual ~flacfile_chunker()
+	{
+	//	FLAC__stream_decoder_delete
+	}
+
+	static FLAC__StreamDecoderWriteStatus write_callback(
+		const FLAC__StreamDecoder *decoder, 
+		const FLAC__Frame *frame, 
+		const FLAC__int32 * const buffer[], 
+		void *client_data)
+	{
+	}
+
+	static void metadata_callback(const FLAC__StreamDecoder *decoder, 
+		const FLAC__StreamMetadata *metadata, void *client_data)
+	{
+	}
+
+	static void error_callback(const FLAC__StreamDecoder *decoder, 
+		FLAC__StreamDecoderErrorStatus status, void *client_data)
+	{
+	}
+
+	Chunk_T* next()
+	{
+		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
+		return chk;
+	}
+
 protected:
 	FLAC__StreamDecoder *_decoder;
 };

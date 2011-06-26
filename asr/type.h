@@ -10,6 +10,7 @@ typedef T_source<my_chunk> my_source;
 typedef T_sink<my_chunk> my_sink;
 */
 typedef chunk_time_domain_1d<SamplePairf, 4096> chunk_t;
+typedef chunk_freq_domain_1d<fftwf_complex, 4096> cchunk_t;
 
 typedef fftwf_complex default_internal_sample_type;
 typedef chunk_time_domain_2d<fftwf_complex, 2, BUFFERSIZE> default_internal_chunk_type;
