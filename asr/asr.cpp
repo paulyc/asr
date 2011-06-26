@@ -44,6 +44,7 @@ void begin()
 #if WINDOWS
 	ui = new Win32UI<ASIOProcessor<SamplePairf, short> >(asio);
 #endif
+	asio->set_ui(ui);
 #if RUN
 	asio->Start();
 	//ASIOStart();
@@ -141,26 +142,11 @@ int main()
 	}
 	return 0;
 #endif
-#if 1
-	//init();
+
 	begin();
-#else
-	typedef chunk_time_domain_1d<SamplePairf, 4096> c_T;
-	//wavfile_chunker_T_N<c_T, 4096> wav_chunker(L"H:\\Music\\Gareth Emery - Metropolis (Original Mix).wav");
-	wavfile_chunker_T_N<c_T, 4096, 1> wav_chunker(L"F:\\My Music\\Flip & Fill - I Wanna Dance With Somebody (Resource Mix).wav");
-	lowpass_filter_td<SamplePairf, c_T, double> filt1(&wav_chunker, 22050.0, 44100.0, 44100.0);
-	//lowpass_filter_td<float, c_T, double> filt2(&filt1, 22050.0, 44100.0, 45000.0);
-	my_output<c_T> out(&filt1);
-	//my_output<c_T> out(&wav_chunker);
-	do
-	{
-		out.process();
-	} while (!wav_chunker.eof());
-	return 0;
-#endif
 
 #if WINDOWS
-	MainLoop_Win32();
+	ui->main_loop();
 #endif
 
 	end();

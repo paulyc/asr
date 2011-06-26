@@ -95,6 +95,33 @@ public:
 		}
 	};
 
+	template <typename Track_T>
+	struct draw_waveform_job : public job
+	{
+		draw_waveform_job(Track_T *t, pthread_mutex_t *l):track(t),_lock(l){
+			_name="draw wave";
+			pthread_mutex_init(&_l, 0);
+			pthread_cond_init(&_next_step, 0);
+		}
+		Track_T *track;
+		
+		//const wchar_t *file;
+		//void do_it()
+		//{
+		//	track->set_source_file(file);
+		//	done = true;
+		//}
+		pthread_mutex_t _l;
+		pthread_mutex_t *_lock;
+		pthread_cond_t _next_step;
+		void step()
+		{
+			track->set_wav_heights(false);
+			track->lockedpaint();
+			done = true;
+		}
+	};
+
 	static pthread_mutex_t _job_lock;
 	static pthread_cond_t _job_rdy;
 	static pthread_cond_t _job_done;
@@ -178,7 +205,7 @@ public:
 			
 			if (id_j)
 			{
-			//	pthread_mutex_unlock(&_job_lock);
+				pthread_mutex_unlock(&_job_lock);
 				id_j->step();
 				if (id_j->done)
 				{
@@ -188,7 +215,6 @@ public:
 					id_j = 0;
 					pthread_cond_signal(&_job_done);
 				}
-				pthread_mutex_unlock(&_job_lock);
 			}
 			else 
 			{

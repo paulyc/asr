@@ -65,7 +65,7 @@ public:
 		_in_config = true;
 		_loaded = false;
 		_paused = true;
-		pthread_mutex_unlock(&_config_lock);
+	//	pthread_mutex_unlock(&_config_lock);
 
 		pthread_mutex_lock(lock);
 		delete _display;
@@ -127,7 +127,7 @@ public:
 		pthread_mutex_unlock(lock);
 		pthread_mutex_lock(lock);
 
-		pthread_mutex_lock(&_config_lock);
+	//	pthread_mutex_lock(&_config_lock);
 		_in_config = false;
 		pthread_mutex_unlock(&_config_lock);
 
@@ -209,7 +209,7 @@ public:
 	{
 		if (unlock)
 			pthread_mutex_unlock(&_config_lock);
-		_display->set_wav_heights(&_config_lock);
+		_display->set_wav_heights(&asio->_io_lock);
 		if (unlock)
 			pthread_mutex_lock(&_config_lock);
 	}
@@ -241,9 +241,11 @@ public:
 		pthread_mutex_lock(lock);
 		if (!_display->set_next_height())
 		{
+		//	GenericUI *ui;
 			pthread_mutex_unlock(lock);
 			_loaded = true;
-			render();
+			if (asio && asio->get_ui())
+				asio->get_ui()->render(_track_id);
 			_resample_filter->set_output_scale(1.0f / _src->maxval());
 			pthread_mutex_unlock(&_config_lock);
 			return false;
@@ -261,7 +263,7 @@ public:
 			T_source<Chunk_T>, 
 		SeekablePitchableFileSource<Chunk_T> >(_src_buf, _mip_map, _display_width);
 		_loaded = true;
-		render();
+		asio->get_ui()->render(_track_id);
 		_resample_filter->set_output_scale(1.0f / _src->maxval());
 		pthread_mutex_unlock(&_config_lock);
 		return false;
@@ -272,36 +274,28 @@ public:
 		return true;
 	}
 
-	void lockedcall(void(*f)(int))
+	void lockedpaint()
 	{
 		pthread_mutex_lock(&_config_lock);
-		f(_track_id);
+		asio->get_ui()->render(_track_id);
 		pthread_mutex_unlock(&_config_lock);
 	}
 
 	void zoom_px(int d)
 	{
 		_display->zoom_px(d);
-		set_wav_heights(false);
-
-		pthread_mutex_lock(&_config_lock);
-		render();
-		pthread_mutex_unlock(&_config_lock);
+		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
 	}
 
 	void move_px(int d)
 	{
 		_display->move_px(d);
-		set_wav_heights(false);
-
-		pthread_mutex_lock(&_config_lock);
-		render();
-		pthread_mutex_unlock(&_config_lock);
+		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
 	}
 
 	void render()
 	{
-		set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
+		asio->get_ui()->set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
 	}
 
 	void set_pitch(double mod)

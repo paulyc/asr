@@ -23,6 +23,8 @@
 #include "wavformdisplay.h"
 #include "track.h"
 
+class GenericUI;
+
 extern IASIO * asiodrv;
 
 #define ASIO_ASSERT_NO_ERROR(call) { \
@@ -203,6 +205,16 @@ public:
 	//	_bus_matrix->xfade_2(m, _tracks[0], _tracks[1], _master_bus);
 	}
 
+	void set_ui(GenericUI *ui)
+	{
+		_ui = ui;
+	}
+
+	GenericUI *get_ui()
+	{
+		return _ui;
+	}
+
 	long _doubleBufferIndex;
 	bool _running;
 	double _speed;
@@ -262,6 +274,7 @@ public: // was protected
 	xfader<track_t> *_file_src;
 
 	pthread_mutex_t _io_lock;
+	GenericUI *_ui;
 };
 
 #endif // !defined(_IO_H)

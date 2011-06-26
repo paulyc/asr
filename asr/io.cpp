@@ -201,7 +201,8 @@ ASIOProcessor<SamplePairf, short>::ASIOProcessor() :
 	_src_active(false),
 	_log("mylog.txt"),
 	_my_source(0),
-	_main_out(0)
+	_main_out(0),
+	_ui(0)
 {
 	Init();
 }
@@ -388,6 +389,8 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBuf
 		chunk_t *chk2 = _tracks[1]->next();
 		chk2->add_ref();
 		chunk_t *out = _main_src->next(chk1, chk2);
+		if (_main_src->_clip)
+			_ui->set_clip(1);
 		_main_mgr._c = out;
 		if (_file_src == _main_src) 
 		{
@@ -399,6 +402,8 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBuf
 		else if (_file_src)
 		{
 			_file_out->process(_file_src->next(chk1, chk2));
+			if (_main_src->_clip)
+				_ui->set_clip(2);
 		}
 		else
 		{

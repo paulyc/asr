@@ -55,6 +55,7 @@ class mixer<Source_T, 2> : public T_source<typename Source_T::chunk_t>
 {
 public:
 	mixer(Source_T *src1, Source_T *src2) :
+	    _clip(false),
 		_src1(src1),
 		_src2(src2),
 		_src1_mul(1.0),
@@ -72,10 +73,13 @@ public:
 		typename Source_T::chunk_t::sample_t *s1 = chk1->_data,
 			*s2 = chk2->_data, *sout = chk_out->_data, 
 			*send = sout + Source_T::chunk_t::chunk_size;
+		_clip = false;
 		for (; sout != send; ++s1, ++s2, ++sout)
 		{
 			(*sout)[0] = (*s1)[0]*_src1_mul + (*s2)[0]*_src2_mul;
 			(*sout)[1] = (*s1)[1]*_src1_mul + (*s2)[1]*_src2_mul;
+			if (fabs((*sout)[0]) > 1.0 || fabs((*sout)[1]) > 1.0)
+				_clip = true;
 		//	Product<typename Source_T::chunk_t::sample_t>::calc(*s1, *s1, _src1_mul);
 		//	Product<typename Source_T::chunk_t::sample_t>::calc(*s2, *s2, _src2_mul);
 		//	Sum<typename Source_T::chunk_t::sample_t>::calc(*sout, *s1, *s2);
@@ -93,6 +97,7 @@ public:
 			_src2_gain = gain;
 	}
 
+	bool _clip;
 protected:
 	Source_T *_src1;
 	Source_T *_src2;
@@ -154,6 +159,7 @@ public:
 		mixer<Source_T, 2>::set_gain(src, gain);
 		set_mix();
 	}
+	
 protected:
 	int _m;
 };

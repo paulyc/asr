@@ -1,8 +1,10 @@
+#include "config.h"
 #include "ui.h"
 
 #include <cstdio>
 
 extern ASIOProcessor<SamplePairf, short> * asio;
+extern GenericUI *ui;
 typedef ASIOProcessor<SamplePairf, short>::track_t track_t;
 
 #if WINDOWS
@@ -23,7 +25,14 @@ double last_time;
 
 UITrack tracks[2];
 
-void repaint(int t_id=1)
+template <>
+void Win32UI<ASIOProcessor<SamplePairf, short> >::set_clip(int t_id)
+{
+	SendMessage(GetDlgItem(g_dlg, t_id==1?IDC_CHECK7:IDC_CHECK8), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
+}
+
+template <>
+void Win32UI<ASIOProcessor<SamplePairf, short> >::render(int t_id)
 {
 	//PAINTSTRUCT ps;
 	HDC hdc, hdc_old;
@@ -115,7 +124,8 @@ void repaint(int t_id=1)
 //	pthread_mutex_unlock(&asio->_io_lock);
 }
 
-void set_position(void *t, double p, bool invalidate)
+template <>
+void Win32UI<ASIOProcessor<SamplePairf, short> >::set_position(void *t, double p, bool invalidate)
 {
 	if (asio)
 	{
@@ -132,7 +142,7 @@ void set_position(void *t, double p, bool invalidate)
 		//InvalidateRect(::GetDlgItem(g_dlg, IDC_STATIC4), NULL, TRUE);
 		//	UpdateWindow(::GetDlgItem(g_dlg, IDC_STATIC4));
 	//		InvalidateRect(g_dlg, NULL, TRUE);
-			repaint(uit-tracks+1);
+			render(uit-tracks+1);
 		}
 	}
 }
@@ -149,8 +159,8 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 	{
 		case WM_PAINT:
 		{
-			asio->GetTrack(1)->lockedcall(repaint);
-			asio->GetTrack(2)->lockedcall(repaint);
+			asio->GetTrack(1)->lockedpaint();
+			asio->GetTrack(2)->lockedpaint();
 			return 0L;
 		}
 		case WM_LBUTTONDOWN:
@@ -493,6 +503,26 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 						buf);
 					break;
 				}
+				case IDC_BUTTON13:
+				case IDC_BUTTON14:
+				case IDC_BUTTON15:
+				case IDC_BUTTON16:
+				{
+					int t_id = LOWORD(wParam)==IDC_BUTTON13||LOWORD(wParam)==IDC_BUTTON14 ? 1 : 2;
+					double dt = LOWORD(wParam)==IDC_BUTTON13 || LOWORD(wParam)==IDC_BUTTON15 ? -0.01 : 0.01;
+					asio->GetTrack(t_id)->nudge_time(dt);
+					break;
+				}
+			/*	case IDC_BUTTON17:
+				case IDC_BUTTON18:
+				case IDC_BUTTON19:
+				case IDC_BUTTON20:
+				{
+					int t_id = LOWORD(wParam)==IDC_BUTTON17||LOWORD(wParam)==IDC_BUTTON18 ? 1 : 2;
+					double dp = LOWORD(wParam)==IDC_BUTTON17 || LOWORD(wParam)==IDC_BUTTON19 ? -0.01 : 0.01;
+					asio->GetTrack(t_id)->nudge_pitch(dp);
+					break;
+				}*/
 				case IDC_COMBO1:
 				case IDC_COMBO2:
 				{
@@ -571,7 +601,8 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void CreateUI()
+template <>
+void Win32UI<ASIOProcessor<SamplePairf, short> >::create()
 {
 #if 0
 	INITCOMMONCONTROLSEX iccx;
@@ -699,9 +730,10 @@ void CreateUI()
 	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 800); 
 }
 
-void MainLoop_Win32()
+template <>
+void Win32UI<ASIOProcessor<SamplePairf, short> >::main_loop()
 {
-	CreateUI();
+	create();
 
 #if USE_NEW_WAVE
 	asio->GetTrack(1)->set_display_width(tracks[0].wave.width());
@@ -713,6 +745,9 @@ void MainLoop_Win32()
 	pen_lt = CreatePen(PS_SOLID, 1, RGB(0,0,192));
 	pen_yel = CreatePen(PS_SOLID, 1, RGB(255,255,0));
 	pen_oran = CreatePen(PS_SOLID, 1, RGB(255,128,0));
+
+	asio->GetTrack(1)->lockedpaint();
+	asio->GetTrack(2)->lockedpaint();
 
 #if SLEEP
 	Sleep(10000);
