@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;E:\cygwin\home\haxor\mycode\asr2\libmad-0.15.1b\msvc++&quot;;E:\cygwin\home\haxor\pthreads.2;&quot;E:\My Documents\Visual Studio Projects\ASIOSDK2\common&quot;;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
+				AdditionalIncludeDirectories="&quot;E:\cygwin\home\haxor\flac-1.2.1\include&quot;;&quot;E:\cygwin\home\haxor\mycode\asr2\libmad-0.15.1b\msvc++&quot;;E:\cygwin\home\haxor\pthreads.2;&quot;E:\My Documents\Visual Studio Projects\ASIOSDK2\common&quot;;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"

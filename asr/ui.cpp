@@ -711,6 +711,7 @@ void Win32UI<ASIOProcessor<SamplePairf, short> >::create()
 	hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER8);
 	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
 	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 1000); 
+	asio->_cue->set_mix(1000);
 	hwndSlider = GetDlgItem(g_dlg, IDC_SLIDER2);
 	SendMessage(hwndSlider, TBM_SETRANGE, TRUE, MAKELONG(0,1000)); 
 	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 500); 

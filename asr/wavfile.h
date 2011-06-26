@@ -330,4 +330,19 @@ private:
 	float _max;
 };
 
+#include <FLAC/stream_decoder.h>
+
+template <typename Chunk_T>
+class flacfile_chunker : public T_source<Chunk_T>, public file_chunker
+{
+public:
+	flacfile_chunker(const wchar_t * filename) :
+		file_chunker(filename),
+		_decoder(0)
+	{
+	}
+protected:
+	FLAC__StreamDecoder *_decoder;
+};
+
 #endif
