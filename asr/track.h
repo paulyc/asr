@@ -113,12 +113,10 @@ public:
 		pthread_mutex_unlock(lock);
 		pthread_mutex_lock(lock);
 		
-#if !USE_NEW_WAVE
-		_meta = new StreamMetadata<Chunk_T>(_src_buf);
-#endif
 		_resample_filter = new lowpass_filter_td<Chunk_T, double>(_src_buf, 22050.0, 44100.0, 48000.0);
 		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
 #if !USE_NEW_WAVE
+		_meta = new StreamMetadata<Chunk_T>(_src_buf);
 		_display = new WavFormDisplay<
 			StreamMetadata<Chunk_T>, 
 			SeekablePitchableFileSource<Chunk_T> >(_meta, this);

@@ -182,7 +182,7 @@ public:
 	  double chunks_per_pixel_d = double(chunks) / _width;
 	  int chunks_per_pixel = max(1, int(chunks_per_pixel_d));
 	  printf("cpp %f\n", chunks_per_pixel_d);
-	  if (chunks_per_pixel_d > 1.0)
+	  if (chunks_per_pixel_d >= 0.1)
 	  {
 		  
 		  for (int p = 0; p < _width; ++p)
@@ -192,14 +192,25 @@ public:
 				  pthread_mutex_lock(lock);
 			  _wav_heights[p].peak_top = 0.0;
 			  _wav_heights[p].avg_top = 0.0;
-			  for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
+			  if (chunks_per_pixel_d >= 1.0)
 			  {
-				  assert(chk < chunks_total);
-				const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
-				SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
-				Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
+				  for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
+				  {
+					  assert(chk < chunks_total);
+					const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
+					SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
+					Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
+				  }
+				  Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
 			  }
-			  Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
+			  else
+			  {
+				  const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
+				  double ofs_d = p*chunks_per_pixel_d - floor(p*chunks_per_pixel_d);
+				  int sub = ofs_d*10;
+				  _wav_heights[p].peak_top = max(meta.subband[sub].peak[0], meta.subband[sub].peak[1]);
+				  _wav_heights[p].avg_top = max(meta.subband[sub].avg[0], meta.subband[sub].avg[1]);
+			  }
 			//  if (repeat)
 			//	  --chk;
 			  if (lock)

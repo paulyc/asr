@@ -140,6 +140,15 @@ public:
 		Sample_T avg_db;
 		Sample_T peak;
 		Sample_T peak_db;
+
+		struct s
+		{
+			Sample_T abs_sum;
+			Sample_T avg;
+			Sample_T avg_db;
+			Sample_T peak;
+			Sample_T peak_db;
+		} subband[10];
 	};
 
 	class iterator
@@ -186,6 +195,7 @@ public:
 
 	const ChunkMetadata& get_metadata(int chk_ofs)
 	{
+		int i;
 		if (_chk_data.size() <= chk_ofs)
 			_chk_data.resize(chk_ofs*2);
 		ChunkMetadata &meta = _chk_data[chk_ofs];
@@ -193,16 +203,39 @@ public:
 		if (!meta.valid)
 		{
 			Chunk_T *chk = _src->get_chunk(chk_ofs);
+			
+			for (i = 0; i < 10; ++i)
+			{
+				meta.subband[i].abs_sum[0] = 0.0f;
+				meta.subband[i].abs_sum[1] = 0.0f;
+				meta.subband[i].peak[0] = 0.0f;
+				meta.subband[i].peak[1] = 0.0f;
+			}
+			i=0;
+			for (Sample_T *data=chk->_data, *end=data+Chunk_T::chunk_size;
+				data != end; )
+			{
+				Abs<Sample_T>::calc(dabs, *data);
+				Sum<Sample_T>::calc(meta.subband[i].abs_sum, meta.subband[i].abs_sum, dabs);
+				SetMax<Sample_T>::calc(meta.subband[i].peak, dabs);
+				++data;
+				if ((end-data)%(Chunk_T::chunk_size/10) == 0)
+					++i;
+			}
 			meta.abs_sum[0] = 0.0f;
 			meta.abs_sum[1] = 0.0f;
 			meta.peak[0] = 0.0f;
 			meta.peak[1] = 0.0f;
-			for (Sample_T *data=chk->_data, *end=data+Chunk_T::chunk_size;
-				data != end; ++data)
+			for (i=0; i<10; ++i)
 			{
-				Abs<Sample_T>::calc(dabs, *data);
-				Sum<Sample_T>::calc(meta.abs_sum, meta.abs_sum, dabs);
-				SetMax<Sample_T>::calc(meta.peak, dabs);
+				meta.abs_sum[0] += meta.subband[i].abs_sum[0];
+				meta.abs_sum[1] += meta.subband[i].abs_sum[1];
+				meta.peak[0] = max(meta.peak[0], meta.subband[i].peak[0]);
+				meta.peak[1] = max(meta.peak[1], meta.subband[i].peak[1]);
+
+				Quotient<Sample_T>::calc(meta.subband[i].avg, meta.subband[i].abs_sum, Chunk_T::chunk_size/10);
+				dBm<Sample_T>::calc(meta.subband[i].avg_db, meta.subband[i].avg);
+				dBm<Sample_T>::calc(meta.subband[i].peak_db, meta.subband[i].peak);
 			}
 			Quotient<Sample_T>::calc(meta.avg, meta.abs_sum, Chunk_T::chunk_size);
 			dBm<Sample_T>::calc(meta.avg_db, meta.avg);
@@ -214,6 +247,7 @@ public:
 protected:
 	BufferedStream<Chunk_T> *_src;
 	std::vector<ChunkMetadata> _chk_data;
+	std::vector<ChunkMetadata> _chk_data_micro;
 	int _chk_ofs;
 };
 
