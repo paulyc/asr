@@ -167,7 +167,9 @@ public:
 	{
 		int i;
 		if (_chk_data.size() <= chk_ofs)
+		{
 			_chk_data.resize(chk_ofs*2);
+		}
 		ChunkMetadata &meta = _chk_data[chk_ofs];
 		Sample_T dabs;
 		if (!meta.valid)
@@ -190,7 +192,9 @@ public:
 				SetMax<Sample_T>::calc(meta.subband[i].peak, dabs);
 				++data;
 				if ((end-data)%(Chunk_T::chunk_size/10) == 0)
+				{
 					++i;
+				}
 			}
 			meta.abs_sum[0] = 0.0f;
 			meta.abs_sum[1] = 0.0f;
@@ -217,7 +221,7 @@ public:
 protected:
 	BufferedStream<Chunk_T> *_src;
 	std::vector<ChunkMetadata> _chk_data;
-	std::vector<ChunkMetadata> _chk_data_micro;
+	//std::vector<ChunkMetadata> _chk_data_micro;
 	int _chk_ofs;
 };
 

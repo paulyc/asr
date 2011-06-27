@@ -55,7 +55,7 @@ END
 IDD_DIALOG1 DIALOGEX 0, 0, 579, 401
 STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_OVERLAPPEDWINDOW
-CAPTION "Dialog"
+CAPTION "ASR"
 MENU IDR_MENU1
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
@@ -176,13 +176,6 @@ BEGIN
 0x7541, 0x0078, 
     0
 END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Accelerator
-//
-
 
 #endif    // English (U.S.) resources
 /////////////////////////////////////////////////////////////////////////////

@@ -152,9 +152,9 @@ public:
 	static void do_job(job *j, bool sync=false, bool critical=false)
 	{
 		pthread_once(&once_control, init);
-		printf("doing job %p (%s) sync %d critical %d\n", j, j->_name, sync, critical);
-		j->_deleteme = !sync;
+	//	printf("doing job %p (%s) sync %d critical %d\n", j, j->_name, sync, critical);
 		pthread_mutex_lock(&_job_lock);
+		j->_deleteme = !sync;
 		if (critical)
 			_critical_jobs.push(j);
 		else
@@ -196,7 +196,7 @@ public:
 				if (cr_j->_deleteme)
 					delete cr_j;
 				cr_j->done = true;
-				printf("signal %p\n", cr_j);
+			//	printf("signal %p\n", cr_j);
 				cr_j = 0;
 				pthread_cond_signal(&_job_done);
 			//	if (!_blockOnCritical)
@@ -211,7 +211,7 @@ public:
 				{
 					if (id_j->_deleteme)
 						delete id_j;
-					printf("signal %p\n", id_j);
+				//	printf("signal %p\n", id_j);
 					id_j = 0;
 					pthread_cond_signal(&_job_done);
 				}

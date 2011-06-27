@@ -112,11 +112,12 @@ public:
 
 		pthread_mutex_unlock(lock);
 		pthread_mutex_lock(lock);
+
+		_meta = new StreamMetadata<Chunk_T>(_src_buf);
 		
 		_resample_filter = new lowpass_filter_td<Chunk_T, double>(_src_buf, 22050.0, _src->sample_rate(), 48000.0);
 		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
 #if !USE_NEW_WAVE
-		_meta = new StreamMetadata<Chunk_T>(_src_buf);
 		_display = new WavFormDisplay<
 			StreamMetadata<Chunk_T>, 
 			SeekablePitchableFileSource<Chunk_T> >(_meta, this);
@@ -215,19 +216,22 @@ public:
 			return true;
 		}
 #if !USE_NEW_WAVE
-		pthread_mutex_lock(lock);
-		if (!_display->set_next_height())
-		{
+		_display->set_zoom(100.0);
+		_display->set_left(0.0);
+		//pthread_mutex_lock(lock);
+		_display->set_wav_heights(lock);
+	//	if (!_display->set_next_height())
+	//	{
 		//	GenericUI *ui;
-			pthread_mutex_unlock(lock);
+	//		pthread_mutex_unlock(lock);
 			_loaded = true;
 			if (asio && asio->get_ui())
 				asio->get_ui()->render(_track_id);
 			_resample_filter->set_output_scale(1.0f / _src->maxval());
 			pthread_mutex_unlock(&_config_lock);
 			return false;
-		}
-		pthread_mutex_unlock(lock);
+	//	}
+		//pthread_mutex_unlock(lock);
 #else
 		do
 		{
@@ -253,6 +257,7 @@ public:
 
 	void lockedpaint()
 	{
+	//	printf("track::lockedpaint\n");
 		pthread_mutex_lock(&_config_lock);
 		asio->get_ui()->render(_track_id);
 		pthread_mutex_unlock(&_config_lock);
@@ -260,18 +265,25 @@ public:
 
 	void zoom_px(int d)
 	{
+	//	printf("track::zoom_px\n");
+		pthread_mutex_lock(&_config_lock);
 		_display->zoom_px(d);
 		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
+		pthread_mutex_unlock(&_config_lock);
 	}
 
 	void move_px(int d)
 	{
+	//	printf("track::move_px\n");
+		pthread_mutex_lock(&_config_lock);
 		_display->move_px(d);
 		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
+		pthread_mutex_unlock(&_config_lock);
 	}
 
 	void render()
 	{
+	//	printf("track::render\n");
 		asio->get_ui()->set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
 		if (asio->get_ui()->want_render())
 			Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));

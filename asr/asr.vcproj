@@ -115,9 +115,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
+				Optimization="0"
 				EnableIntrinsicFunctions="true"
+				OmitFramePointers="true"
+				AdditionalIncludeDirectories="&quot;E:\cygwin\home\haxor\flac-1.2.1\include&quot;;&quot;E:\cygwin\home\haxor\mycode\asr2\libmad-0.15.1b\msvc++&quot;;E:\cygwin\home\haxor\pthreads.2;&quot;E:\My Documents\Visual Studio Projects\ASIOSDK2\common&quot;;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				BasicRuntimeChecks="1"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -135,7 +138,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libmad.lib libfftw3f-3.lib comctl32.lib Comdlg32.lib pthreadVC2.lib"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;E:\cygwin\home\haxor\mycode\asr2\libmad-0.15.1b\msvc++\Debug&quot;;E:\cygwin\home\haxor\pthreads.2;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
+				IgnoreAllDefaultLibraries="false"
+				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				OptimizeReferences="2"
@@ -184,12 +191,28 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\asiodrv.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -216,12 +239,28 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\fftw.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -252,12 +291,28 @@
 						Name="VCCLCompilerTool"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\speedparser.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
