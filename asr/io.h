@@ -95,9 +95,9 @@ class file_raw_output : public T_sink_sourceable<Chunk_T>
 protected:
 	FILE *_f;
 public:
-	file_raw_output(T_source<Chunk_T> *src, const char *filename="output.raw") :
+	file_raw_output(T_source<Chunk_T> *src, const wchar_t *filename=L"output.raw") :
 	  T_sink_sourceable(src),
-	  _f(fopen(filename, "wb"))
+	  _f(_wfopen(filename, L"wb"))
 	{
 	}
 	  ~file_raw_output()
@@ -213,6 +213,62 @@ public:
 	GenericUI *get_ui()
 	{
 		return _ui;
+	}
+
+	enum Source { Off, Master, Cue, Aux };
+	enum Output { Main, File };
+
+	void set_source(Output o, Source s)
+	{
+		if (!asio->_file_out)
+			return;
+		pthread_mutex_lock(&_io_lock);
+		if (o==Main)
+		{
+			switch (s)
+			{
+				case Master:
+					asio->_main_src = asio->_master_xfader;
+					break;
+				case Cue:
+					asio->_main_src = asio->_cue;
+					break;
+				case Aux:
+				//	asio->_main_src = asio->_aux;
+					break;
+			}
+		}
+		else
+		{
+			switch (s)
+			{
+				case Off:
+					asio->_file_src = 0;
+					break;
+				case Master:
+					asio->_file_src = asio->_master_xfader;
+					break;
+				case Cue:
+					asio->_file_src = asio->_cue;
+					break;
+				case Aux:
+				//	asio->_file_src = asio->_aux;
+					break;
+			}
+		}
+		pthread_mutex_unlock(&_io_lock);
+	}
+
+	void set_file_output(const wchar_t *filename)
+	{
+		pthread_mutex_lock(&_io_lock);
+		if (_file_out)
+		{
+			delete _file_out;
+			_file_out = 0;
+		}
+		_file_out = new file_raw_output<chunk_t>(_master_bus, filename);
+		pthread_mutex_unlock(&_io_lock);
 	}
 
 	long _doubleBufferIndex;

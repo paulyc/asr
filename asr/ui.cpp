@@ -3,7 +3,8 @@
 
 #include <cstdio>
 
-extern ASIOProcessor<SamplePairf, short> * asio;
+typedef ASIOProcessor<SamplePairf, short> ASIOP;
+extern ASIOP * asio;
 extern GenericUI *ui;
 typedef ASIOProcessor<SamplePairf, short>::track_t track_t;
 
@@ -438,9 +439,10 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					return TRUE;
 				case IDC_BUTTON3: // load src
 				case IDC_BUTTON6:
+				case IDC_BUTTON25:
 				{
-					TCHAR filepath[256] = {0};
-					TCHAR filetitle[256];
+					TCHAR filepath[512] = {0};
+					TCHAR filetitle[512];
 					OPENFILENAME ofn = { //typedef struct tagOFNW {
 						sizeof(ofn), // DWORD        lStructSize;
 						hwndDlg, //   HWND         hwndOwner;
@@ -475,8 +477,15 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					};
 					//memset(&ofn, 0, sizeof(ofn));
 					if (GetOpenFileName(&ofn)) {
-						SetDlgItemText(hwndDlg, LOWORD(wParam)==IDC_BUTTON3 ? IDC_EDIT1 : IDC_EDIT2, filepath);
-						asio->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->set_source_file(filepath, &asio->_io_lock);
+						if (LOWORD(wParam)!=IDC_BUTTON25)
+						{
+							SetDlgItemText(hwndDlg, LOWORD(wParam)==IDC_BUTTON3 ? IDC_EDIT1 : IDC_EDIT2, filepath);
+							asio->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->set_source_file(filepath, &asio->_io_lock);
+						}
+						else
+						{
+							asio->set_file_output(filepath);
+						}
 					//	asio->SetSrc(1, filepath);
 					}
 					return TRUE;
@@ -532,49 +541,59 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					SetDlgItemTextW(hwndDlg, t_id==1?IDC_EDIT3:IDC_EDIT4, buf);
 					break;
 				}
-				case IDC_COMBO1:
-				case IDC_COMBO2:
+				case IDC_RADIO1:
+				case IDC_RADIO2:
+				case IDC_RADIO3:
 				{
-					switch(HIWORD(wParam))
+					if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) != BST_CHECKED)
 					{
-						case CBN_CLOSEUP:
-						{
-						//	T_sink_sourceable<chunk_t> *output;
-						//	if (LOWORD(wParam)==IDC_COMBO1)
-						//		output = asio->_main_out;
-						//	else
-						//		output = asio->_file_out;
-							LRESULT foo = SendMessage(GetDlgItem(g_dlg, LOWORD(wParam)), CB_GETCURSEL, 0, 0);
-							switch (foo)
-							{
-							case 0:
-								//output->set_source(asio->_master_bus);
-								if (LOWORD(wParam)==IDC_COMBO1)
-									asio->_main_src = asio->_master_xfader;
-								else
-									asio->_file_src = 0;
-								break;
-							case 1:
-								if (LOWORD(wParam)==IDC_COMBO1)
-									asio->_main_src = asio->_cue;
-								else
-									asio->_file_src = asio->_master_xfader;
-								break;
-							case 2:
-								if (LOWORD(wParam)==IDC_COMBO1)
-									asio->_main_src = asio->_aux;
-								else
-									asio->_file_src = asio->_cue;
-								break;
-							case 3:
-								asio->_file_src = asio->_aux;
-								break;
-							}
-							break;
-						}
+						SendMessage((HWND)lParam, BM_SETCHECK, BST_CHECKED, 0);
+						if (LOWORD(wParam)!=IDC_RADIO1)
+							SendMessage(GetDlgItem(g_dlg, IDC_RADIO1), BM_SETCHECK, 0, 0);
+						else
+							asio->set_source(ASIOP::Main, ASIOP::Master);
+						if (LOWORD(wParam)!=IDC_RADIO2)
+							SendMessage(GetDlgItem(g_dlg, IDC_RADIO2), BM_SETCHECK, 0, 0);
+						else
+							asio->set_source(ASIOP::Main, ASIOP::Cue);
+						if (LOWORD(wParam)!=IDC_RADIO3)
+							SendMessage(GetDlgItem(g_dlg, IDC_RADIO3), BM_SETCHECK, 0, 0);
+						else
+							asio->set_source(ASIOP::Main, ASIOP::Aux);
 					}
 					break;
 				}
+				case IDC_RADIO5:
+				case IDC_RADIO6:
+				case IDC_RADIO7:
+				case IDC_RADIO8:
+				{
+					if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) != BST_CHECKED)
+					{
+						SendMessage((HWND)lParam, BM_SETCHECK, BST_CHECKED, 0);
+						if (LOWORD(wParam)!=IDC_RADIO5)
+							SendMessage(GetDlgItem(g_dlg, IDC_RADIO5), BM_SETCHECK, 0, 0);
+						else
+							asio->set_source(ASIOP::File, ASIOP::Off);
+
+						if (LOWORD(wParam)!=IDC_RADIO6)
+							SendMessage(GetDlgItem(g_dlg, IDC_RADIO6), BM_SETCHECK, 0, 0);
+						else
+							asio->set_source(ASIOP::File, ASIOP::Master);
+
+						if (LOWORD(wParam)!=IDC_RADIO7)
+							SendMessage(GetDlgItem(g_dlg, IDC_RADIO7), BM_SETCHECK, 0, 0);
+						else
+							asio->set_source(ASIOP::File, ASIOP::Cue);
+
+						if (LOWORD(wParam)!=IDC_RADIO8)
+							SendMessage(GetDlgItem(g_dlg, IDC_RADIO8), BM_SETCHECK, 0, 0);
+						else
+							asio->set_source(ASIOP::File, ASIOP::Aux);
+					}
+					break;
+				}
+			//	return TRUE;
 			}
 	}
 	return FALSE;
@@ -740,6 +759,8 @@ void Win32UI<ASIOProcessor<SamplePairf, short> >::create()
 	SendMessage(hwndSlider, TBM_SETPOS, TRUE, 800); 
 	SetDlgItemText(g_dlg, IDC_EDIT5, L"0.00 dB");
 	SetDlgItemText(g_dlg, IDC_EDIT6, L"0.00 dB");
+	SendMessage(GetDlgItem(g_dlg, IDC_RADIO1), BM_SETCHECK, BST_CHECKED, 0);
+	SendMessage(GetDlgItem(g_dlg, IDC_RADIO5), BM_SETCHECK, BST_CHECKED, 0);
 }
 
 template <>

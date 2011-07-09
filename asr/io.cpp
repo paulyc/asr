@@ -201,6 +201,7 @@ ASIOProcessor<SamplePairf, short>::ASIOProcessor() :
 	_src_active(false),
 	_log("mylog.txt"),
 	_my_source(0),
+	_file_out(0),
 	_main_out(0),
 	_ui(0)
 {
@@ -323,7 +324,6 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 		(short**)_buffer_infos[2].buffers, 
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);
-	_file_out = new file_raw_output<chunk_t>(_master_bus, "out.raw");
 //	_bus_matrix->map(_tracks[0], _master_bus);
 //	_bus_matrix->map(_tracks[1], _master_bus);
 //	_master_bus->map_output(_main_out);
