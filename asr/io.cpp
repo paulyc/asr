@@ -391,13 +391,15 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 		if (_file_src == _main_src) 
 		{
 			out->add_ref();
-			_file_out->process(out);
+			_file_mgr._c = out;
+			_file_out->process();
 			T_allocator<chunk_t>::free(chk1);
 			T_allocator<chunk_t>::free(chk2);
 		}
 		else if (_file_src)
 		{
-			_file_out->process(_file_src->next(chk1, chk2));
+			_file_mgr._c = _file_src->next(chk1, chk2);
+			_file_out->process();
 		}
 		else
 		{
