@@ -49,4 +49,6 @@
 #define DEBUG_ALLOCATOR 0
 #define USE_NEW_WAVE 0
 
+#define ASYNC_GENERATE 1
+
 #endif // !defined(_CONFIG_H)

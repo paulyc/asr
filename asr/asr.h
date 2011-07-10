@@ -22,7 +22,7 @@ typedef double SamplePaird[2];
 typedef fftwf_complex ComplexPairf[2];
 typedef fftw_complex ComplexPaird[2];
 
-typedef int smp_ofs_t;
+typedef __int64 smp_ofs_t;
 
 template <typename T> 
 const char* gettype();
@@ -303,9 +303,9 @@ public:
 	}
 	virtual void seek_chk(int chk_ofs)
 	{
-		throw std::exception("not implemented");
+		seek_smp(chk_ofs*T::chunk_size);
 	}
-	virtual void seek_smp(int smp_ofs)
+	virtual void seek_smp(smp_ofs_t smp_ofs)
 	{
 		throw std::exception("not implemented");
 	}

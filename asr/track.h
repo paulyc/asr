@@ -336,7 +336,9 @@ public:
 
 	void nudge_time(double dt)
 	{
+		pthread_mutex_lock(&_config_lock);
 		_resample_filter->seek_time(_resample_filter->get_time()+dt);
+		pthread_mutex_unlock(&_config_lock);
 	}
 
 	void nudge_pitch(double dp)
@@ -393,7 +395,9 @@ public:
 
 	void goto_pitchpoint()
 	{
+		pthread_mutex_lock(&_config_lock);
 		_resample_filter->set_output_sampling_frequency(_pitchpoint);
+		pthread_mutex_unlock(&_config_lock);
 	}
 
 protected:

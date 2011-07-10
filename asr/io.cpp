@@ -218,6 +218,7 @@ void ASIOProcessor::Init()
 	long minSize, maxSize, preferredSize, granularity;
 
 	pthread_mutex_init(&_io_lock, 0);
+	pthread_cond_init(&_gen_done, 0);
 
 	try {
 		_my_controller = new controller_t;
@@ -309,21 +310,14 @@ void ASIOProcessor::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 #endif
 
-//	_bus_matrix = new io_matrix<track_t, bus<chunk_t> >;
 	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
 	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
 	_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
-//	_master_bus = new bus<chunk_t>(_bus_matrix);
-//	_cue_bus = new bus<chunk_t>(_bus_matrix);
-//	_aux_bus = new bus<chunk_t>(_bus_matrix);
-	//_main_out = new asio_sink<chunk_t, bus<chunk_t>, short>(_master_bus, 
+
 	_main_out = new asio_sink<chunk_t, chk_mgr, short>(&_main_mgr,
 		(short**)_buffer_infos[2].buffers, 
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);
-//	_bus_matrix->map(_tracks[0], _master_bus);
-//	_bus_matrix->map(_tracks[1], _master_bus);
-//	_master_bus->map_output(_main_out);
 
 	_main_src = _master_xfader;
 	_file_src = 0;
@@ -335,6 +329,8 @@ void ASIOProcessor::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOGetSampleRate(&r));
 	printf("At a sampling rate of %f\n", r);
 //	ASIOSetSampleRate(44100.0);
+
+	_main_mgr._c = zero_source<chunk_t>::get()->next();
 }
 
 ASIOError ASIOProcessor::Start()
@@ -350,7 +346,6 @@ ASIOError ASIOProcessor::Stop()
 	_src_active = false;
 	return ASIOStop();
 }
-
 
 void ASIOProcessor::ProcessInput()
 {
@@ -377,6 +372,12 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 #endif	
 
 #if DO_OUTPUT
+#if ASYNC_GENERATE
+	while (_main_mgr._c == 0)
+	{
+		pthread_cond_wait(&_gen_done, &_io_lock);
+	}
+#else
 	if (_main_mgr._c == 0)
 	{
 		chunk_t *chk1 = _tracks[0]->next();
@@ -385,7 +386,7 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 		chk2->add_ref();
 		chunk_t *out = _main_src->next(chk1, chk2);
 		if (_main_src->_clip)
-			_ui->set_clip(1);
+			_ui->set_clip(_main_src==_master_xfader?1:2);
 		_main_mgr._c = out;
 		if (_file_src == _main_src) 
 		{
@@ -397,8 +398,6 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 		else if (_file_src)
 		{
 			_file_out->process(_file_src->next(chk1, chk2));
-			if (_main_src->_clip)
-				_ui->set_clip(2);
 		}
 		else
 		{
@@ -406,17 +405,67 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 			T_allocator<chunk_t>::free(chk2);
 		}
 	}
+#endif
 	
 	//chunk_t *cue_chk = _cue->next(chk1, chk2);
 	_main_out->process(_doubleBufferIndex);
-#endif
+	
+	ASIOOutputReady();
+	
+	if (_file_out && _file_src && _file_mgr._c)
+	{
+		_file_out->process();
+	}
 
+#if ASYNC_GENERATE
+	Worker::do_job(new Worker::callback_job<ASIOProcessor>(
+		functor0<ASIOProcessor>(this, &ASIOProcessor::AsyncGenerate)), 
+		false, true);
+#endif
+#endif
 
 #if ECHO_INPUT
 	// copy input
 	memcpy(_buffer_infos[2].buffers[doubleBufferIndex], _buffer_infos[0].buffers[doubleBufferIndex], BUFFERSIZE*sizeof(short));
 	memcpy(_buffer_infos[3].buffers[doubleBufferIndex], _buffer_infos[1].buffers[doubleBufferIndex], BUFFERSIZE*sizeof(short));
 #endif
+
+	pthread_mutex_unlock(&_io_lock);
+}
+
+void ASIOProcessor::AsyncGenerate()
+{
+	pthread_mutex_lock(&_io_lock);
+	if (_main_mgr._c == 0)
+	{
+		chunk_t *chk1 = _tracks[0]->next();
+		chk1->add_ref();
+		chunk_t *chk2 = _tracks[1]->next();
+		chk2->add_ref();
+		chunk_t *out = _main_src->next(chk1, chk2);
+		if (_main_src->_clip)
+			_ui->set_clip(_main_src==_master_xfader?1:2);
+		_main_mgr._c = out;
+		if (_file_src == _main_src) 
+		{
+			out->add_ref();
+			_file_mgr._c = out;
+			T_allocator<chunk_t>::free(chk1);
+			T_allocator<chunk_t>::free(chk2);
+		}
+		else if (_file_src)
+		{
+			_file_mgr._c = _file_src->next(chk1, chk2);
+			if (_file_src->_clip)
+				_ui->set_clip(_file_src==_master_xfader?1:2);
+		}
+		else
+		{
+			T_allocator<chunk_t>::free(chk1);
+			T_allocator<chunk_t>::free(chk2);
+		}
+	}
+	pthread_cond_signal(&_gen_done);
 	pthread_mutex_unlock(&_io_lock);
 }
 
@@ -592,6 +641,7 @@ void ASIOProcessor::Destroy()
 	}
 	CoUninitialize();
 
+	pthread_cond_destroy(&_gen_done);
 	pthread_mutex_destroy(&_io_lock);
 
 	for (std::vector<track_t*>::iterator i = _tracks.begin(); i != _tracks.end(); i++)

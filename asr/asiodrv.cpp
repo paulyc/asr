@@ -62,6 +62,11 @@ ASIOError ASIOSetSampleRate(ASIOSampleRate sampleRate)
 	return asiodrv->setSampleRate(sampleRate);
 }
 
+ASIOError ASIOOutputReady()
+{
+	return asiodrv->outputReady();
+}
+
 ASIOError ASIOExit()
 {
 	if (asiodrv)

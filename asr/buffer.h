@@ -108,7 +108,7 @@ public:
 	{
 		smp_ofs_t ofs_in_chk;
 		Chunk_T *chk = T_allocator<Chunk_T>::alloc(), *buf_chk = get_chunk(_chk_ofs);
-		int to_fill = Chunk_T::chunk_size, loop_fill;
+		smp_ofs_t to_fill = Chunk_T::chunk_size, loop_fill;
 		Chunk_T::sample_t *to_ptr = chk->_data;
 		pthread_mutex_lock(&_data_lock);
 		while (to_fill > 0)
@@ -247,9 +247,9 @@ public:
 
 protected:
 	std::vector<Chunk_T *> _chks;
-	int _chk_ofs;
+	smp_ofs_t _chk_ofs;
 	smp_ofs_t _smp_ofs;
-	int _chk_ofs_loading;
+	smp_ofs_t _chk_ofs_loading;
 	pthread_mutex_t _buffer_lock;
 	pthread_mutex_t _src_lock;
 	pthread_mutex_t _data_lock;

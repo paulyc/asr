@@ -205,7 +205,8 @@ void UITrack::set_fine(double v)
 }
 
 UIText::UIText(GenericUI *ui, int i) :
-	callback(ui, &GenericUI::set_text_field)
+	callback(ui, &GenericUI::set_text_field),
+	id(i)
 {
 }
 

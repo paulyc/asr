@@ -47,7 +47,7 @@ public:
 	{
 		_file = new DiskFile(filename, L"rb");
 	}
-	file_chunker(GenericFile *file) :
+	file_chunker(DiskFile *file) :
 		_file(file)
 	{
 	}
@@ -56,7 +56,7 @@ public:
 		delete _file;
 	}
 protected:
-	GenericFile * _file;
+	DiskFile * _file;
 };
 
 template <typename Chunk_T>
@@ -371,7 +371,9 @@ class flacfile_chunker : public T_source<Chunk_T>, public file_chunker
 public:
 	flacfile_chunker(const wchar_t * filename) :
 		file_chunker(filename),
-		_decoder(0)
+		_decoder(0),
+		_sample_rate(44100.0),
+		_eof(false)
 	{
 		if((_decoder = FLAC__stream_decoder_new()) == NULL) {
 			delete _file;
@@ -380,7 +382,7 @@ public:
 		}
 
 		if(FLAC__stream_decoder_init_FILE(_decoder, 
-			_file, write_callback, metadata_callback, 
+			_file->_File, write_callback, metadata_callback, 
 			error_callback, (void*)this) != FLAC__STREAM_DECODER_INIT_STATUS_OK)
 		{
 			delete _file;
@@ -393,7 +395,7 @@ public:
 
 	virtual ~flacfile_chunker()
 	{
-	//	FLAC__stream_decoder_delete
+		FLAC__stream_decoder_delete(_decoder);
 	}
 
 	static FLAC__StreamDecoderWriteStatus write_callback(
@@ -402,11 +404,34 @@ public:
 		const FLAC__int32 * const buffer[], 
 		void *client_data)
 	{
+		
 	}
 
 	static void metadata_callback(const FLAC__StreamDecoder *decoder, 
 		const FLAC__StreamMetadata *metadata, void *client_data)
 	{
+		switch (metadata->type)
+		{
+			case FLAC__METADATA_TYPE_STREAMINFO: // 	STREAMINFO block
+				memcpy(&_stream_info, &metadata->data.stream_info, sizeof(FLAC__StreamMetadata_StreamInfo));
+				_sample_rate = _stream_info.sample_rate ? (double)_stream_info.sample_rate : 44100.;
+				if (_stream_info.total_samples)
+				{
+					_len.samples = _stream_info.total_samples;
+					_len.chunks = _len.samples / Chunk_T::chunk_size;
+					_len.smp_ofs_in_chk = _len.samples % Chunk_T::chunk_size;
+					_len.time = _len.samples / (double)_stream_info.sample_rate;
+				}
+				break;
+			case FLAC__METADATA_TYPE_PADDING: // 	PADDING block
+			case FLAC__METADATA_TYPE_APPLICATION: // 	APPLICATION block
+			case FLAC__METADATA_TYPE_SEEKTABLE: // 	SEEKTABLE block
+			case FLAC__METADATA_TYPE_VORBIS_COMMENT: // 	VORBISCOMMENT block (a.k.a. FLAC tags)
+			case FLAC__METADATA_TYPE_CUESHEET: // 	CUESHEET block
+			case FLAC__METADATA_TYPE_PICTURE: // 	PICTURE block
+			case FLAC__METADATA_TYPE_UNDEFINED: // 	marker to denote beginning of undefined type range; this number will increase as new metadata types are added 
+				break;
+		}
 	}
 
 	static void error_callback(const FLAC__StreamDecoder *decoder, 
@@ -417,11 +442,41 @@ public:
 	Chunk_T* next()
 	{
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
+		typename Chunk_T::sample_t *smp = chk->_data, *end = smp + Chunk_T::chunk_size;
+		if (!FLAC__stream_decoder_process_single(_decoder))
+		{
+			FLAC__StreamDecoderState s = FLAC__stream_decoder_get_state(_decoder);
+			switch (s)
+			{
+			case FLAC__STREAM_DECODER_END_OF_STREAM:
+				_eof = true;
+				break;
+			case FLAC__STREAM_DECODER_SEEK_ERROR:
+				FLAC__stream_decoder_flush(_decoder);
+				break;
+			case FLAC__STREAM_DECODER_ABORTED:
+			case FLAC__STREAM_DECODER_MEMORY_ALLOCATION_ERROR:
+				break;
+			}
+		}
 		return chk;
+	}
+
+	virtual double sample_rate()
+	{
+		return _sample_rate;
+	}
+
+	virtual void seek_smp(smp_ofs_t smp_ofs)
+	{
+		FLAC__stream_decoder_seek_absolute(_decoder, smp_ofs);
 	}
 
 protected:
 	FLAC__StreamDecoder *_decoder;
+	FLAC__StreamMetadata_StreamInfo _stream_info;
+	double _sample_rate;
+	bool _eof;
 };
 
 #endif

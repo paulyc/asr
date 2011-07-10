@@ -323,7 +323,7 @@ class functor0
 {
 public:
 	functor0(T *obj, void(T::*f)()):_obj(obj),_f(f){}
-	void operator()() {(_obj->*)_f();}
+	void operator()() {(_obj->*_f)();}
 private:
 	T *_obj;
 	void(T::*_f)();

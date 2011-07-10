@@ -106,9 +106,9 @@ public:
 	  {
 		  return feof(_f);
 	  }
-	virtual void process(Chunk_T *t)
+	virtual void process()
 	{
-		//Chunk_T *t = _src->next();
+		Chunk_T *t = _src->next();
 		fwrite(t->_data, 8, Chunk_T::chunk_size, _f);
 		T_allocator<Chunk_T>::free(t);
 	}
@@ -157,7 +157,7 @@ public:
 			_c = 0;
 			return r;
 		}
-	} _main_mgr;
+	} _main_mgr, _file_mgr;
 	
 	ASIOProcessor();
 	virtual ~ASIOProcessor();
@@ -167,6 +167,7 @@ public:
 
 	void BufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
 	void SetSrc(int ch, const wchar_t *fqpath);
+	void AsyncGenerate();
 
 	/*void SetResamplerate(double rate)
 	{
@@ -259,7 +260,7 @@ public:
 			delete _file_out;
 			_file_out = 0;
 		}
-		_file_out = new file_raw_output<chunk_t>(_master_bus, filename);
+		_file_out = new file_raw_output<chunk_t>(&_file_mgr, filename);
 		pthread_mutex_unlock(&_io_lock);
 	}
 
@@ -307,17 +308,13 @@ public: // was protected
 	xfader<track_t> *_cue;
 	xfader<track_t> *_aux;
 
-	io_matrix<track_t, bus<chunk_t> > *_bus_matrix;
-	bus<chunk_t> *_master_bus;
-	bus<chunk_t> *_cue_bus;
-	bus<chunk_t> *_aux_bus;
-	io_matrix<bus<chunk_t>, T_sink<chunk_t> > _output_matrix;
-
 	xfader<track_t> *_main_src;
 	xfader<track_t> *_file_src;
 
 	pthread_mutex_t _io_lock;
 	GenericUI *_ui;
+
+	pthread_cond_t _gen_done;
 };
 
 #endif // !defined(_IO_H)
