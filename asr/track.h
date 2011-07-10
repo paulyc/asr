@@ -457,6 +457,16 @@ public:
 		// do something with the ui
 	}
 
+	void set_clip(int id)
+	{
+		deferred_call(new deferred1<track_t, int>(this, &track_t::set_clip_impl, id));
+	}
+
+	void set_clip_impl(int id)
+	{
+		asio->_ui->set_clip(id);
+	}
+
 	void call_deferreds_loop()
 	{
 		pthread_mutex_lock(&_deferreds_lock);
@@ -466,8 +476,10 @@ public:
 			{
 				deferred *d = _defcalls.front();
 				_defcalls.pop();
+				pthread_mutex_unlock(&_deferreds_lock);
 				d->operator()();
 				delete d;
+				pthread_mutex_lock(&_deferreds_lock);
 			}
 			pthread_cond_wait(&_have_deferred, &_deferreds_lock);
 		}

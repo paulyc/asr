@@ -256,7 +256,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON16:
 				{
 					int t_id = LOWORD(wParam)==IDC_BUTTON13||LOWORD(wParam)==IDC_BUTTON14 ? 1 : 2;
-					double dt = LOWORD(wParam)==IDC_BUTTON13 || LOWORD(wParam)==IDC_BUTTON15 ? -0.1 : 0.1;
+					double dt = LOWORD(wParam)==IDC_BUTTON13 || LOWORD(wParam)==IDC_BUTTON15 ? -0.02 : 0.02;
 					asio->GetTrack(t_id)->nudge_time(dt);
 					break;
 				}
@@ -578,10 +578,7 @@ void Win32UI::set_text_field(int id, const wchar_t *txt)
 
 void Win32UI::set_clip(int t_id)
 {
-	if (t_id==1)
-		_track1.clip = true;
-	else
-		_track2.clip = true;
+	SendMessage(GetDlgItem(g_dlg, t_id==1?IDC_CHECK7:IDC_CHECK8), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
 }
 
 void Win32UI::render(int t_id)
@@ -602,12 +599,6 @@ void Win32UI::render(int t_id)
 
 	if (!track->loaded())
 		return;
-
-	if (uit->clip)
-	{
-		SendMessage(GetDlgItem(g_dlg, t_id==1?IDC_CHECK7:IDC_CHECK8), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
-		uit->clip = false;
-	}
 
 	h = ::GetDlgItem(g_dlg, t_id == 1 ? IDC_STATIC4 : IDC_STATIC5);
 //	printf("WM_PAINT %d, %d, %d, %d\n", hwndDlg, uMsg, wParam, lParam);

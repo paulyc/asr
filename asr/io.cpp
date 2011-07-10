@@ -451,7 +451,7 @@ void ASIOProcessor::AsyncGenerate()
 		chk2->add_ref();
 		chunk_t *out = _main_src->next(chk1, chk2);
 		if (_main_src->_clip)
-			_ui->set_clip(_main_src==_master_xfader?1:2);
+			_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
 		_main_mgr._c = out;
 		if (_file_src == _main_src) 
 		{
@@ -464,7 +464,7 @@ void ASIOProcessor::AsyncGenerate()
 		{
 			_file_mgr._c = _file_src->next(chk1, chk2);
 			if (_file_src->_clip)
-				_ui->set_clip(_file_src==_master_xfader?1:2);
+				_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
 		}
 		else
 		{
