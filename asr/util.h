@@ -329,6 +329,19 @@ private:
 	void(T::*_f)();
 };
 
+class deferred
+{
+public:
+	virtual void operator()() = 0;
+};
+
+template <typename T>
+class deferred0 : public functor0<T>, public deferred
+{
+public:
+	deferred0(T *obj, void(T::*f)()) : functor0(obj, f) {}
+};
+
 template <typename T, typename Ret>
 class functor0_r
 {
@@ -349,6 +362,19 @@ public:
 private:
 	T *_obj;
 	void(T::*_f)(Param1);
+};
+
+template <typename T, typename Param1>
+class deferred1 : public functor1<T, Param1>, public deferred
+{
+public:
+	deferred1(T *obj, void(T::*f)(Param1), Param1 p1) : functor1(obj, f), _p1(p1) {}
+	void operator()()
+	{
+		functor1<T, Param1>::operator ()(_p1);
+	}
+private:
+	Param1 _p1;
 };
 
 template <typename T, typename Ret, typename Param1>

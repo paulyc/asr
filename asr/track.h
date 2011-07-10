@@ -15,6 +15,7 @@ class SeekablePitchableFileSource : public T_source<Chunk_T>
 	friend class Worker;
 public:
 	typedef type chunk_t;
+	typedef SeekablePitchableFileSource<Chunk_T> track_t;
 
 	SeekablePitchableFileSource(int track_id, const wchar_t *filename=0, pthread_mutex_t *lock=0) :
 		_in_config(false),
@@ -28,18 +29,31 @@ public:
 		_cuepoint(0.0),
 		_track_id(track_id),
 		_pitchpoint(48000.0),
-		_display_width(-1)
+		_display_width(750)
 #if USE_NEW_WAVE
 		,_mip_map(0)
 #endif
+		,_running(true)
 	{
 		pthread_mutex_init(&_config_lock, 0);
+		pthread_mutex_init(&_loading_lock, 0);
+		pthread_cond_init(&_track_loaded, 0);
+		pthread_mutex_init(&_deferreds_lock, 0);
+		pthread_cond_init(&_have_deferred, 0);
+
 		if (filename)
 			set_source_file(filename, lock);
+
+		Worker::do_job(new Worker::call_deferreds_job<track_t>(this));
 	}
 
 	virtual ~SeekablePitchableFileSource()
 	{
+		pthread_mutex_destroy(&_loading_lock);
+		pthread_cond_destroy(&_track_loaded);
+		_running = false;
+		pthread_cond_signal(&_have_deferred);
+
 		pthread_mutex_lock(&_config_lock);
 		delete _display;
 		_display = 0;
@@ -61,11 +75,12 @@ public:
 
 	void set_source_file(const wchar_t *filename, pthread_mutex_t *lock)
 	{
-		pthread_mutex_lock(&_config_lock);
+		pthread_mutex_lock(&_loading_lock);
+		
 		_in_config = true;
 		_loaded = false;
 		_paused = true;
-	//	pthread_mutex_unlock(&_config_lock);
+		pthread_mutex_unlock(&_loading_lock);
 
 		pthread_mutex_lock(lock);
 		delete _display;
@@ -120,17 +135,14 @@ public:
 #if !USE_NEW_WAVE
 		_display = new WavFormDisplay<
 			StreamMetadata<Chunk_T>, 
-			SeekablePitchableFileSource<Chunk_T> >(_meta, this);
+			SeekablePitchableFileSource<Chunk_T> >(_meta, this, _display_width);
 #endif
 
 		pthread_mutex_unlock(lock);
-		pthread_mutex_lock(lock);
 
-	//	pthread_mutex_lock(&_config_lock);
+		pthread_mutex_lock(&_loading_lock);
 		_in_config = false;
-		pthread_mutex_unlock(&_config_lock);
-
-		pthread_mutex_unlock(lock);
+		pthread_mutex_unlock(&_loading_lock);
 
 		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
 	}
@@ -139,15 +151,16 @@ public:
 	{
 		Chunk_T *chk;
 
-		if (_in_config || _paused)
+		pthread_mutex_lock(&_loading_lock);
+		if (!_loaded || _paused)
 		{
+			pthread_mutex_unlock(&_loading_lock);
 			chk = zero_source<Chunk_T>::get()->next();
 		}
 		else
 		{
-			pthread_mutex_lock(&_config_lock);
 			chk = _resample_filter->next();
-			pthread_mutex_unlock(&_config_lock);
+			pthread_mutex_unlock(&_loading_lock);
 			render();
 		}
 		
@@ -156,20 +169,22 @@ public:
 
 	int get_display_width()
 	{
-	//	pthread_mutex_lock(&_config_lock);
+	//	pthread_mutex_lock(&_loading_lock);
+	//	while (!_loaded)
+	//		pthread_cond_wait(&_track_loaded, &_loading_lock);
 		int w=_display->get_width();
-	//	pthread_mutex_unlock(&_config_lock);
+	//	pthread_mutex_unlock(&_loading_lock);
 		return w;
 	}
 
 	void set_display_width(int width)
 	{
 	//	pthread_mutex_lock(&_config_lock);
-#if USE_NEW_WAVE
+//#if USE_NEW_WAVE
 		_display_width = width;
-#else
+//#else
 		_display->set_width(width);
-#endif
+//#endif
 	//	pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -183,37 +198,50 @@ public:
 		_display->unlock_pos();
 	}
 
-	void set_wav_heights(bool unlock=true)
+	void lock()
+	{
+		pthread_mutex_lock(&_config_lock);
+	}
+
+	void unlock()
+	{
+		pthread_mutex_unlock(&_config_lock);
+	}
+
+	void set_wav_heights(bool unlock=true, bool lock=false)
 	{
 		if (unlock)
 			pthread_mutex_unlock(&_config_lock);
-		_display->set_wav_heights(&asio->_io_lock);
+		if (lock)
+			pthread_mutex_lock(&_loading_lock);
+		//_display->set_wav_heights(&asio->_io_lock);
+		_display->set_wav_heights();
+		if (lock)
+			pthread_mutex_unlock(&_loading_lock);
 		if (unlock)
 			pthread_mutex_lock(&_config_lock);
 	}
 
 	bool play_pause()
 	{
-		pthread_mutex_lock(&_config_lock);
 		_paused = !_paused;
-		pthread_mutex_unlock(&_config_lock);
 		return _paused;
 	}
 
 	bool load_step(pthread_mutex_t *lock)
 	{
-		pthread_mutex_lock(&_config_lock);
+	//	pthread_mutex_lock(&_config_lock);
 #if USE_NEW_WAVE
 		if (_src_buf->len().samples < 0)
 #else
-		if (len().samples < 0)
+		while (len().samples < 0)
 #endif
 		{
 			pthread_mutex_lock(lock);
 			_src_buf->load_next(lock);
 			pthread_mutex_unlock(lock);
-			pthread_mutex_unlock(&_config_lock);
-			return true;
+			//pthread_mutex_unlock(&_config_lock);
+			//return true;
 		}
 #if !USE_NEW_WAVE
 		_display->set_zoom(100.0);
@@ -224,12 +252,16 @@ public:
 	//	{
 		//	GenericUI *ui;
 	//		pthread_mutex_unlock(lock);
-			_loaded = true;
-			if (asio && asio->get_ui())
-				asio->get_ui()->render(_track_id);
+			
+			
 			_resample_filter->set_output_scale(1.0f / _src->maxval());
 			_meta->load_metadata(lock);
-			pthread_mutex_unlock(&_config_lock);
+			pthread_mutex_lock(&_loading_lock);
+			_loaded = true;
+			pthread_cond_signal(&_track_loaded);
+			pthread_mutex_unlock(&_loading_lock);
+			if (asio && asio->get_ui())
+				asio->get_ui()->render(_track_id);
 			return false;
 	//	}
 		//pthread_mutex_unlock(lock);
@@ -259,27 +291,29 @@ public:
 	void lockedpaint()
 	{
 	//	printf("track::lockedpaint\n");
-		pthread_mutex_lock(&_config_lock);
+		pthread_mutex_lock(&_loading_lock);
 		asio->get_ui()->render(_track_id);
-		pthread_mutex_unlock(&_config_lock);
+		pthread_mutex_unlock(&_loading_lock);
 	}
 
 	void zoom_px(int d)
 	{
 	//	printf("track::zoom_px\n");
-		pthread_mutex_lock(&_config_lock);
+		if (!_loaded) return;
+	//	pthread_mutex_lock(&_config_lock);
 		_display->zoom_px(d);
 		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
-		pthread_mutex_unlock(&_config_lock);
+	//	pthread_mutex_unlock(&_config_lock);
 	}
 
 	void move_px(int d)
 	{
 	//	printf("track::move_px\n");
-		pthread_mutex_lock(&_config_lock);
+	//	pthread_mutex_lock(&_config_lock);
+		if (!_loaded) return;
 		_display->move_px(d);
 		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
-		pthread_mutex_unlock(&_config_lock);
+	//	pthread_mutex_unlock(&_config_lock);
 	}
 
 	void render()
@@ -300,15 +334,28 @@ public:
 		return 48000.0/_resample_filter->get_output_sampling_frequency();
 	}
 
+	void deferred_call(deferred *d)
+	{
+		pthread_mutex_lock(&_deferreds_lock);
+		_defcalls.push(d);
+		pthread_cond_signal(&_have_deferred);
+		pthread_mutex_unlock(&_deferreds_lock);
+	}
+
 	void set_output_sampling_frequency(double f)
 	{
-		pthread_mutex_lock(&_config_lock);
-		if (!_in_config && _resample_filter)
+		deferred_call(new deferred1<track_t, double>(this, &track_t::set_output_sampling_frequency_impl, f));
+	}
+
+	void set_output_sampling_frequency_impl(double f)
+	{
+		pthread_mutex_lock(&_loading_lock);
+		if (_loaded && _resample_filter)
 		{
 			printf("output mod %f\n", 48000.0/f);
 			_resample_filter->set_output_sampling_frequency(f);
 		}
-		pthread_mutex_unlock(&_config_lock);
+		pthread_mutex_unlock(&_loading_lock);
 	}
 
 	double get_output_sampling_frequency(double f)
@@ -318,27 +365,38 @@ public:
 
 	void seek_time(double t)
 	{
-		pthread_mutex_lock(&_config_lock);
-		if (!_in_config && _resample_filter)
+		deferred_call(new deferred1<track_t, double>(this, &track_t::seek_time_impl, t));
+	}
+
+	void seek_time_impl(double t)
+	{
+		pthread_mutex_lock(&_loading_lock);
+		if (_loaded && _resample_filter)
 			_resample_filter->seek_time(t);
 		render();
-		pthread_mutex_unlock(&_config_lock);
+		pthread_mutex_unlock(&_loading_lock);
 	}
 
 	void seek_f(double f)
 	{
-		pthread_mutex_lock(&_config_lock);
-		if (!_in_config && _resample_filter && len().samples > 0)
+		deferred_call(new deferred1<track_t, double>(this, &track_t::seek_f_impl, f));
+	}
+
+	void seek_f_impl(double f)
+	{
+		pthread_mutex_lock(&_loading_lock);
+		if (_loaded && _resample_filter && len().samples > 0)
 			_resample_filter->seek_time(f * len().time);
 		render();
-		pthread_mutex_unlock(&_config_lock);
+		pthread_mutex_unlock(&_loading_lock);
 	}
 
 	void nudge_time(double dt)
 	{
-		pthread_mutex_lock(&_config_lock);
-		_resample_filter->seek_time(_resample_filter->get_time()+dt);
-		pthread_mutex_unlock(&_config_lock);
+		pthread_mutex_lock(&_loading_lock);
+		if (_loaded)
+			_resample_filter->seek_time(_resample_filter->get_time()+dt);
+		pthread_mutex_unlock(&_loading_lock);
 	}
 
 	void nudge_pitch(double dp)
@@ -395,9 +453,27 @@ public:
 
 	void goto_pitchpoint()
 	{
-		pthread_mutex_lock(&_config_lock);
-		_resample_filter->set_output_sampling_frequency(_pitchpoint);
-		pthread_mutex_unlock(&_config_lock);
+		set_output_sampling_frequency(_pitchpoint);
+		// do something with the ui
+	}
+
+	void call_deferreds_loop()
+	{
+		pthread_mutex_lock(&_deferreds_lock);
+		while (_running)
+		{
+			while (!_defcalls.empty())
+			{
+				deferred *d = _defcalls.front();
+				_defcalls.pop();
+				d->operator()();
+				delete d;
+			}
+			pthread_cond_wait(&_have_deferred, &_deferreds_lock);
+		}
+//		pthread_mutex_unlock(&_deferreds_lock);
+//		pthread_mutex_destroy(&_deferreds_lock);
+//		pthread_cond_destroy(&_have_deferred);
 	}
 
 protected:
@@ -430,6 +506,13 @@ public:
 #if USE_NEW_WAVE
 	MipMap<BufferedStream<Chunk_T> > *_mip_map;
 #endif
+	pthread_mutex_t _loading_lock;
+	pthread_cond_t _track_loaded;
+
+	std::queue<deferred*> _defcalls;
+	pthread_mutex_t _deferreds_lock;
+	pthread_cond_t _have_deferred;
+	bool _running;
 };
 
 #endif // !defined(TRACK_H)

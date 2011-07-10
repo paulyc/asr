@@ -181,7 +181,8 @@ UITrack::UITrack(GenericUI *ui, int tid, int pitch_id, int gain_id) :
 	coarse_val(48000.0),
 	fine_val(0.0),
 	pitch(ui, pitch_id),
-	gain(ui, gain_id)
+	gain(ui, gain_id),
+	clip(false)
 {}
 
 void UITrack::set_coarse(double v)

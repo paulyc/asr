@@ -158,6 +158,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					return TRUE;*/
 					
 				case IDOK:
+					//kill worker thread
 					DestroyWindow(hwndDlg);
 					g_dlg = NULL;
 					PostMessage(NULL, WM_QUIT, 0, 0);
@@ -504,10 +505,10 @@ void Win32UI::main_loop()
 {
 	create();
 
-#if USE_NEW_WAVE
+//#if USE_NEW_WAVE
 	asio->GetTrack(1)->set_display_width(_track1.wave.width());
 	asio->GetTrack(2)->set_display_width(_track2.wave.width());
-#endif
+//#endif
 
 	br = CreateSolidBrush(RGB(255,255,255));
 	pen_dk = CreatePen(PS_SOLID, 1, RGB(0,0,255));
@@ -515,8 +516,8 @@ void Win32UI::main_loop()
 	pen_yel = CreatePen(PS_SOLID, 1, RGB(255,255,0));
 	pen_oran = CreatePen(PS_SOLID, 1, RGB(255,128,0));
 
-	asio->GetTrack(1)->lockedpaint();
-	asio->GetTrack(2)->lockedpaint();
+	//asio->GetTrack(1)->lockedpaint();
+	//asio->GetTrack(2)->lockedpaint();
 
 #if SLEEP
 	Sleep(10000);
@@ -577,7 +578,10 @@ void Win32UI::set_text_field(int id, const wchar_t *txt)
 
 void Win32UI::set_clip(int t_id)
 {
-	SendMessage(GetDlgItem(g_dlg, t_id==1?IDC_CHECK7:IDC_CHECK8), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
+	if (t_id==1)
+		_track1.clip = true;
+	else
+		_track2.clip = true;
 }
 
 void Win32UI::render(int t_id)
@@ -598,6 +602,12 @@ void Win32UI::render(int t_id)
 
 	if (!track->loaded())
 		return;
+
+	if (uit->clip)
+	{
+		SendMessage(GetDlgItem(g_dlg, t_id==1?IDC_CHECK7:IDC_CHECK8), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
+		uit->clip = false;
+	}
 
 	h = ::GetDlgItem(g_dlg, t_id == 1 ? IDC_STATIC4 : IDC_STATIC5);
 //	printf("WM_PAINT %d, %d, %d, %d\n", hwndDlg, uMsg, wParam, lParam);

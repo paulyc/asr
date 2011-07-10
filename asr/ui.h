@@ -50,6 +50,7 @@ struct UITrack
 	double fine_val;
 	UIText pitch;
 	UIText gain;
+	bool clip;
 };
 
 struct UISlider

@@ -32,6 +32,9 @@ public:
 
 		(new Worker)->spin(true);
 		(new Worker)->spin(false);
+		(new Worker)->spin(false);
+		(new Worker)->spin(false);
+		(new Worker)->spin(false);
 	}
 
 	static void destroy()
@@ -79,6 +82,17 @@ public:
 		{
 			func();
 		}
+	};
+
+	template <typename Obj_T>
+	struct call_deferreds_job : public job
+	{
+		call_deferreds_job(Obj_T *obj) : _object(obj) {}
+		void step()
+		{
+			_object->call_deferreds_loop();
+		}
+		Obj_T *_object;
 	};
 
 	template <typename Track_T>
@@ -131,8 +145,11 @@ public:
 		pthread_cond_t _next_step;
 		void step()
 		{
-			track->set_wav_heights(false);
-			track->lockedpaint();
+			if (track->loaded())
+			{
+				track->set_wav_heights(false, true);
+				track->lockedpaint();
+			}
 			done = true;
 		}
 	};
