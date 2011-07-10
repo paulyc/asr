@@ -35,14 +35,14 @@ const char* gettype() { return "T"; }
 typable(float)
 typable(double)
 
-ASIOProcessor<SamplePairf, short> * asio = 0;
+ASIOProcessor * asio = 0;
 GenericUI *ui = 0;
 
 void begin()
 {
-	asio = new ASIOProcessor<SamplePairf, short>;
+	asio = new ASIOProcessor;
 #if WINDOWS
-	ui = new Win32UI<ASIOProcessor<SamplePairf, short> >(asio);
+	ui = new Win32UI(asio);
 #endif
 	asio->set_ui(ui);
 #if RUN

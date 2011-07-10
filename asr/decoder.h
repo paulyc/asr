@@ -379,7 +379,7 @@ public:
 		{
 		//	for (int i = 0; i < 23; ++i)
 			{
-				b = _bits.front();
+				bit_info b = _bits.front();
 				_bits.pop();
 			//	bits.pop();
 			//	pk_out << "bit is " << b.bit << " " << (b.forward ? "f" : "b") << std::endl;
@@ -391,7 +391,7 @@ public:
 				} else {
 					bits_t mask;
 					mask = ((1 << 23) - 1);
-					_timecode = rev(-timecode);
+					_timecode = rev(-_timecode);
 					_bitstream = ((_bitstream << 1) & mask) + (bits_t)b.bit;
 				}
 			//	pk_out << "timecode " << timecode << " bitstream " << bitstream << std::endl;
@@ -412,14 +412,14 @@ public:
 					{
 					//pk_out << "hello "<< r<<std::endl;
 						pos_info p;
-						if (mod != 0.0)
+						if (p_begin.mod != 0.0)
 						{
 							p.tm = r/2110000.0*(17*60);
 							p.smp = b.smp;
 							p.forward = b.forward;
 							p.valid = true;
-							p.freq = freq;
-							pos_stream.push(p);
+							p.freq = p_begin.freq;
+							_pos_stream.push(p);
 						}
 						/*
 						if (!valid) // only once per frame for now.

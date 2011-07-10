@@ -3,10 +3,10 @@
 
 #include <cstdio>
 
-typedef ASIOProcessor<SamplePairf, short> ASIOP;
+typedef ASIOProcessor ASIOP;
 extern ASIOP * asio;
 extern GenericUI *ui;
-typedef ASIOProcessor<SamplePairf, short>::track_t track_t;
+typedef ASIOProcessor::track_t track_t;
 
 #if WINDOWS
 #include <commctrl.h>
@@ -26,14 +26,157 @@ double last_time;
 
 UITrack tracks[2];
 
-template <>
-void Win32UI<ASIOProcessor<SamplePairf, short> >::set_clip(int t_id)
+void GenericUI::do_paint()
+{
+	_io->GetTrack(1)->lockedpaint();
+	_io->GetTrack(2)->lockedpaint();
+}
+
+void GenericUI::mouse_down(MouseButton b, int x, int y)
+{
+	switch (b)
+	{
+		case Left:
+		{
+			tracks[0].wave.mousedown = y >= tracks[0].wave.windowr.top && y < tracks[0].wave.windowr.bottom &&
+				x >= tracks[0].wave.windowr.left && x < tracks[0].wave.windowr.right;
+			if (tracks[0].wave.mousedown)
+			{
+				_lastx=x;
+				_lasty=y;
+				_io->GetTrack(1)->lock_pos(x-tracks[0].wave.windowr.left);
+			}
+
+			tracks[1].wave.mousedown = y >= tracks[1].wave.windowr.top && y < tracks[1].wave.windowr.bottom &&
+				x >= tracks[1].wave.windowr.left && x < tracks[1].wave.windowr.right;
+			if (tracks[1].wave.mousedown)
+			{
+				_lastx=x;
+				_lasty=y;
+				_io->GetTrack(2)->lock_pos(x-tracks[1].wave.windowr.left);
+			}
+			break;
+		}
+	case Right:
+		break;
+	case Middle:
+		break;
+	}
+}
+
+void GenericUI::mouse_up(MouseButton b, int x, int y)
+{
+	switch (b)
+	{
+		case Left:
+		{
+			tracks[0].wave.mousedown = false;
+			tracks[1].wave.mousedown = false;
+			_io->GetTrack(1)->unlock_pos();
+			_io->GetTrack(2)->unlock_pos();
+			break;
+		}
+		case Right:
+		{
+			if (y > tracks[0].wave.windowr.top && y < tracks[0].wave.windowr.bottom)
+			{
+				double f = double(x - tracks[0].wave.windowr.left)/tracks[0].wave.width();
+				if (f >= 0.0 && f <= 1.0)
+				{
+					printf("cue %f\n", f);
+					_io->GetTrack(1)->set_cuepoint(_io->GetTrack(1)->get_display_time(f));
+				}
+			}
+			else if (y > tracks[1].wave.windowr.top && y < tracks[1].wave.windowr.bottom)
+			{
+				double f = double(x - tracks[1].wave.windowr.left)/tracks[1].wave.width();
+				if (f >= 0.0 && f <= 1.0)
+				{
+					printf("cue %f\n", f);
+					_io->GetTrack(2)->set_cuepoint(_io->GetTrack(2)->get_display_time(f));
+				}
+			}
+			break;
+		}
+	case Middle:
+		break;
+	}
+}
+
+void GenericUI::mouse_dblclick(MouseButton b, int x, int y)
+{
+	switch (b)
+	{
+		case Left:
+		{
+			if (y >= tracks[0].wave.windowr.top && y < tracks[0].wave.windowr.bottom)
+			{
+				double f = double(x - tracks[0].wave.windowr.left)/tracks[0].wave.width();
+				if (f >= 0.0 && f <= 1.0)
+				{
+					printf("%f\n", f);
+					_io->GetTrack(1)->seek_time(_io->GetTrack(1)->get_display_time(f));
+				}
+			}
+			else if (y >= tracks[1].wave.windowr.top && y < tracks[1].wave.windowr.bottom)
+			{
+				double f = double(x - tracks[1].wave.windowr.left)/tracks[1].wave.width();
+				if (f >= 0.0 && f <= 1.0)
+				{
+					printf("%f\n", f);
+					_io->GetTrack(2)->seek_time(_io->GetTrack(2)->get_display_time(f));
+				}
+			}
+			break;
+		}
+	case Right:
+		break;
+	case Middle:
+		break;
+	}
+}
+
+void GenericUI::mouse_move(int x, int y)
+{
+	int dx = x-_lastx;
+	int dy = y-_lasty;
+
+	if (tracks[0].wave.mousedown)
+	{
+		if (dy)
+		{
+			_io->GetTrack(1)->zoom_px(dy);
+		}
+		if (dx)
+		{
+			_io->GetTrack(1)->move_px(dx);
+			_io->GetTrack(1)->lock_pos(x-tracks[0].wave.windowr.left);
+		}
+		_lastx = x;
+		_lasty = y;
+	}
+	else if (tracks[1].wave.mousedown)
+	{
+		if (dy)
+		{
+			_io->GetTrack(2)->zoom_px(dy);
+		}
+		if (dx)
+		{
+			_io->GetTrack(2)->move_px(dx);
+			_io->GetTrack(2)->lock_pos(x-tracks[1].wave.windowr.left);
+		}
+		_lastx = x;
+		_lasty = y;
+	}
+}
+
+void Win32UI::set_clip(int t_id)
 {
 	SendMessage(GetDlgItem(g_dlg, t_id==1?IDC_CHECK7:IDC_CHECK8), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
 }
 
-template <>
-void Win32UI<ASIOProcessor<SamplePairf, short> >::render(int t_id)
+void Win32UI::render(int t_id)
 {
 	//PAINTSTRUCT ps;
 	HDC hdc, hdc_old;
@@ -84,7 +227,7 @@ void Win32UI<ASIOProcessor<SamplePairf, short> >::render(int t_id)
 		//	pthread_mutex_unlock(&asio->_io_lock);
 		//	pthread_mutex_lock(&asio->_io_lock);
 		}
-		const ASIOProcessor<SamplePairf, short>::track_t::display_t::wav_height &h =
+		const track_t::display_t::wav_height &h =
 			track->_display->get_wav_height(p);
 		int px_pk = (1.0-h.peak_top) * height / 2;
 		int px_avg = (1.0-h.avg_top) * height / 2;
@@ -125,8 +268,7 @@ void Win32UI<ASIOProcessor<SamplePairf, short> >::render(int t_id)
 //	pthread_mutex_unlock(&asio->_io_lock);
 }
 
-template <>
-void Win32UI<ASIOProcessor<SamplePairf, short> >::set_position(void *t, double p, bool invalidate)
+void Win32UI::set_position(void *t, double p, bool invalidate)
 {
 	if (asio)
 	{
@@ -161,137 +303,32 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 	{
 		case WM_PAINT:
 		{
-			asio->GetTrack(1)->lockedpaint();
-			asio->GetTrack(2)->lockedpaint();
+			ui->do_paint();
 			return 0L;
 		}
 		case WM_LBUTTONDOWN:
 		{
-			buttonx = LOWORD(lParam);
-			buttony = HIWORD(lParam)+45;
-			
-			tracks[0].wave.mousedown = buttony >= tracks[0].wave.windowr.top && buttony < tracks[0].wave.windowr.bottom &&
-				buttonx >= tracks[0].wave.windowr.left && buttonx < tracks[0].wave.windowr.right;
-			if (tracks[0].wave.mousedown)
-			{
-				lastx=buttonx;
-				lasty=buttony;
-				asio->GetTrack(1)->lock_pos(lastx-tracks[0].wave.windowr.left);
-			}
-
-			tracks[1].wave.mousedown = buttony >= tracks[1].wave.windowr.top && buttony < tracks[1].wave.windowr.bottom &&
-				buttonx >= tracks[1].wave.windowr.left && buttonx < tracks[1].wave.windowr.right;
-			if (tracks[1].wave.mousedown)
-			{
-				lastx=buttonx;
-				lasty=buttony;
-				asio->GetTrack(2)->lock_pos(lastx-tracks[1].wave.windowr.left);
-			}
+			ui->mouse_down(GenericUI::Left, LOWORD(lParam), HIWORD(lParam)+45);
 			break;
 		}
 		case WM_LBUTTONDBLCLK:
 		{
-			buttonx = LOWORD(lParam);
-			buttony = HIWORD(lParam)+45;
-			if (buttony >= tracks[0].wave.windowr.top && buttony < tracks[0].wave.windowr.bottom)
-			{
-				double f = double(buttonx - tracks[0].wave.windowr.left)/tracks[0].wave.width();
-				if (f >= 0.0 && f <= 1.0)
-				{
-					printf("%f\n", f);
-					asio->GetTrack(1)->seek_time(asio->GetTrack(1)->get_display_time(f));
-				}
-			}
-			else if (buttony >= tracks[1].wave.windowr.top && buttony < tracks[1].wave.windowr.bottom)
-			{
-				double f = double(buttonx - tracks[1].wave.windowr.left)/tracks[1].wave.width();
-				if (f >= 0.0 && f <= 1.0)
-				{
-					printf("%f\n", f);
-					asio->GetTrack(2)->seek_time(asio->GetTrack(2)->get_display_time(f));
-				}
-			}
+			ui->mouse_dblclick(GenericUI::Left, LOWORD(lParam), HIWORD(lParam)+45);
 			break;
 		}
 		case WM_LBUTTONUP:
 		{
-			tracks[0].wave.mousedown = false;
-			tracks[1].wave.mousedown = false;
-			asio->GetTrack(1)->unlock_pos();
-			asio->GetTrack(2)->unlock_pos();
+			ui->mouse_up(GenericUI::Left, LOWORD(lParam), HIWORD(lParam)+45);
 			break;
 		}
 		case WM_MOUSEMOVE:
 		{
-			buttonx = LOWORD(lParam);
-			buttony = HIWORD(lParam)+45;
-		//	printf("WM_MOUSEMOVE %d %d %x %x\n", hwndDlg,uMsg,wParam,lParam);
-			int dx = buttonx-lastx;
-			int dy = buttony-lasty;
-
-			if (tracks[0].wave.mousedown)
-			{
-				if (dy)
-				{
-					asio->GetTrack(1)->zoom_px(dy);
-				}
-				if (dx)
-				{
-					asio->GetTrack(1)->move_px(dx);
-					asio->GetTrack(1)->lock_pos(buttonx-tracks[0].wave.windowr.left);
-				}
-				lastx =buttonx;
-				lasty =buttony;
-			}
-			else if (tracks[1].wave.mousedown)
-			{
-				if (dy)
-				{
-					asio->GetTrack(2)->zoom_px(dy);
-				}
-				if (dx)
-				{
-					asio->GetTrack(2)->move_px(dx);
-					asio->GetTrack(2)->lock_pos(buttonx-tracks[1].wave.windowr.left);
-				}
-				lastx =buttonx;
-				lasty =buttony;
-			}
+			ui->mouse_move(LOWORD(lParam), HIWORD(lParam)+45);
 			break;
 		}
 		case WM_RBUTTONUP:
 		{
-		//	HWND h = GetDlgItem(g_dlg, IDC_STATIC4);
-		//	POINT p;
-		//	WINDOWINFO wi;
-		//	GetCurrentPositionEx(h, &p);
-		//	::GetWindowInfo(h, &wi);
-		//	35,131,438,52
-			//216,56
-		//	if (HIWORD(lParam) >= 35 || LOWORD(lParam) >= 131)
-			buttonx = LOWORD(lParam);
-			buttony = HIWORD(lParam)+45;
-			{
-				if (buttony > tracks[0].wave.windowr.top && buttony < tracks[0].wave.windowr.bottom)
-				{
-					double f = double(buttonx - tracks[0].wave.windowr.left)/tracks[0].wave.width();
-					if (f >= 0.0 && f <= 1.0)
-					{
-						printf("cue %f\n", f);
-						asio->GetTrack(1)->set_cuepoint(asio->GetTrack(1)->get_display_time(f));
-					}
-				}
-				else if (buttony > tracks[1].wave.windowr.top && buttony < tracks[1].wave.windowr.bottom)
-				{
-					double f = double(buttonx - tracks[1].wave.windowr.left)/tracks[1].wave.width();
-					if (f >= 0.0 && f <= 1.0)
-					{
-						printf("cue %f\n", f);
-						asio->GetTrack(2)->set_cuepoint(asio->GetTrack(2)->get_display_time(f));
-					}
-				}
-			//	printf("%d %d %d\n", HIWORD(lParam), LOWORD(lParam), y);
-			}
+			ui->mouse_up(GenericUI::Right, LOWORD(lParam), HIWORD(lParam)+45);
 			break;
 		}
 		case WM_HSCROLL:
@@ -629,8 +666,7 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-template <>
-void Win32UI<ASIOProcessor<SamplePairf, short> >::create()
+void Win32UI::create()
 {
 #if 0
 	INITCOMMONCONTROLSEX iccx;
@@ -763,8 +799,7 @@ void Win32UI<ASIOProcessor<SamplePairf, short> >::create()
 	SendMessage(GetDlgItem(g_dlg, IDC_RADIO5), BM_SETCHECK, BST_CHECKED, 0);
 }
 
-template <>
-void Win32UI<ASIOProcessor<SamplePairf, short> >::main_loop()
+void Win32UI::main_loop()
 {
 	create();
 

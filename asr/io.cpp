@@ -5,7 +5,7 @@
 
 #include <pthread.h>
 
-extern ASIOProcessor<SamplePairf, short> * asio;
+extern ASIOProcessor * asio;
 
 /*
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T, int chunk_size>
@@ -184,8 +184,7 @@ long asioMessage(long selector, long value, void *message, double *opt)
 	return ASE_OK;
 }
 
-template <>
-ASIOProcessor<SamplePairf, short>::ASIOProcessor() :
+ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
 	_default_src(L"F:\\My Music\\Flip & Fill - I Wanna Dance With Somebody (Resource Mix).wav"),
@@ -208,14 +207,12 @@ ASIOProcessor<SamplePairf, short>::ASIOProcessor() :
 	Init();
 }
 
-template <typename Input_Buffer_T, typename Output_Buffer_T>
-ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::~ASIOProcessor()
+ASIOProcessor::~ASIOProcessor()
 {
 	Destroy();
 }
 
-template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
+void ASIOProcessor::Init()
 {
 	ASIOError e;
 	long minSize, maxSize, preferredSize, granularity;
@@ -340,16 +337,14 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Init()
 //	ASIOSetSampleRate(44100.0);
 }
 
-template <typename Input_Buffer_T, typename Output_Buffer_T>
-ASIOError ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Start()
+ASIOError ASIOProcessor::Start()
 {
 	_running = true;
 	_src_active = true;
 	return ASIOStart();
 }
 
-template <typename Input_Buffer_T, typename Output_Buffer_T>
-ASIOError ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Stop()
+ASIOError ASIOProcessor::Stop()
 {
 	_running = false;
 	_src_active = false;
@@ -357,23 +352,22 @@ ASIOError ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Stop()
 }
 
 
-template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::ProcessInput()
+void ASIOProcessor::ProcessInput()
 {
+	throw std::exception("Not implemented");
 	if (_my_source)
 	{
 		_my_source->have_data();
 		while (_my_source->chunk_ready())
 		{
-			_my_raw_output->process();
-			_my_controller->process(_resample_filter, _my_pk_det);
+		//	_my_raw_output->process();
+		//	_my_controller->process(, _my_pk_det);
 		}
 		_speed = _my_pk_det->p_begin.mod;
 	}
 }
 
-template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
+void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
 	pthread_mutex_lock(&_io_lock);
 	_doubleBufferIndex = doubleBufferIndex;
@@ -508,8 +502,7 @@ end1:
 	return toBuf;
 }
 
-template <>
-void ASIOProcessor<SamplePairf, short>::SetSrc(int ch, const wchar_t *fqpath)
+void ASIOProcessor::SetSrc(int ch, const wchar_t *fqpath)
 {
 	bool was_active = _src_active;
 	if (was_active)
@@ -522,8 +515,7 @@ void ASIOProcessor<SamplePairf, short>::SetSrc(int ch, const wchar_t *fqpath)
 		Start();
 }
 
-template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::LoadDriver()
+void ASIOProcessor::LoadDriver()
 {
 #if WINDOWS
 #define ASIODRV_DESC		L"description"
@@ -582,8 +574,7 @@ void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::LoadDriver()
 #endif
 }
 
-template <typename Input_Buffer_T, typename Output_Buffer_T>
-void ASIOProcessor<Input_Buffer_T, Output_Buffer_T>::Destroy()
+void ASIOProcessor::Destroy()
 {
 	ASIOError e;
 	if (_running)

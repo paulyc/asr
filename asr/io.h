@@ -23,6 +23,7 @@
 #include "wavformdisplay.h"
 #include "track.h"
 
+class ASIOProcessor;
 class GenericUI;
 
 extern IASIO * asiodrv;
@@ -39,9 +40,6 @@ void bufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
 ASIOTime* bufferSwitchTimeInfo(ASIOTime *params, long doubleBufferIndex, ASIOBool directProcess);
 void sampleRateDidChange(ASIOSampleRate sRate);
 long asioMessage(long selector, long value, void *message, double *opt);
-
-template <typename Input_Buffer_T, typename Output_Buffer_T>
-class ASIOProcessor;
 
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
 class asio_sink : public T_sink_sourceable<Chunk_T>
@@ -132,18 +130,6 @@ public:
 #define RUN 0
 #define INPUT_PERIOD (1.0/44100.0)
 
-#if 0
-template <typename T, int n>
-class vector_n
-{
-	vector_n(
-	T operator[]
-private:
-	T _items[n];
-};
-#endif
-
-template <typename Input_Buffer_T, typename Output_Buffer_T>
 class ASIOProcessor
 {
 public:
@@ -182,7 +168,7 @@ public:
 	void BufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
 	void SetSrc(int ch, const wchar_t *fqpath);
 
-	void SetResamplerate(double rate)
+	/*void SetResamplerate(double rate)
 	{
 		_resamplerate = rate;
 		_my_controller->set_output_sampling_frequency(_resample_filter, _resamplerate);
@@ -191,7 +177,7 @@ public:
 	void SetPos(double tm)
 	{
 		_my_controller->set_output_time(_resample_filter, tm);
-	}
+	}*/
 
 	typedef SeekablePitchableFileSource<chunk_t> track_t;
 	track_t* GetTrack(int t_id)
@@ -220,7 +206,7 @@ public:
 
 	void set_source(Output o, Source s)
 	{
-		if (!asio->_file_out)
+		if (!_file_out)
 			return;
 		pthread_mutex_lock(&_io_lock);
 		if (o==Main)
@@ -228,13 +214,13 @@ public:
 			switch (s)
 			{
 				case Master:
-					asio->_main_src = asio->_master_xfader;
+					_main_src = _master_xfader;
 					break;
 				case Cue:
-					asio->_main_src = asio->_cue;
+					_main_src = _cue;
 					break;
 				case Aux:
-				//	asio->_main_src = asio->_aux;
+				//	_main_src = _aux;
 					break;
 			}
 		}
@@ -243,16 +229,16 @@ public:
 			switch (s)
 			{
 				case Off:
-					asio->_file_src = 0;
+					_file_src = 0;
 					break;
 				case Master:
-					asio->_file_src = asio->_master_xfader;
+					_file_src = _master_xfader;
 					break;
 				case Cue:
-					asio->_file_src = asio->_cue;
+					_file_src = _cue;
 					break;
 				case Aux:
-				//	asio->_file_src = asio->_aux;
+				//	_file_src = _aux;
 					break;
 			}
 		}
@@ -285,11 +271,6 @@ public: // was protected
 	void Destroy();
 
 	const static int inputBuffersize = 4*BUFFERSIZE;
-	
-	Input_Buffer_T *_inputBufL, *_inputBufR;
-	size_t _inputBufLEffectiveSize, _inputBufREffectiveSize;
-	Input_Buffer_T *_bufLBegin, *_bufLEnd, *_bufRBegin, *_bufREnd;
-	double _inputBufTime;
 	
 	ASIODriverInfo _drv_info;
 	size_t _buffer_infos_len;
