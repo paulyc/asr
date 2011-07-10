@@ -206,8 +206,6 @@ public:
 
 	void set_source(Output o, Source s)
 	{
-		if (!_file_out)
-			return;
 		pthread_mutex_lock(&_io_lock);
 		if (o==Main)
 		{
@@ -226,6 +224,8 @@ public:
 		}
 		else
 		{
+			if (!_file_out)
+				return;
 			switch (s)
 			{
 				case Off:

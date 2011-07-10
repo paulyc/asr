@@ -228,6 +228,7 @@ public:
 			if (asio && asio->get_ui())
 				asio->get_ui()->render(_track_id);
 			_resample_filter->set_output_scale(1.0f / _src->maxval());
+			_meta->load_metadata(lock);
 			pthread_mutex_unlock(&_config_lock);
 			return false;
 	//	}

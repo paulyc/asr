@@ -318,4 +318,59 @@ void printfbuffer(T *buf, int len, const char *label=0);
 void copy_chunk_buffer();
 void buf_copy(char *buf_src, char *buf_dst, int num_items, int item_sz=1, int stride=1);
 
+template <typename T>
+class functor0
+{
+public:
+	functor0(T *obj, void(T::*f)()):_obj(obj),_f(f){}
+	void operator()() {(_obj->*)_f();}
+private:
+	T *_obj;
+	void(T::*_f)();
+};
+
+template <typename T, typename Ret>
+class functor0_r
+{
+public:
+	functor0_r(T *obj, Ret(T::*f)()):_obj(obj),_f(f){}
+	Ret operator()() {return (_obj->*_f)();}
+private:
+	T *_obj;
+	Ret(T::*_f)();
+};
+
+template <typename T, typename Param1>
+class functor1
+{
+public:
+	functor1(T *obj, void(T::*f)(Param1)):_obj(obj),_f(f){}
+	void operator()(Param1 p1) {(_obj->*_f)(p1);}
+private:
+	T *_obj;
+	void(T::*_f)(Param1);
+};
+
+template <typename T, typename Ret, typename Param1>
+class functor1_r
+{
+public:
+	functor1_r(T *obj, Ret(T::*f)(Param1)):_obj(obj),_f(f){}
+	Ret operator()(Param1 p1) {return (_obj->*_f)(p1);}
+private:
+	T *_obj;
+	Ret(T::*_f)(Param1);
+};
+
+template <typename T, typename Param1, typename Param2>
+class functor2
+{
+public:
+	functor2(T *obj, void(T::*f)(Param1,Param2)):_obj(obj),_f(f){}
+	void operator()(Param1 p1, Param2 p2) {(_obj->*_f)(p1, p2);}
+private:
+	T *_obj;
+	void(T::*_f)(Param1,Param2);
+};
+
 #endif

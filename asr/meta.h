@@ -164,6 +164,16 @@ public:
 		return _src->len();
 	}
 
+	void load_metadata(pthread_mutex_t *lock)
+	{
+		for (int chk_ofs=0; chk_ofs < _src->len().chunks; ++chk_ofs)
+		{
+			pthread_mutex_lock(lock);
+			get_metadata(chk_ofs);
+			pthread_mutex_unlock(lock);
+		}
+	}
+
 	const ChunkMetadata& get_metadata(int chk_ofs)
 	{
 		int i, indx;
