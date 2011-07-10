@@ -204,6 +204,12 @@ public:
 	enum Source { Off, Master, Cue, Aux };
 	enum Output { Main, File };
 
+	void set_gain(int t_id, double g)
+	{
+		_master_xfader->set_gain(t_id, g);
+		_cue->set_gain(t_id, g);
+	}
+
 	void set_source(Output o, Source s)
 	{
 		pthread_mutex_lock(&_io_lock);

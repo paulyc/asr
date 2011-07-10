@@ -9,12 +9,9 @@ class GenericUI;
 
 struct UIWavform
 {
-	//UIWavform(int id, int x, int y, int width, int height)
-	//{
-	//}
 	UIWavform() :
-playback_pos(0.0),
-px(0),cpx(0), mousedown(false) {}
+		playback_pos(0.0),
+		px(0),cpx(0), mousedown(false) {}
 	double playback_pos;
 	int px, cpx;
 	RECT r;
@@ -36,18 +33,14 @@ struct UIText
 	UIText(GenericUI *ui, int i);
 	void set_text(const wchar_t *txt);
 	void set_text_pct(double v);
+	void set_text_db(double db);
 	functor2<GenericUI, int, const wchar_t *> callback;
 	int id;
 };
 
-template <typename Chunk_T>
-class SeekablePitchableFileSource;
-
 struct UITrack
 {
-	//UITrack(int x, int y, int width, int height
-	UITrack(GenericUI *ui, int tid, int pitch_id);
-	//UITrack();
+	UITrack(GenericUI *ui, int tid, int pitch_id, int gain_id);
 	UIWavform wave;
 	void set_coarse(double v);
 	void set_fine(double v);
@@ -56,6 +49,7 @@ struct UITrack
 	double coarse_val;
 	double fine_val;
 	UIText pitch;
+	UIText gain;
 };
 
 struct UISlider
@@ -66,7 +60,7 @@ struct UISlider
 class GenericUI
 {
 public:
-	GenericUI(ASIOProcessor *io);
+	GenericUI(ASIOProcessor *io, UITrack t1, UITrack t2);
 
 	virtual void create() = 0;
 	virtual void main_loop() = 0;
@@ -81,7 +75,8 @@ public:
 	virtual void mouse_dblclick(MouseButton b, int x, int y);
 	virtual void mouse_move(int x, int y);
 	virtual void do_paint();
-	virtual void slider_move(double pos){}
+	enum SliderType { PitchCoarse, PitchFine, Gain, XfadeMaster, XfadeCue };
+	virtual void slider_move(double pos, SliderType t, int x);
 	virtual void set_text_field(int id, const wchar_t *txt) = 0;
 	virtual void set_main_mix(double pos){}
 //protected:
@@ -91,6 +86,7 @@ public:
 	UITrack _track2;
 };
 
+#if WINDOWS
 class Win32UI : public GenericUI
 {
 public:
@@ -107,15 +103,11 @@ public:
 	bool _want_render;
 };
 
-struct FinePitchSlider : public UISlider
+struct Win32UISlider : public UISlider
 {
-	//FinePitchSlider(track_t *track)
-	//void set_pos(double p)
-
-	//functor1
+	virtual void set_pos(double p);
 };
 
-#if WINDOWS
 #include <commctrl.h>
 #include "resource.h"
 #define SLEEP 0
