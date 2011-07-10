@@ -212,6 +212,24 @@ ASIOProcessor::~ASIOProcessor()
 	Destroy();
 }
 
+void ASIOProcessor::CreateTracks()
+{
+	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(1, _default_src, &_io_lock));
+	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2, _default_src, &_io_lock));
+	
+	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
+	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
+	_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
+
+	_main_out = new asio_sink<chunk_t, chk_mgr, short>(&_main_mgr,
+		(short**)_buffer_infos[2].buffers, 
+		(short**)_buffer_infos[3].buffers,
+		_bufSize);
+
+	_main_src = _master_xfader;
+	_file_src = 0;
+}
+
 void ASIOProcessor::Init()
 {
 	ASIOError e;
@@ -222,9 +240,6 @@ void ASIOProcessor::Init()
 
 	try {
 		_my_controller = new controller_t;
-
-		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(1, _default_src, &_io_lock));
-		_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2, _default_src, &_io_lock));
 
 #if CARE_ABOUT_INPUT
 		_my_source = new asio_source<short, SamplePairf, chunk_t>;
@@ -310,17 +325,7 @@ void ASIOProcessor::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 #endif
 
-	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
-	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
-	_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
-
-	_main_out = new asio_sink<chunk_t, chk_mgr, short>(&_main_mgr,
-		(short**)_buffer_infos[2].buffers, 
-		(short**)_buffer_infos[3].buffers,
-		_bufSize);
-
-	_main_src = _master_xfader;
-	_file_src = 0;
+	
 
 	ASIOSampleRate r;
 /*		ASIOSampleType t;

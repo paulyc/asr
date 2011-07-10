@@ -195,7 +195,10 @@ public:
 	void set_ui(GenericUI *ui)
 	{
 		_ui = ui;
+		CreateTracks();
 	}
+
+	void CreateTracks();
 
 	GenericUI *get_ui()
 	{

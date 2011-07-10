@@ -252,10 +252,10 @@ public:
 	//	{
 		//	GenericUI *ui;
 	//		pthread_mutex_unlock(lock);
-			
+			_meta->load_metadata(lock);
 			
 			_resample_filter->set_output_scale(1.0f / _src->maxval());
-			_meta->load_metadata(lock);
+			//_meta->load_metadata(lock);
 			pthread_mutex_lock(&_loading_lock);
 			_loaded = true;
 			pthread_cond_signal(&_track_loaded);

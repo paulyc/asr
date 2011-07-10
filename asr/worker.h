@@ -147,7 +147,7 @@ public:
 		{
 			if (track->loaded())
 			{
-				track->set_wav_heights(false, true);
+				track->set_wav_heights(false, false);
 				track->lockedpaint();
 			}
 			done = true;

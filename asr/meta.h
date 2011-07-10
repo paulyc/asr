@@ -1,6 +1,8 @@
 #ifndef _META_H
 #define _META_H
 
+#include <sched.h>
+
 template <typename Source_T>
 class MipMap
 {
@@ -171,6 +173,7 @@ public:
 			pthread_mutex_lock(lock);
 			get_metadata(chk_ofs);
 			pthread_mutex_unlock(lock);
+			sched_yield();
 		}
 	}
 
