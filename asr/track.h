@@ -123,14 +123,16 @@ public:
 		if (wcsstr(_filename, L".mp3") == _filename + wcslen(_filename) - 4)
 		{
 			_src = new mp3file_chunker<Chunk_T>(_filename);
-			_src_buf = new BufferedStream<Chunk_T>(_src);
-		//	_src_buf->load_complete();
+		}
+		else if (wcsstr(_filename, L".wav") == _filename + wcslen(_filename) - 4)
+		{
+			_src = new wavfile_chunker<Chunk_T>(_filename);
 		}
 		else
 		{
-			_src = new wavfile_chunker<Chunk_T>(_filename);
-			_src_buf = new BufferedStream<Chunk_T>(_src);
+		//	_src = new flacfile_chunker<Chunk_T>(_filename);
 		}
+		_src_buf = new BufferedStream<Chunk_T>(_src);
 
 		pthread_mutex_unlock(lock);
 		pthread_mutex_lock(lock);

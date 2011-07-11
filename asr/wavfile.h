@@ -407,26 +407,29 @@ public:
 		const FLAC__int32 * const buffer[], 
 		void *client_data)
 	{
-		_left = buffer[0];
-		_right = buffer[1];
-		_blocksize = frame->header.blocksize;
-		_ofs = 0;
+		flacfile_chunker<Chunk_T>* _this = static_cast<flacfile_chunker<Chunk_T>*>(client_data);
+		_this->_left = (FLAC__int32*)buffer[0];
+		_this->_right = (FLAC__int32*)buffer[1];
+		_this->_blocksize = frame->header.blocksize;
+		_this->_ofs = 0;
+		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 	}
 
 	static void metadata_callback(const FLAC__StreamDecoder *decoder, 
 		const FLAC__StreamMetadata *metadata, void *client_data)
 	{
+		flacfile_chunker<Chunk_T>* _this = static_cast<flacfile_chunker<Chunk_T>*>(client_data);
 		switch (metadata->type)
 		{
 			case FLAC__METADATA_TYPE_STREAMINFO: // 	STREAMINFO block
-				memcpy(&_stream_info, &metadata->data.stream_info, sizeof(FLAC__StreamMetadata_StreamInfo));
-				_sample_rate = _stream_info.sample_rate ? (double)_stream_info.sample_rate : 44100.;
-				if (_stream_info.total_samples)
+				memcpy(&_this->_stream_info, &metadata->data.stream_info, sizeof(FLAC__StreamMetadata_StreamInfo));
+				_this->_sample_rate = _this->_stream_info.sample_rate ? (double)_this->_stream_info.sample_rate : 44100.;
+				if (_this->_stream_info.total_samples)
 				{
-					_len.samples = _stream_info.total_samples;
-					_len.chunks = _len.samples / Chunk_T::chunk_size;
-					_len.smp_ofs_in_chk = _len.samples % Chunk_T::chunk_size;
-					_len.time = _len.samples / (double)_stream_info.sample_rate;
+					_this->_len.samples = _this->_stream_info.total_samples;
+					_this->_len.chunks = _this->_len.samples / Chunk_T::chunk_size;
+					_this->_len.smp_ofs_in_chk = _this->_len.samples % Chunk_T::chunk_size;
+					_this->_len.time = _this->_len.samples / (double)_this->_stream_info.sample_rate;
 				}
 				break;
 			case FLAC__METADATA_TYPE_PADDING: // 	PADDING block
@@ -462,20 +465,32 @@ public:
 			case FLAC__STREAM_DECODER_MEMORY_ALLOCATION_ERROR:
 				break;
 			}
+			return false;
 		}
+		return true;
 	}
 
 	Chunk_T* next()
 	{
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		typename Chunk_T::sample_t *smp = chk->_data, *end = smp + Chunk_T::chunk_size;
-		for (; smp != end; ++smp)
+		for (; smp != end; )
 		{
-			for (; _ofs < _blocksize; ++_ofs)
+			for (; smp != end && _ofs < _blocksize; ++_ofs, ++smp)
 			{
+				if (_left[_ofs] >= 0)
+					(*smp)[0] = _left[_ofs] / float(INT_MAX);
+				else
+					(*smp)[0] = -_left[_ofs] / float(INT_MIN);
+				
+				if (_right[_ofs] >= 0)
+					(*smp)[1] = _right[_ofs] / float(INT_MAX);
+				else
+					(*smp)[1] = -_right[_ofs] / float(INT_MIN);
 			}
+			if (_ofs == _blocksize)
+				load_frame();
 		}
-		
 		return chk;
 	}
 
