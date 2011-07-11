@@ -182,8 +182,14 @@ public:
 			{
 				pthread_mutex_unlock(&_buffer_lock);
 				pthread_mutex_lock(&_src_lock);
-				_src->seek_chk(chk_ofs);
-				Chunk_T *c = _src->next();
+				Chunk_T *c = 0;
+				if (_src->len().chunks != -1 && _src->len().chunks <= chk_ofs)
+					c = zero_source<Chunk_T>::get()->next();
+				else
+				{
+					_src->seek_chk(chk_ofs);
+					c = _src->next();
+				}
 				pthread_mutex_unlock(&_src_lock);
 				pthread_mutex_lock(&_buffer_lock);
 				_chks[chk_ofs] = c;

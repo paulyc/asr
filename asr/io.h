@@ -279,6 +279,7 @@ public: // was protected
 	void LoadDriver();
 	void ProcessInput();
 	void Destroy();
+	void Finish();
 
 	const static int inputBuffersize = 4*BUFFERSIZE;
 	

@@ -61,6 +61,7 @@ void end()
 	//ASIOStop();
 	asio->Stop();
 #endif
+	asio->Finish();
 	delete ui;
 	delete asio;
 }

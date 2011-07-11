@@ -49,12 +49,19 @@ public:
 
 	virtual ~SeekablePitchableFileSource()
 	{
-		pthread_mutex_destroy(&_loading_lock);
-		pthread_cond_destroy(&_track_loaded);
+		pthread_mutex_lock(&_loading_lock);
+		while (!_loaded) 
+			pthread_cond_wait(&_track_loaded, &_loading_lock);
+		
 		_running = false;
 		pthread_cond_signal(&_have_deferred);
 
-		pthread_mutex_lock(&_config_lock);
+		pthread_join(_deferred_thread, 0);
+
+		pthread_mutex_destroy(&_loading_lock);
+		pthread_cond_destroy(&_track_loaded);
+
+	//	pthread_mutex_lock(&_config_lock);
 		delete _display;
 		_display = 0;
 #if USE_NEW_WAVE
@@ -69,7 +76,7 @@ public:
 		_src_buf = 0;
 		delete _src;
 		_src = 0;
-		pthread_mutex_unlock(&_config_lock);
+	//	pthread_mutex_unlock(&_config_lock);
 		pthread_mutex_destroy(&_config_lock);
 	}
 
@@ -198,20 +205,10 @@ public:
 		_display->unlock_pos();
 	}
 
-	void lock()
-	{
-		pthread_mutex_lock(&_config_lock);
-	}
-
-	void unlock()
-	{
-		pthread_mutex_unlock(&_config_lock);
-	}
-
 	void set_wav_heights(bool unlock=true, bool lock=false)
 	{
 		if (unlock)
-			pthread_mutex_unlock(&_config_lock);
+			pthread_mutex_unlock(&_loading_lock);
 		if (lock)
 			pthread_mutex_lock(&_loading_lock);
 		//_display->set_wav_heights(&asio->_io_lock);
@@ -219,7 +216,7 @@ public:
 		if (lock)
 			pthread_mutex_unlock(&_loading_lock);
 		if (unlock)
-			pthread_mutex_lock(&_config_lock);
+			pthread_mutex_lock(&_loading_lock);
 	}
 
 	bool play_pause()
@@ -258,10 +255,11 @@ public:
 			//_meta->load_metadata(lock);
 			pthread_mutex_lock(&_loading_lock);
 			_loaded = true;
-			pthread_cond_signal(&_track_loaded);
-			pthread_mutex_unlock(&_loading_lock);
 			if (asio && asio->get_ui())
 				asio->get_ui()->render(_track_id);
+			pthread_cond_signal(&_track_loaded);
+			pthread_mutex_unlock(&_loading_lock);
+			
 			return false;
 	//	}
 		//pthread_mutex_unlock(lock);
@@ -467,8 +465,9 @@ public:
 		asio->_ui->set_clip(id);
 	}
 
-	void call_deferreds_loop()
+	void call_deferreds_loop(pthread_t th)
 	{
+		_deferred_thread = th;
 		pthread_mutex_lock(&_deferreds_lock);
 		while (_running)
 		{
@@ -483,9 +482,7 @@ public:
 			}
 			pthread_cond_wait(&_have_deferred, &_deferreds_lock);
 		}
-//		pthread_mutex_unlock(&_deferreds_lock);
-//		pthread_mutex_destroy(&_deferreds_lock);
-//		pthread_cond_destroy(&_have_deferred);
+		pthread_exit(0);
 	}
 
 protected:
@@ -525,6 +522,7 @@ public:
 	pthread_mutex_t _deferreds_lock;
 	pthread_cond_t _have_deferred;
 	bool _running;
+	pthread_t _deferred_thread;
 };
 
 #endif // !defined(TRACK_H)

@@ -55,6 +55,7 @@ public:
 		const char *_name;
 		virtual void do_it(){}
 		virtual void step(){}
+		pthread_t _thread;
 	};
 
 	template <typename Source_T>
@@ -90,7 +91,7 @@ public:
 		call_deferreds_job(Obj_T *obj) : _object(obj) {}
 		void step()
 		{
-			_object->call_deferreds_loop();
+			_object->call_deferreds_loop(_thread);
 		}
 		Obj_T *_object;
 	};
@@ -236,6 +237,7 @@ protected:
 			cr_j = _critical_jobs.front();
 			_critical_jobs.pop();
 			pthread_mutex_unlock(&_job_lock);
+			cr_j->_thread = _tid;
 			cr_j->do_it();
 			cr_j->done = true;
 			if (cr_j->_deleteme)
@@ -271,6 +273,7 @@ protected:
 				}
 				id_j = _idle_jobs.front();
 				_idle_jobs.pop();
+				id_j->_thread = _tid;
 				pthread_mutex_unlock(&_job_lock);
 			}
 		}
@@ -289,6 +292,7 @@ protected:
 			//	if (!_blockOnCritical)
 			//		pthread_mutex_unlock(&_job_lock);
 				pthread_mutex_unlock(&_job_lock);
+				cr_j->_thread = _tid;
 				cr_j->do_it();
 				cr_j->done = true;
 				if (cr_j->_deleteme)
@@ -321,6 +325,7 @@ protected:
 					id_j = _idle_jobs.front();
 					_idle_jobs.pop();
 					pthread_mutex_unlock(&_job_lock);
+					id_j->_thread = _tid;
 				}
 				else
 				{

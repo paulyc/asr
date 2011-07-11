@@ -325,8 +325,6 @@ void ASIOProcessor::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 #endif
 
-	
-
 	ASIOSampleRate r;
 /*		ASIOSampleType t;
 	r = 44100.0;
@@ -336,6 +334,54 @@ void ASIOProcessor::Init()
 //	ASIOSetSampleRate(44100.0);
 
 	_main_mgr._c = zero_source<chunk_t>::get()->next();
+}
+
+// stop using ui before destroying
+void ASIOProcessor::Finish()
+{
+	if (_running)
+		Stop();
+	delete _tracks[0];
+	delete _tracks[1];
+	_tracks.resize(0);
+}
+
+void ASIOProcessor::Destroy()
+{
+	ASIOError e;
+	
+#if CREATE_BUFFERS
+	e = ASIODisposeBuffers();
+	free(_buffer_infos);
+#endif
+	free(_output_channel_infos);
+	free(_input_channel_infos);
+	e = ASIOExit();
+	if (asiodrv) {
+		asiodrv->Release();
+		asiodrv = 0;
+	}
+	CoUninitialize();
+
+	//for (std::vector<track_t*>::iterator i = _tracks.begin(); i != _tracks.end(); i++)
+	//{/
+	//	delete (*i);
+	//}
+	
+	delete _main_out;
+	delete _file_out;
+	delete _cue;
+	delete _master_xfader;
+	delete _aux;
+	//	delete _aux_bus;
+//	delete _cue_bus;
+//	delete _master_bus;
+//	delete _bus_matrix;
+
+	pthread_cond_destroy(&_gen_done);
+	pthread_mutex_destroy(&_io_lock);
+
+	T_allocator<chunk_t>::dump_leaks();
 }
 
 ASIOError ASIOProcessor::Start()
@@ -628,39 +674,4 @@ void ASIOProcessor::LoadDriver()
 		abort(); 
 	}
 #endif
-}
-
-void ASIOProcessor::Destroy()
-{
-	ASIOError e;
-	if (_running)
-		Stop();
-#if CREATE_BUFFERS
-	e = ASIODisposeBuffers();
-	free(_buffer_infos);
-#endif
-	free(_output_channel_infos);
-	free(_input_channel_infos);
-	e = ASIOExit();
-	if (asiodrv) {
-		asiodrv->Release();
-		asiodrv = 0;
-	}
-	CoUninitialize();
-
-	pthread_cond_destroy(&_gen_done);
-	pthread_mutex_destroy(&_io_lock);
-
-	for (std::vector<track_t*>::iterator i = _tracks.begin(); i != _tracks.end(); i++)
-	{
-		delete (*i);
-	}
-	_tracks.resize(0);
-	delete _main_out;
-//	delete _aux_bus;
-//	delete _cue_bus;
-//	delete _master_bus;
-//	delete _bus_matrix;
-
-	T_allocator<chunk_t>::dump_leaks();
 }
