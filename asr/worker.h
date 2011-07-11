@@ -86,6 +86,29 @@ public:
 	};
 
 	template <typename Obj_T>
+	struct callback_th_job : public job
+	{
+		functor1<Obj_T, pthread_t> func;
+		callback_th_job(functor1<Obj_T, pthread_t> f) : func(f) {}
+		void do_it()
+		{
+			func(_thread);
+		}
+	};
+
+	template <typename Obj_T>
+	struct callback2_job : public job
+	{
+		deferred *def;
+		callback2_job(deferred *d) : def(d) {}
+		void do_it()
+		{
+			(*d)();
+			delete d;
+		}
+	};
+
+	template <typename Obj_T>
 	struct call_deferreds_job : public job
 	{
 		call_deferreds_job(Obj_T *obj) : _object(obj) {}

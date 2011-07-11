@@ -168,6 +168,7 @@ public:
 	void BufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
 	void SetSrc(int ch, const wchar_t *fqpath);
 	void AsyncGenerate();
+	void GenerateLoop(pthread_t th);
 
 	/*void SetResamplerate(double rate)
 	{
@@ -318,7 +319,10 @@ public: // was protected
 	pthread_mutex_t _io_lock;
 	GenericUI *_ui;
 
+	pthread_cond_t _do_gen;
 	pthread_cond_t _gen_done;
+	bool _finishing;
+	pthread_t _gen_th;
 };
 
 #endif // !defined(_IO_H)

@@ -202,7 +202,8 @@ ASIOProcessor::ASIOProcessor() :
 	_my_source(0),
 	_file_out(0),
 	_main_out(0),
-	_ui(0)
+	_ui(0),
+	_finishing(false)
 {
 	Init();
 }
@@ -228,6 +229,13 @@ void ASIOProcessor::CreateTracks()
 
 	_main_src = _master_xfader;
 	_file_src = 0;
+
+#if GENERATE_LOOP
+	Worker::do_job(new Worker::callback_th_job<ASIOProcessor>(
+		functor1<ASIOProcessor, pthread_t>(this, &ASIOProcessor::GenerateLoop)),
+		false, true
+	);
+#endif
 }
 
 void ASIOProcessor::Init()
@@ -237,6 +245,7 @@ void ASIOProcessor::Init()
 
 	pthread_mutex_init(&_io_lock, 0);
 	pthread_cond_init(&_gen_done, 0);
+	pthread_cond_init(&_do_gen, 0);
 
 	try {
 		_my_controller = new controller_t;
@@ -339,8 +348,15 @@ void ASIOProcessor::Init()
 // stop using ui before destroying
 void ASIOProcessor::Finish()
 {
+	_finishing = true;
 	if (_running)
 		Stop();
+
+#if GENERATE_LOOP
+	pthread_cond_signal(&_do_gen);
+	pthread_join(_gen_th, 0);
+#endif
+
 	delete _tracks[0];
 	delete _tracks[1];
 	_tracks.resize(0);
@@ -378,6 +394,7 @@ void ASIOProcessor::Destroy()
 //	delete _master_bus;
 //	delete _bus_matrix;
 
+	pthread_cond_destroy(&_do_gen);
 	pthread_cond_destroy(&_gen_done);
 	pthread_mutex_destroy(&_io_lock);
 
@@ -423,7 +440,7 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 #endif	
 
 #if DO_OUTPUT
-#if ASYNC_GENERATE
+#if ASYNC_GENERATE||GENERATE_LOOP
 	while (_main_mgr._c == 0)
 	{
 		pthread_cond_wait(&_gen_done, &_io_lock);
@@ -474,6 +491,8 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	Worker::do_job(new Worker::callback_job<ASIOProcessor>(
 		functor0<ASIOProcessor>(this, &ASIOProcessor::AsyncGenerate)), 
 		false, true);
+#elif GENERATE_LOOP
+	pthread_cond_signal(&_do_gen);
 #endif
 #endif
 
@@ -520,6 +539,51 @@ void ASIOProcessor::AsyncGenerate()
 	}
 	pthread_cond_signal(&_gen_done);
 	pthread_mutex_unlock(&_io_lock);
+}
+
+void ASIOProcessor::GenerateLoop(pthread_t th)
+{
+	pthread_mutex_lock(&_io_lock);
+	_gen_th = th;
+	while (!_finishing)
+	{
+		if (_main_mgr._c == 0)
+		{
+			chunk_t *chk1 = _tracks[0]->next();
+			chk1->add_ref();
+			chunk_t *chk2 = _tracks[1]->next();
+			chk2->add_ref();
+			chunk_t *out = _main_src->next(chk1, chk2);
+			if (_main_src->_clip)
+				_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
+			_main_mgr._c = out;
+			if (_file_src == _main_src) 
+			{
+				out->add_ref();
+				_file_mgr._c = out;
+				T_allocator<chunk_t>::free(chk1);
+				T_allocator<chunk_t>::free(chk2);
+			}
+			else if (_file_src)
+			{
+				_file_mgr._c = _file_src->next(chk1, chk2);
+				if (_file_src->_clip)
+					_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
+			}
+			else
+			{
+				T_allocator<chunk_t>::free(chk1);
+				T_allocator<chunk_t>::free(chk2);
+			}
+			pthread_cond_signal(&_gen_done);
+		}
+		else
+		{
+			pthread_cond_wait(&_do_gen, &_io_lock);
+		}
+	}
+	pthread_mutex_unlock(&_io_lock);
+	pthread_exit(0);
 }
 
 #if !USE_SSE2 && !NON_SSE_INTS
