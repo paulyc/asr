@@ -215,7 +215,7 @@ ASIOProcessor::~ASIOProcessor()
 
 void ASIOProcessor::CreateTracks()
 {
-	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(1, _default_src, &_io_lock));
+	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(1, L"H:\\Music\\Blank & Jones - Mind Of The Wonderful (Water Music Dance)\\Blank & Jones - Mind Of The Wonderful (Water Music Dance) - 03 - Mind Of The Wonderful (Club Mix).flac", &_io_lock));
 	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2, _default_src, &_io_lock));
 	
 	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
@@ -341,8 +341,6 @@ void ASIOProcessor::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOGetSampleRate(&r));
 	printf("At a sampling rate of %f\n", r);
 //	ASIOSetSampleRate(44100.0);
-
-	_main_mgr._c = zero_source<chunk_t>::get()->next();
 }
 
 // stop using ui before destroying

@@ -35,7 +35,7 @@ struct WAVFormatChunk
 
 inline const char * cwcs_to_ccs(const wchar_t *str)
 {
-	static char buf[256];
+	static char buf[1024];
 	wcstombs(buf, str, sizeof(buf));
 	return buf;
 }
@@ -366,29 +366,27 @@ private:
 #include <FLAC/stream_decoder.h>
 
 template <typename Chunk_T>
-class flacfile_chunker : public T_source<Chunk_T>, public file_chunker
+class flacfile_chunker : public T_source<Chunk_T>
 {
 public:
 	flacfile_chunker(const wchar_t * filename) :
-		file_chunker(filename),
 		_decoder(0),
 		_sample_rate(44100.0),
 		_eof(false),
 		_left(0),
-		_right(0)
+		_right(0),
+		_blocksize(0),
+		_ofs(0),
+		_samples(0)
 	{
 		if((_decoder = FLAC__stream_decoder_new()) == NULL) {
-			delete _file;
-			_file = 0;
 			throw std::exception("ERROR: allocating decoder");
 		}
 
-		if(FLAC__stream_decoder_init_FILE(_decoder, 
-			_file->_File, write_callback, metadata_callback, 
+		if(FLAC__stream_decoder_init_file(_decoder, 
+			cwcs_to_ccs(filename), write_callback, metadata_callback, 
 			error_callback, (void*)this) != FLAC__STREAM_DECODER_INIT_STATUS_OK)
 		{
-			delete _file;
-			_file = 0;
 			throw std::exception("ERROR: initializing decoder");
 		}
 
@@ -411,6 +409,10 @@ public:
 		_this->_left = (FLAC__int32*)buffer[0];
 		_this->_right = (FLAC__int32*)buffer[1];
 		_this->_blocksize = frame->header.blocksize;
+		_this->_samples += frame->header.blocksize;
+		_this->_bits_per_sample = frame->header.bits_per_sample;
+		_this->_smp_max_inv = 1.0f / float(0xffffffff >> (33-_this->_bits_per_sample));
+		_this->_smp_min_inv = 1.0f / float(int(~(0xffffffff >> (33-_this->_bits_per_sample))));
 		_this->_ofs = 0;
 		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 	}
@@ -457,6 +459,13 @@ public:
 			{
 			case FLAC__STREAM_DECODER_END_OF_STREAM:
 				_eof = true;
+				if (_len.samples == -1)
+				{
+					_len.samples = _samples;
+					_len.chunks = _samples / Chunk_T::chunk_size;
+					_len.smp_ofs_in_chk = _samples % Chunk_T::chunk_size;
+					_len.time = _samples / (double)_sample_rate;
+				}
 				break;
 			case FLAC__STREAM_DECODER_SEEK_ERROR:
 				FLAC__stream_decoder_flush(_decoder);
@@ -479,14 +488,14 @@ public:
 			for (; smp != end && _ofs < _blocksize; ++_ofs, ++smp)
 			{
 				if (_left[_ofs] >= 0)
-					(*smp)[0] = _left[_ofs] / float(INT_MAX);
+					(*smp)[0] = _left[_ofs] * _smp_max_inv;
 				else
-					(*smp)[0] = -_left[_ofs] / float(INT_MIN);
+					(*smp)[0] = -_left[_ofs] * _smp_min_inv;
 				
 				if (_right[_ofs] >= 0)
-					(*smp)[1] = _right[_ofs] / float(INT_MAX);
+					(*smp)[1] = _right[_ofs] * _smp_max_inv;
 				else
-					(*smp)[1] = -_right[_ofs] / float(INT_MIN);
+					(*smp)[1] = -_right[_ofs] * _smp_min_inv;
 			}
 			if (_ofs == _blocksize)
 				load_frame();
@@ -513,6 +522,10 @@ protected:
 	FLAC__int32 *_right;
 	unsigned _blocksize;
 	unsigned _ofs;
+	unsigned _samples;
+	unsigned _bits_per_sample;
+	float _smp_min_inv;
+	float _smp_max_inv;
 };
 
 #endif

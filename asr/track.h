@@ -130,7 +130,7 @@ public:
 		}
 		else
 		{
-		//	_src = new flacfile_chunker<Chunk_T>(_filename);
+			_src = new flacfile_chunker<Chunk_T>(_filename);
 		}
 		_src_buf = new BufferedStream<Chunk_T>(_src);
 
