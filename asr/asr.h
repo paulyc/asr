@@ -8,6 +8,9 @@
 #include <exception>
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <set>
+#include <fstream>
+#include <iostream>
 
 #include <fftw3.h>
 #include <pthread.h>
@@ -15,6 +18,8 @@
 #ifdef WIN32
 #include <windows.h>
 #endif
+
+#include "config.h"
 
 typedef float SamplePairf[2];
 typedef double SamplePaird[2];
@@ -33,6 +38,100 @@ const char* gettype();
 #define define_template_type_T(base,T,type) typedef base<T> type; typable(type)
 #define define_template_type_T_n(base,T,n,type) typedef base<T,n> type; typable(type)
 #define define_template_type_T_n_T(base,T1,n,T2,type) typedef base<T,n,T2> type; typable(type)
+
+#if DEBUG_MALLOC
+struct alloc_info
+{
+	alloc_info(){}
+	alloc_info(size_t b, const char *f, int l) : 
+		bytes(b), file(f), line(l){}
+	size_t bytes;
+	const char *file;
+	int line;
+};
+
+extern bool destructing_hash;
+
+class my_hash_map : public stdext::hash_map<void*, alloc_info>
+{
+public:
+	~my_hash_map()
+	{
+		destructing_hash = true;
+	}
+};
+
+extern my_hash_map _malloc_map;
+extern pthread_mutex_t malloc_lock;
+extern pthread_once_t once_control; 
+extern pthread_mutexattr_t malloc_attr;
+
+static void init_lock()
+{
+//	pthread_mutex_init(&malloc_lock, 0);
+//	pthread_mutexattr_init(&malloc_attr);
+//	malloc_attr.
+}
+
+static void *operator new(size_t by, const char *f, int l)
+{
+	pthread_once(&once_control, init_lock);
+	pthread_mutex_lock(&malloc_lock);
+	void *m = malloc(by);
+	_malloc_map[m].bytes = by;
+	_malloc_map[m].file = f;
+	_malloc_map[m].line = l;
+	pthread_mutex_unlock(&malloc_lock);
+	return m;
+}
+
+static void *operator new[](size_t by, const char *f, int l)
+{
+	pthread_once(&once_control, init_lock);
+	pthread_mutex_lock(&malloc_lock);
+	void *m = malloc(by);
+	_malloc_map[m].bytes = by;
+	_malloc_map[m].file = f;
+	_malloc_map[m].line = l;
+	pthread_mutex_unlock(&malloc_lock);
+	return m;
+}
+
+template <typename T>
+static void operator delete(void *m)
+{
+	pthread_mutex_lock(&malloc_lock);
+	if (!destructing_hash)
+		_malloc_map.erase(m);
+	free(m);
+	pthread_mutex_unlock(&malloc_lock);
+}
+
+template <typename T>
+static void operator delete[](void *m)
+{
+	pthread_mutex_lock(&malloc_lock);
+	if (!destructing_hash)
+		_malloc_map.erase(m);
+	free(m);
+	pthread_mutex_unlock(&malloc_lock);
+}
+
+#define new new(__FILE__, __LINE__)
+
+static void dump_malloc()
+{
+	for (stdext::hash_map<void*, alloc_info>::iterator i = _malloc_map.begin();
+		i != _malloc_map.end(); ++i)
+	{
+		printf("%p allocated %s:%d bytes %d\n", i->first, 
+			i->second.file, 
+			i->second.line,
+			i->second.bytes);
+	}
+}
+
+#endif
 
 /*
 template <typename T, int data_size_n, int pad_size_bytes>
@@ -95,13 +194,7 @@ protected:
 public:
 	~T_allocator<T>() // no virtual destruct?
 	{
-		pthread_mutex_lock(&_lock);
-		while (!_T_queue.empty())
-		{
-			delete _T_queue.front();
-			_T_queue.pop();
-		}
-		pthread_mutex_unlock(&_lock);
+		gc();
 		pthread_mutex_destroy(&_lock);
 	}
 
@@ -147,6 +240,23 @@ public:
 				pthread_mutex_unlock(&_lock);
 			}
 		}
+	}
+
+	static void gc()
+	{
+		pthread_mutex_lock(&_lock);
+		while (!_T_queue.empty())
+		{
+#if DEBUG_ALLOCATOR
+			_info_map.erase(_T_queue.front());
+#endif
+#if DEBUG_MALLOC
+			_malloc_map.erase(_T_queue.front());
+#endif
+			delete _T_queue.front();
+			_T_queue.pop();
+		}
+		pthread_mutex_unlock(&_lock);
 	}
 
 #if DEBUG_ALLOCATOR

@@ -396,6 +396,7 @@ void ASIOProcessor::Destroy()
 	pthread_cond_destroy(&_gen_done);
 	pthread_mutex_destroy(&_io_lock);
 
+	T_allocator<chunk_t>::gc();
 	T_allocator<chunk_t>::dump_leaks();
 }
 
@@ -439,10 +440,12 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 
 #if DO_OUTPUT
 #if ASYNC_GENERATE||GENERATE_LOOP
+	
 	while (_main_mgr._c == 0)
 	{
 		pthread_cond_wait(&_gen_done, &_io_lock);
 	}
+	
 #else
 	if (_main_mgr._c == 0)
 	{

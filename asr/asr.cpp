@@ -38,6 +38,14 @@ typable(double)
 ASIOProcessor * asio = 0;
 GenericUI *ui = 0;
 
+#if DEBUG_MALLOC
+my_hash_map _malloc_map;
+pthread_mutex_t malloc_lock= PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
+bool destructing_hash = true;
+pthread_once_t once_control = PTHREAD_ONCE_INIT; 
+pthread_mutexattr_t malloc_attr;
+#endif
+
 void begin()
 {
 	asio = new ASIOProcessor;
@@ -64,6 +72,10 @@ void end()
 	asio->Finish();
 	delete ui;
 	delete asio;
+
+#if DEBUG_MALLOC
+	dump_malloc();
+#endif
 }
 
 void testf()
