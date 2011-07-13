@@ -544,6 +544,9 @@ void ASIOProcessor::AsyncGenerate()
 
 void ASIOProcessor::GenerateLoop(pthread_t th)
 {
+#ifdef WIN32
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+#endif
 	pthread_mutex_lock(&_io_lock);
 	_gen_th = th;
 	while (!_finishing)
