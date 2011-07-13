@@ -412,7 +412,7 @@ protected:
 	
 	const static int _default_sample_precision = 13;
 	const static int _default_tbl_precision = 512;
-	const static int _default_tbl_size = 2*_default_tbl_precision*_default_sample_precision;
+	const static int _default_tbl_size = 2*_default_tbl_precision*(_default_sample_precision+1);
 	int _sample_precision;
 	int _tbl_precision;
 	int _tbl_size;
@@ -495,7 +495,7 @@ public:
 
 	void fill_coeff_tbl()
 	{
-		Precision_T t_diff = Precision_T(_sample_precision) * _input_sampling_period;
+		Precision_T t_diff = Precision_T(_sample_precision+1) * _input_sampling_period;
 		Precision_T t = -t_diff;
 		for (int i=0; i < _default_tbl_size; ++i)
 		{
@@ -546,8 +546,8 @@ public:
 		for (smp = chk->_data, end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
 			t_input = _output_time - t_diff;
-			smp_ofs_t ofs = smp_ofs_t(t_input * 44100.0) +1;
-			t_input = ofs / 44100.0;
+			smp_ofs_t ofs = smp_ofs_t(t_input * _input_sampling_rate) + 1;
+			t_input = ofs / _input_sampling_rate;
 			conv_ptr = _buffer_mgr->get_at_ofs(ofs);
 
 			Precision_T acc[2] = {0.0, 0.0};
@@ -557,11 +557,15 @@ public:
 #if 0
 				mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
 #else
-			//	mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
-				int indx = _default_tbl_size/2+floor(_default_tbl_size/2*(t_input-_output_time)/t_diff+0.5);
+				
+			//	int indx = _default_tbl_size/2+int((_default_tbl_size/2)*(t_input-_output_time)/t_diff);
+				t_diff = Precision_T(_sample_precision+1) * _input_sampling_period;
+				int indx = (t_input-_output_time+t_diff)/(2.0*t_diff / (_default_tbl_size));		
 				assert(indx >= 0 && indx < _default_tbl_size);
-			//	printf("%f %f\n", mul-_coeff_tbl[indx], 
-			//		(t_input-_output_time)-Precision_T(_sample_precision) * _input_sampling_period + indx*2.0*Precision_T(_sample_precision) * _input_sampling_period / (_default_tbl_size));
+			//	mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
+			//	printf("%f\n", mul-_coeff_tbl[indx]
+			//		//,(t_input-_output_time)-Precision_T(_sample_precision) * _input_sampling_period + indx*2.0*Precision_T(_sample_precision) * _input_sampling_period / (_default_tbl_size)
+			//		);
 				mul = _coeff_tbl[indx];
 #endif
 				acc[0] += (*conv_ptr)[0] * mul;
