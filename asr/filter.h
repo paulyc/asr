@@ -4,11 +4,6 @@
 #include "util.h"
 #include "buffer.h"
 
-#include <set>
-#include <fstream>
-#include <iostream>
-#include <map>
-
 template <typename Source_T>
 class gain : public T_source<typename Source_T::chunk_t>, public T_sink<typename Source_T::chunk_t>
 {
@@ -432,8 +427,6 @@ protected:
 	Precision_T _rho;
 	Precision_T _impulse_response_scale;
 
-	Precision_T _t_diff;
-
 	Precision_T _output_scale;
 
 	//int _stride;
@@ -475,6 +468,11 @@ public:
 		set_output_sampling_frequency(output_rate);
 	}
 
+	virtual ~filter_td_base()
+	{
+		delete _buffer_mgr;
+	}
+
 	void set_output_sampling_frequency(Precision_T f)
 	{
 		_output_sampling_rate = f;
@@ -501,7 +499,7 @@ public:
 		Precision_T t = -t_diff;
 		for (int i=0; i < _default_tbl_size; ++i)
 		{
-			_coeff_tbl[i] = _output_scale*_impulse_response_scale * _h(t) * _kwt->get(t/_t_diff);
+			_coeff_tbl[i] = _output_scale*_impulse_response_scale * _h(t) * _kwt->get(t/t_diff);
 			t += 2.0*t_diff / (_default_tbl_size);
 		}
 	}
@@ -542,35 +540,30 @@ public:
 	Chunk_T* next()
 	{
 		Chunk_T *chk = T_allocator<Chunk_T>::alloc();
-		int dim = chk->dim();
-		assert(dim == Dim);
-
-		Precision_T window_len = Precision_T(2*_sample_precision) * _impulse_response_period;
-		_t_diff = Precision_T(_sample_precision) * _input_sampling_period;
-		
-		convolution_loop(chk);
-		
-		return chk;
-	}
-
-	void convolution_loop(Chunk_T *chk)
-	{
-		Precision_T t_input;
+		Precision_T t_input, t_diff = Precision_T(_sample_precision) * _input_sampling_period;
 		Sample_T *smp, *end, *conv_ptr;
 
 		for (smp = chk->_data, end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
-			t_input = _output_time - _t_diff;
-			conv_ptr = _buffer_mgr->get_at(t_input);
+			t_input = _output_time - t_diff;
+			smp_ofs_t ofs = smp_ofs_t(t_input * 44100.0) +1;
+			t_input = ofs / 44100.0;
+			conv_ptr = _buffer_mgr->get_at_ofs(ofs);
 
 			Precision_T acc[2] = {0.0, 0.0};
 			Precision_T mul;
 			for (Sample_T *conv_end = conv_ptr + (_sample_precision*2); conv_ptr != conv_end; ++conv_ptr)
 			{
-			//	mul = _impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/_t_diff);
-				int indx = 512*13+int(512*13*(t_input-_output_time)/_t_diff);
-				assert(indx >= 0 && indx < 512*26);
+#if 0
+				mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
+#else
+			//	mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
+				int indx = _default_tbl_size/2+floor(_default_tbl_size/2*(t_input-_output_time)/t_diff+0.5);
+				assert(indx >= 0 && indx < _default_tbl_size);
+			//	printf("%f %f\n", mul-_coeff_tbl[indx], 
+			//		(t_input-_output_time)-Precision_T(_sample_precision) * _input_sampling_period + indx*2.0*Precision_T(_sample_precision) * _input_sampling_period / (_default_tbl_size));
 				mul = _coeff_tbl[indx];
+#endif
 				acc[0] += (*conv_ptr)[0] * mul;
 				acc[1] += (*conv_ptr)[1] * mul;
 				
@@ -581,7 +574,10 @@ public:
 			(*smp)[1] = (float)acc[1];
 			_output_time += _output_sampling_period;
 		}
+		
+		return chk;
 	}
+
 	friend class Controller;
 	typedef typename Chunk_T chunk_t;
 };

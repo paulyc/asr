@@ -168,12 +168,12 @@ public:
 			--num;
 			++buf;
 		}
-		smp_ofs_t chk_ofs = ofs / 4096,
-			smp_ofs = ofs % 4096;
+		smp_ofs_t chk_ofs = ofs / Chunk_T::chunk_size,
+			smp_ofs = ofs % Chunk_T::chunk_size;
 		int chk_left, to_cpy, written=0;
 		do
 		{
-			chk_left = 4096 - smp_ofs;
+			chk_left = Chunk_T::chunk_size - smp_ofs;
 			to_cpy = min(chk_left, num);
 			pthread_mutex_lock(&_buffer_lock);
 			if (chk_ofs >= _chks.size())
@@ -310,6 +310,12 @@ public:
 		{
 			return load(tm);
 		}
+	}
+
+	Sample_T* get_at_ofs(smp_ofs_t ofs)
+	{
+		_src->get_samples(ofs, _buffer, 30);
+		return _buffer;
 	}
 
 	const typename Source_T::pos_info& len()
