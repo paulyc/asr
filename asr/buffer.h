@@ -155,7 +155,7 @@ public:
 
 	int get_samples(double tm, typename Chunk_T::sample_t *buf, int num)
 	{
-		smp_ofs_t ofs = tm *44100.0;
+		smp_ofs_t ofs = tm *_src->sample_rate();
 		return get_samples(ofs, buf, num);
 	}
 	int get_samples(smp_ofs_t ofs, typename Chunk_T::sample_t *buf, int num)
@@ -229,7 +229,7 @@ public:
 		_src->_len.chunks = chk-1;
 		_src->_len.samples = _src->_len.chunks*Chunk_T::chunk_size;
 		_src->_len.smp_ofs_in_chk = _src->_len.samples % _src->_len.chunks;
-		_src->_len.time = _src->_len.samples/44100.0;
+		_src->_len.time = _src->_len.samples/_src->sample_rate();
 		pthread_mutex_unlock(&_src_lock);
 		return _len.chunks;
 	}
@@ -243,7 +243,7 @@ public:
 			_src->_len.chunks = _chk_ofs_loading-1;
 			_src->_len.samples = _src->_len.chunks*Chunk_T::chunk_size;
 			_src->_len.smp_ofs_in_chk = _src->_len.samples % _src->_len.chunks;
-			_src->_len.time = _src->_len.samples/44100.0;
+			_src->_len.time = _src->_len.samples/_src->sample_rate();
 			pthread_mutex_unlock(&_src_lock);
 			return false;
 		}
@@ -295,7 +295,7 @@ public:
 			}
 			else
 			{
-				smp_ofs_t ofs = tm_diff * 44100.0;
+				smp_ofs_t ofs = tm_diff * _src->sample_rate();
 				if (ofs+num_samples >= BufSz)
 				{
 					return load(tm);
