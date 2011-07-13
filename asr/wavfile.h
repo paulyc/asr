@@ -377,7 +377,8 @@ public:
 		_right(0),
 		_blocksize(0),
 		_ofs(0),
-		_samples(0)
+		_samples(0),
+		_half_rate(false)
 	{
 		if((_decoder = FLAC__stream_decoder_new()) == NULL) {
 			throw std::exception("ERROR: allocating decoder");
@@ -409,7 +410,7 @@ public:
 		_this->_left = (FLAC__int32*)buffer[0];
 		_this->_right = (FLAC__int32*)buffer[1];
 		_this->_blocksize = frame->header.blocksize;
-		_this->_samples += frame->header.blocksize;
+		_this->_samples += _this->_half_rate ? frame->header.blocksize/2 : frame->header.blocksize;
 		_this->_bits_per_sample = frame->header.bits_per_sample;
 		_this->_smp_max_inv = 1.0f / float(0xffffffff >> (33-_this->_bits_per_sample));
 		_this->_smp_min_inv = 1.0f / float(int(~(0xffffffff >> (33-_this->_bits_per_sample))));
@@ -426,12 +427,18 @@ public:
 			case FLAC__METADATA_TYPE_STREAMINFO: // 	STREAMINFO block
 				memcpy(&_this->_stream_info, &metadata->data.stream_info, sizeof(FLAC__StreamMetadata_StreamInfo));
 				_this->_sample_rate = _this->_stream_info.sample_rate ? (double)_this->_stream_info.sample_rate : 44100.;
+				if (_this->_sample_rate > 48001.0f)
+				{
+					_this->_sample_rate *= 0.5f;
+					_this->_stream_info.total_samples /= 2;
+					_this->_half_rate = true;
+				}
 				if (_this->_stream_info.total_samples)
 				{
 					_this->_len.samples = _this->_stream_info.total_samples;
 					_this->_len.chunks = _this->_len.samples / Chunk_T::chunk_size;
 					_this->_len.smp_ofs_in_chk = _this->_len.samples % Chunk_T::chunk_size;
-					_this->_len.time = _this->_len.samples / (double)_this->_stream_info.sample_rate;
+					_this->_len.time = _this->_len.samples / (double)_this->_sample_rate;
 				}
 				break;
 			case FLAC__METADATA_TYPE_PADDING: // 	PADDING block
@@ -496,6 +503,9 @@ public:
 					(*smp)[1] = _right[_ofs] * _smp_max_inv;
 				else
 					(*smp)[1] = -_right[_ofs] * _smp_min_inv;
+
+				if (_half_rate)
+					++_ofs;
 			}
 			if (_ofs == _blocksize)
 				load_frame();
@@ -526,6 +536,7 @@ protected:
 	unsigned _bits_per_sample;
 	float _smp_min_inv;
 	float _smp_max_inv;
+	bool _half_rate;
 };
 
 #endif
