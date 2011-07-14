@@ -170,14 +170,12 @@ public:
 	{
 		for (int chk_ofs=0; chk_ofs < _src->len().chunks; ++chk_ofs)
 		{
-			pthread_mutex_lock(lock);
-			get_metadata(chk_ofs);
-			pthread_mutex_unlock(lock);
+			get_metadata(chk_ofs, lock);
 			sched_yield();
 		}
 	}
 
-	const ChunkMetadata& get_metadata(int chk_ofs)
+	const ChunkMetadata& get_metadata(int chk_ofs, pthread_mutex_t *lock=0)
 	{
 		int i, indx;
 		if (_chk_data.size() <= chk_ofs)
@@ -188,8 +186,11 @@ public:
 		Sample_T dabs;
 		if (!meta.valid)
 		{
+			if (lock) pthread_mutex_lock(lock);
 			Chunk_T *chk = _src->get_chunk(chk_ofs);
-			
+			if (lock) pthread_mutex_unlock(lock);
+
+			if (lock) pthread_mutex_lock(lock);
 			for (i = 0; i < 10; ++i)
 			{
 				meta.subband[i].abs_sum[0] = 0.0f;
@@ -227,6 +228,7 @@ public:
 			dBm<Sample_T>::calc(meta.avg_db, meta.avg);
 			dBm<Sample_T>::calc(meta.peak_db, meta.peak);
 			meta.valid = true;
+			if (lock) pthread_mutex_unlock(lock);
 		}
 		return meta;
 	}
