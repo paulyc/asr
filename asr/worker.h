@@ -268,6 +268,7 @@ protected:
 			cr_j = 0;
 			pthread_cond_signal(&_job_done);
 		}
+		delete this;
 	}
 
 	void idle_thread()
@@ -300,6 +301,7 @@ protected:
 				pthread_mutex_unlock(&_job_lock);
 			}
 		}
+		delete this;
 	}
 
 	void thread()
