@@ -120,6 +120,7 @@ void dump_malloc()
 #include "io.h"
 #include "speedparser.h"
 #include "ui.h"
+#include "tracer.h"
 
 template <typename T> 
 const char* gettype() { return "T"; }
@@ -164,6 +165,7 @@ void end()
 
 void testf()
 {
+	printf("testf\n");
 #if TEST0
 	char buf[128];
 	char *f1 = buf;
@@ -233,6 +235,7 @@ int main()
 	//printf("%x\n", _WIN32_WINNT);
 #if TEST
 	try{
+		Tracer::hook(testf);
 		testf();
 	}catch(exception&e){
 		throw e;

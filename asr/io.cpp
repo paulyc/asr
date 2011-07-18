@@ -1,5 +1,6 @@
 #include "config.h"
 #include "io.h"
+#include "tracer.h"
 
 #include <queue>
 
@@ -341,6 +342,14 @@ void ASIOProcessor::Init()
 	ASIO_ASSERT_NO_ERROR(ASIOGetSampleRate(&r));
 	printf("At a sampling rate of %f\n", r);
 //	ASIOSetSampleRate(44100.0);
+
+	__asm
+	{
+		mov eax, ASIOProcessor::BufferSwitch
+		push eax
+		call Tracer::hook
+		add esp, 4
+	}
 }
 
 // stop using ui before destroying

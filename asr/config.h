@@ -53,4 +53,6 @@
 #define ASYNC_GENERATE 0
 #define GENERATE_LOOP 1
 
+#define TRACE 0
+
 #endif // !defined(_CONFIG_H)

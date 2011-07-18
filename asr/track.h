@@ -282,10 +282,6 @@ public:
 		pthread_mutex_unlock(&_config_lock);
 		return false;
 #endif
-		
-	//	render();
-		pthread_mutex_unlock(&_config_lock);
-		return true;
 	}
 
 	void lockedpaint()
