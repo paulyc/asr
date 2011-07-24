@@ -3,6 +3,7 @@
 
 #include "util.h"
 #include "buffer.h"
+#include "tracer.h"
 
 template <typename Source_T>
 class gain : public T_source<typename Source_T::chunk_t>, public T_sink<typename Source_T::chunk_t>
@@ -593,6 +594,14 @@ public:
 	lowpass_filter_td(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
 		filter_td_base(src, cutoff, input_rate, output_rate)
 	{
+		__asm
+		{
+			push 0;offset string "ASIOProcessor::BufferSwitch"
+			mov eax, next
+			push eax
+			call Tracer::hook
+			add esp, 8
+		}
 	}
 protected:
 	Precision_T _h(Precision_T t)

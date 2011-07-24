@@ -169,6 +169,7 @@ public:
 	void SetSrc(int ch, const wchar_t *fqpath);
 	void AsyncGenerate();
 	void GenerateLoop(pthread_t th);
+	void GenerateOutput();
 
 	/*void SetResamplerate(double rate)
 	{

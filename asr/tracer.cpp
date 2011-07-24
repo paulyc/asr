@@ -1,8 +1,8 @@
 #include "tracer.h"
 
-stdext::hash_map<const char *, int> Tracer::_map;
+stdext::hash_map<void*, Tracer::trace_entry*> Tracer::_trace_map;
 stdext::hash_map<pthread_t, std::stack<Tracer::frame> > Tracer::_thread_stacks;
-stdext::hash_map<void*, char*> Tracer::_func_map;
+stdext::hash_map<void*, Tracer::func_entry> Tracer::_func_map;
 LARGE_INTEGER Tracer::_perf_freq;
 
 __declspec(naked) void stub()

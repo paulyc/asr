@@ -345,10 +345,21 @@ void ASIOProcessor::Init()
 
 	__asm
 	{
+		push 0;offset string "ASIOProcessor::BufferSwitch"
 		mov eax, ASIOProcessor::BufferSwitch
 		push eax
 		call Tracer::hook
-		add esp, 4
+		add esp, 8
+		push 0;offset string "ASIOProcessor::GenerateOutput"
+		mov eax, ASIOProcessor::GenerateOutput
+		push eax
+		call Tracer::hook
+		add esp, 8
+	;	push 0
+	;	mov eax, lowpass_filter_td<chunk_t, double>::next
+	;;	push eax
+	;	call Tracer::hook
+	;	add esp, 8
 	}
 }
 
@@ -407,6 +418,8 @@ void ASIOProcessor::Destroy()
 
 	T_allocator<chunk_t>::gc();
 	T_allocator<chunk_t>::dump_leaks();
+
+	Tracer::printTrace();
 }
 
 ASIOError ASIOProcessor::Start()
@@ -562,32 +575,7 @@ void ASIOProcessor::GenerateLoop(pthread_t th)
 	{
 		if (_main_mgr._c == 0)
 		{
-			chunk_t *chk1 = _tracks[0]->next();
-			chk1->add_ref();
-			chunk_t *chk2 = _tracks[1]->next();
-			chk2->add_ref();
-			chunk_t *out = _main_src->next(chk1, chk2);
-			if (_main_src->_clip)
-				_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
-			_main_mgr._c = out;
-			if (_file_src == _main_src) 
-			{
-				out->add_ref();
-				_file_mgr._c = out;
-				T_allocator<chunk_t>::free(chk1);
-				T_allocator<chunk_t>::free(chk2);
-			}
-			else if (_file_src)
-			{
-				_file_mgr._c = _file_src->next(chk1, chk2);
-				if (_file_src->_clip)
-					_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
-			}
-			else
-			{
-				T_allocator<chunk_t>::free(chk1);
-				T_allocator<chunk_t>::free(chk2);
-			}
+			GenerateOutput();
 			pthread_cond_signal(&_gen_done);
 		}
 		else
@@ -597,6 +585,36 @@ void ASIOProcessor::GenerateLoop(pthread_t th)
 	}
 	pthread_mutex_unlock(&_io_lock);
 	pthread_exit(0);
+}
+
+void ASIOProcessor::GenerateOutput()
+{
+	chunk_t *chk1 = _tracks[0]->next();
+	chk1->add_ref();
+	chunk_t *chk2 = _tracks[1]->next();
+	chk2->add_ref();
+	chunk_t *out = _main_src->next(chk1, chk2);
+	if (_main_src->_clip)
+		_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
+	_main_mgr._c = out;
+	if (_file_src == _main_src) 
+	{
+		out->add_ref();
+		_file_mgr._c = out;
+		T_allocator<chunk_t>::free(chk1);
+		T_allocator<chunk_t>::free(chk2);
+	}
+	else if (_file_src)
+	{
+		_file_mgr._c = _file_src->next(chk1, chk2);
+		if (_file_src->_clip)
+			_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
+	}
+	else
+	{
+		T_allocator<chunk_t>::free(chk1);
+		T_allocator<chunk_t>::free(chk2);
+	}
 }
 
 #if !USE_SSE2 && !NON_SSE_INTS
