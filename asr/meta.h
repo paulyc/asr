@@ -142,6 +142,7 @@ public:
 		Sample_T avg_db;
 		Sample_T peak;
 		Sample_T peak_db;
+		Sample_T peak_lo;
 
 		struct s
 		{
@@ -150,6 +151,7 @@ public:
 			Sample_T avg_db;
 			Sample_T peak;
 			Sample_T peak_db;
+			Sample_T peak_lo;
 		};
 		std::vector<s> subband;
 	};
@@ -197,6 +199,8 @@ public:
 				meta.subband[i].abs_sum[1] = 0.0f;
 				meta.subband[i].peak[0] = 0.0f;
 				meta.subband[i].peak[1] = 0.0f;
+				meta.subband[i].peak_lo[0] = 0.0f;
+				meta.subband[i].peak_lo[1] = 0.0f;
 			}
 			indx=0;
 			for (Sample_T *data=chk->_data, *end=data+Chunk_T::chunk_size;
@@ -205,7 +209,8 @@ public:
 				i = indx*10/Chunk_T::chunk_size;
 				Abs<Sample_T>::calc(dabs, *data);
 				Sum<Sample_T>::calc(meta.subband[i].abs_sum, meta.subband[i].abs_sum, dabs);
-				SetMax<Sample_T>::calc(meta.subband[i].peak, dabs);
+				SetMax<Sample_T>::calc(meta.subband[i].peak, *data);
+				SetMin<Sample_T>::calc(meta.subband[i].peak_lo, *data);
 				++data;
 				++indx;
 			}
@@ -213,12 +218,16 @@ public:
 			meta.abs_sum[1] = 0.0f;
 			meta.peak[0] = 0.0f;
 			meta.peak[1] = 0.0f;
+			meta.peak_lo[0] = 0.0f;
+			meta.peak_lo[1] = 0.0f;
 			for (i=0; i<10; ++i)
 			{
 				meta.abs_sum[0] += meta.subband[i].abs_sum[0];
 				meta.abs_sum[1] += meta.subband[i].abs_sum[1];
 				meta.peak[0] = max(meta.peak[0], meta.subband[i].peak[0]);
 				meta.peak[1] = max(meta.peak[1], meta.subband[i].peak[1]);
+				meta.peak_lo[0] = min(meta.peak_lo[0], meta.subband[i].peak_lo[0]);
+				meta.peak_lo[1] = min(meta.peak_lo[1], meta.subband[i].peak_lo[1]);
 
 				Quotient<Sample_T>::calc(meta.subband[i].avg, meta.subband[i].abs_sum, Chunk_T::chunk_size/10);
 				dBm<Sample_T>::calc(meta.subband[i].avg_db, meta.subband[i].avg);

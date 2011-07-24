@@ -79,15 +79,12 @@ public:
 		  for (int p = 0; p < _width; ++p)
 		  {
 			  int chk = double(left_chunk) + p*chunks_per_pixel_d;
-			  _wav_heights[p].peak_top = 0.0;
-			  _wav_heights[p].avg_top = 0.0;
-
 			    const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				  double ofs_d = p*chunks_per_pixel_d - floor(p*chunks_per_pixel_d);
 				  int sub = ofs_d*10;
 				  _wav_heights[p].peak_top = max(meta.subband[sub].peak[0], meta.subband[sub].peak[1]);
 				  _wav_heights[p].avg_top = max(meta.subband[sub].avg[0], meta.subband[sub].avg[1]);
-		
+				  _wav_heights[p].peak_bot = min(meta.subband[sub].peak_lo[0], meta.subband[sub].peak_lo[1]);
 				  if (lock)
 			  {
 				  pthread_mutex_unlock(lock);
@@ -103,12 +100,14 @@ public:
 			  int chk = double(left_chunk) + p*chunks_per_pixel_d;
 			  _wav_heights[p].peak_top = 0.0;
 			  _wav_heights[p].avg_top = 0.0;
+			  _wav_heights[p].peak_bot = 0.0;
 
 				  for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
 				  {
 					  assert(chk < chunks_total);
 					const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 					SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
+					SetMin<double>::calc(_wav_heights[p].peak_bot, min(meta.peak_lo[0], meta.peak_lo[1]));
 					Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
 				  }
 				  Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
@@ -141,6 +140,7 @@ public:
 			  
 			  _wav_heights[p].avg_top = 0.0;
 			  _wav_heights[p].peak_top = 0.0;
+			  _wav_heights[p].peak_bot = 0.0;
 			  int smp = 0;
 			  while (smp < num_smp)
 			  {
@@ -148,7 +148,24 @@ public:
 				  for (; ofs < Source_T::chunk_t::chunk_size && smp < num_smp; ++ofs, ++smp)
 				  {
 					  _wav_heights[p].avg_top += fabs(the_chk->_data[ofs][0]);
-					  _wav_heights[p].peak_top = max(fabs(the_chk->_data[ofs][0]), _wav_heights[p].peak_top);
+					  if (num_smp == 1)
+					  {
+						  if (the_chk->_data[ofs][0] > 0.0f)
+						  {
+							_wav_heights[p].peak_top = max(the_chk->_data[ofs][0], _wav_heights[p].peak_top);
+							_wav_heights[p].peak_bot = 0.0f;
+						  }
+						  else
+						  {
+							  _wav_heights[p].peak_top = 0.0f;
+							_wav_heights[p].peak_bot = min(the_chk->_data[ofs][0], _wav_heights[p].peak_bot);
+						  }
+					  }
+					  else
+					  {
+						  _wav_heights[p].peak_top = max(the_chk->_data[ofs][0], _wav_heights[p].peak_top);
+						  _wav_heights[p].peak_bot = min(the_chk->_data[ofs][0], _wav_heights[p].peak_bot);
+					  }
 					//  assert(chk < chunks);
 				//	const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				//	SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));

@@ -166,6 +166,30 @@ public:
 };
 
 template <typename T>
+class SetMin : UnaryOperator<T>
+{
+public:
+	static void calc(T &result, const T &lhs)
+	{
+		if (lhs < result)
+			result = lhs;
+	}
+};
+
+template <>
+class SetMin<SamplePairf> : UnaryOperator<SamplePairf>
+{
+public:
+	static void calc(SamplePairf &result, const SamplePairf &lhs)
+	{
+		if (lhs[0] < result[0])
+			result[0] = lhs[0];
+		if (lhs[1] < result[1])
+			result[1] = lhs[1];
+	}
+};
+
+template <typename T>
 class Abs : UnaryOperator<T>
 {
 public:

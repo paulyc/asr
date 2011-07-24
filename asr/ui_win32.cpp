@@ -640,15 +640,36 @@ void Win32UI::render(int t_id)
 			track->_display->get_wav_height(p);
 		int px_pk = (1.0-h.peak_top) * height / 2;
 		int px_avg = (1.0-h.avg_top) * height / 2;
+		int px_mn = (1.0+h.peak_bot) * height / 2;
 		int line_height = px_avg-px_pk;
 		
-		SelectObject(hdc, pen_lt);
-		MoveToEx(hdc, r.left+p, r.top+px_pk, NULL);
-		LineTo(hdc, r.left+p, r.top+px_avg);
-		SelectObject(hdc, pen_dk);
-		LineTo(hdc, r.left+p, r.top+height-px_avg);
-		SelectObject(hdc, pen_lt);
-		LineTo(hdc, r.left+p, r.top+height-px_pk);
+		if (h.peak_top != 0.0)
+		{
+			SelectObject(hdc, pen_lt);
+			MoveToEx(hdc, r.left+p, r.top+px_pk, NULL);
+			LineTo(hdc, r.left+p, r.top+px_avg);
+			if (h.peak_bot != 0.0)
+			{
+				SelectObject(hdc, pen_dk);
+				LineTo(hdc, r.left+p, r.top+height-px_avg);
+				SelectObject(hdc, pen_lt);
+				LineTo(hdc, r.left+p, r.top+height-px_mn);
+			}
+			else
+			{
+				SelectObject(hdc, pen_dk);
+				LineTo(hdc, r.left+p, r.top+height/2);
+			}
+		}
+		else
+		{
+			MoveToEx(hdc, r.left+p, r.top+height/2, NULL);
+			SelectObject(hdc, pen_dk);
+				LineTo(hdc, r.left+p, r.top+height-px_avg);
+				SelectObject(hdc, pen_lt);
+				LineTo(hdc, r.left+p, r.top+height-px_mn);
+		}
+		
 	}
 
 	double len = track->len().time;
