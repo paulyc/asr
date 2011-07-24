@@ -27,6 +27,7 @@ public:
 		_meta(0),
 		_display(0),
 		_cuepoint(0.0),
+		_loaded(true),
 		_track_id(track_id),
 		_pitchpoint(48000.0),
 		_display_width(750)
@@ -83,6 +84,10 @@ public:
 	void set_source_file(const wchar_t *filename, pthread_mutex_t *lock)
 	{
 		pthread_mutex_lock(&_loading_lock);
+		while (_in_config || !_loaded)
+		{
+			pthread_cond_wait(&_track_loaded, &_loading_lock);
+		}
 		
 		_in_config = true;
 		_loaded = false;
