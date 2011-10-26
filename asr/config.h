@@ -55,4 +55,6 @@
 
 #define TRACE 0
 
+#define BUFFER_BEFORE_COPY 1
+
 #endif // !defined(_CONFIG_H)

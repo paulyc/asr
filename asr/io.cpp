@@ -21,6 +21,13 @@ void asio_sink<Input_Sample_T, Output_Sample_T, Chunk_T, chunk_size, false>::pro
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
 void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process(int dbIndex)
 {
+    process(_buffers[0][dbIndex], _buffers[1][dbIndex]);
+}
+
+
+template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
+void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process(Output_Sample_T *bufL, Output_Sample_T *bufR)
+{
 	size_t to_write = _buf_size, loop_write, written=0;
 	int stride = 2;
 	Output_Sample_T *write, *end_write;
@@ -38,7 +45,7 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process(int dbIndex)
 			_read = _chk->_data;
 		}
 		loop_write = min(to_write, chunk_t::chunk_size - (_read - _chk->_data));
-		for (write = _buffers[0][dbIndex] + written,
+		for (write = bufL + written,
 			end_write = write + loop_write,
 			read = _read;
 			write != end_write;
@@ -49,7 +56,7 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process(int dbIndex)
 			else
 				*write = Output_Sample_T(min(1.0f, (*read)[0]) * SHRT_MAX);
 		}
-		for (write = _buffers[1][dbIndex] + written,
+		for (write = bufR + written,
 			end_write = write + loop_write,
 			read = _read;
 			write != end_write;
@@ -334,6 +341,12 @@ void ASIOProcessor::Init()
 	_bufSize = preferredSize;
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 #endif
+    
+#if BUFFER_BEFORE_COPY
+    _bufL = new short[_bufSize];
+    _bufR = new short[_bufSize];
+    _need_buffers = true;
+#endif
 
 	ASIOSampleRate r;
 /*		ASIOSampleType t;
@@ -383,6 +396,11 @@ void ASIOProcessor::Finish()
 void ASIOProcessor::Destroy()
 {
 	ASIOError e;
+    
+#if BUFFER_BEFORE_COPY
+    delete _bufL;
+    delete _bufR;
+#endif
 	
 #if CREATE_BUFFERS
 	e = ASIODisposeBuffers();
@@ -462,6 +480,7 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 
 #if DO_OUTPUT
 	
+#if !BUFFER_BEFORE_COPY
 	while (_main_mgr._c == 0)
 	{
 		pthread_cond_wait(&_gen_done, &_io_lock);
@@ -476,14 +495,17 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	{
 		_file_out->process();
 	}
-
-#if ASYNC_GENERATE
-	Worker::do_job(new Worker::callback_job<ASIOProcessor>(
-		functor0<ASIOProcessor>(this, &ASIOProcessor::AsyncGenerate)), 
-		false, true);
-#elif GENERATE_LOOP
-	pthread_cond_signal(&_do_gen);
+#else
+    while (_need_buffers)
+    {
+        pthread_cond_wait(&_gen_done, &_io_lock);
+    }
+    memcpy(_buffer_infos[2].buffers[doubleBufferIndex], _bufL, _bufSize*sizeof(short));
+    memcpy(_buffer_infos[3].buffers[doubleBufferIndex], _bufR, _bufSize*sizeof(short));
+    _need_buffers = true;
 #endif
+
+	pthread_cond_signal(&_do_gen);
 #endif
 
 #if ECHO_INPUT
@@ -492,42 +514,6 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	memcpy(_buffer_infos[3].buffers[doubleBufferIndex], _buffer_infos[1].buffers[doubleBufferIndex], BUFFERSIZE*sizeof(short));
 #endif
 
-	pthread_mutex_unlock(&_io_lock);
-}
-
-void ASIOProcessor::AsyncGenerate()
-{
-	pthread_mutex_lock(&_io_lock);
-	if (_main_mgr._c == 0)
-	{
-		chunk_t *chk1 = _tracks[0]->next();
-		chk1->add_ref();
-		chunk_t *chk2 = _tracks[1]->next();
-		chk2->add_ref();
-		chunk_t *out = _main_src->next(chk1, chk2);
-		if (_main_src->_clip)
-			_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
-		_main_mgr._c = out;
-		if (_file_src == _main_src) 
-		{
-			out->add_ref();
-			_file_mgr._c = out;
-			T_allocator<chunk_t>::free(chk1);
-			T_allocator<chunk_t>::free(chk2);
-		}
-		else if (_file_src)
-		{
-			_file_mgr._c = _file_src->next(chk1, chk2);
-			if (_file_src->_clip)
-				_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
-		}
-		else
-		{
-			T_allocator<chunk_t>::free(chk1);
-			T_allocator<chunk_t>::free(chk2);
-		}
-	}
-	pthread_cond_signal(&_gen_done);
 	pthread_mutex_unlock(&_io_lock);
 }
 
@@ -563,6 +549,7 @@ void ASIOProcessor::GenerateOutput()
 	chunk_t *out = _main_src->next(chk1, chk2);
 	if (_main_src->_clip)
 		_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
+    
 	_main_mgr._c = out;
 	if (_file_src == _main_src) 
 	{
@@ -582,6 +569,16 @@ void ASIOProcessor::GenerateOutput()
 		T_allocator<chunk_t>::free(chk1);
 		T_allocator<chunk_t>::free(chk2);
 	}
+    
+#if BUFFER_BEFORE_COPY
+    _main_out->process(bufL, bufR);
+    _need_buffers = false;
+    
+    if (_file_out && _file_src && _file_mgr._c)
+	{
+		_file_out->process();
+	}
+#endif
 }
 
 void ASIOProcessor::SetSrc(int ch, const wchar_t *fqpath)

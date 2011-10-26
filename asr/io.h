@@ -62,6 +62,7 @@ public:
 		T_allocator<Chunk_T>::free(_chk);
 	}
 	void process(int dbIndex);
+    void process(Output_Sample_T *bufL, Output_Sample_T *bufR);
 protected:
 	Chunk_T *_chk;
 	typename Chunk_T::sample_t *_read;
@@ -324,6 +325,12 @@ public: // was protected
 	pthread_cond_t _gen_done;
 	bool _finishing;
 	pthread_t _gen_th;
+    
+#if BUFFER_BEFORE_COPY
+    short *_bufL;
+    short *_bufR;
+    bool _need_buffers;
+#endif
 };
 
 #endif // !defined(_IO_H)
