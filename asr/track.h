@@ -31,9 +31,6 @@ public:
 		_track_id(track_id),
 		_pitchpoint(48000.0),
 		_display_width(750)
-#if USE_NEW_WAVE
-		,_mip_map(0)
-#endif
 		,_running(true)
 	{
 		pthread_mutex_init(&_config_lock, 0);
@@ -65,10 +62,6 @@ public:
 	//	pthread_mutex_lock(&_config_lock);
 		delete _display;
 		_display = 0;
-#if USE_NEW_WAVE
-		delete _mip_map;
-		_mip_map = 0;
-#endif
 		delete _resample_filter;
 		_resample_filter = 0;
 		delete _meta;
@@ -98,12 +91,6 @@ public:
 		delete _display;
 		_display = 0;
 		pthread_mutex_unlock(lock);
-#if USE_NEW_WAVE
-		pthread_mutex_lock(lock);
-		delete _mip_map;
-		_mip_map = 0;
-		pthread_mutex_unlock(lock);
-#endif
 		pthread_mutex_lock(lock);
 		delete _resample_filter;
 		_resample_filter = 0;
@@ -146,11 +133,9 @@ public:
 		
 		_resample_filter = new lowpass_filter_td<Chunk_T, double>(_src_buf, 22050.0, _src->sample_rate(), 48000.0);
 		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
-#if !USE_NEW_WAVE
 		_display = new WavFormDisplay<
 			StreamMetadata<Chunk_T>, 
 			SeekablePitchableFileSource<Chunk_T> >(_meta, this, _display_width);
-#endif
 
 		pthread_mutex_unlock(lock);
 
@@ -234,20 +219,14 @@ public:
 
 	bool load_step(pthread_mutex_t *lock)
 	{
-	//	pthread_mutex_lock(&_config_lock);
-#if USE_NEW_WAVE
-		if (_src_buf->len().samples < 0)
-#else
 		while (len().samples < 0)
-#endif
 		{
 			pthread_mutex_lock(lock);
 			_src_buf->load_next(lock);
 			pthread_mutex_unlock(lock);
-			//pthread_mutex_unlock(&_config_lock);
 			//return true;
 		}
-#if !USE_NEW_WAVE
+        
 		_display->set_zoom(100.0);
 		_display->set_left(0.0);
 		//pthread_mutex_lock(lock);
@@ -270,23 +249,6 @@ public:
 			return false;
 	//	}
 		//pthread_mutex_unlock(lock);
-#else
-		do
-		{
-			pthread_mutex_unlock(&_config_lock);
-			pthread_mutex_lock(&_config_lock);
-		} while (_display_width == -1);
-
-		_mip_map = new MipMap<BufferedStream<Chunk_T> >(_src_buf, 8, _display_width, lock);
-		_display = new WavFormDisplay2<MipMap<BufferedStream<Chunk_T> >,
-			T_source<Chunk_T>, 
-		SeekablePitchableFileSource<Chunk_T> >(_src_buf, _mip_map, _display_width);
-		_loaded = true;
-		asio->get_ui()->render(_track_id);
-		_resample_filter->set_output_scale(1.0f / _src->maxval());
-		pthread_mutex_unlock(&_config_lock);
-		return false;
-#endif
 	}
 
 	void lockedpaint()
@@ -499,25 +461,17 @@ public:
 	lowpass_filter_td<Chunk_T, double> *_resample_filter;
 	StreamMetadata<Chunk_T> *_meta;
 
-#if USE_NEW_WAVE
-	typedef WavFormDisplay2<MipMap<BufferedStream<Chunk_T> >,
-			T_source<Chunk_T>, 
-		SeekablePitchableFileSource<Chunk_T> > display_t;
-#else
 	typedef WavFormDisplay<
 		StreamMetadata<Chunk_T>, 
 		SeekablePitchableFileSource<Chunk_T> 
 	> display_t;
-#endif
 	display_t *_display;
 	double _cuepoint;
 	bool _loaded;
 	int _track_id;
 	double _pitchpoint;
 	int _display_width;
-#if USE_NEW_WAVE
-	MipMap<BufferedStream<Chunk_T> > *_mip_map;
-#endif
+    
 	pthread_mutex_t _loading_lock;
 	pthread_cond_t _track_loaded;
 

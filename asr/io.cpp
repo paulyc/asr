@@ -461,44 +461,11 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 #endif	
 
 #if DO_OUTPUT
-#if ASYNC_GENERATE||GENERATE_LOOP
 	
 	while (_main_mgr._c == 0)
 	{
 		pthread_cond_wait(&_gen_done, &_io_lock);
 	}
-	
-#else
-	if (_main_mgr._c == 0)
-	{
-		chunk_t *chk1 = _tracks[0]->next();
-		chk1->add_ref();
-		chunk_t *chk2 = _tracks[1]->next();
-		chk2->add_ref();
-		chunk_t *out = _main_src->next(chk1, chk2);
-		if (_main_src->_clip)
-			_ui->set_clip(_main_src==_master_xfader?1:2);
-		_main_mgr._c = out;
-		if (_file_src == _main_src) 
-		{
-			out->add_ref();
-			_file_mgr._c = out;
-			_file_out->process();
-			T_allocator<chunk_t>::free(chk1);
-			T_allocator<chunk_t>::free(chk2);
-		}
-		else if (_file_src)
-		{
-			_file_mgr._c = _file_src->next(chk1, chk2);
-			_file_out->process();
-		}
-		else
-		{
-			T_allocator<chunk_t>::free(chk1);
-			T_allocator<chunk_t>::free(chk2);
-		}
-	}
-#endif
 	
 	//chunk_t *cue_chk = _cue->next(chk1, chk2);
 	_main_out->process(_doubleBufferIndex);
@@ -615,88 +582,6 @@ void ASIOProcessor::GenerateOutput()
 		T_allocator<chunk_t>::free(chk1);
 		T_allocator<chunk_t>::free(chk2);
 	}
-}
-
-#if !USE_SSE2 && !NON_SSE_INTS
-static float * LoadHelp(float *toBuf, short *fromBuf)
-#else
-static float * LoadHelp(float *toBuf, int *fromBuf)
-#endif
-{
-#ifdef _DEBUG
-	printf("ASIOProcessor::LoadHelp(%p, %p)\n", toBuf, fromBuf);
-#endif
-
-#if C_LOOPS 
-#if !NON_SSE_INTS
-#error hello1
-	short val;
-	for (short *p=fromBuf; p<fromBuf+BUFFERSIZE; ++p) {
-		val = *p;
-		if (val >= 0)
-			*toBuf++ = val / float(SHRT_MAX);
-		else
-			*toBuf++ = val / float(-SHRT_MIN);
-	}
-#else
-//#error hello2
-	int val;
-	for (int *p=fromBuf; p<fromBuf+BUFFERSIZE; ++p) {
-		val = *p;
-		if (val >= 0)
-			*toBuf++ = val / float(INT_MAX);
-		else
-			*toBuf++ = val / float(-INT_MIN);
-	}
-#endif
-//#error hello3
-#else
-	int dummy = 0;
-	++dummy;
-#if USE_SSE2
-	__m128 div_init = {(float)INT_MAX, (float)INT_MAX, (float)INT_MAX, (float)INT_MAX};
-#else
-	__m128 div_init = {32767.0f, 32767.0f, 32767.0f, 32767.0f};
-#endif
-	__asm
-	{
-		mov eax, fromBuf
-		mov ecx, eax
-#if !USE_SSE2
-		add ecx, BUFFERSIZE*2
-#else
-		add ecx, BUFFERSIZE*4
-#endif
-		//lea ebx, this
-		//mov ebx, [ebx]._bufLEnd
-		lea edx, div_init
-		movaps xmm1, [edx]
-		
-		mov edx, toBuf
-top1:
-		cmp eax, ecx
-		jz end1
-#if !USE_SSE2
-		fild word ptr[eax]
-		fstp [ebx]
-		add ebx, 4
-		add eax, 2
-#else
-		cvtdq2ps xmm0, [eax]
-		divps xmm0, xmm1
-		movaps [edx], xmm0
-		add edx, 16
-		add eax, 16
-#endif
-		jmp top1
-end1:
-			
-		//lea edx, this
-		//mov [edx]._bufLEnd, ebx
-		mov toBuf, edx
-	}
-#endif
-	return toBuf;
 }
 
 void ASIOProcessor::SetSrc(int ch, const wchar_t *fqpath)

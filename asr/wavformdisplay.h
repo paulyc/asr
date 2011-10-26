@@ -311,41 +311,4 @@ protected:
 	int _level;
 };
 
-template <typename Map_T, typename Source_T, typename Controller_T>
-class WavFormDisplay2 : public WavFormDisplay<Source_T, Controller_T>
-{
-public:
-	WavFormDisplay2(Source_T *src, Map_T *map, int width) :
-		WavFormDisplay(src,0,width),
-		_map(map)
-	{
-		_width = width;
-	}
-
-	virtual bool set_next_height()
-	{
-		return false;
-	}
-
-	virtual void set_wav_heights(pthread_mutex_t *lock=0)
-	{
-	}
-
-	virtual const wav_height& get_wav_height(int pixel)
-	{
-		int level_mips = pow(2.0, _level) * _width;
-		int l_indx = _level > 0 ? _left * level_mips : 0;
-		const typename Map_T::Level::mip& m = _map->GetLevel(_level)->get_mip(l_indx+pixel);
-		_this_height.avg_top = (m.avg[0]+m.avg[1])*0.5;
-		_this_height.peak_top = max(m.peak_hi[0], m.peak_hi[1]);
-		_this_height.peak_bot = min(m.peak_lo[0], m.peak_lo[1]);
-		return _this_height;
-	}
-
-protected:
-	Map_T *_map;
-	typename Map_T::Level *_l;
-	wav_height _this_height;
-};
-
 #endif // !defined(_WAVFORMDISPLAY_H)
