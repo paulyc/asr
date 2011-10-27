@@ -57,4 +57,6 @@
 
 #define BUFFER_BEFORE_COPY 1
 
+#define NEW_ARCH 0
+
 #endif // !defined(_CONFIG_H)

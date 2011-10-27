@@ -269,6 +269,14 @@ public:
 		_file_out = new file_raw_output<chunk_t>(&_file_mgr, filename);
 		pthread_mutex_unlock(&_io_lock);
 	}
+    
+    void load_step()
+    {
+        if (!_tracks[0]->_loaded)
+            _tracks[0]->load_step();
+        if (!_tracks[1]->_loaded)
+            _tracks[1]->load_step();
+    }
 
 	long _doubleBufferIndex;
 	bool _running;

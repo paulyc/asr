@@ -42,7 +42,9 @@ public:
 		if (filename)
 			set_source_file(filename, lock);
 
+#if !NEW_ARCH
 		Worker::do_job(new Worker::call_deferreds_job<track_t>(this));
+#endif
 	}
 
 	virtual ~SeekablePitchableFileSource()
@@ -143,7 +145,9 @@ public:
 		_in_config = false;
 		pthread_mutex_unlock(&_loading_lock);
 
+#if !NEW_ARCH
 		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
+#endif
 	}
 
 	Chunk_T* next(void *dummy=0)
@@ -241,9 +245,17 @@ public:
 			//_meta->load_metadata(lock);
 			pthread_mutex_lock(&_loading_lock);
 			_loaded = true;
+
 			if (asio && asio->get_ui())
+            {
+#if NEW_ARCH
+                asio->get_ui()->set_dirty(_track_id);
+#else
 				asio->get_ui()->render(_track_id);
-			pthread_cond_signal(&_track_loaded);
+#endif
+            }
+
+            pthread_cond_signal(&_track_loaded);
 			pthread_mutex_unlock(&_loading_lock);
 			
 			return false;
@@ -265,8 +277,12 @@ public:
 		if (!_loaded) return;
 	//	pthread_mutex_lock(&_config_lock);
 		_display->zoom_px(d);
+#if NEW_ARCH
+        asio->get_ui()->set_dirty(_track_id);
+#else
 		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
-	//	pthread_mutex_unlock(&_config_lock);
+#endif
+    //	pthread_mutex_unlock(&_config_lock);
 	}
 
 	void move_px(int d)
@@ -275,17 +291,30 @@ public:
 	//	pthread_mutex_lock(&_config_lock);
 		if (!_loaded) return;
 		_display->move_px(d);
+#if NEW_ARCH
+        asio->get_ui()->set_dirty(_track_id);
+#else
 		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
+#endif
 	//	pthread_mutex_unlock(&_config_lock);
 	}
 
 	void render()
 	{
 	//	printf("track::render\n");
-		asio->get_ui()->set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
+		update_position();
+#if NEW_ARCH
+        asio->get_ui()->set_dirty(_track_id);
+#else
 		if (asio->get_ui()->want_render())
 			Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
+#endif
 	}
+    
+    void update_position()
+    {
+        asio->get_ui()->set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
+    }
 
 	void set_pitch(double mod)
 	{

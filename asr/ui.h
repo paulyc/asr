@@ -51,6 +51,7 @@ struct UITrack
 	UIText pitch;
 	UIText gain;
 	bool clip;
+    bool dirty;
 };
 
 struct UISlider
@@ -65,7 +66,15 @@ public:
 
 	virtual void create() = 0;
 	virtual void main_loop() = 0;
+    virtual void process_messages() {}
 	virtual void render(int) = 0;
+    virtual void render_dirty()
+    {
+        if (_track1.dirty)
+            render(1);
+        if (_track2.dirty)
+            render(2);
+    }
 	virtual void set_track_filename(int t) = 0;
 	virtual void set_position(void *t, double tm, bool invalidate) = 0;
 	virtual void set_clip(int) = 0;
@@ -80,6 +89,13 @@ public:
 	virtual void slider_move(double pos, SliderType t, int x);
 	virtual void set_text_field(int id, const wchar_t *txt) = 0;
 	virtual void set_main_mix(double pos){}
+    virtual void set_dirty(int track_id)
+    {
+        if (track_id == 1) 
+            _track1.dirty = true; 
+        else 
+            _track2.dirty = true; 
+    }
 //protected:
 	ASIOProcessor *_io;
 	int _lastx, _lasty;

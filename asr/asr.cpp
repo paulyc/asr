@@ -130,6 +130,7 @@ typable(double)
 
 ASIOProcessor * asio = 0;
 GenericUI *ui = 0;
+bool running = true;
 
 void begin()
 {
@@ -146,6 +147,24 @@ void begin()
 #if TEST2
 	asio->Start();
 #endif
+}
+
+void main_loop()
+{
+    while (running)
+    {
+        if (io->_need_buffers)
+        {
+            io->GenerateOutput();
+        }
+        ui->process_messages();
+        if (io->_need_buffers)
+            continue;
+        ui->render_dirty();
+        if (io->_need_buffers)
+            continue;
+        io->load_step();
+    }
 }
 
 void end()
@@ -245,8 +264,14 @@ int main()
 
 	begin();
 
+#if NEW_ARCH
+    main_loop();
+#else
 #if WINDOWS
 	ui->main_loop();
+#else
+#error no ui loop defined
+#endif
 #endif
 
 	end();
