@@ -423,4 +423,94 @@ private:
 	void(T::*_f)(Param1,Param2);
 };
 
+template <typename T>
+class fast_queue
+{
+public:
+	fast_queue():_count(0),_head(0),_tail(0){}
+	void push(T item)
+	{
+		++_count;
+		node *t = _tail;
+		_tail = new node(item, 0);
+		if (t) t->_next = _tail;
+		else _head = _tail;
+	}
+	T pop()
+	{
+		node *h = _head;
+		T it = h->_item;
+		--_count;
+		_head = h->_next;
+		delete h;
+		if (!_head) _tail = 0;
+		return it;
+	}
+	unsigned count1()
+	{
+		node *n = _head;
+		unsigned c;
+		if (!n) return 0;
+		for (c=1;n!=_tail;++c)n=n->_next;
+		return c;
+	}
+	unsigned count2()
+	{
+		return _count;
+	}
+private:
+	struct node 
+	{
+		node(T item, node *next):_item(item),_next(next){}
+		T _item;
+		node *_next;
+	};
+	unsigned _count;
+	node *_head;
+	node *_tail;
+};
+
+template <typename T>
+class ts_queue : public fast_queue<T>
+{
+public:
+	ts_queue():
+		fast_queue(),
+		_lock(PTHREAD_MUTEX_INITIALIZER),
+		(PTHREAD_COND_INITIALIZER){}
+	void push (T item)
+	{
+		pthread_mutex_lock(&_lock);
+		fast_queue<T>::push(item);
+		pthread_cond_signal(&_wait);
+		pthread_mutex_unlock(&_lock);
+	}
+	T pop()
+	{
+		pthread_mutex_lock(&_lock);
+		T it = fast_queue<T>::pop();
+		pthread_mutex_unlock(&_lock);
+		return it;
+	}
+	T pop_wait()
+	{
+		pthread_mutex_lock(&_lock);
+		while (!count1())
+			pthread_cond_wait(&_cond, &_lock);
+		T it = fast_queue<T>::pop();
+		pthread_mutex_unlock(&_lock);
+		return it;
+	}
+	unsigned count()
+	{
+		pthread_mutex_lock(&_lock);
+		unsigned c = count1();
+		pthread_mutex_unlock(&_lock);
+		return c;
+	}
+private:
+	pthread_mutex_t _lock;
+	pthread_cond_t _cond;
+};
+
 #endif

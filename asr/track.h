@@ -56,8 +56,9 @@ public:
 		_running = false;
 		pthread_cond_signal(&_have_deferred);
 
+#if !NEW_ARCH
 		pthread_join(_deferred_thread, 0);
-
+#endif
 		pthread_mutex_destroy(&_loading_lock);
 		pthread_cond_destroy(&_track_loaded);
 
@@ -221,13 +222,13 @@ public:
 		return _paused;
 	}
 
-	bool load_step(pthread_mutex_t *lock)
+	bool load_step(pthread_mutex_t *lock=0)
 	{
 		while (len().samples < 0)
 		{
-			pthread_mutex_lock(lock);
-			_src_buf->load_next(lock);
-			pthread_mutex_unlock(lock);
+			if (lock) pthread_mutex_lock(lock);
+			_src_buf->load_next();
+			if (lock) pthread_mutex_unlock(lock);
 			//return true;
 		}
         
@@ -269,6 +270,15 @@ public:
 		pthread_mutex_lock(&_loading_lock);
 		asio->get_ui()->render(_track_id);
 		pthread_mutex_unlock(&_loading_lock);
+	}
+
+	void draw_if_loaded()
+	{
+		if (loaded())
+		{
+			set_wav_heights(false, false);
+			lockedpaint();
+		}
 	}
 
 	void zoom_px(int d)

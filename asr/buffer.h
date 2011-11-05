@@ -234,7 +234,7 @@ public:
 		return _len.chunks;
 	}
 
-	bool load_next(pthread_mutex_t *lock)
+	bool load_next()
 	{
 		if (_src->eof())
 		{

@@ -161,7 +161,8 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					//kill worker thread
 					DestroyWindow(hwndDlg);
 					g_dlg = NULL;
-					PostMessage(NULL, WM_QUIT, 0, 0);
+					PostQuitMessage(0);
+					ui->do_quit();
 					return TRUE;
 				case IDC_BUTTON1:
 					asio->Start();
@@ -365,7 +366,8 @@ Win32UI::Win32UI(ASIOProcessor *io) :
 	GenericUI(io, 
 		UITrack(this, 1, IDC_EDIT3, IDC_EDIT5), 
 		UITrack(this, 2, IDC_EDIT4, IDC_EDIT6)),
-	_want_render(false)
+	_want_render(false),
+	_want_quit(false)
 {}
 
 void Win32UI::create()
@@ -499,13 +501,8 @@ void Win32UI::create()
 	SetDlgItemText(g_dlg, IDC_EDIT6, L"0.00 dB");
 	SendMessage(GetDlgItem(g_dlg, IDC_RADIO1), BM_SETCHECK, BST_CHECKED, 0);
 	SendMessage(GetDlgItem(g_dlg, IDC_RADIO5), BM_SETCHECK, BST_CHECKED, 0);
-}
 
-void Win32UI::main_loop()
-{
-	create();
-
-//#if USE_NEW_WAVE
+	//#if USE_NEW_WAVE
 	asio->GetTrack(1)->set_display_width(_track1.wave.width());
 	asio->GetTrack(2)->set_display_width(_track2.wave.width());
 //#endif
@@ -518,13 +515,26 @@ void Win32UI::main_loop()
 
 	//asio->GetTrack(1)->lockedpaint();
 	//asio->GetTrack(2)->lockedpaint();
+}
+
+void Win32UI::destroy()
+{
+	DeleteObject(pen_dk);
+	DeleteObject(pen_lt);
+	DeleteObject(pen_yel);
+	DeleteObject(pen_oran);
+	DeleteObject(br);
+}
+
+void Win32UI::main_loop()
+{
+	create();
 
 #if SLEEP
 	Sleep(10000);
 #else
 	BOOL bRet;
 	MSG msg;
-
 	while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0) 
 	{ 
 		if (bRet == -1)
@@ -539,13 +549,28 @@ void Win32UI::main_loop()
 		} 
 	} 
 
-	DeleteObject(pen_dk);
-	DeleteObject(pen_lt);
-	DeleteObject(pen_yel);
-	DeleteObject(pen_oran);
-	DeleteObject(br);
+	destroy();
 
 #endif // !SLEEP
+}
+
+void Win32UI::process_messages()
+{
+	BOOL bRet;
+	MSG msg;
+
+	while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0) 
+	{
+		if (msg.message == WM_QUIT)
+		{
+
+		}
+		if (!IsWindow(g_dlg) || !IsDialogMessage(g_dlg, &msg)) 
+		{ 
+			TranslateMessage(&msg); 
+			DispatchMessage(&msg); 
+		} 
+	} 
 }
 
 void Win32UI::set_position(void *t, double p, bool invalidate)
@@ -694,6 +719,8 @@ void Win32UI::render(int t_id)
 	DeleteDC(memDC);
 	
 	ReleaseDC(h, hdc_old);
+
+	uit->dirty = false;
 
 //	pthread_mutex_unlock(&asio->_io_lock);
 }

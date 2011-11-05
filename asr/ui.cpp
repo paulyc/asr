@@ -176,6 +176,14 @@ void GenericUI::slider_move(double pos, SliderType t, int x)
 	}
 }
 
+void GenericUI::render_dirty()
+{
+    if (_track1.dirty)
+		_io->GetTrack(1)->draw_if_loaded();
+    if (_track2.dirty)
+        _io->GetTrack(2)->draw_if_loaded();
+}
+
 UITrack::UITrack(GenericUI *ui, int tid, int pitch_id, int gain_id) :
 	id(tid),
 	coarse_val(48000.0),

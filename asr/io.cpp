@@ -5,6 +5,7 @@
 #include <queue>
 
 #include <pthread.h>
+#include <semaphore.h>
 
 extern ASIOProcessor * asio;
 
@@ -223,7 +224,7 @@ ASIOProcessor::~ASIOProcessor()
 
 void ASIOProcessor::CreateTracks()
 {
-	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(1, L"H:\\Music\\Blank & Jones - Mind Of The Wonderful (Water Music Dance)\\Blank & Jones - Mind Of The Wonderful (Water Music Dance) - 03 - Mind Of The Wonderful (Club Mix).flac", &_io_lock));
+	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(1, _default_src, &_io_lock));
 	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2, _default_src, &_io_lock));
 	
 	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
@@ -469,6 +470,64 @@ void ASIOProcessor::ProcessInput()
 	}
 }
 
+void fAStIOProcessor::MainLoop()
+{
+	while (!_finishing)
+	{
+		if (_buf_q.count() == 0)
+		{
+Generate:
+			GenerateOutput();
+		}
+
+		// render
+
+		if (_buf_q.count() == 0)
+			goto Generate;
+
+		// load track
+	}
+}
+
+void fAStIOProcessor::GenerateOutput()
+{
+	chunk_t *chk1 = _tracks[0]->next();
+	chk1->add_ref();
+	chunk_t *chk2 = _tracks[1]->next();
+	chk2->add_ref();
+	chunk_t *out = _main_src->next(chk1, chk2);
+	if (_main_src->_clip)
+		_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
+	//_main_mgr._c = out;
+	if (_file_src == _main_src) 
+	{
+		out->add_ref();
+		_file_mgr._c = out;
+		T_allocator<chunk_t>::free(chk1);
+		T_allocator<chunk_t>::free(chk2);
+	}
+	else if (_file_src)
+	{
+		_file_mgr._c = _file_src->next(chk1, chk2);
+		if (_file_src->_clip)
+			_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
+	}
+	else
+	{
+		T_allocator<chunk_t>::free(chk1);
+		T_allocator<chunk_t>::free(chk2);
+	}
+}
+
+void fAStIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
+{
+	//sem_wait(&_sem);
+	char *bufs = _buf_q.pop_wait();
+	memcpy(_buffer_infos[2].buffers[doubleBufferIndex], bufs, _bufSize);
+	memcpy(_buffer_infos[3].buffers[doubleBufferIndex], bufs+_bufSize, _bufSize);
+	//sem_post(&_sem);
+}
+
 void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
 	pthread_mutex_lock(&_io_lock);
@@ -517,29 +576,6 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	pthread_mutex_unlock(&_io_lock);
 }
 
-void ASIOProcessor::GenerateLoop(pthread_t th)
-{
-#ifdef WIN32
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-#endif
-	pthread_mutex_lock(&_io_lock);
-	_gen_th = th;
-	while (!_finishing)
-	{
-		if (_main_mgr._c == 0)
-		{
-			GenerateOutput();
-			pthread_cond_signal(&_gen_done);
-		}
-		else
-		{
-			pthread_cond_wait(&_do_gen, &_io_lock);
-		}
-	}
-	pthread_mutex_unlock(&_io_lock);
-	pthread_exit(0);
-}
-
 void ASIOProcessor::GenerateOutput()
 {
 	chunk_t *chk1 = _tracks[0]->next();
@@ -571,8 +607,11 @@ void ASIOProcessor::GenerateOutput()
 	}
     
 #if BUFFER_BEFORE_COPY
-    _main_out->process(bufL, bufR);
+    _main_out->process(_bufL, _bufR);
+	pthread_mutex_lock(&_io_lock);
     _need_buffers = false;
+	pthread_cond_signal(&_gen_done);
+	pthread_mutex_unlock(&_io_lock);
     
     if (_file_out && _file_src && _file_mgr._c)
 	{
@@ -580,6 +619,37 @@ void ASIOProcessor::GenerateOutput()
 	}
 #endif
 }
+
+#if 0
+void ASIOProcessor::GenerateLoop(pthread_t th)
+{
+#ifdef WIN32
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+#endif
+	pthread_mutex_lock(&_io_lock);
+	_gen_th = th;
+	while (!_finishing)
+	{
+#if BUFFER_BEFORE_COPY
+		while (_need_buffers)
+#else
+		if (_main_mgr._c == 0)
+#endif
+		{
+			GenerateOutput();
+			pthread_cond_signal(&_gen_done);
+		}
+#if !BUFFER_BEFORE_COPY
+		else
+#endif
+		{
+			pthread_cond_wait(&_do_gen, &_io_lock);
+		}
+	}
+	pthread_mutex_unlock(&_io_lock);
+	pthread_exit(0);
+}
+#endif
 
 void ASIOProcessor::SetSrc(int ch, const wchar_t *fqpath)
 {

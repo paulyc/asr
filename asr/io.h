@@ -334,11 +334,21 @@ public: // was protected
 	bool _finishing;
 	pthread_t _gen_th;
     
-#if BUFFER_BEFORE_COPY
     short *_bufL;
     short *_bufR;
     bool _need_buffers;
-#endif
+};
+
+class fAStIOProcessor : public ASIOProcessor
+{
+public:
+	void MainLoop();
+	void GenerateOutput();
+	void BufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
+protected:
+	ts_queue<char*> _buf_q;
+	chunk_t *_main_out_chunk;
+	sem_t _sem;
 };
 
 #endif // !defined(_IO_H)

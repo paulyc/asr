@@ -50,13 +50,18 @@
 #define DEBUG_MALLOC 0
 #define USE_NEW_WAVE 0
 
-#define ASYNC_GENERATE 0
-#define GENERATE_LOOP 1
-
 #define TRACE 0
 
-#define BUFFER_BEFORE_COPY 1
+#define ASYNC_GENERATE 0
 
+#if 1
+#define GENERATE_LOOP 0
+#define BUFFER_BEFORE_COPY 1
+#define NEW_ARCH 1
+#else
+#define GENERATE_LOOP 1
+#define BUFFER_BEFORE_COPY 0
 #define NEW_ARCH 0
+#endif
 
 #endif // !defined(_CONFIG_H)

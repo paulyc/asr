@@ -169,11 +169,7 @@ public:
 		pthread_cond_t _next_step;
 		void step()
 		{
-			if (track->loaded())
-			{
-				track->set_wav_heights(false, false);
-				track->lockedpaint();
-			}
+			track->draw_if_loaded();
 			done = true;
 		}
 	};

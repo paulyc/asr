@@ -65,16 +65,13 @@ public:
 	GenericUI(ASIOProcessor *io, UITrack t1, UITrack t2);
 
 	virtual void create() = 0;
+	virtual void destroy() = 0;
 	virtual void main_loop() = 0;
+	virtual bool running() = 0;
+	virtual void do_quit() = 0;
     virtual void process_messages() {}
 	virtual void render(int) = 0;
-    virtual void render_dirty()
-    {
-        if (_track1.dirty)
-            render(1);
-        if (_track2.dirty)
-            render(2);
-    }
+    virtual void render_dirty();
 	virtual void set_track_filename(int t) = 0;
 	virtual void set_position(void *t, double tm, bool invalidate) = 0;
 	virtual void set_clip(int) = 0;
@@ -109,15 +106,20 @@ class Win32UI : public GenericUI
 public:
 	Win32UI(ASIOProcessor *io);
 	virtual void create();
+	virtual void destroy();
 	virtual void main_loop();
+	virtual void process_messages();
 	virtual void render(int);
 	virtual void set_track_filename(int t){}
 	virtual void set_position(void *t, double tm, bool invalidate);
 	virtual void set_clip(int);
 	virtual bool want_render(){ bool r = _want_render; _want_render = false; return r; }
 	virtual void set_text_field(int id, const wchar_t *txt);
+	virtual void do_quit(){_want_quit=true;}
+	virtual bool running(){return !_want_quit;}
 
 	bool _want_render;
+	bool _want_quit;
 };
 
 struct Win32UISlider : public UISlider

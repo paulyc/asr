@@ -151,19 +151,19 @@ void begin()
 
 void main_loop()
 {
-    while (running)
+    while (ui->running())
     {
-        if (io->_need_buffers)
+        if (asio->_need_buffers)
         {
-            io->GenerateOutput();
+            asio->GenerateOutput();
         }
         ui->process_messages();
-        if (io->_need_buffers)
+        if (asio->_need_buffers)
             continue;
         ui->render_dirty();
-        if (io->_need_buffers)
+        if (asio->_need_buffers)
             continue;
-        io->load_step();
+        asio->load_step();
     }
 }
 
@@ -265,7 +265,9 @@ int main()
 	begin();
 
 #if NEW_ARCH
+	ui->create();
     main_loop();
+	ui->destroy();
 #else
 #if WINDOWS
 	ui->main_loop();
