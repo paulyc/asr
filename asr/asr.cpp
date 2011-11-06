@@ -153,16 +153,11 @@ void main_loop()
 {
     while (ui->running())
     {
-        if (asio->_need_buffers)
-        {
-            asio->GenerateOutput();
-        }
+        asio->DoGenerate();
         ui->process_messages();
-        if (asio->_need_buffers)
-            continue;
+        asio->DoGenerate();
         ui->render_dirty();
-        if (asio->_need_buffers)
-            continue;
+        asio->DoGenerate();
         asio->load_step();
     }
 }

@@ -171,6 +171,7 @@ public:
 	void AsyncGenerate();
 	void GenerateLoop(pthread_t th);
 	void GenerateOutput();
+	void DoGenerate();
 
 	/*void SetResamplerate(double rate)
 	{
@@ -272,10 +273,8 @@ public:
     
     void load_step()
     {
-        if (!_tracks[0]->_loaded)
-            _tracks[0]->load_step();
-        if (!_tracks[1]->_loaded)
-            _tracks[1]->load_step();
+        _tracks[0]->load_step_if();
+        _tracks[1]->load_step_if();
     }
 
 	long _doubleBufferIndex;

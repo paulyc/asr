@@ -117,6 +117,7 @@ public:
 	virtual void set_text_field(int id, const wchar_t *txt);
 	virtual void do_quit(){_want_quit=true;}
 	virtual bool running(){return !_want_quit;}
+	virtual void load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam);
 
 	bool _want_render;
 	bool _want_quit;

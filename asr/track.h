@@ -42,9 +42,9 @@ public:
 		if (filename)
 			set_source_file(filename, lock);
 
-#if !NEW_ARCH
+//#if !NEW_ARCH
 		Worker::do_job(new Worker::call_deferreds_job<track_t>(this));
-#endif
+//#endif
 	}
 
 	virtual ~SeekablePitchableFileSource()
@@ -90,28 +90,28 @@ public:
 		_paused = true;
 		pthread_mutex_unlock(&_loading_lock);
 
-		pthread_mutex_lock(lock);
+		LOCK_IF_SMP(lock);
 		delete _display;
 		_display = 0;
-		pthread_mutex_unlock(lock);
-		pthread_mutex_lock(lock);
+		UNLOCK_IF_SMP(lock);
+		LOCK_IF_SMP(lock);
 		delete _resample_filter;
 		_resample_filter = 0;
-		pthread_mutex_unlock(lock);
-		pthread_mutex_lock(lock);
+		UNLOCK_IF_SMP(lock);
+		LOCK_IF_SMP(lock);
 		delete _meta;
 		_meta = 0;
-		pthread_mutex_unlock(lock);
-		pthread_mutex_lock(lock);
+		UNLOCK_IF_SMP(lock);
+		LOCK_IF_SMP(lock);
 		delete _src_buf;
 		_src_buf = 0;
-		pthread_mutex_unlock(lock);
-		pthread_mutex_lock(lock);
+		UNLOCK_IF_SMP(lock);
+		LOCK_IF_SMP(lock);
 		delete _src;
 		_src = 0;
-		pthread_mutex_unlock(lock);
+		UNLOCK_IF_SMP(lock);
 
-		pthread_mutex_lock(lock);
+		LOCK_IF_SMP(lock);
 
 		_filename = filename;
 
@@ -129,8 +129,8 @@ public:
 		}
 		_src_buf = new BufferedStream<Chunk_T>(_src);
 
-		pthread_mutex_unlock(lock);
-		pthread_mutex_lock(lock);
+		UNLOCK_IF_SMP(lock);
+		LOCK_IF_SMP(lock);
 
 		_meta = new StreamMetadata<Chunk_T>(_src_buf);
 		
@@ -140,7 +140,7 @@ public:
 			StreamMetadata<Chunk_T>, 
 			SeekablePitchableFileSource<Chunk_T> >(_meta, this, _display_width);
 
-		pthread_mutex_unlock(lock);
+		UNLOCK_IF_SMP(lock);
 
 		pthread_mutex_lock(&_loading_lock);
 		_in_config = false;
@@ -220,6 +220,12 @@ public:
 	{
 		_paused = !_paused;
 		return _paused;
+	}
+
+	void load_step_if()
+	{
+		if (!_loaded && !_in_config)
+            load_step();
 	}
 
 	bool load_step(pthread_mutex_t *lock=0)

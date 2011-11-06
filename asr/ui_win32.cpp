@@ -174,53 +174,19 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON6:
 				case IDC_BUTTON25:
 				{
-					TCHAR filepath[512] = {0};
-					TCHAR filetitle[512];
-					OPENFILENAME ofn = { //typedef struct tagOFNW {
-						sizeof(ofn), // DWORD        lStructSize;
-						hwndDlg, //   HWND         hwndOwner;
-						NULL, //   HINSTANCE    hInstance;
-						TEXT("Sound Files\0*.WAV;*.MP3;*.FLAC;*.AAC;*.MP4;*.AC3\0"
-						TEXT("All Files\0*.*")), //   LPCWSTR      lpstrFilter;
-						NULL, //LPWSTR       lpstrCustomFilter;
-						0, //   DWORD        nMaxCustFilter;
-						1, //   DWORD        nFilterIndex;
-						filepath, //   LPWSTR       lpstrFile;
-						sizeof(filepath), //   DWORD        nMaxFile;
-						filetitle, //   LPWSTR       lpstrFileTitle;
-						sizeof(filetitle), //   DWORD        nMaxFileTitle;
-						NULL, //   LPCWSTR      lpstrInitialDir;
-						NULL, //   LPCWSTR      lpstrTitle;
-						LOWORD(wParam)!=IDC_BUTTON25?OFN_FILEMUSTEXIST:NULL, //   DWORD        Flags;
-						0, //   WORD         nFileOffset;
-						0, //   WORD         nFileExtension;
-						NULL, //   LPCWSTR      lpstrDefExt;
-						NULL, //   LPARAM       lCustData;
-						NULL, //   LPOFNHOOKPROC lpfnHook;
-						NULL, //   LPCWSTR      lpTemplateName;
-						//#ifdef _MAC
-						//   LPEDITMENU   lpEditInfo;
-						//   LPCSTR       lpstrPrompt;
-						//#endif
-						//#if (_WIN32_WINNT >= 0x0500)
-						NULL, //   void *        pvReserved;
-						0, //   DWORD        dwReserved;
-						0, //   DWORD        FlagsEx;
-						//#endif // (_WIN32_WINNT >= 0x0500)
-					};
-					//memset(&ofn, 0, sizeof(ofn));
-					if (GetOpenFileName(&ofn)) {
-						if (LOWORD(wParam)!=IDC_BUTTON25)
-						{
-							SetDlgItemText(hwndDlg, LOWORD(wParam)==IDC_BUTTON3 ? IDC_EDIT1 : IDC_EDIT2, filepath);
-							asio->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->set_source_file(filepath, &asio->_io_lock);
-						}
-						else
-						{
-							asio->set_file_output(filepath);
-						}
-					//	asio->SetSrc(1, filepath);
-					}
+#if NEW_ARCH
+					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->deferred_call(
+						new deferred3<Win32UI, HWND, WPARAM, LPARAM>(
+							dynamic_cast<Win32UI*>(ui), 
+							&Win32UI::load_track, 
+							hwndDlg, 
+							wParam, 
+							lParam
+						)
+					);
+#else
+					dynamic_cast<Win32UI*>(ui)->load_track(hwndDlg, wParam, lParam);
+#endif
 					return TRUE;
 				}
 				case IDC_BUTTON4: // cue src
@@ -330,6 +296,57 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 			}
 	}
 	return FALSE;
+}
+
+void Win32UI::load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam)
+{
+	TCHAR filepath[512] = {0};
+	TCHAR filetitle[512];
+	OPENFILENAME ofn = { //typedef struct tagOFNW {
+		sizeof(ofn), // DWORD        lStructSize;
+		hwndDlg, //   HWND         hwndOwner;
+		NULL, //   HINSTANCE    hInstance;
+		TEXT("Sound Files\0*.WAV;*.MP3;*.FLAC;*.AAC;*.MP4;*.AC3\0"
+		TEXT("All Files\0*.*")), //   LPCWSTR      lpstrFilter;
+		NULL, //LPWSTR       lpstrCustomFilter;
+		0, //   DWORD        nMaxCustFilter;
+		1, //   DWORD        nFilterIndex;
+		filepath, //   LPWSTR       lpstrFile;
+		sizeof(filepath), //   DWORD        nMaxFile;
+		filetitle, //   LPWSTR       lpstrFileTitle;
+		sizeof(filetitle), //   DWORD        nMaxFileTitle;
+		NULL, //   LPCWSTR      lpstrInitialDir;
+		NULL, //   LPCWSTR      lpstrTitle;
+		LOWORD(wParam)!=IDC_BUTTON25?OFN_FILEMUSTEXIST:NULL, //   DWORD        Flags;
+		0, //   WORD         nFileOffset;
+		0, //   WORD         nFileExtension;
+		NULL, //   LPCWSTR      lpstrDefExt;
+		NULL, //   LPARAM       lCustData;
+		NULL, //   LPOFNHOOKPROC lpfnHook;
+		NULL, //   LPCWSTR      lpTemplateName;
+		//#ifdef _MAC
+		//   LPEDITMENU   lpEditInfo;
+		//   LPCSTR       lpstrPrompt;
+		//#endif
+		//#if (_WIN32_WINNT >= 0x0500)
+		NULL, //   void *        pvReserved;
+		0, //   DWORD        dwReserved;
+		0, //   DWORD        FlagsEx;
+		//#endif // (_WIN32_WINNT >= 0x0500)
+	};
+	//memset(&ofn, 0, sizeof(ofn));
+	if (GetOpenFileName(&ofn)) {
+		if (LOWORD(wParam)!=IDC_BUTTON25)
+		{
+			SetDlgItemText(hwndDlg, LOWORD(wParam)==IDC_BUTTON3 ? IDC_EDIT1 : IDC_EDIT2, filepath);
+			_io->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->set_source_file(filepath, &_io->_io_lock);
+		}
+		else
+		{
+			_io->set_file_output(filepath);
+		}
+	//	asio->SetSrc(1, filepath);
+	}
 }
 
 LRESULT CALLBACK CustomWndProc(HWND hwnd,

@@ -399,8 +399,8 @@ void ASIOProcessor::Destroy()
 	ASIOError e;
     
 #if BUFFER_BEFORE_COPY
-    delete _bufL;
-    delete _bufR;
+    delete[] _bufL;
+    delete[] _bufR;
 #endif
 	
 #if CREATE_BUFFERS
@@ -576,8 +576,19 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	pthread_mutex_unlock(&_io_lock);
 }
 
+void ASIOProcessor::DoGenerate()
+{
+	pthread_mutex_lock(&_io_lock);
+	if (_need_buffers)
+		GenerateOutput();
+	pthread_mutex_unlock(&_io_lock);
+}
+
 void ASIOProcessor::GenerateOutput()
 {
+#ifdef BUFFER_BEFORE_COPY
+	if (!_main_mgr._c) {
+#endif
 	chunk_t *chk1 = _tracks[0]->next();
 	chk1->add_ref();
 	chunk_t *chk2 = _tracks[1]->next();
@@ -605,13 +616,14 @@ void ASIOProcessor::GenerateOutput()
 		T_allocator<chunk_t>::free(chk1);
 		T_allocator<chunk_t>::free(chk2);
 	}
-    
+#ifdef BUFFER_BEFORE_COPY
+	}
+#endif
+
 #if BUFFER_BEFORE_COPY
     _main_out->process(_bufL, _bufR);
-	pthread_mutex_lock(&_io_lock);
     _need_buffers = false;
 	pthread_cond_signal(&_gen_done);
-	pthread_mutex_unlock(&_io_lock);
     
     if (_file_out && _file_src && _file_mgr._c)
 	{
@@ -620,7 +632,6 @@ void ASIOProcessor::GenerateOutput()
 #endif
 }
 
-#if 0
 void ASIOProcessor::GenerateLoop(pthread_t th)
 {
 #ifdef WIN32
@@ -649,7 +660,6 @@ void ASIOProcessor::GenerateLoop(pthread_t th)
 	pthread_mutex_unlock(&_io_lock);
 	pthread_exit(0);
 }
-#endif
 
 void ASIOProcessor::SetSrc(int ch, const wchar_t *fqpath)
 {

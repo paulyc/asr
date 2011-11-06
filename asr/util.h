@@ -423,6 +423,33 @@ private:
 	void(T::*_f)(Param1,Param2);
 };
 
+template <typename T, typename Param1, typename Param2, typename Param3>
+class functor3
+{
+public:
+	functor3(T *obj, void(T::*f)(Param1,Param2,Param3)):_obj(obj),_f(f){}
+	void operator()(Param1 p1, Param2 p2, Param3 p3) {(_obj->*_f)(p1, p2, p3);}
+private:
+	T *_obj;
+	void(T::*_f)(Param1,Param2,Param3);
+};
+
+template <typename T, typename Param1, typename Param2, typename Param3>
+class deferred3 : public functor3<T, Param1, Param2, Param3>, public deferred
+{
+public:
+	deferred3(T *obj, void(T::*f)(Param1,Param2,Param3), Param1 p1, Param2 p2, Param3 p3) : 
+	  functor3(obj, f), _p1(p1), _p2(p2), _p3(p3) {}
+	void operator()()
+	{
+		functor3<T, Param1, Param2, Param3>::operator ()(_p1, _p2, _p3);
+	}
+private:
+	Param1 _p1;
+	Param2 _p2;
+	Param3 _p3;
+};
+
 template <typename T>
 class fast_queue
 {
@@ -512,5 +539,15 @@ private:
 	pthread_mutex_t _lock;
 	pthread_cond_t _cond;
 };
+
+#if NEW_ARCH
+#define LOCK_IF_SMP(lock)
+#define UNLOCK_IF_SMP(lock)
+#else
+#define LOCK_IF_SMP(lock) pthread_mutex_lock(lock);
+#define UNLOCK_IF_SMP(lock) pthread_mutex_unlock(lock);
+#endif
+
+
 
 #endif
