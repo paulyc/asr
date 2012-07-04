@@ -202,7 +202,7 @@ public:
 		{
 			*buf++ = 0.0;
 			++tap;
-		}
+		} 
 
 
 		//printf("_speed %f fc %f magL %f magR %f phaseL - phaseR %f\n", 1000.0/fc, fc, maxL, maxR, phL- phR);

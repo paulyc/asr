@@ -395,6 +395,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\future.h"
+				>
+			</File>
+			<File
 				RelativePath=".\io.h"
 				>
 			</File>
@@ -403,7 +407,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\lock.h"
+				>
+			</File>
+			<File
 				RelativePath=".\meta.h"
+				>
+			</File>
+			<File
+				RelativePath=".\myasio.h"
 				>
 			</File>
 			<File

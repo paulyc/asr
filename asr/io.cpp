@@ -236,6 +236,9 @@ void ASIOProcessor::CreateTracks()
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);
 
+	//_out_2 = new asio_sink<chunk_t, chk_mgr, short>(&_2_mgr,
+	//	);
+
 	_main_src = _master_xfader;
 	_file_src = 0;
 
@@ -375,6 +378,10 @@ void ASIOProcessor::Init()
 	;	call Tracer::hook
 	;	add esp, 8
 	}
+}
+
+void ASIOProcessor::Reconfig()
+{
 }
 
 // stop using ui before destroying

@@ -158,7 +158,7 @@ public:
 			_c = 0;
 			return r;
 		}
-	} _main_mgr, _file_mgr;
+	} _main_mgr, _file_mgr, _2_mgr;
 	
 	ASIOProcessor();
 	virtual ~ASIOProcessor();
@@ -286,6 +286,7 @@ public:
 
 public: // was protected
 	void Init();
+	void Reconfig();
 	void LoadDriver();
 	void ProcessInput();
 	void Destroy();
@@ -316,6 +317,8 @@ public: // was protected
 	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_file_out;
 	asio_sink<chunk_t, chk_mgr, short> *_main_out;
+
+	asio_sink<chunk_t, chk_mgr, short> *_out_2;
 
 	std::vector<track_t*> _tracks;
 	xfader<track_t> *_master_xfader;

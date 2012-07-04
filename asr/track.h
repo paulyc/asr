@@ -7,12 +7,23 @@
 #include "buffer.h"
 #include "type.h"
 #include "ui.h"
-#include "worker.h"
+#include "future.h"
+
+class PitchableSource
+{
+};
+
+class SeekableSource
+{
+};
+
+class BufferedSource
+{
+};
 
 template <typename Chunk_T>
 class SeekablePitchableFileSource : public T_source<Chunk_T>
 {
-	friend class Worker;
 public:
 	typedef type chunk_t;
 	typedef SeekablePitchableFileSource<Chunk_T> track_t;
@@ -31,20 +42,14 @@ public:
 		_track_id(track_id),
 		_pitchpoint(48000.0),
 		_display_width(750)
-		,_running(true)
 	{
-		pthread_mutex_init(&_config_lock, 0);
 		pthread_mutex_init(&_loading_lock, 0);
 		pthread_cond_init(&_track_loaded, 0);
-		pthread_mutex_init(&_deferreds_lock, 0);
-		pthread_cond_init(&_have_deferred, 0);
 
 		if (filename)
 			set_source_file(filename, lock);
 
-//#if !NEW_ARCH
-		Worker::do_job(new Worker::call_deferreds_job<track_t>(this));
-//#endif
+		_future = new FutureExecutor;
 	}
 
 	virtual ~SeekablePitchableFileSource()
@@ -52,17 +57,13 @@ public:
 		pthread_mutex_lock(&_loading_lock);
 		while (!_loaded) 
 			pthread_cond_wait(&_track_loaded, &_loading_lock);
-		
-		_running = false;
-		pthread_cond_signal(&_have_deferred);
 
-#if !NEW_ARCH
-		pthread_join(_deferred_thread, 0);
-#endif
+		delete _future;
+		_future = 0;
+
 		pthread_mutex_destroy(&_loading_lock);
 		pthread_cond_destroy(&_track_loaded);
 
-	//	pthread_mutex_lock(&_config_lock);
 		delete _display;
 		_display = 0;
 		delete _resample_filter;
@@ -73,8 +74,6 @@ public:
 		_src_buf = 0;
 		delete _src;
 		_src = 0;
-	//	pthread_mutex_unlock(&_config_lock);
-		pthread_mutex_destroy(&_config_lock);
 	}
 
 	void set_source_file(const wchar_t *filename, pthread_mutex_t *lock)
@@ -344,10 +343,7 @@ public:
 
 	void deferred_call(deferred *d)
 	{
-		pthread_mutex_lock(&_deferreds_lock);
-		_defcalls.push(d);
-		pthread_cond_signal(&_have_deferred);
-		pthread_mutex_unlock(&_deferreds_lock);
+		_future->submit(d);
 	}
 
 	void set_output_sampling_frequency(double f)
@@ -475,28 +471,7 @@ public:
 		asio->_ui->set_clip(id);
 	}
 
-	void call_deferreds_loop(pthread_t th)
-	{
-		_deferred_thread = th;
-		pthread_mutex_lock(&_deferreds_lock);
-		while (_running)
-		{
-			while (!_defcalls.empty())
-			{
-				deferred *d = _defcalls.front();
-				_defcalls.pop();
-				pthread_mutex_unlock(&_deferreds_lock);
-				d->operator()();
-				delete d;
-				pthread_mutex_lock(&_deferreds_lock);
-			}
-			pthread_cond_wait(&_have_deferred, &_deferreds_lock);
-		}
-		pthread_exit(0);
-	}
-
 protected:
-	pthread_mutex_t _config_lock;
 	bool _in_config;
 	const wchar_t *_filename;
 	bool _paused;
@@ -519,12 +494,8 @@ public:
     
 	pthread_mutex_t _loading_lock;
 	pthread_cond_t _track_loaded;
-
-	std::queue<deferred*> _defcalls;
-	pthread_mutex_t _deferreds_lock;
-	pthread_cond_t _have_deferred;
-	bool _running;
-	pthread_t _deferred_thread;
+	
+	FutureExecutor *_future;
 };
 
 #endif // !defined(TRACK_H)
