@@ -9,165 +9,212 @@
 #include "ui.h"
 #include "future.h"
 
-class PitchableSource
+template <typename Chunk_T>
+class PitchableMixin
 {
-};
+public:
+	PitchableMixin() : _resample_filter(0), _pitchpoint(48000.0)
+	{
+	}
 
-class SeekableSource
-{
-};
+	virtual void lock() = 0;
+	virtual void unlock() = 0;
+	virtual bool loaded() = 0;
+	virtual void deferred_call(deferred *d) = 0;
 
-class BufferedSource
-{
+	void create(BufferedStream<Chunk_T> *src, double sample_rate)
+	{
+		if (_resample_filter != 0)
+		{
+			throw new std::exception("PitchableSource has already been create()d");
+		}
+		_resample_filter = new lowpass_filter_td<Chunk_T, double>(src, 22050.0, sample_rate, 48000.0);
+		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
+	}
+
+	void destroy()
+	{
+		delete _resample_filter;
+		_resample_filter = 0;
+	}
+
+	void set_output_sampling_frequency(double f)
+	{
+		deferred_call(new deferred1<PitchableMixin<Chunk_T>, double>(this, &PitchableMixin<Chunk_T>::set_output_sampling_frequency_impl, f));
+	}
+
+	void set_output_sampling_frequency_impl(double f)
+	{
+		lock();
+		if (loaded() && _resample_filter)
+		{
+			printf("output mod %f\n", 48000.0/f);
+			_resample_filter->set_output_sampling_frequency(f);
+		}
+		unlock();
+	}
+
+	double get_output_sampling_frequency(double f)
+	{
+		return _resample_filter->get_output_sampling_frequency();
+	}
+
+	void set_pitch(double mod)
+	{
+		set_output_sampling_frequency(48000.0/mod);
+	}
+
+	double get_pitch()
+	{
+		return 48000.0/_resample_filter->get_output_sampling_frequency();
+	}
+
+	void nudge_pitch(double dp)
+	{
+		set_pitch(get_pitch()+dp);
+	}
+
+	void set_pitchpoint()
+	{
+		_pitchpoint = _resample_filter->get_output_sampling_frequency();
+	}
+
+	void goto_pitchpoint()
+	{
+		set_output_sampling_frequency(_pitchpoint);
+		// do something with the ui
+	}
+
+	double get_pitchpoint()
+	{
+		return _pitchpoint;
+	}
+
+	lowpass_filter_td<Chunk_T, double> *get_source()
+	{
+		return _resample_filter;
+	}
+
+protected:
+	lowpass_filter_td<Chunk_T, double> *_resample_filter;
+	double _pitchpoint;
 };
 
 template <typename Chunk_T>
-class SeekablePitchableFileSource : public T_source<Chunk_T>
+class SeekableMixin
 {
 public:
-	typedef type chunk_t;
-	typedef SeekablePitchableFileSource<Chunk_T> track_t;
+	SeekableMixin() : _cuepoint(0.0) {}
 
-	SeekablePitchableFileSource(int track_id, const wchar_t *filename=0, pthread_mutex_t *lock=0) :
-		_in_config(false),
-		_filename(0),
-		_paused(true),
-		_src(0),
-		_src_buf(0),
-		_resample_filter(0),
-		_meta(0),
-		_display(0),
-		_cuepoint(0.0),
-		_loaded(true),
-		_track_id(track_id),
-		_pitchpoint(48000.0),
-		_display_width(750)
+	virtual void lock() = 0;
+	virtual void unlock() = 0;
+	virtual bool loaded() = 0;
+	virtual lowpass_filter_td<Chunk_T, double> *get_root_source() = 0;
+	virtual void render() = 0;
+	virtual double get_display_pos(double) = 0;
+	virtual typename const T_source<Chunk_T>::pos_info& len() = 0;
+	virtual void deferred_call(deferred *d) = 0;
+
+	void set_cuepoint(double pos)
 	{
-		pthread_mutex_init(&_loading_lock, 0);
-		pthread_cond_init(&_track_loaded, 0);
-
-		if (filename)
-			set_source_file(filename, lock);
-
-		_future = new FutureExecutor;
+		_cuepoint = pos;
 	}
 
-	virtual ~SeekablePitchableFileSource()
+	double get_cuepoint()
 	{
-		pthread_mutex_lock(&_loading_lock);
-		while (!_loaded) 
-			pthread_cond_wait(&_track_loaded, &_loading_lock);
-
-		delete _future;
-		_future = 0;
-
-		pthread_mutex_destroy(&_loading_lock);
-		pthread_cond_destroy(&_track_loaded);
-
-		delete _display;
-		_display = 0;
-		delete _resample_filter;
-		_resample_filter = 0;
-		delete _meta;
-		_meta = 0;
-		delete _src_buf;
-		_src_buf = 0;
-		delete _src;
-		_src = 0;
+		return _cuepoint;
 	}
 
-	void set_source_file(const wchar_t *filename, pthread_mutex_t *lock)
+	void seek_time(double t)
 	{
-		pthread_mutex_lock(&_loading_lock);
-		while (_in_config || !_loaded)
-		{
-			pthread_cond_wait(&_track_loaded, &_loading_lock);
-		}
-		
-		_in_config = true;
-		_loaded = false;
-		_paused = true;
-		pthread_mutex_unlock(&_loading_lock);
+		deferred_call(new deferred1<SeekableMixin<Chunk_T>, double>(this, &SeekableMixin<Chunk_T>::seek_time_impl, t));
+	}
 
-		LOCK_IF_SMP(lock);
-		delete _display;
-		_display = 0;
-		UNLOCK_IF_SMP(lock);
-		LOCK_IF_SMP(lock);
-		delete _resample_filter;
-		_resample_filter = 0;
-		UNLOCK_IF_SMP(lock);
-		LOCK_IF_SMP(lock);
-		delete _meta;
-		_meta = 0;
-		UNLOCK_IF_SMP(lock);
-		LOCK_IF_SMP(lock);
-		delete _src_buf;
-		_src_buf = 0;
-		UNLOCK_IF_SMP(lock);
-		LOCK_IF_SMP(lock);
-		delete _src;
-		_src = 0;
-		UNLOCK_IF_SMP(lock);
+	void seek_time_impl(double t)
+	{
+		lock();
+		if (loaded() && get_root_source())
+			get_root_source()->seek_time(t);
+		render();
+		unlock();
+	}
 
-		LOCK_IF_SMP(lock);
+	void seek_f(double f)
+	{
+		deferred_call(new deferred1<SeekableMixin<Chunk_T>, double>(this, &SeekableMixin<Chunk_T>::seek_f_impl, f));
+	}
 
-		_filename = filename;
+	void seek_f_impl(double f)
+	{
+		lock();
+		if (loaded() && get_root_source() && len().samples > 0)
+			get_root_source()->seek_time(f * len().time);
+		render();
+		unlock();
+	}
 
-		if (wcsstr(_filename, L".mp3") == _filename + wcslen(_filename) - 4)
-		{
-			_src = new mp3file_chunker<Chunk_T>(_filename);
-		}
-		else if (wcsstr(_filename, L".wav") == _filename + wcslen(_filename) - 4)
-		{
-			_src = new wavfile_chunker<Chunk_T>(_filename);
-		}
-		else
-		{
-			_src = new flacfile_chunker<Chunk_T>(_filename);
-		}
-		_src_buf = new BufferedStream<Chunk_T>(_src);
+	void nudge_time(double dt)
+	{
+		lock();
+		if (loaded())
+			get_root_source()->seek_time(get_root_source()->get_time()+dt);
+		unlock();
+	}
 
-		UNLOCK_IF_SMP(lock);
-		LOCK_IF_SMP(lock);
+	double get_cuepoint_pos()
+	{
+		return get_display_pos(_cuepoint);
+	}
 
-		_meta = new StreamMetadata<Chunk_T>(_src_buf);
-		
-		_resample_filter = new lowpass_filter_td<Chunk_T, double>(_src_buf, 22050.0, _src->sample_rate(), 48000.0);
-		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
+	void goto_cuepoint()
+	{
+		double t = get_root_source()->get_time();
+		if (t <= _cuepoint || t - 0.3 > _cuepoint) //debounce (?)
+			seek_time(_cuepoint);
+	}
+protected:
+	double _cuepoint;
+};
+
+
+template <typename Chunk_T>
+class ViewableMixin
+{
+public:
+	typedef WavFormDisplay<
+		StreamMetadata<Chunk_T>, 
+		ViewableMixin<Chunk_T> 
+	> display_t;
+
+	ViewableMixin() : _meta(0), _display(0), _display_width(750) {}
+
+	virtual void lock() = 0;
+	virtual void unlock() = 0;
+
+	void create(BufferedStream<Chunk_T> *src)
+	{
+		_meta = new StreamMetadata<Chunk_T>(src);
 		_display = new WavFormDisplay<
 			StreamMetadata<Chunk_T>, 
-			SeekablePitchableFileSource<Chunk_T> >(_meta, this, _display_width);
-
-		UNLOCK_IF_SMP(lock);
-
-		pthread_mutex_lock(&_loading_lock);
-		_in_config = false;
-		pthread_mutex_unlock(&_loading_lock);
-
-#if !NEW_ARCH
-		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
-#endif
+			ViewableMixin<Chunk_T> >(_meta, this, _display_width);
 	}
 
-	Chunk_T* next(void *dummy=0)
+	void destroy()
 	{
-		Chunk_T *chk;
+		delete _display;
+		_display = 0;
+		delete _meta;
+		_meta = 0;
+	}
 
-		pthread_mutex_lock(&_loading_lock);
-		if (!_loaded || _paused)
-		{
-			pthread_mutex_unlock(&_loading_lock);
-			chk = zero_source<Chunk_T>::get()->next();
-		}
-		else
-		{
-			chk = _resample_filter->next();
-			pthread_mutex_unlock(&_loading_lock);
-			render();
-		}
-		
-		return chk;
+	double get_display_time(double f)
+	{
+		return _display->get_display_time(f);
+	}
+
+	double get_display_pos(double f)
+	{
+		return _display->get_display_pos(f);
 	}
 
 	int get_display_width()
@@ -204,15 +251,176 @@ public:
 	void set_wav_heights(bool unlock=true, bool lock=false)
 	{
 		if (unlock)
-			pthread_mutex_unlock(&_loading_lock);
+			this->unlock();
 		if (lock)
-			pthread_mutex_lock(&_loading_lock);
+			this->lock();
 		//_display->set_wav_heights(&asio->_io_lock);
 		_display->set_wav_heights();
 		if (lock)
-			pthread_mutex_unlock(&_loading_lock);
+			this->unlock();
 		if (unlock)
-			pthread_mutex_lock(&_loading_lock);
+			this->lock();
+	}
+
+	typename const display_t::wav_height& get_wav_height(int pixel)
+	{
+		return _display->get_wav_height(pixel);
+	}
+
+protected:
+	StreamMetadata<Chunk_T> *_meta;
+	display_t *_display;
+	int _display_width;
+};
+
+template <typename Chunk_T>
+class BufferedSource : public T_source<Chunk_T>
+{
+public:
+	BufferedSource() : _src(0), _src_buf(0), _filename(0)
+	{
+	}
+
+	void create(const wchar_t *filename)
+	{
+		_filename = filename;
+
+		if (wcsstr(_filename, L".mp3") == _filename + wcslen(_filename) - 4)
+		{
+			_src = new mp3file_chunker<Chunk_T>(_filename);
+		}
+		else if (wcsstr(_filename, L".wav") == _filename + wcslen(_filename) - 4)
+		{
+			_src = new wavfile_chunker<Chunk_T>(_filename);
+		}
+		else
+		{
+			_src = new flacfile_chunker<Chunk_T>(_filename);
+		}
+		_src_buf = new BufferedStream<Chunk_T>(_src);
+	}
+
+	void destroy()
+	{
+		delete _src_buf;
+		_src_buf = 0;
+		delete _src;
+		_src = 0;
+		_filename = 0;
+	}
+
+	virtual typename const T_source<Chunk_T>::pos_info& len()
+	{
+		return _src_buf->len();
+	}
+
+protected:
+	T_source<Chunk_T> *_src;
+	BufferedStream<Chunk_T> *_src_buf;
+	const wchar_t *_filename;
+};
+
+template <typename Chunk_T>
+class SeekablePitchableFileSource : public BufferedSource<Chunk_T>, public PitchableMixin<Chunk_T>, public SeekableMixin<Chunk_T>, public ViewableMixin<Chunk_T>
+{
+public:
+	typedef type chunk_t;
+	typedef SeekablePitchableFileSource<Chunk_T> track_t;
+
+	SeekablePitchableFileSource(int track_id, const wchar_t *filename=0, pthread_mutex_t *lock=0) :
+		_in_config(false),
+		_paused(true),
+		_loaded(true),
+		_track_id(track_id)
+	{
+		pthread_mutex_init(&_loading_lock, 0);
+		pthread_cond_init(&_track_loaded, 0);
+
+		if (filename)
+			set_source_file(filename, lock);
+
+		_future = new FutureExecutor;
+	}
+
+	virtual ~SeekablePitchableFileSource()
+	{
+		pthread_mutex_lock(&_loading_lock);
+		while (!_loaded) 
+			pthread_cond_wait(&_track_loaded, &_loading_lock);
+
+		delete _future;
+		_future = 0;
+
+		pthread_mutex_destroy(&_loading_lock);
+		pthread_cond_destroy(&_track_loaded);
+
+		ViewableMixin<Chunk_T>::destroy();
+		PitchableMixin<Chunk_T>::destroy();
+		
+		BufferedSource<Chunk_T>::destroy();
+	}
+
+	void set_source_file(const wchar_t *filename, pthread_mutex_t *lock)
+	{
+		pthread_mutex_lock(&_loading_lock);
+		while (_in_config || !_loaded)
+		{
+			pthread_cond_wait(&_track_loaded, &_loading_lock);
+		}
+		
+		_in_config = true;
+		_loaded = false;
+		_paused = true;
+		pthread_mutex_unlock(&_loading_lock);
+
+		LOCK_IF_SMP(lock);
+		ViewableMixin<Chunk_T>::destroy();
+		UNLOCK_IF_SMP(lock);
+
+		LOCK_IF_SMP(lock);
+		PitchableMixin<Chunk_T>::destroy();
+		UNLOCK_IF_SMP(lock);
+		
+		LOCK_IF_SMP(lock);
+		BufferedSource<Chunk_T>::destroy();
+		UNLOCK_IF_SMP(lock);
+
+		LOCK_IF_SMP(lock);
+		BufferedSource<Chunk_T>::create(filename);
+		UNLOCK_IF_SMP(lock);
+
+		LOCK_IF_SMP(lock);
+		PitchableMixin<Chunk_T>::create(_src_buf, _src->sample_rate());
+		ViewableMixin<Chunk_T>::create(_src_buf);
+		UNLOCK_IF_SMP(lock);
+
+		pthread_mutex_lock(&_loading_lock);
+		_in_config = false;
+		pthread_mutex_unlock(&_loading_lock);
+
+#if !NEW_ARCH
+		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
+#endif
+	}
+
+	Chunk_T* next(void *dummy=0)
+	{
+		Chunk_T *chk;
+
+		pthread_mutex_lock(&_loading_lock);
+		if (!_loaded || _paused)
+		{
+			pthread_mutex_unlock(&_loading_lock);
+			chk = zero_source<Chunk_T>::get()->next();
+		}
+		else
+		{
+			chk = _resample_filter->next();
+			pthread_mutex_unlock(&_loading_lock);
+			render();
+		}
+		
+		return chk;
 	}
 
 	bool play_pause()
@@ -331,113 +539,19 @@ public:
         asio->get_ui()->set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
     }
 
-	void set_pitch(double mod)
-	{
-		set_output_sampling_frequency(48000.0/mod);
-	}
-
-	double get_pitch()
-	{
-		return 48000.0/_resample_filter->get_output_sampling_frequency();
-	}
-
 	void deferred_call(deferred *d)
 	{
 		_future->submit(d);
 	}
 
-	void set_output_sampling_frequency(double f)
+	double get_display_pos(double f)
 	{
-		deferred_call(new deferred1<track_t, double>(this, &track_t::set_output_sampling_frequency_impl, f));
+		return ViewableMixin<Chunk_T>::get_display_pos(f);
 	}
 
-	void set_output_sampling_frequency_impl(double f)
+	typename const T_source<Chunk_T>::pos_info& len()
 	{
-		pthread_mutex_lock(&_loading_lock);
-		if (_loaded && _resample_filter)
-		{
-			printf("output mod %f\n", 48000.0/f);
-			_resample_filter->set_output_sampling_frequency(f);
-		}
-		pthread_mutex_unlock(&_loading_lock);
-	}
-
-	double get_output_sampling_frequency(double f)
-	{
-		return _resample_filter->get_output_sampling_frequency();
-	}
-
-	void seek_time(double t)
-	{
-		deferred_call(new deferred1<track_t, double>(this, &track_t::seek_time_impl, t));
-	}
-
-	void seek_time_impl(double t)
-	{
-		pthread_mutex_lock(&_loading_lock);
-		if (_loaded && _resample_filter)
-			_resample_filter->seek_time(t);
-		render();
-		pthread_mutex_unlock(&_loading_lock);
-	}
-
-	void seek_f(double f)
-	{
-		deferred_call(new deferred1<track_t, double>(this, &track_t::seek_f_impl, f));
-	}
-
-	void seek_f_impl(double f)
-	{
-		pthread_mutex_lock(&_loading_lock);
-		if (_loaded && _resample_filter && len().samples > 0)
-			_resample_filter->seek_time(f * len().time);
-		render();
-		pthread_mutex_unlock(&_loading_lock);
-	}
-
-	void nudge_time(double dt)
-	{
-		pthread_mutex_lock(&_loading_lock);
-		if (_loaded)
-			_resample_filter->seek_time(_resample_filter->get_time()+dt);
-		pthread_mutex_unlock(&_loading_lock);
-	}
-
-	void nudge_pitch(double dp)
-	{
-		set_pitch(get_pitch()+dp);
-	}
-
-	double get_display_time(double f)
-	{
-		return _display->get_display_time(f);
-	}
-
-	const pos_info& len()
-	{
-		return _src_buf->len();
-	}
-
-	void set_cuepoint(double pos)
-	{
-		_cuepoint = pos;
-	}
-
-	double get_cuepoint()
-	{
-		return _cuepoint;
-	}
-
-	double get_cuepoint_pos()
-	{
-		return _display->get_display_pos(_cuepoint);
-	}
-
-	void goto_cuepoint()
-	{
-		double t = _resample_filter->get_time();
-		if (t <= _cuepoint || t - 0.3 > _cuepoint) //debounce (?)
-			seek_time(_cuepoint);
+		return BufferedSource<Chunk_T>::len();
 	}
 
 	bool loaded()
@@ -445,20 +559,14 @@ public:
 		return _loaded;
 	}
 
-	void set_pitchpoint()
+	void lock()
 	{
-		_pitchpoint = _resample_filter->get_output_sampling_frequency();
+		pthread_mutex_lock(&_loading_lock);
 	}
 
-	double get_pitchpoint()
+	void unlock()
 	{
-		return _pitchpoint;
-	}
-
-	void goto_pitchpoint()
-	{
-		set_output_sampling_frequency(_pitchpoint);
-		// do something with the ui
+		pthread_mutex_unlock(&_loading_lock);
 	}
 
 	void set_clip(int id)
@@ -471,27 +579,17 @@ public:
 		asio->_ui->set_clip(id);
 	}
 
+	lowpass_filter_td<Chunk_T, double> *get_root_source()
+	{
+		return PitchableMixin<Chunk_T>::get_source();
+	}
+
 protected:
 	bool _in_config;
-	const wchar_t *_filename;
 	bool _paused;
-public:
-	T_source<Chunk_T> *_src;
-	BufferedStream<Chunk_T> *_src_buf;
-	lowpass_filter_td<Chunk_T, double> *_resample_filter;
-	StreamMetadata<Chunk_T> *_meta;
-
-	typedef WavFormDisplay<
-		StreamMetadata<Chunk_T>, 
-		SeekablePitchableFileSource<Chunk_T> 
-	> display_t;
-	display_t *_display;
-	double _cuepoint;
 	bool _loaded;
 	int _track_id;
-	double _pitchpoint;
-	int _display_width;
-    
+	
 	pthread_mutex_t _loading_lock;
 	pthread_cond_t _track_loaded;
 	

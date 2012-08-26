@@ -679,7 +679,7 @@ void Win32UI::render(int t_id)
 		//	pthread_mutex_lock(&asio->_io_lock);
 		}
 		const track_t::display_t::wav_height &h =
-			track->_display->get_wav_height(p);
+			track->get_wav_height(p);
 		int px_pk = (1.0-h.peak_top) * height / 2;
 		int px_avg = (1.0-h.avg_top) * height / 2;
 		int px_mn = (1.0+h.peak_bot) * height / 2;
