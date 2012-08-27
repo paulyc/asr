@@ -45,8 +45,9 @@ template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
 class asio_sink : public T_sink_sourceable<Chunk_T>
 {
 public:
-	asio_sink(Source_T *src, Output_Sample_T **bufs1, Output_Sample_T **bufs2, long bufSz) :
+	asio_sink(ASIOProcessor *owner, Source_T *src, Output_Sample_T **bufs1, Output_Sample_T **bufs2, long bufSz) :
 	  T_sink_sourceable<Chunk_T>(src),
+	  _owner(owner),
 	  _buf_size(bufSz),
 	  _src_t(src)
 	{
@@ -64,6 +65,7 @@ public:
 	void process(int dbIndex);
     void process(Output_Sample_T *bufL, Output_Sample_T *bufR);
 protected:
+	ASIOProcessor *_owner;
 	Chunk_T *_chk;
 	typename Chunk_T::sample_t *_read;
 	Output_Sample_T **_buffers[2];
@@ -75,13 +77,14 @@ template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
 class asio_source : public T_source<Chunk_T>
 {
 public:
-	asio_source();
+	asio_source(ASIOProcessor *owner);
 	~asio_source();
 	
 	void have_data();
 	bool chunk_ready() { return _chks_next.size() > 0; }
 	Chunk_T* next();
 protected:
+	ASIOProcessor *_owner;
 	Chunk_T *_chk_working;
 	std::queue<Chunk_T *> _chks_next;
 	Output_Sample_T *_chk_ptr;
@@ -163,6 +166,7 @@ public:
 	ASIOProcessor();
 	virtual ~ASIOProcessor();
 
+public:
 	ASIOError Start();
 	ASIOError Stop();
 
@@ -276,6 +280,11 @@ public:
         _tracks[0]->load_step_if();
         _tracks[1]->load_step_if();
     }
+
+	pthread_mutex_t *get_lock()
+	{
+		return &_io_lock;
+	}
 
 	long _doubleBufferIndex;
 	bool _running;

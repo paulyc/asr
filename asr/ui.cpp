@@ -4,9 +4,9 @@
 #include <cstdio>
 
 typedef ASIOProcessor ASIOP;
-extern ASIOP * asio;
+//extern ASIOP * asio;
 typedef ASIOP::track_t track_t;
-extern GenericUI *ui;
+//extern GenericUI *ui;
 
 GenericUI::GenericUI(ASIOProcessor *io, UITrack t1, UITrack t2) :
 	_io(io),
@@ -201,7 +201,7 @@ void UITrack::set_coarse(double v)
 	double val = 48000.0 / (coarse_val+fine_val) - 1.0;
 	printf("track %d: %f\n", id, val*100.0);
 	pitch.set_text_pct(val*100.0);
-	asio->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
+	ASR::get_io_instance()->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
 }
 
 void UITrack::set_fine(double v)
@@ -211,7 +211,7 @@ void UITrack::set_fine(double v)
 	double val = 48000.0 / (coarse_val+fine_val) - 1.0;
 	printf("track %d: %f\n", id, val*100.0);
 	pitch.set_text_pct(val*100.0);
-	asio->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
+	ASR::get_io_instance()->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
 }
 
 UIText::UIText(GenericUI *ui, int i) :

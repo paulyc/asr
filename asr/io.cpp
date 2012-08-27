@@ -7,8 +7,6 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-extern ASIOProcessor * asio;
-
 /*
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T, int chunk_size>
 void asio_sink<Input_Sample_T, Output_Sample_T, Chunk_T, chunk_size, false>::process()
@@ -75,7 +73,8 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process(Output_Sample_T *buf
 }
 
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
-asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::asio_source()
+asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::asio_source(ASIOProcessor *owner) :
+	_owner(owner)
 {
 	_chk_working = T_allocator<Chunk_T>::alloc();
 	_chk_ptr = _chk_working->_data;
@@ -92,9 +91,9 @@ asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::~asio_source()
 template <>
 void asio_source<short, SamplePairf, chunk_t>::have_data()
 {
-	size_t buf_sz = asio->_bufSize;
-	short *input0 = (short*)asio->_buffer_infos[0].buffers[asio->_doubleBufferIndex], 
-		*input1 = (short*)asio->_buffer_infos[1].buffers[asio->_doubleBufferIndex], 
+	size_t buf_sz = _owner->_bufSize;
+	short *input0 = (short*)_owner->_buffer_infos[0].buffers[_owner->_doubleBufferIndex], 
+		*input1 = (short*)_owner->_buffer_infos[1].buffers[_owner->_doubleBufferIndex], 
 		*end0 = input0 + buf_sz, 
 		*end1 = input1 + buf_sz;
 	SamplePairf *end_chk = _chk_working->_data + chunk_t::chunk_size;
@@ -150,7 +149,7 @@ back to the driver.
 */
 void bufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
-	asio->BufferSwitch(doubleBufferIndex, directProcess);
+	ASR::get_io_instance()->BufferSwitch(doubleBufferIndex, directProcess);
 }
 
 ASIOTime* bufferSwitchTimeInfo(ASIOTime *params, long doubleBufferIndex, ASIOBool directProcess)
@@ -224,14 +223,15 @@ ASIOProcessor::~ASIOProcessor()
 
 void ASIOProcessor::CreateTracks()
 {
-	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(1, _default_src, &_io_lock));
-	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(2, _default_src, &_io_lock));
+	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 1, _default_src));
+	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 2, _default_src));
 	
 	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
 	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
 	_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
 
-	_main_out = new asio_sink<chunk_t, chk_mgr, short>(&_main_mgr,
+	_main_out = new asio_sink<chunk_t, chk_mgr, short>(this,
+		&_main_mgr,
 		(short**)_buffer_infos[2].buffers, 
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);

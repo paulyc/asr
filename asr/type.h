@@ -28,4 +28,14 @@ typedef int_N_wavfile_chunker_T_base<int, BUFFERSIZE> my_wavfile_chunker_base;
 //typedef wavfile_chunker_T_N<default_internal_chunk_type, BUFFERSIZE, 2> my_wavfile_chunker;
 //typedef wavfile_chunker_T_N_base<default_internal_chunk_type, BUFFERSIZE, 2> my_wavfile_chunker_base;
 
+template <typename T> 
+const char* gettype();
+
+#define stringify(x) #x
+#define typable(type) template <> const char* gettype<type>() { return stringify(type); }
+#define define_template_type_n(base,n,type) typedef base<n> type; typable(type)
+#define define_template_type_T(base,T,type) typedef base<T> type; typable(type)
+#define define_template_type_T_n(base,T,n,type) typedef base<T,n> type; typable(type)
+#define define_template_type_T_n_T(base,T1,n,T2,type) typedef base<T,n,T2> type; typable(type)
+
 #endif // !defined(TYPE_H)

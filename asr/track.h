@@ -327,7 +327,8 @@ public:
 	typedef type chunk_t;
 	typedef SeekablePitchableFileSource<Chunk_T> track_t;
 
-	SeekablePitchableFileSource(int track_id, const wchar_t *filename=0, pthread_mutex_t *lock=0) :
+	SeekablePitchableFileSource(ASIOProcessor *io, int track_id, const wchar_t *filename) :
+		_io(io),
 		_in_config(false),
 		_paused(true),
 		_loaded(true),
@@ -337,7 +338,7 @@ public:
 		pthread_cond_init(&_track_loaded, 0);
 
 		if (filename)
-			set_source_file(filename, lock);
+			set_source_file(filename, _io->get_lock());
 
 		_future = new FutureExecutor;
 	}
@@ -460,12 +461,12 @@ public:
 			pthread_mutex_lock(&_loading_lock);
 			_loaded = true;
 
-			if (asio && asio->get_ui())
+			if (_io && _io->get_ui())
             {
 #if NEW_ARCH
-                asio->get_ui()->set_dirty(_track_id);
+                _io->get_ui()->set_dirty(_track_id);
 #else
-				asio->get_ui()->render(_track_id);
+				_io->get_ui()->render(_track_id);
 #endif
             }
 
@@ -481,7 +482,7 @@ public:
 	{
 	//	printf("track::lockedpaint\n");
 		pthread_mutex_lock(&_loading_lock);
-		asio->get_ui()->render(_track_id);
+		_io->get_ui()->render(_track_id);
 		pthread_mutex_unlock(&_loading_lock);
 	}
 
@@ -527,16 +528,16 @@ public:
 	//	printf("track::render\n");
 		update_position();
 #if NEW_ARCH
-        asio->get_ui()->set_dirty(_track_id);
+        _io->get_ui()->set_dirty(_track_id);
 #else
-		if (asio->get_ui()->want_render())
+		if (_io->get_ui()->want_render())
 			Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
 #endif
 	}
     
     void update_position()
     {
-        asio->get_ui()->set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
+        _io->get_ui()->set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
     }
 
 	void deferred_call(deferred *d)
@@ -576,7 +577,7 @@ public:
 
 	void set_clip_impl(int id)
 	{
-		asio->_ui->set_clip(id);
+		_io->_ui->set_clip(id);
 	}
 
 	lowpass_filter_td<Chunk_T, double> *get_root_source()
@@ -585,6 +586,7 @@ public:
 	}
 
 protected:
+	ASIOProcessor *_io;
 	bool _in_config;
 	bool _paused;
 	bool _loaded;

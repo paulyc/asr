@@ -321,6 +321,18 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\test.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\tracer.cpp"
 				>
 			</File>
@@ -411,6 +423,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\malloc.h"
+				>
+			</File>
+			<File
 				RelativePath=".\meta.h"
 				>
 			</File>
@@ -424,6 +440,10 @@
 			</File>
 			<File
 				RelativePath=".\speedparser.h"
+				>
+			</File>
+			<File
+				RelativePath=".\stream.h"
 				>
 			</File>
 			<File

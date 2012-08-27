@@ -45,6 +45,7 @@ struct UITrack
 	void set_coarse(double v);
 	void set_fine(double v);
 	
+	
 	int id;
 	double coarse_val;
 	double fine_val;

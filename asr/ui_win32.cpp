@@ -4,9 +4,7 @@
 #include <cstdio>
 
 typedef ASIOProcessor ASIOP;
-extern ASIOP * asio;
 typedef ASIOP::track_t track_t;
-extern GenericUI *ui;
 
 #if WINDOWS
 #include <commctrl.h>
@@ -30,6 +28,9 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
     LPARAM lParam
 )
 {
+	ASIOProcessor *asio = ASR::get_io_instance();
+	GenericUI *ui = asio->get_ui();
+
 	switch (uMsg)
 	{
 		case WM_PAINT:
@@ -430,8 +431,14 @@ void Win32UI::create()
 	UpdateWindow(g_newwnd);
 #endif
 
-	HWND button = CreateWindowEx(0, L"Button", L"Text", BS_PUSHBUTTON|BS_TEXT|WS_TABSTOP|WS_CHILD|WS_VISIBLE, 100, 100, 100, 100, g_newwnd, 0, ::GetModuleHandle(NULL),
-    0);
+	HWND button = CreateWindowEx(0, 
+		L"Button", 
+		L"Text", 
+		BS_PUSHBUTTON|BS_TEXT|WS_TABSTOP|WS_CHILD|WS_VISIBLE, 
+		100, 100, 100, 100, 
+		g_newwnd, 
+		0, ::GetModuleHandle(NULL),
+		0);
 //	ShowWindow(button, SW_SHOW);
 	
 	g_dlg = CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG1), NULL, MyDialogProc);
@@ -442,7 +449,7 @@ void Win32UI::create()
 		printf("Yo error %d\n", GetLastError());
 		return;
 	}
-	SetDlgItemText(g_dlg, IDC_EDIT1, asio->_default_src);
+	SetDlgItemText(g_dlg, IDC_EDIT1, _io->_default_src);
 	ShowWindow(g_dlg, SW_SHOW);
 
 	HWND h;
@@ -520,8 +527,8 @@ void Win32UI::create()
 	SendMessage(GetDlgItem(g_dlg, IDC_RADIO5), BM_SETCHECK, BST_CHECKED, 0);
 
 	//#if USE_NEW_WAVE
-	asio->GetTrack(1)->set_display_width(_track1.wave.width());
-	asio->GetTrack(2)->set_display_width(_track2.wave.width());
+	_io->GetTrack(1)->set_display_width(_track1.wave.width());
+	_io->GetTrack(2)->set_display_width(_track2.wave.width());
 //#endif
 
 	br = CreateSolidBrush(RGB(255,255,255));
@@ -592,9 +599,9 @@ void Win32UI::process_messages()
 
 void Win32UI::set_position(void *t, double p, bool invalidate)
 {
-	if (asio)
+	if (_io)
 	{
-		UITrack *uit = (t == asio->GetTrack(1) ? &_track1 : &_track2);
+		UITrack *uit = (t == _io->GetTrack(1) ? &_track1 : &_track2);
 		//if (p >= 0.0 && p <= 1.0)
 		//{
 			uit->wave.playback_pos = p;
@@ -628,7 +635,7 @@ void Win32UI::render(int t_id)
 	//PAINTSTRUCT ps;
 	HDC hdc, hdc_old;
 	HWND h;
-	track_t *track = asio->GetTrack(t_id);
+	track_t *track = _io->GetTrack(t_id);
 	UITrack *uit;
 	if (t_id==1)
 		uit = &_track1;
