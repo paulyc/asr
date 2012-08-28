@@ -60,18 +60,18 @@ protected:
 	
 };
 
-struct chk_mgr : public T_source<chunk_t>
+struct chunk_buffer : public T_source<chunk_t>
+{
+	chunk_buffer():_c(0){}
+	chunk_t* _c;
+	chunk_t* next()
 	{
-		chk_mgr():_c(0){}
-		chunk_t* _c;
-		chunk_t* next()
-		{
-			assert(_c);
-			chunk_t *r = _c;
-			_c = 0;
-			return r;
-		}
-	};
+		assert(_c);
+		chunk_t *r = _c;
+		_c = 0;
+		return r;
+	}
+};
 
 template <typename Chunk_T>
 class ASIOManager : public IOManager<Chunk_T>
@@ -82,10 +82,10 @@ public:
 
 	void enumerateIOs();
 	void createBuffers();
-	void createIOs(chk_mgr *src);
+	void createIOs(chunk_buffer *src, chunk_buffer *src2);
 
 	void setOutputSource(int id);
-
+	void processOutputs();
 	void switchBuffers(long doubleBufferIndex);
 
 //protected:
@@ -117,8 +117,8 @@ public:
 	std::vector<T_source<Chunk_T>*> _inputs;
 	std::vector<T_sink<Chunk_T>*> _outputs;
 
-	asio_sink<chunk_t, chk_mgr, short> *_main_out;
-	asio_sink<chunk_t, chk_mgr, short> *_out_2;
+	asio_sink<chunk_t, chunk_buffer, short> *_main_out;
+	asio_sink<chunk_t, chunk_buffer, short> *_out_2;
 };
 
 #endif // !defined(IOMGR_H)

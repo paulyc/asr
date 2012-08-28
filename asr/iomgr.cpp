@@ -159,7 +159,7 @@ void ASIOManager<Chunk_T>::createBuffers()
 	ch_output_r = 1;
 #endif
 
-	_buffer_infos_len = 4;
+	_buffer_infos_len = 6;
 	_buffer_infos = (ASIOBufferInfo*)malloc(_buffer_infos_len*sizeof(ASIOBufferInfo));
 	_buffer_infos[0].isInput = ASIOTrue;
 	//_buffer_infos[0].channelNum = 2;
@@ -171,6 +171,10 @@ void ASIOManager<Chunk_T>::createBuffers()
 	_buffer_infos[2].channelNum = ch_output_l;
 	_buffer_infos[3].isInput = ASIOFalse;
 	_buffer_infos[3].channelNum = ch_output_r;
+	_buffer_infos[4].isInput = ASIOFalse;
+	_buffer_infos[4].channelNum = 4;
+	_buffer_infos[5].isInput = ASIOFalse;
+	_buffer_infos[5].channelNum = 5;
 
 	_cb.bufferSwitch = bufferSwitch;
 	_cb.bufferSwitchTimeInfo = bufferSwitchTimeInfo;
@@ -208,19 +212,29 @@ void ASIOManager<Chunk_T>::createBuffers()
 }
 
 template <typename Chunk_T>
-void ASIOManager<Chunk_T>::createIOs(chk_mgr *src)
+void ASIOManager<Chunk_T>::createIOs(chunk_buffer *src, chunk_buffer *src2)
 {
-	_main_out = new asio_sink<chunk_t, chk_mgr, short>(src,
+	_main_out = new asio_sink<chunk_t, chunk_buffer, short>(src,
 		(short**)_buffer_infos[2].buffers, 
 		(short**)_buffer_infos[3].buffers,
 		_bufSize);
 
-	//_out_2 = new asio_sink<chunk_t, chk_mgr, short>(&_2_mgr,
-	//	);
+	_out_2 = new asio_sink<chunk_t, chunk_buffer, short>(src2,
+		(short**)_buffer_infos[4].buffers, 
+		(short**)_buffer_infos[5].buffers,
+		_bufSize);
+}
+
+template <typename Chunk_T>
+void ASIOManager<Chunk_T>::processOutputs()
+{
+	_main_out->process();
+	_out_2->process();
 }
 
 template <typename Chunk_T>
 void ASIOManager<Chunk_T>::switchBuffers(long doubleBufferIndex)
 {
 	_main_out->switchBuffers(doubleBufferIndex);
+	_out_2->switchBuffers(doubleBufferIndex);
 }

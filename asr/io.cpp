@@ -45,7 +45,7 @@ void ASIOProcessor::CreateTracks()
 	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
 	_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
 
-	_iomgr->createIOs(&_main_mgr);
+	_iomgr->createIOs(&_main_mgr, &_2_mgr);
 
 	_main_src = _master_xfader;
 	_file_src = 0;
@@ -112,20 +112,11 @@ void ASIOProcessor::Destroy()
 {
 	delete _iomgr;
 	CoUninitialize();
-
-	//for (std::vector<track_t*>::iterator i = _tracks.begin(); i != _tracks.end(); i++)
-	//{/
-	//	delete (*i);
-	//}
 	
 	delete _file_out;
 	delete _cue;
 	delete _master_xfader;
 	delete _aux;
-	//	delete _aux_bus;
-//	delete _cue_bus;
-//	delete _master_bus;
-//	delete _bus_matrix;
 
 	pthread_cond_destroy(&_do_gen);
 	pthread_cond_destroy(&_gen_done);
@@ -215,8 +206,6 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	pthread_mutex_unlock(&_io_lock);
 }
 
-
-
 void ASIOProcessor::GenerateOutput()
 {
 #ifdef BUFFER_BEFORE_COPY
@@ -226,6 +215,11 @@ void ASIOProcessor::GenerateOutput()
 	chk1->add_ref();
 	chunk_t *chk2 = _tracks[1]->next();
 	chk2->add_ref();
+	
+	// fix 2nd output
+	chk2->add_ref();
+	_2_mgr._c = chk2;
+
 	chunk_t *out = _main_src->next(chk1, chk2);
 	if (_main_src->_clip)
 		_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
@@ -251,10 +245,14 @@ void ASIOProcessor::GenerateOutput()
 	}
 #ifdef BUFFER_BEFORE_COPY
 	}
+	//else
+//	{
+//		assert("shouldnt really happen" && false);
+//	}
 #endif
 
 #if BUFFER_BEFORE_COPY
-    _iomgr->_main_out->process();
+    _iomgr->processOutputs();
     _need_buffers = false;
 	pthread_cond_signal(&_gen_done);
     
@@ -292,19 +290,6 @@ void ASIOProcessor::GenerateLoop(pthread_t th)
 	}
 	pthread_mutex_unlock(&_io_lock);
 	pthread_exit(0);
-}
-
-void ASIOProcessor::SetSrc(int ch, const wchar_t *fqpath)
-{
-	bool was_active = _src_active;
-	if (was_active)
-		Stop();
-	try {
-		_tracks[ch-1]->set_source_file(fqpath, &_io_lock);
-	} catch (std::exception e) {
-	}
-	if (was_active)
-		Start();
 }
 
 #if NEW_ARCH

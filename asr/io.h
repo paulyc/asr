@@ -33,7 +33,7 @@ class GenericUI;
 class ASIOProcessor
 {
 public:
-	chk_mgr _main_mgr, _file_mgr, _2_mgr;
+	chunk_buffer _main_mgr, _file_mgr, _2_mgr;
 	
 	ASIOProcessor();
 	virtual ~ASIOProcessor();
@@ -43,24 +43,11 @@ public:
 	ASIOError Stop();
 
 	void BufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
-	void SetSrc(int ch, const wchar_t *fqpath);
-	void AsyncGenerate();
 	void GenerateLoop(pthread_t th);
 	void GenerateOutput();
 #if NEW_ARCH
 	void DoGenerate();
 #endif
-
-	/*void SetResamplerate(double rate)
-	{
-		_resamplerate = rate;
-		_my_controller->set_output_sampling_frequency(_resample_filter, _resamplerate);
-	}
-
-	void SetPos(double tm)
-	{
-		_my_controller->set_output_time(_resample_filter, tm);
-	}*/
 
 	typedef SeekablePitchableFileSource<chunk_t> track_t;
 	track_t* GetTrack(int t_id)
