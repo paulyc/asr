@@ -48,36 +48,32 @@ public:
 
 	Chunk_T *get_chunk(int chk_ofs)
 	{
+		// dont think this needs locked??
+		if (_src->_len.chunks != -1 && chk_ofs >= _src->_len.chunks)
+		{
+			return zero_source<Chunk_T>::get()->next();
+		}
 		pthread_mutex_lock(&_buffer_lock);
 		if (chk_ofs >= _chks.size())
 			_chks.resize(chk_ofs*2, 0);
 		if (!_chks[chk_ofs])
 		{
 			pthread_mutex_unlock(&_buffer_lock);
-			if (_src->_len.chunks != -1 && chk_ofs >= _src->_len.chunks)
+			// possible race condition where mp3 chunk not loaded
+			try
 			{
-				Chunk_T *c = zero_source<Chunk_T>::get()->next();
-				pthread_mutex_lock(&_buffer_lock);
-				_chks[chk_ofs] = c;
-			}
-			else
+				pthread_mutex_lock(&_src_lock);
+				_src->seek_chk(chk_ofs);
+			} 
+			catch (std::exception &e)
 			{
-				// possible race condition where mp3 chunk not loaded
-				try
-				{
-					pthread_mutex_lock(&_src_lock);
-					_src->seek_chk(chk_ofs);
-				} 
-				catch (std::exception &e)
-				{
-					pthread_mutex_unlock(&_src_lock);
-					return zero_source<Chunk_T>::get()->next();
-				}
-				Chunk_T *c = _src->next();
 				pthread_mutex_unlock(&_src_lock);
-				pthread_mutex_lock(&_buffer_lock);
-				_chks[chk_ofs] = c;
+				return zero_source<Chunk_T>::get()->next();
 			}
+			Chunk_T *c = _src->next();
+			pthread_mutex_unlock(&_src_lock);
+			pthread_mutex_lock(&_buffer_lock);
+			_chks[chk_ofs] = c;
 		}
 		Chunk_T *r = _chks[chk_ofs];
 		pthread_mutex_unlock(&_buffer_lock);
