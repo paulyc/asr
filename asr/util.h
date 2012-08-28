@@ -540,14 +540,7 @@ private:
 	pthread_cond_t _cond;
 };
 
-#if NEW_ARCH
-#define LOCK_IF_SMP(lock)
-#define UNLOCK_IF_SMP(lock)
-#else
 #define LOCK_IF_SMP(lock) pthread_mutex_lock(lock);
 #define UNLOCK_IF_SMP(lock) pthread_mutex_unlock(lock);
-#endif
-
-
 
 #endif

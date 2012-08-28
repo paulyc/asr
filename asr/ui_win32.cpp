@@ -175,19 +175,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON6:
 				case IDC_BUTTON25:
 				{
-#if NEW_ARCH
-					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->deferred_call(
-						new deferred3<Win32UI, HWND, WPARAM, LPARAM>(
-							dynamic_cast<Win32UI*>(ui), 
-							&Win32UI::load_track, 
-							hwndDlg, 
-							wParam, 
-							lParam
-						)
-					);
-#else
 					dynamic_cast<Win32UI*>(ui)->load_track(hwndDlg, wParam, lParam);
-#endif
 					return TRUE;
 				}
 				case IDC_BUTTON4: // cue src

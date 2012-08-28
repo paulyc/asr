@@ -36,37 +36,16 @@ using std::exception;
 typable(float)
 typable(double)
 
-#if NEW_ARCH
-void main_loop()
-{
-    while (ui->running())
-    {
-        asio->DoGenerate();
-        ui->process_messages();
-        asio->DoGenerate();
-        ui->render_dirty();
-        asio->DoGenerate();
-        asio->load_step();
-    }
-}
-#endif
-
 ASR::shared_state_t ASR::shared_state;
 
 void ASR::execute()
 {
 	begin();
 
-#if NEW_ARCH
-       ui->create();
-    main_loop();
-       ui->destroy();
-#else
 #if WINDOWS
 	shared_state.ui->main_loop();
 #else
 #error no ui loop defined
-#endif
 #endif
 
 	end();

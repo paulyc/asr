@@ -399,9 +399,7 @@ public:
 		_in_config = false;
 		pthread_mutex_unlock(&_loading_lock);
 
-#if !NEW_ARCH
 		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
-#endif
 	}
 
 	Chunk_T* next(void *dummy=0)
@@ -463,11 +461,7 @@ public:
 
 			if (_io && _io->get_ui())
             {
-#if NEW_ARCH
-                _io->get_ui()->set_dirty(_track_id);
-#else
 				_io->get_ui()->render(_track_id);
-#endif
             }
 
             pthread_cond_signal(&_track_loaded);
@@ -501,11 +495,7 @@ public:
 		if (!_loaded) return;
 	//	pthread_mutex_lock(&_config_lock);
 		_display->zoom_px(d);
-#if NEW_ARCH
-        asio->get_ui()->set_dirty(_track_id);
-#else
 		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
-#endif
     //	pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -515,11 +505,7 @@ public:
 	//	pthread_mutex_lock(&_config_lock);
 		if (!_loaded) return;
 		_display->move_px(d);
-#if NEW_ARCH
-        asio->get_ui()->set_dirty(_track_id);
-#else
 		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
-#endif
 	//	pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -527,12 +513,8 @@ public:
 	{
 	//	printf("track::render\n");
 		update_position();
-#if NEW_ARCH
-        _io->get_ui()->set_dirty(_track_id);
-#else
 		if (_io->get_ui()->want_render())
 			Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
-#endif
 	}
     
     void update_position()

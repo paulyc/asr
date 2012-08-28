@@ -292,16 +292,6 @@ void ASIOProcessor::GenerateLoop(pthread_t th)
 	pthread_exit(0);
 }
 
-#if NEW_ARCH
-void ASIOProcessor::DoGenerate()
-{
-	pthread_mutex_lock(&_io_lock);
-	if (_need_buffers)
-		GenerateOutput();
-	pthread_mutex_unlock(&_io_lock);
-}
-#endif
-
 #if 0
 void fAStIOProcessor::MainLoop()
 {

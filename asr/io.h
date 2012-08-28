@@ -28,8 +28,6 @@
 class ASIOProcessor;
 class GenericUI;
 
-
-
 class ASIOProcessor
 {
 public:
@@ -45,9 +43,6 @@ public:
 	void BufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
 	void GenerateLoop(pthread_t th);
 	void GenerateOutput();
-#if NEW_ARCH
-	void DoGenerate();
-#endif
 
 	typedef SeekablePitchableFileSource<chunk_t> track_t;
 	track_t* GetTrack(int t_id)
