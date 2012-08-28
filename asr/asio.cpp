@@ -9,14 +9,15 @@ void asio_sink<Input_Sample_T, Output_Sample_T, Chunk_T, chunk_size, false>::pro
 */
 
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
-void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process(int dbIndex)
+void asio_sink<Chunk_T, Source_T, Output_Sample_T>::switchBuffers(int dbIndex)
 {
-    process(_buffers[0][dbIndex], _buffers[1][dbIndex]);
+	memcpy(_buffers[0][dbIndex], _bufL, _buf_size*sizeof(short));
+    memcpy(_buffers[1][dbIndex], _bufR, _buf_size*sizeof(short));
 }
 
 
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
-void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process(Output_Sample_T *bufL, Output_Sample_T *bufR)
+void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process()
 {
 	size_t to_write = _buf_size, loop_write, written=0;
 	int stride = 2;
@@ -35,7 +36,7 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process(Output_Sample_T *buf
 			_read = _chk->_data;
 		}
 		loop_write = min(to_write, chunk_t::chunk_size - (_read - _chk->_data));
-		for (write = bufL + written,
+		for (write = _bufL + written,
 			end_write = write + loop_write,
 			read = _read;
 			write != end_write;
@@ -46,7 +47,7 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process(Output_Sample_T *buf
 			else
 				*write = Output_Sample_T(min(1.0f, (*read)[0]) * SHRT_MAX);
 		}
-		for (write = bufR + written,
+		for (write = _bufR + written,
 			end_write = write + loop_write,
 			read = _read;
 			write != end_write;

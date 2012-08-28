@@ -91,7 +91,8 @@ ASIOManager<Chunk_T>::ASIOManager(IASIO *drv) :
 template <typename Chunk_T>
 ASIOManager<Chunk_T>::~ASIOManager()
 {
-	ASIOError e = ASIOExit();
+	ASIOError e = ASIODisposeBuffers();
+	e = ASIOExit();
 	free(_buffer_infos);
 	free(_output_channel_infos);
 	free(_input_channel_infos);
@@ -158,7 +159,6 @@ void ASIOManager<Chunk_T>::createBuffers()
 	ch_output_r = 1;
 #endif
 
-#if CREATE_BUFFERS
 	_buffer_infos_len = 4;
 	_buffer_infos = (ASIOBufferInfo*)malloc(_buffer_infos_len*sizeof(ASIOBufferInfo));
 	_buffer_infos[0].isInput = ASIOTrue;
@@ -178,7 +178,6 @@ void ASIOManager<Chunk_T>::createBuffers()
 	_cb.asioMessage = asioMessage;
 	_bufSize = _preferredSize;
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
-#endif
 
 	ASIOSampleRate r;
 /*		ASIOSampleType t;
@@ -221,8 +220,7 @@ void ASIOManager<Chunk_T>::createIOs(chk_mgr *src)
 }
 
 template <typename Chunk_T>
-void ASIOManager<Chunk_T>::switchBuffers(long doubleBufferIndex, void *bufL, void *bufR)
+void ASIOManager<Chunk_T>::switchBuffers(long doubleBufferIndex)
 {
-	memcpy(_buffer_infos[2].buffers[doubleBufferIndex], bufL, _bufSize*sizeof(short));
-    memcpy(_buffer_infos[3].buffers[doubleBufferIndex], bufR, _bufSize*sizeof(short));
+	_main_out->switchBuffers(doubleBufferIndex);
 }

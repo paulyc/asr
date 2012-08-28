@@ -83,8 +83,6 @@ void ASIOProcessor::Init()
 	_iomgr->createBuffers();
 
 #if BUFFER_BEFORE_COPY
-    _bufL = new short[_iomgr->_bufSize];
-    _bufR = new short[_iomgr->_bufSize];
     _need_buffers = true;
 #endif
 }
@@ -112,17 +110,6 @@ void ASIOProcessor::Finish()
 
 void ASIOProcessor::Destroy()
 {
-	ASIOError e;
-    
-#if BUFFER_BEFORE_COPY
-    delete[] _bufL;
-    delete[] _bufR;
-#endif
-
-#if CREATE_BUFFERS
-	e = ASIODisposeBuffers();
-#endif
-	
 	delete _iomgr;
 	CoUninitialize();
 
@@ -212,7 +199,7 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
     {
         pthread_cond_wait(&_gen_done, &_io_lock);
     }
-	_iomgr->switchBuffers(doubleBufferIndex, _bufL, _bufR);
+	_iomgr->switchBuffers(doubleBufferIndex);
     _need_buffers = true;
 #endif
 
@@ -228,13 +215,7 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	pthread_mutex_unlock(&_io_lock);
 }
 
-void ASIOProcessor::DoGenerate()
-{
-	pthread_mutex_lock(&_io_lock);
-	if (_need_buffers)
-		GenerateOutput();
-	pthread_mutex_unlock(&_io_lock);
-}
+
 
 void ASIOProcessor::GenerateOutput()
 {
@@ -273,7 +254,7 @@ void ASIOProcessor::GenerateOutput()
 #endif
 
 #if BUFFER_BEFORE_COPY
-    _iomgr->_main_out->process(_bufL, _bufR);
+    _iomgr->_main_out->process();
     _need_buffers = false;
 	pthread_cond_signal(&_gen_done);
     
@@ -325,6 +306,16 @@ void ASIOProcessor::SetSrc(int ch, const wchar_t *fqpath)
 	if (was_active)
 		Start();
 }
+
+#if NEW_ARCH
+void ASIOProcessor::DoGenerate()
+{
+	pthread_mutex_lock(&_io_lock);
+	if (_need_buffers)
+		GenerateOutput();
+	pthread_mutex_unlock(&_io_lock);
+}
+#endif
 
 #if 0
 void fAStIOProcessor::MainLoop()

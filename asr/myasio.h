@@ -23,19 +23,25 @@ public:
 		_read = 0;
 		_buffers[0] = bufs1;
 		_buffers[1] = bufs2;
+		_bufL = new short[_buf_size];
+		_bufR = new short[_buf_size];
 	}
 	virtual ~asio_sink()
 	{
+		delete [] _bufR;
+		delete [] _bufL;
 		T_allocator<Chunk_T>::free(_chk);
 	}
-	void process(int dbIndex);
-    void process(Output_Sample_T *bufL, Output_Sample_T *bufR);
+    void process();
+	void switchBuffers(int dbIndex);
 protected:
 	Chunk_T *_chk;
 	typename Chunk_T::sample_t *_read;
 	Output_Sample_T **_buffers[2];
 	long _buf_size;
 	Source_T *_src_t;
+	short *_bufL;
+    short *_bufR;
 };
 
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>

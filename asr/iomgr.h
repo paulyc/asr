@@ -12,7 +12,6 @@
 #include "util.h"
 #include "myasio.h"
 
-#define CREATE_BUFFERS 1
 #define CHOOSE_CHANNELS 0
 #define RUN 0
 #define INPUT_PERIOD (1.0/44100.0)
@@ -87,7 +86,7 @@ public:
 
 	void setOutputSource(int id);
 
-	void switchBuffers(long doubleBufferIndex, void *bufL, void *bufR);
+	void switchBuffers(long doubleBufferIndex);
 
 //protected:
 	IASIO *_drv;

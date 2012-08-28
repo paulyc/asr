@@ -33,20 +33,6 @@ class GenericUI;
 class ASIOProcessor
 {
 public:
-	struct sound_stream
-	{
-		sound_stream(int chan){}
-		virtual int num_channels() = 0;
-	//	int nChannels;
-		int buffer_sz;
-	};
-	struct input : public sound_stream
-	{
-	};
-	struct output : public sound_stream
-	{
-	};
-
 	chk_mgr _main_mgr, _file_mgr, _2_mgr;
 	
 	ASIOProcessor();
@@ -61,7 +47,9 @@ public:
 	void AsyncGenerate();
 	void GenerateLoop(pthread_t th);
 	void GenerateOutput();
+#if NEW_ARCH
 	void DoGenerate();
+#endif
 
 	/*void SetResamplerate(double rate)
 	{
@@ -218,9 +206,6 @@ public: // was protected
 	pthread_cond_t _gen_done;
 	bool _finishing;
 	pthread_t _gen_th;
-    
-    short *_bufL;
-    short *_bufR;
     bool _need_buffers;
 
 	ASIOManager<chunk_t>* _iomgr;
