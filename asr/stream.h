@@ -155,4 +155,31 @@ zero_source<T>* zero_source<T>::_the_src = 0;
 template <typename T>
 pthread_once_t zero_source<T>::_once_control = PTHREAD_ONCE_INIT;
 
+template <typename Chunk_T>
+class file_raw_output : public T_sink_sourceable<Chunk_T>
+{
+protected:
+	FILE *_f;
+public:
+	file_raw_output(T_source<Chunk_T> *src, const wchar_t *filename=L"output.raw") :
+	  T_sink_sourceable(src),
+	  _f(_wfopen(filename, L"wb"))
+	{
+	}
+	  ~file_raw_output()
+	  {
+		  fclose(_f);
+	  }
+	  bool eof()
+	  {
+		  return feof(_f);
+	  }
+	virtual void process()
+	{
+		Chunk_T *t = _src->next();
+		fwrite(t->_data, 8, Chunk_T::chunk_size, _f);
+		T_allocator<Chunk_T>::free(t);
+	}
+};
+
 #endif // !defined(STREAM_H)

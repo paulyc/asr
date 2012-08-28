@@ -30,6 +30,8 @@ typedef fftw_complex ComplexPaird[2];
 
 typedef __int64 smp_ofs_t;
 
+#include "type.h"
+
 /*
 SamplePairf& operator=(SamplePairf &lhs, float rhs)
 {

@@ -1,7 +1,7 @@
 #ifndef _TYPE_H
 #define _TYPE_H
 
-#include "wavfile.h"
+//#include "wavfile.h"
 
 /*
 typedef chunk_T_T_size<int, 2*BUFFERSIZE> my_chunk;
@@ -9,6 +9,8 @@ typedef T_allocator<my_chunk> my_allocator;
 typedef T_source<my_chunk> my_source;
 typedef T_sink<my_chunk> my_sink;
 */
+
+#include "chunk.h"
 typedef chunk_time_domain_1d<SamplePairf, 4096> chunk_t;
 typedef chunk_freq_domain_1d<fftwf_complex, 4096> cchunk_t;
 

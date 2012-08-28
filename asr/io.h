@@ -23,116 +23,12 @@
 #include "wavformdisplay.h"
 #include "track.h"
 
+#include "iomgr.h"
+
 class ASIOProcessor;
 class GenericUI;
 
-extern IASIO * asiodrv;
 
-#define ASIO_ASSERT_NO_ERROR(call) { \
-	e = call ; \
-	if (e != ASE_OK) { \
-		printf("Yo error %s\n", asio_error_str(e)); \
-		assert(false); \
-	} \
-}
-
-void bufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
-ASIOTime* bufferSwitchTimeInfo(ASIOTime *params, long doubleBufferIndex, ASIOBool directProcess);
-void sampleRateDidChange(ASIOSampleRate sRate);
-long asioMessage(long selector, long value, void *message, double *opt);
-
-template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
-class asio_sink : public T_sink_sourceable<Chunk_T>
-{
-public:
-	asio_sink(ASIOProcessor *owner, Source_T *src, Output_Sample_T **bufs1, Output_Sample_T **bufs2, long bufSz) :
-	  T_sink_sourceable<Chunk_T>(src),
-	  _owner(owner),
-	  _buf_size(bufSz),
-	  _src_t(src)
-	{
-	//	_chk = _src->next();
-	//	_read = _chk->_data;
-		_chk = 0;
-		_read = 0;
-		_buffers[0] = bufs1;
-		_buffers[1] = bufs2;
-	}
-	virtual ~asio_sink()
-	{
-		T_allocator<Chunk_T>::free(_chk);
-	}
-	void process(int dbIndex);
-    void process(Output_Sample_T *bufL, Output_Sample_T *bufR);
-protected:
-	ASIOProcessor *_owner;
-	Chunk_T *_chk;
-	typename Chunk_T::sample_t *_read;
-	Output_Sample_T **_buffers[2];
-	long _buf_size;
-	Source_T *_src_t;
-};
-
-template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
-class asio_source : public T_source<Chunk_T>
-{
-public:
-	asio_source(ASIOProcessor *owner);
-	~asio_source();
-	
-	void have_data();
-	bool chunk_ready() { return _chks_next.size() > 0; }
-	Chunk_T* next();
-protected:
-	ASIOProcessor *_owner;
-	Chunk_T *_chk_working;
-	std::queue<Chunk_T *> _chks_next;
-	Output_Sample_T *_chk_ptr;
-	sem_t _next_sem;
-};
-
-template <typename Chunk_T>
-class file_raw_output : public T_sink_sourceable<Chunk_T>
-{
-protected:
-	FILE *_f;
-public:
-	file_raw_output(T_source<Chunk_T> *src, const wchar_t *filename=L"output.raw") :
-	  T_sink_sourceable(src),
-	  _f(_wfopen(filename, L"wb"))
-	{
-	}
-	  ~file_raw_output()
-	  {
-		  fclose(_f);
-	  }
-	  bool eof()
-	  {
-		  return feof(_f);
-	  }
-	virtual void process()
-	{
-		Chunk_T *t = _src->next();
-		fwrite(t->_data, 8, Chunk_T::chunk_size, _f);
-		T_allocator<Chunk_T>::free(t);
-	}
-};
-
-/*
-template <typename T>
-class asio_96_24_sink : public asio_sink<T>
-{
-public:
-	void next(T* t)
-	{
-	}
-};
-*/
-
-#define CREATE_BUFFERS 1
-#define CHOOSE_CHANNELS 0
-#define RUN 0
-#define INPUT_PERIOD (1.0/44100.0)
 
 class ASIOProcessor
 {
@@ -150,18 +46,8 @@ public:
 	struct output : public sound_stream
 	{
 	};
-	struct chk_mgr : public T_source<chunk_t>
-	{
-		chk_mgr():_c(0){}
-		chunk_t* _c;
-		chunk_t* next()
-		{
-			assert(_c);
-			chunk_t *r = _c;
-			_c = 0;
-			return r;
-		}
-	} _main_mgr, _file_mgr, _2_mgr;
+
+	chk_mgr _main_mgr, _file_mgr, _2_mgr;
 	
 	ASIOProcessor();
 	virtual ~ASIOProcessor();
@@ -296,22 +182,12 @@ public:
 public: // was protected
 	void Init();
 	void Reconfig();
-	void LoadDriver();
 	void ProcessInput();
 	void Destroy();
 	void Finish();
 
 	const static int inputBuffersize = 4*BUFFERSIZE;
 	
-	ASIODriverInfo _drv_info;
-	size_t _buffer_infos_len;
-	ASIOBufferInfo *_buffer_infos;
-	ASIOCallbacks _cb;
-	long _numInputChannels;
-	long _numOutputChannels;
-	ASIOChannelInfo *_input_channel_infos;
-	ASIOChannelInfo *_output_channel_infos;
-	long _bufSize;
 	double _outputTime;
 	bool _src_active;
 
@@ -325,9 +201,7 @@ public: // was protected
 		> controller_t;
 	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_file_out;
-	asio_sink<chunk_t, chk_mgr, short> *_main_out;
-
-	asio_sink<chunk_t, chk_mgr, short> *_out_2;
+	
 
 	std::vector<track_t*> _tracks;
 	xfader<track_t> *_master_xfader;
@@ -348,6 +222,8 @@ public: // was protected
     short *_bufL;
     short *_bufR;
     bool _need_buffers;
+
+	ASIOManager<chunk_t>* _iomgr;
 };
 
 class fAStIOProcessor : public ASIOProcessor

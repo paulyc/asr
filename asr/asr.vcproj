@@ -201,6 +201,18 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\asio.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\asiodrv.cpp"
 				>
 				<FileConfiguration
@@ -275,6 +287,18 @@
 			<File
 				RelativePath=".\io.cpp"
 				>
+			</File>
+			<File
+				RelativePath=".\iomgr.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\iTunesCOMInterface_i.c"
@@ -415,6 +439,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\iomgr.h"
+				>
+			</File>
+			<File
 				RelativePath=".\iTunesCOMInterface.h"
 				>
 			</File>
@@ -452,6 +480,10 @@
 			</File>
 			<File
 				RelativePath=".\track.h"
+				>
+			</File>
+			<File
+				RelativePath=".\trackmgr.h"
 				>
 			</File>
 			<File
