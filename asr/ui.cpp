@@ -8,10 +8,50 @@ typedef ASIOProcessor ASIOP;
 typedef ASIOP::track_t track_t;
 //extern GenericUI *ui;
 
+void MagicController::next_time(double t, int t_id)
+{
+	switch (_magic_count)
+	{
+	case -1:
+		break;
+	case 0:
+		_first_track = t_id;
+		_magic_times[_magic_count++] = t;
+		break;
+	case 1:
+		if (t_id == _first_track)
+		{
+			_magic_times[_magic_count++] = t;
+		}
+		break;
+	case 2:
+		if (t_id != _first_track)
+		{
+			_second_track = t_id;
+			_magic_times[_magic_count++] = t;
+		}
+		break;
+	case 3:
+		if (t_id == _second_track)
+		{
+			const double dt1 = _magic_times[1] - _magic_times[0];
+			const double dt2 = t - _magic_times[2];
+			const double ratio = dt2 / dt1;
+			_io->GetTrack(t_id)->set_pitch(ratio);
+			_magic_count = -1;
+		}
+		break;
+	default:
+		assert("should not happen" && false);
+		break;
+	}
+}
+
 GenericUI::GenericUI(ASIOProcessor *io, UITrack t1, UITrack t2) :
 	_io(io),
 	_track1(t1),
-	_track2(t2)
+	_track2(t2),
+	_magic(io)
 {}
 
 void GenericUI::do_paint()
@@ -54,10 +94,41 @@ void GenericUI::mouse_down(MouseButton b, int x, int y)
 
 void GenericUI::mouse_up(MouseButton b, int x, int y)
 {
+	bool inWave1=false, inWave2=false;
+	double tm;
+
+	if (y > _track1.wave.windowr.top && y < _track1.wave.windowr.bottom)
+	{
+		double f = double(x - _track1.wave.windowr.left)/_track1.wave.width();
+		if (f >= 0.0 && f <= 1.0)
+		{
+			inWave1 = true;
+			tm = _io->GetTrack(1)->get_display_time(f);
+		}
+	}
+	else if (y > _track2.wave.windowr.top && y < _track2.wave.windowr.bottom)
+	{
+		double f = double(x - _track2.wave.windowr.left)/_track2.wave.width();
+		if (f >= 0.0 && f <= 1.0)
+		{
+			inWave2 = true;
+			tm = _io->GetTrack(2)->get_display_time(f);
+		}
+	}
+
 	switch (b)
 	{
 		case Left:
 		{
+			if (inWave1)
+			{
+				_magic.next_time(tm, 1);
+			}
+			else if (inWave2)
+			{
+				_magic.next_time(tm, 2);
+			}
+
 			_track1.wave.mousedown = false;
 			_track2.wave.mousedown = false;
 			_io->GetTrack(1)->unlock_pos();
@@ -66,23 +137,13 @@ void GenericUI::mouse_up(MouseButton b, int x, int y)
 		}
 		case Right:
 		{
-			if (y > _track1.wave.windowr.top && y < _track1.wave.windowr.bottom)
+			if (inWave1)
 			{
-				double f = double(x - _track1.wave.windowr.left)/_track1.wave.width();
-				if (f >= 0.0 && f <= 1.0)
-				{
-					printf("cue %f\n", f);
-					_io->GetTrack(1)->set_cuepoint(_io->GetTrack(1)->get_display_time(f));
-				}
+				_io->GetTrack(1)->set_cuepoint(tm);
 			}
-			else if (y > _track2.wave.windowr.top && y < _track2.wave.windowr.bottom)
+			else if (inWave2)
 			{
-				double f = double(x - _track2.wave.windowr.left)/_track2.wave.width();
-				if (f >= 0.0 && f <= 1.0)
-				{
-					printf("cue %f\n", f);
-					_io->GetTrack(2)->set_cuepoint(_io->GetTrack(2)->get_display_time(f));
-				}
+				_io->GetTrack(2)->set_cuepoint(tm);
 			}
 			break;
 		}

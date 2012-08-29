@@ -60,6 +60,26 @@ struct UISlider
 	virtual void set_pos(double p) = 0;
 };
 
+class MagicController
+{
+public:
+	MagicController(ASIOProcessor *io) : _io(io), _magic_count(-1) {}
+	void do_magic()
+	{
+		if (_magic_count == -1)
+			_magic_count = 0;
+		else
+			_magic_count = -1; // disable if hit button again before finishing
+	}
+	void next_time(double t, int t_id);
+protected:
+	ASIOProcessor *_io;
+	int _magic_count;
+	double _magic_times[3];
+	int _first_track;
+	int _second_track;
+};
+
 class GenericUI
 {
 public:
@@ -94,11 +114,16 @@ public:
         else 
             _track2.dirty = true; 
     }
+	virtual void do_magic()
+	{
+		_magic.do_magic();
+	}
 //protected:
 	ASIOProcessor *_io;
 	int _lastx, _lasty;
 	UITrack _track1;
 	UITrack _track2;
+	MagicController _magic;
 };
 
 #if WINDOWS

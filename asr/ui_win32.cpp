@@ -281,9 +281,10 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					}
 					break;
 				}
-			//	case IDC_BUTTON26:
-			//		asio->
-			//	return TRUE;
+				case IDC_BUTTON26:
+					ui->do_magic();
+					break;
+				return TRUE;
 			}
 	}
 	return FALSE;
