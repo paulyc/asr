@@ -112,7 +112,7 @@ public:
 	xfader(Source_T *src1, Source_T *src2) :
 		mixer(src1, src2)
 	{
-		set_mix(50);
+		set_mix(0);
 	}
 
 	// 0 <= m <= 100

@@ -155,8 +155,8 @@ void ASIOManager<Chunk_T>::createBuffers()
 #else
 	ch_input_l = 18;
 	ch_input_r = 19;
-	ch_output_l = 0;
-	ch_output_r = 1;
+	ch_output_l = 2;
+	ch_output_r = 3;
 #endif
 
 	_buffer_infos_len = 6;

@@ -212,7 +212,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON16:
 				{
 					int t_id = LOWORD(wParam)==IDC_BUTTON13||LOWORD(wParam)==IDC_BUTTON14 ? 1 : 2;
-					double dt = LOWORD(wParam)==IDC_BUTTON13 || LOWORD(wParam)==IDC_BUTTON15 ? -0.02 : 0.02;
+					double dt = LOWORD(wParam)==IDC_BUTTON13 || LOWORD(wParam)==IDC_BUTTON15 ? -0.01 : 0.01;
 					asio->GetTrack(t_id)->nudge_time(dt);
 					break;
 				}
