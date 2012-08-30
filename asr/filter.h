@@ -555,7 +555,7 @@ public:
 			Precision_T mul;
 			for (Sample_T *conv_end = conv_ptr + (_sample_precision*2); conv_ptr != conv_end; ++conv_ptr)
 			{
-#if 0
+#if 0 //direct calculation instead of table. slower but more accurate
 				mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
 #else
 				

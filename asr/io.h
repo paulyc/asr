@@ -45,7 +45,7 @@ public:
 	void GenerateOutput();
 
 	typedef SeekablePitchableFileSource<chunk_t> track_t;
-	track_t* GetTrack(int t_id)
+	track_t* GetTrack(int t_id) const
 	{
 		return _tracks[t_id-1];
 	}
@@ -64,7 +64,7 @@ public:
 
 	void CreateTracks();
 
-	GenericUI *get_ui()
+	GenericUI *get_ui() const
 	{
 		return _ui;
 	}
@@ -142,6 +142,26 @@ public:
 		return &_io_lock;
 	}
 
+	void set_sync_cue(bool sync)
+	{
+		_sync_cue = sync;
+	}
+
+	bool get_sync_cue() const
+	{
+		return _sync_cue;
+	}
+
+	void trigger_sync_cue(int caller_id)
+	{
+		if (_sync_cue)
+		{
+			track_t *other_track = GetTrack(caller_id == 1 ? 2 : 1);
+			other_track->goto_cuepoint();
+			other_track->play();
+		}
+	}
+
 	long _doubleBufferIndex;
 	bool _running;
 	double _speed;
@@ -171,7 +191,6 @@ public: // was protected
 		> controller_t;
 	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_file_out;
-	
 
 	std::vector<track_t*> _tracks;
 	xfader<track_t> *_master_xfader;
@@ -191,6 +210,7 @@ public: // was protected
     bool _need_buffers;
 
 	ASIOManager<chunk_t>* _iomgr;
+	bool _sync_cue;
 };
 
 class fAStIOProcessor : public ASIOProcessor

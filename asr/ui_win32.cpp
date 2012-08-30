@@ -284,8 +284,11 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON26:
 					ui->do_magic();
 					break;
-				return TRUE;
+				case IDC_CHECK9:
+					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					break;
 			}
+			return TRUE;
 	}
 	return FALSE;
 }

@@ -26,7 +26,8 @@ ASIOProcessor::ASIOProcessor() :
 	_file_out(0),
 	_ui(0),
 	_finishing(false),
-	_iomgr(0)
+	_iomgr(0),
+	_sync_cue(false)
 {
 	Init();
 }

@@ -332,7 +332,8 @@ public:
 		_in_config(false),
 		_paused(true),
 		_loaded(true),
-		_track_id(track_id)
+		_track_id(track_id),
+		_last_time(0.0)
 	{
 		pthread_mutex_init(&_loading_lock, 0);
 		pthread_cond_init(&_track_loaded, 0);
@@ -397,6 +398,7 @@ public:
 
 		pthread_mutex_lock(&_loading_lock);
 		_in_config = false;
+		_last_time = 0.0;
 		pthread_mutex_unlock(&_loading_lock);
 
 		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
@@ -424,8 +426,18 @@ public:
 
 	bool play_pause()
 	{
+		//lock();dont know if lock
 		_paused = !_paused;
+	//	unlock();
 		return _paused;
+	}
+
+	void play()
+	{
+		//lock();dont know if lock
+		if (_paused)
+			_paused = false;
+		//unlock();
 	}
 
 	void load_step_if()
@@ -519,7 +531,13 @@ public:
     
     void update_position()
     {
-        _io->get_ui()->set_position(this, _display->get_display_pos(_resample_filter->get_time()), true);
+		const double tm = _resample_filter->get_time();
+		if (tm > _cuepoint && _last_time < _cuepoint)
+		{
+			_io->trigger_sync_cue(_track_id);
+		}
+		_last_time = tm;
+        _io->get_ui()->set_position(this, _display->get_display_pos(tm), true);
     }
 
 	void deferred_call(deferred *d)
@@ -578,6 +596,7 @@ protected:
 	pthread_cond_t _track_loaded;
 	
 	FutureExecutor *_future;
+	double _last_time;
 };
 
 #endif // !defined(TRACK_H)
