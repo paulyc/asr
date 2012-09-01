@@ -64,18 +64,13 @@ class MagicController
 {
 public:
 	MagicController(ASIOProcessor *io) : _io(io), _magic_count(-1) {}
-	void do_magic()
-	{
-		if (_magic_count == -1)
-			_magic_count = 0;
-		else
-			_magic_count = -1; // disable if hit button again before finishing
-	}
+	
+	void do_magic();
 	void next_time(double t, int t_id);
 protected:
 	ASIOProcessor *_io;
 	int _magic_count;
-	double _magic_times[3];
+	double _magic_times[4];
 	int _first_track;
 	int _second_track;
 };
