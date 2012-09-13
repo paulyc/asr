@@ -71,7 +71,8 @@ void ASIOProcessor::Init()
 #if CARE_ABOUT_INPUT
 		_my_source = new asio_source<short, SamplePairf, chunk_t>;
 		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>(_my_source);
-		_my_raw_output = new file_raw_output<chunk_t>(_my_pk_det);
+
+	//	_my_raw_output = new file_raw_output<chunk_t>(_my_pk_det);
 #endif
 	} catch (std::exception e) {
 		throw e;
@@ -145,7 +146,7 @@ ASIOError ASIOProcessor::Stop()
 
 void ASIOProcessor::ProcessInput()
 {
-	throw std::exception("Not implemented");
+	//throw std::exception("Not implemented");
 	if (_my_source)
 	{
 		_my_source->copy_data(_iomgr->_bufSize,
@@ -154,7 +155,8 @@ void ASIOProcessor::ProcessInput()
 		while (_my_source->chunk_ready())
 		{
 		//	_my_raw_output->process();
-		//	_my_controller->process(, _my_pk_det);
+			
+			_my_controller->process(_tracks[0], _my_pk_det);
 		}
 		_speed = _my_pk_det->p_begin.mod;
 	}

@@ -98,13 +98,13 @@ public:
 		bool valid;
 	};
 
-	const static int resampler_taps = 20;
+	const static int resampler_taps = 13;
 
 	dumb_resampler<double, double> _rs;
 
 	peak_detector(T_source<Chunk_T> *src) :
 		T_sink(src),
-		_rs(10),
+		_rs(resampler_taps),
 		pk_out("peaks.txt"),
 		_smp(0)
 	{
@@ -180,7 +180,7 @@ public:
 				maxRpos = i;
 			}
 		}
-
+#if 0
 		// v1: linear interpolate
 		y1 = magsL[maxLpos-1];
 		y2 = magsL[maxLpos];
@@ -193,17 +193,32 @@ public:
 		dbin = ((y3-y1)/(y1+y2+y3));
 		fcR = (double(maxRpos)+dbin)*(SAMPLERATE/chunk_size);
 		fc = (fcL+fcR)*0.5;
-
+#else
 		// v2: resample DTFT -> DFT
-		double *buf = _rs.get_tap_buffer();
+		double *buf = _rs.get_tap_buffer(), *buf_end = buf+resampler_taps;
+		
 		int tap = maxLpos - resampler_taps/2;
-		int last_tap = maxLpos + resampler_taps/2;
-		while (tap < 0)
+		int last_tap = tap + resampler_taps;
+		
+		while (buf < buf_end)
 		{
-			*buf++ = 0.0;
+			*buf++ = (tap < 0 || tap > chunk_size/2) ? 0.0 : magsL[tap];
 			++tap;
 		} 
 
+		double max = 0.0;
+		double maxpos = 0.0;
+		for (double d=-7.0; d < -5.0; d += 0.01) {
+			double x = _rs.apply(d);
+			if (x > max) 
+			{
+				max = x;
+				maxpos = d;
+			}
+		}
+		double cntr = maxpos + 6.0;
+		fc = (double(maxLpos)+cntr)*(SAMPLERATE/chunk_size);
+#endif
 
 		//printf("_speed %f fc %f magL %f magR %f phaseL - phaseR %f\n", 1000.0/fc, fc, maxL, maxR, phL- phR);
 		if (maxL < 10.0f)
@@ -216,6 +231,7 @@ public:
 		bool forward;
 		int ch = 0;
 		int smp_ofs = 0;
+		_smp = 0; // ? was not reset before dont know if any purpose
 		for (SamplePairf *ptr = chk->_data, *end = ptr + chunk_size; ptr != end; ++ptr, ++_smp, ++smp_ofs)
 		{
 		//	for (int ch = 0; ch <= 0; ++ch) // only care about 1 channel, cant error correct anyway
@@ -414,12 +430,13 @@ public:
 						pos_info p;
 						if (p_begin.mod != 0.0)
 						{
-							p.tm = r/2110000.0*(17*60);
-							p.smp = b.smp;
-							p.forward = b.forward;
-							p.valid = true;
+							p_begin.tm = p.tm = r/2110000.0*(17*60);
+							p_begin.smp = p.smp = b.smp;
+							p_begin.forward = p.forward = b.forward;
+							p_begin.valid = p.valid = true;
 							p.freq = p_begin.freq;
 							_pos_stream.push(p);
+							
 						}
 						/*
 						if (!valid) // only once per frame for now.

@@ -403,20 +403,47 @@ public:
 	}
 };
 
+template <typename Precision_T=double, int Sample_Precision=13, int Table_Precision=512>
+class filter_coeff_table
+{
+private:
+	Precision_T _input_sampling_period;
+protected:
+	const static int _sample_precision = Sample_Precision;
+	const static int _default_tbl_size = 2*Table_Precision*(Sample_Precision+1);
+	Precision_T _coeff_tbl[_default_tbl_size];
+
+	virtual Precision_T filter_h(Precision_T, Precision_T) = 0;
+
+	void fill_coeff_tbl(Precision_T input_sampling_period)
+	{
+		_input_sampling_period = input_sampling_period;
+		Precision_T t_diff = Precision_T(Sample_Precision+1) * _input_sampling_period;
+		Precision_T t = -t_diff;
+		for (int i=0; i < _default_tbl_size; ++i)
+		{
+			_coeff_tbl[i] = filter_h(t, t_diff);
+			t += 2.0*t_diff / (_default_tbl_size);
+		}
+	}
+
+	Precision_T get_coeff(Precision_T tm) 
+	{
+		const Precision_T t_diff = Precision_T(Sample_Precision+1) * _input_sampling_period;
+		int indx = (tm+t_diff)/(2.0*t_diff / (_default_tbl_size));		
+		assert(indx >= 0 && indx < _default_tbl_size);
+		return _coeff_tbl[indx];
+	}
+};
+
 template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
-class filter_td_base : public T_source<Chunk_T>, public T_sink<Chunk_T>
+class filter_td_base : public T_source<Chunk_T>, public T_sink<Chunk_T>, public filter_coeff_table<>
 {
 protected:
 	typedef typename Chunk_T::sample_t Sample_T;
 
 	Precision_T _cutoff;
-	
-	const static int _default_sample_precision = 13;
-	const static int _default_tbl_precision = 512;
-	const static int _default_tbl_size = 2*_default_tbl_precision*(_default_sample_precision+1);
-	int _sample_precision;
-	int _tbl_precision;
-	int _tbl_size;
+
 	Precision_T _input_sampling_rate;
 	Precision_T _output_sampling_rate;
 	Precision_T _output_time;
@@ -451,13 +478,10 @@ protected:
 	BufferedStream<Chunk_T> *_buffered_stream;
 	BufferMgr<BufferedStream<Chunk_T> > *_buffer_mgr;
 
-	Precision_T _coeff_tbl[_default_tbl_size];
-
 public:
 	filter_td_base(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
 		T_sink<Chunk_T>(src),
 		_cutoff(cutoff),
-		_sample_precision(_default_sample_precision),
 		_input_sampling_rate(input_rate),
 		_output_scale(Precision_T(1.0)),
 		_output_time(Precision_T(0.0))
@@ -494,15 +518,14 @@ public:
 		return _output_sampling_rate;
 	}
 
+	Precision_T filter_h(Precision_T t, Precision_T t_diff) 
+	{
+		return _output_scale*_impulse_response_scale * _h(t) * _kwt->get(t/t_diff);
+	}
+
 	void fill_coeff_tbl()
 	{
-		Precision_T t_diff = Precision_T(_sample_precision+1) * _input_sampling_period;
-		Precision_T t = -t_diff;
-		for (int i=0; i < _default_tbl_size; ++i)
-		{
-			_coeff_tbl[i] = _output_scale*_impulse_response_scale * _h(t) * _kwt->get(t/t_diff);
-			t += 2.0*t_diff / (_default_tbl_size);
-		}
+		filter_coeff_table::fill_coeff_tbl(_input_sampling_period);
 	}
 
 	void set_output_scale(Precision_T s)
@@ -560,14 +583,15 @@ public:
 #else
 				
 			//	int indx = _default_tbl_size/2+int((_default_tbl_size/2)*(t_input-_output_time)/t_diff);
-				t_diff = Precision_T(_sample_precision+1) * _input_sampling_period;
+			/*	t_diff = Precision_T(_sample_precision+1) * _input_sampling_period;
 				int indx = (t_input-_output_time+t_diff)/(2.0*t_diff / (_default_tbl_size));		
-				assert(indx >= 0 && indx < _default_tbl_size);
+				assert(indx >= 0 && indx < _default_tbl_size);*/
 			//	mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
 			//	printf("%f\n", mul-_coeff_tbl[indx]
 			//		//,(t_input-_output_time)-Precision_T(_sample_precision) * _input_sampling_period + indx*2.0*Precision_T(_sample_precision) * _input_sampling_period / (_default_tbl_size)
 			//		);
-				mul = _coeff_tbl[indx];
+			//	mul = _coeff_tbl[indx];
+				mul = get_coeff(t_input-_output_time);
 #endif
 				acc[0] += (*conv_ptr)[0] * mul;
 				acc[1] += (*conv_ptr)[1] * mul;
@@ -638,22 +662,29 @@ protected:
 };
 
 template <typename Sample_T=double, typename Precision_T=double>
-class dumb_resampler
+class dumb_resampler : public filter_coeff_table<>
 {
 public:
 	dumb_resampler(int taps) :
 		_taps(taps)
 	{
 		_kwt = KaiserWindowTable<Precision_T>::get();
+		fill_coeff_tbl(Precision_T(1.0));
+		_tap_buffer = new Sample_T[_taps];
+	}
+	virtual ~dumb_resampler()
+	{
+		delete [] _tap_buffer;
 	}
 	Sample_T *get_tap_buffer() { return _tap_buffer; }
 	Precision_T apply(Precision_T taps_time)
 	{
 		Precision_T acc = Precision_T(0.0);
-		Precision_T t_diff = taps_period * taps;
-		for (Sample_T *p = _tap_buffer; p < _tap_buffer + taps; ++p)
+		Precision_T t_diff = Precision_T(1.0) * _taps;
+		for (Sample_T *p = _tap_buffer; p < _tap_buffer + _taps; ++p)
 		{
-			acc += *p * _h(taps_time) * _kwt->get(taps_time/Precision_T(_taps));
+			//acc += *p * _h(taps_time) * _kwt->get(taps_time/Precision_T(_taps));
+			acc += *p * get_coeff(taps_time);
 			taps_time += Precision_T(1.0);
 		}
 		return acc;
@@ -661,6 +692,10 @@ public:
 	virtual Precision_T _h(Precision_T t)
 	{
 		return sinc<Precision_T>(t);
+	}
+	Precision_T filter_h(Precision_T t, Precision_T t_diff) 
+	{
+		return _h(t) * _kwt->get(t/t_diff);
 	}
 protected:
 	int _taps;

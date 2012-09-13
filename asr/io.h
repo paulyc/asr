@@ -186,7 +186,7 @@ public: // was protected
 
 	asio_source<short, SamplePairf, chunk_t> *_my_source;
 	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *_my_pk_det;
-	typedef controller<lowpass_filter_td<chunk_t, double>, 
+	typedef controller<track_t, 
 		peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> 
 		> controller_t;
 	controller_t *_my_controller;

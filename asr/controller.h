@@ -12,6 +12,8 @@ class controller
 public:
 	void process(Filter_T *filt, Decoder_T *dec)
 	{
+		dec->next();
+
 		if (dec->p_begin.mod != 0.0)
 		{
 			printf("mod %f\n", dec->p_begin.mod);
@@ -22,6 +24,7 @@ public:
 		if (dec->p_begin.valid)
 		{
 			double pos = dec->p_begin.tm - 2.0;
+			pos -= dec->p_begin.smp * 1.0/48000.0;
 			printf("set output time %f\n", pos);
 			set_output_time(filt, pos);
 			//p_begin.forward = b.forward;

@@ -23,7 +23,7 @@
 #define TEST2 0
 
 #define NON_SSE_INTS 1
-#define	CARE_ABOUT_INPUT 0
+#define	CARE_ABOUT_INPUT 1
 #define ECHO_INPUT 0
 #define DO_OUTPUT 1
 

@@ -61,15 +61,4 @@ protected:
 	sem_t _next_sem;
 };
 
-/*
-template <typename T>
-class asio_96_24_sink : public asio_sink<T>
-{
-public:
-	void next(T* t)
-	{
-	}
-};
-*/
-
 #endif // !defined(_MYASIO_H)
