@@ -86,6 +86,12 @@ void ASR::end()
 int main()
 {
 #if 0
+#include <queue>
+	std::queue<int> q;
+	std::queue<int>::reference r = q.front();
+	return 0;
+#endif
+#if 0
 #include "filter.h"
 #include <iostream>
 	using namespace std;

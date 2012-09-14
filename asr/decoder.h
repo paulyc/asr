@@ -73,7 +73,8 @@ public:
 	{
 		float val;
 		int ch;
-		int smp;
+		smp_ofs_t smp;
+		int chk_ofs;
 		bool forward;
 	};
 	struct pk_dec_info
@@ -86,12 +87,14 @@ public:
 	{
 		bool bit;
 		bool forward;
-		int smp;
+		smp_ofs_t smp;
+		int chk_ofs;
 	};
 	struct pos_info
 	{
 		double tm;
-		int smp;
+		smp_ofs_t smp;
+		int chk_ofs;
 		double freq;
 		double mod;
 		bool forward;
@@ -217,7 +220,31 @@ public:
 			}
 		}
 		double cntr = maxpos + 6.0;
-		fc = (double(maxLpos)+cntr)*(SAMPLERATE/chunk_size);
+		fcL = (double(maxLpos)+cntr)*(SAMPLERATE/chunk_size);
+
+		buf = _rs.get_tap_buffer(), buf_end = buf+resampler_taps;
+		tap = maxRpos - resampler_taps/2;
+		last_tap = tap + resampler_taps;
+		
+		while (buf < buf_end)
+		{
+			*buf++ = (tap < 0 || tap > chunk_size/2) ? 0.0 : magsR[tap];
+			++tap;
+		} 
+
+		 max = 0.0;
+		 maxpos = 0.0;
+		for (double d=-7.0; d < -5.0; d += 0.01) {
+			double x = _rs.apply(d);
+			if (x > max) 
+			{
+				max = x;
+				maxpos = d;
+			}
+		}
+		 cntr = maxpos + 6.0;
+		 fcR = (double(maxRpos)+cntr)*(SAMPLERATE/chunk_size);
+		 fc = (fcL+fcR)*0.5;
 #endif
 
 		//printf("_speed %f fc %f magL %f magR %f phaseL - phaseR %f\n", 1000.0/fc, fc, maxL, maxR, phL- phR);
@@ -231,7 +258,6 @@ public:
 		bool forward;
 		int ch = 0;
 		int smp_ofs = 0;
-		_smp = 0; // ? was not reset before dont know if any purpose
 		for (SamplePairf *ptr = chk->_data, *end = ptr + chunk_size; ptr != end; ++ptr, ++_smp, ++smp_ofs)
 		{
 		//	for (int ch = 0; ch <= 0; ++ch) // only care about 1 channel, cant error correct anyway
@@ -252,7 +278,7 @@ public:
 						}
 						if (ch==0)
 						{
-							pk_info pi = {_max[ch], ch, _smp, forward};
+							pk_info pi = {_max[ch], ch, _smp, smp_ofs, forward};
 							_pks.push(pi);
 						}
 						if (_max[ch] > _rng_max[ch])
@@ -304,7 +330,7 @@ public:
 			_pks.pop();
 		//	pk_dec_info pdi = {fabs(pi.val) > rng_mid[pi.ch], pi.ch, pi.forward};
 		//	pks_dec.push(pdi);
-			bit_info b = {fabs(pi.val) > _rng_mid[pi.ch], pi.forward, pi.smp};
+			bit_info b = {fabs(pi.val) > _rng_mid[pi.ch], pi.forward, pi.smp, pi.chk_ofs};
 			_bits.push(b);
 		//	pk_out << "{" << pdi.hi << ", " << pdi.ch << "} ";
 		}
@@ -432,6 +458,7 @@ public:
 						{
 							p_begin.tm = p.tm = r/2110000.0*(17*60);
 							p_begin.smp = p.smp = b.smp;
+							p_begin.chk_ofs = p.chk_ofs = b.chk_ofs;
 							p_begin.forward = p.forward = b.forward;
 							p_begin.valid = p.valid = true;
 							p.freq = p_begin.freq;
@@ -502,7 +529,7 @@ public:
 	fftwf_complex *_outBuf, *_outEnd;
 	fftwf_plan _plan;
 	lut_t _lut;
-	int _smp; // handle overflow of this thing
+	smp_ofs_t _smp; // handle overflow of this thing
 
 	int _bit_smp_list[24];
 	

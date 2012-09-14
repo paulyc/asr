@@ -510,7 +510,7 @@ public:
 		
 		_rho = _output_sampling_rate / _input_sampling_rate;
 		_impulse_response_scale = min(Precision_T(1.0), _rho);
-		fill_coeff_tbl();
+	//	fill_coeff_tbl();
 	}
 
 	Precision_T get_output_sampling_frequency()
@@ -567,8 +567,41 @@ public:
 		Precision_T t_input, t_diff = Precision_T(_sample_precision) * _input_sampling_period;
 		Sample_T *smp, *end, *conv_ptr;
 
+		Sample_T *key_smp = 0;
+		if (!pos_stream.empty())
+		{
+			key_smp = chk->_data + pos_stream.front().chk_ofs;
+		}
+
 		for (smp = chk->_data, end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
+			if (smp == key_smp)
+			{
+				//if (abs(_output_time - pos_stream.front().tm) > 0.01)
+				{
+					_output_time = pos_stream.front().tm;
+				//	printf("key_samp output time %f\n", _output_time);
+				}
+				if (last.tm != 0.0) {
+					double record_time = (pos_stream.front().tm - last.tm);
+					double real_time = (pos_stream.front().smp - last.smp) / 48000.0;
+			//		set_output_sampling_frequency(48000. / (real_time / record_time));
+				//	printf("sampling freq %f\n", this->get_output_sampling_frequency());
+				}
+				else
+				{
+				//	set_output_sampling_frequency(48000);
+				}
+				last = pos_stream.front();
+				pos_stream.pop();
+				if (!pos_stream.empty())
+				{
+					key_smp = chk->_data + pos_stream.front().chk_ofs;
+				} else
+				{
+					key_smp = 0;
+				}
+			}
 			t_input = _output_time - t_diff;
 			smp_ofs_t ofs = smp_ofs_t(t_input * _input_sampling_rate) + 1;
 			t_input = ofs / _input_sampling_rate;
@@ -578,7 +611,7 @@ public:
 			Precision_T mul;
 			for (Sample_T *conv_end = conv_ptr + (_sample_precision*2); conv_ptr != conv_end; ++conv_ptr)
 			{
-#if 0 //direct calculation instead of table. slower but more accurate
+#if 1 //direct calculation instead of table. slower but more accurate
 				mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
 #else
 				
@@ -606,7 +639,23 @@ public:
 		
 		return chk;
 	}
+	
 
+	struct pos_info
+	{
+	int chk_ofs;
+	int smp;
+	double tm;
+	};
+	std::queue<pos_info> pos_stream;
+	void have_position(int chk_ofs, smp_ofs_t smp, double tm)
+	{
+		pos_info p = {chk_ofs, smp, tm};
+		pos_stream.push(p);
+	}
+	pos_info last;
+
+	
 	friend class Controller;
 	typedef typename Chunk_T chunk_t;
 };

@@ -13,7 +13,7 @@ template <typename Chunk_T>
 class PitchableMixin
 {
 public:
-	PitchableMixin() : _resample_filter(0), _pitchpoint(48000.0)
+	PitchableMixin() : _resample_filter(0), _pitchpoint(48000.0), _decoder(0)
 	{
 	}
 
@@ -54,7 +54,7 @@ public:
 		unlock();
 	}
 
-	double get_output_sampling_frequency(double f)
+	double get_output_sampling_frequency()
 	{
 		return _resample_filter->get_output_sampling_frequency();
 	}
@@ -95,9 +95,50 @@ public:
 		return _resample_filter;
 	}
 
+	void use_decoder(peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *decoder)
+	{
+		_resample_filter->pos_stream(this);
+	}
+
+	/*pos_info next_pos()
+	{
+		if (!_decoder->_pos_stream.empty())
+		{
+			pos_info p = _decoder->_pos_stream.front();
+			_decoder->_pos_stream.pop();
+			return p;
+		}
+		else
+		{
+			pos_info p;
+			p.valid = false;
+			return p;
+		}
+	}
+
+	typedef typename peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>::pos_info pos_info;
+	const pos_info& next_pos_info()
+	{
+		if (_decoder->_pos_stream.empty())
+		{
+			return 
+		}
+		else
+		{
+			const pos_info &pos = _decoder->_pos_stream.front();
+			_decoder->_pos_stream.pop();
+			return pos
+		}
+		
+	}
+
+	double last_time;
+	smp_ofs_t last_smp;*/
+
 protected:
 	lowpass_filter_td<Chunk_T, double> *_resample_filter;
 	double _pitchpoint;
+	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *_decoder;
 };
 
 template <typename Chunk_T>
@@ -172,6 +213,7 @@ public:
 		if (t <= _cuepoint || t - 0.3 > _cuepoint) //debounce (?)
 			seek_time(_cuepoint);
 	}
+
 protected:
 	double _cuepoint;
 };
