@@ -507,7 +507,7 @@ public:
 			memcpy(_inBuf, copy_from, sizeof(SamplePairf)*to_write);
 			copy_from += to_write;
 			freqs[f_indx] = fft_find_frequency();
-			printf("indx[%d] : %f\n", f_indx, freqs[f_indx]);
+		//	printf("indx[%d] : %f\n", f_indx, freqs[f_indx]);
 		}
 		
 		process_samples(chk);

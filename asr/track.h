@@ -629,7 +629,7 @@ public:
 
 	void have_position(int chk_ofs, smp_ofs_t smp, double tm, double freq)
 	{
-		if (_in_config)
+		if (!_loaded || _paused)
 		{
 			return;
 		}

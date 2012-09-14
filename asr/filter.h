@@ -570,6 +570,7 @@ public:
 		Sample_T *smp, *end, *conv_ptr;
 
 		Sample_T *key_smp = 0;
+	//	printf("pos %d\n", pos_stream.size());
 		if (!pos_stream.empty())
 		{
 			key_smp = chk->_data + pos_stream.front().chk_ofs;
@@ -583,14 +584,14 @@ public:
 				{
 					if (abs(_last_tm - pos_stream.front().tm) > 1.0)
 					{
-						printf("key_samp output time %f\n", _output_time);
+					//	printf("key_samp output time %f\n", _output_time);
 						_output_time = pos_stream.front().tm;
 					}
 					_last_tm = pos_stream.front().tm;
 					if (pos_stream.front().freq != 0.0)
 					{
 						set_output_sampling_frequency(pos_stream.front().freq);
-						printf("sampling freq %f\n", this->get_output_sampling_frequency());
+					//	printf("sampling freq %f\n", this->get_output_sampling_frequency());
 					}
 					
 				}
