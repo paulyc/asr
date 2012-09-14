@@ -627,6 +627,17 @@ public:
 		return PitchableMixin<Chunk_T>::get_source();
 	}
 
+	void have_position(int chk_ofs, smp_ofs_t smp, double tm, double freq)
+	{
+		if (_in_config)
+		{
+			return;
+		}
+		lowpass_filter_td<Chunk_T, double> *src = get_root_source();
+		if (src)
+			src->have_position(chk_ofs, smp, tm, freq);
+	}
+
 protected:
 	ASIOProcessor *_io;
 	bool _in_config;

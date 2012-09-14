@@ -62,13 +62,14 @@ inline bits_t rev(bits_t current)
     return ((current << 1) & mask) | l;
 }
 
-template <typename Sample_T, typename Chunk_T, int chunk_size>
+template <typename Sample_T, typename Chunk_T, int chunk_size, int fft_size=1024>
 class peak_detector;
 
-template <typename Chunk_T, int chunk_size>
-class peak_detector<SamplePairf, Chunk_T, chunk_size> : public T_source<Chunk_T>, public T_sink<Chunk_T>
+template <typename Chunk_T, int chunk_size, int fft_size>
+class peak_detector<SamplePairf, Chunk_T, chunk_size, fft_size> : public T_source<Chunk_T>, public T_sink<Chunk_T>
 {
 public:
+	typedef typename Chunk_T chunk_t;
 	struct pk_info
 	{
 		float val;
@@ -129,9 +130,9 @@ public:
 		_timecode = 0;
 		_valid_counter = 0;
 
-		_inBuf = _inEnd = (float*)fftwf_malloc(sizeof(SamplePairf) * chunk_size);
-		_outBuf = _outEnd = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * (chunk_size*4));
-		_plan = fftwf_plan_dft_r2c_2d(chunk_size, 2, _inBuf, _outBuf, FFTW_MEASURE);
+		_inBuf = _inEnd = (float*)fftwf_malloc(sizeof(SamplePairf) * fft_size);
+		_outBuf = _outEnd = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * (fft_size*4));
+		_plan = fftwf_plan_dft_r2c_2d(fft_size, 2, _inBuf, _outBuf, FFTW_MEASURE);
 
 	//	_little_fft_size = 256;
 	//	_little_fft_buf = (float*)fftwf_malloc(sizeof(SamplePairf) * _little_fft_size);
@@ -139,11 +140,11 @@ public:
 	//float *_little_fft_ptr;
 	//	_little_fft_buf = 
 
-		p_begin.tm = 2.0;
+	/*	p_begin.tm = 2.0;
 		p_begin.forward = true;
 		p_begin.freq = 2000.0;
 		p_begin.mod = 1.0;
-		p_begin.valid = false;
+		p_begin.valid = false;*/
 	}
 	~peak_detector()
 	{
@@ -159,10 +160,10 @@ public:
 		fftwf_execute(_plan);
 		int i, maxLpos, maxRpos;
 
-		double magsL[chunk_size/2+1];
-		double magsR[chunk_size/2+1];
+		double magsL[fft_size/2+1];
+		double magsR[fft_size/2+1];
 
-		for (i=0;i<(chunk_size/2+1);++i)
+		for (i=0;i<(fft_size/2+1);++i)
 		{
 			x = _outBuf[i*2][0];
 			y = _outBuf[i*2][1];
@@ -189,12 +190,12 @@ public:
 		y2 = magsL[maxLpos];
 		y3 = magsL[maxLpos+1];
 		dbin = ((y3-y1)/(y1+y2+y3));
-		fcL = (double(maxLpos)+dbin)*(SAMPLERATE/chunk_size);
+		fcL = (double(maxLpos)+dbin)*(SAMPLERATE/fft_size);
 		y1 = magsR[maxRpos-1];
 		y2 = magsR[maxRpos];
 		y3 = magsR[maxRpos+1];
 		dbin = ((y3-y1)/(y1+y2+y3));
-		fcR = (double(maxRpos)+dbin)*(SAMPLERATE/chunk_size);
+		fcR = (double(maxRpos)+dbin)*(SAMPLERATE/fft_size);
 		fc = (fcL+fcR)*0.5;
 #else
 		// v2: resample DTFT -> DFT
@@ -205,13 +206,13 @@ public:
 		
 		while (buf < buf_end)
 		{
-			*buf++ = (tap < 0 || tap > chunk_size/2) ? 0.0 : magsL[tap];
+			*buf++ = (tap < 0 || tap > fft_size/2) ? 0.0 : magsL[tap];
 			++tap;
 		} 
 
 		double max = 0.0;
 		double maxpos = 0.0;
-		for (double d=-7.0; d < -5.0; d += 0.01) {
+		for (double d=-7.0; d < -5.0; d += 0.001) {
 			double x = _rs.apply(d);
 			if (x > max) 
 			{
@@ -220,7 +221,7 @@ public:
 			}
 		}
 		double cntr = maxpos + 6.0;
-		fcL = (double(maxLpos)+cntr)*(SAMPLERATE/chunk_size);
+		fcL = (double(maxLpos)+cntr)*(SAMPLERATE/fft_size);
 
 		buf = _rs.get_tap_buffer(), buf_end = buf+resampler_taps;
 		tap = maxRpos - resampler_taps/2;
@@ -228,13 +229,13 @@ public:
 		
 		while (buf < buf_end)
 		{
-			*buf++ = (tap < 0 || tap > chunk_size/2) ? 0.0 : magsR[tap];
+			*buf++ = (tap < 0 || tap > fft_size/2) ? 0.0 : magsR[tap];
 			++tap;
 		} 
 
 		 max = 0.0;
 		 maxpos = 0.0;
-		for (double d=-7.0; d < -5.0; d += 0.01) {
+		for (double d=-7.0; d < -5.0; d += 0.001) {
 			double x = _rs.apply(d);
 			if (x > max) 
 			{
@@ -243,7 +244,7 @@ public:
 			}
 		}
 		 cntr = maxpos + 6.0;
-		 fcR = (double(maxRpos)+cntr)*(SAMPLERATE/chunk_size);
+		 fcR = (double(maxRpos)+cntr)*(SAMPLERATE/fft_size);
 		 fc = (fcL+fcR)*0.5;
 #endif
 
@@ -454,15 +455,14 @@ public:
 					{
 					//pk_out << "hello "<< r<<std::endl;
 						pos_info p;
-						if (p_begin.mod != 0.0)
+						//if (p_begin.mod != 0.0)
 						{
-							p_begin.tm = p.tm = r/2110000.0*(17*60);
-							p_begin.smp = p.smp = b.smp;
-							p_begin.chk_ofs = p.chk_ofs = b.chk_ofs;
-							p_begin.forward = p.forward = b.forward;
-							p_begin.valid = p.valid = true;
-							p.freq = p_begin.freq;
-							_pos_stream.push(p);
+							p.tm = r/2110000.0*(17*60);
+							p.smp = b.smp;
+							p.chk_ofs = b.chk_ofs;
+							p.forward = b.forward;
+							p.valid = true;
+							_pos_stream.push_back(p);
 							
 						}
 						/*
@@ -495,21 +495,42 @@ public:
 		
 		Chunk_T *chk = _src->next();
 
-		memcpy(_inBuf, chk->_data, sizeof(SamplePairf) * chunk_size);
-		
-		double freq = fft_find_frequency(), mod;
-		if (freq > 0.0)
-			mod = freq/2000.0;
-		else
-			mod = 0.0;
-		p_begin.freq = freq;
-		p_begin.mod = mod;
+		double freqs[chunk_size/fft_size];
+		double mod;
+
+		SamplePairf *copy_from = chk->_data, *copy_end = copy_from+chunk_size;
+
+		//memcpy(_inBuf, chk->_data, sizeof(SamplePairf) * chunk_size);
+
+		int to_write = fft_size;
+		for (int f_indx = 0; f_indx < chunk_size/fft_size; ++f_indx) {
+			memcpy(_inBuf, copy_from, sizeof(SamplePairf)*to_write);
+			copy_from += to_write;
+			freqs[f_indx] = fft_find_frequency();
+			printf("indx[%d] : %f\n", f_indx, freqs[f_indx]);
+		}
 		
 		process_samples(chk);
 
 		decode_bits();
 	
 		decode_stream();
+
+		int f_indx = 0;
+		for (std::deque<pos_info>::iterator i = _pos_stream.begin(); i != _pos_stream.end(); i++)
+		{
+			double freq = freqs[(*i).chk_ofs/fft_size], mod;
+			if (freq > 0.0)
+				mod = freq/2000.0;
+			else
+				mod = 0.0;
+			(*i).freq = freq;
+			(*i).mod = mod;
+		}
+
+		
+	//	p_begin.freq = freq;
+	//	p_begin.mod = mod;
 
 		return chk;
 	}
@@ -520,12 +541,11 @@ public:
 	std::queue<pk_info> _pks;
 	//std::queue<pk_dec_info> pks_dec;
 	std::queue<bit_info> _bits;
-	std::queue<pos_info> _pos_stream;
-	pos_info p_begin;
+	std::deque<pos_info> _pos_stream;
 	std::ofstream pk_out;
 	bits_t _bitstream, _timecode, _valid_counter;
 	//bool sync;
-	float *_inBuf, *_inEnd;
+	float *_inBuf, *_inEnd, *_inPtr;
 	fftwf_complex *_outBuf, *_outEnd;
 	fftwf_plan _plan;
 	lut_t _lut;

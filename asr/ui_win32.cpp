@@ -287,6 +287,18 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_CHECK9:
 					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
 					break;
+				/*case IDC_CHECK10:
+					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					break;
+				case IDC_CHECK11:
+					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					break;
+				case IDC_CHECK12:
+					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					break;
+				case IDC_CHECK13:
+					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					break;*/
 			}
 			return TRUE;
 	}

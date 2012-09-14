@@ -555,6 +555,8 @@ public:
 		fill_coeff_tbl();
 	}
 
+	double _last_tm;
+
 	/*
 	
 	Row-major ordering
@@ -579,8 +581,18 @@ public:
 			{
 				//if (abs(_output_time - pos_stream.front().tm) > 0.01)
 				{
-					_output_time = pos_stream.front().tm;
-				//	printf("key_samp output time %f\n", _output_time);
+					if (abs(_last_tm - pos_stream.front().tm) > 1.0)
+					{
+						printf("key_samp output time %f\n", _output_time);
+						_output_time = pos_stream.front().tm;
+					}
+					_last_tm = pos_stream.front().tm;
+					if (pos_stream.front().freq != 0.0)
+					{
+						set_output_sampling_frequency(pos_stream.front().freq);
+						printf("sampling freq %f\n", this->get_output_sampling_frequency());
+					}
+					
 				}
 				if (last.tm != 0.0) {
 					double record_time = (pos_stream.front().tm - last.tm);
@@ -646,11 +658,12 @@ public:
 	int chk_ofs;
 	int smp;
 	double tm;
+	double freq;
 	};
 	std::queue<pos_info> pos_stream;
-	void have_position(int chk_ofs, smp_ofs_t smp, double tm)
+	void have_position(int chk_ofs, smp_ofs_t smp, double tm, double freq)
 	{
-		pos_info p = {chk_ofs, smp, tm};
+		pos_info p = {chk_ofs, smp, tm, freq};
 		pos_stream.push(p);
 	}
 	pos_info last;

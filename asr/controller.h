@@ -10,16 +10,18 @@ template <typename Filter_T, typename Decoder_T>
 class controller
 {
 public:
+	void next(Decoder_T *dec)
+	{
+		T_allocator<Decoder_T::chunk_t>::free(dec->next());
+	}
 	void process(Filter_T *filt, Decoder_T *dec)
 	{
-		dec->next();
-
-		if (dec->p_begin.mod != 0.0)
+	//	if (dec->p_begin.mod != 0.0)
 		{
 		//	printf("mod %f\n", dec->p_begin.mod);
-			double freq = 44100.0 / (dec->p_begin.mod * (44100.0f /48000.0f));
-			printf("set freq %f\n", freq);
-			set_output_sampling_frequency(filt, freq);
+	//		double freq = 44100.0 / (dec->p_begin.mod * (44100.0f /48000.0f));
+	//		printf("set freq %f\n", freq);
+	//		set_output_sampling_frequency(filt, freq);
 		}
 		/*if (dec->p_begin.valid)
 		{
@@ -33,8 +35,9 @@ public:
 		//filt->use_decoder(dec);
 		while (!dec->_pos_stream.empty())
 		{
-			filt->get_root_source()->have_position(dec->_pos_stream.front().chk_ofs, dec->_pos_stream.front().smp, dec->_pos_stream.front().tm);
-			dec->_pos_stream.pop();
+			double freq = 44100.0 / (dec->_pos_stream.front().mod * (44100.0f /48000.0f));
+			filt->have_position(dec->_pos_stream.front().chk_ofs, dec->_pos_stream.front().smp, dec->_pos_stream.front().tm, freq);
+			dec->_pos_stream.pop_front();
 		}
 	}
 	void set_output_sampling_frequency(Filter_T *filt, double freq)

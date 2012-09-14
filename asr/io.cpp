@@ -155,10 +155,9 @@ void ASIOProcessor::ProcessInput()
 		while (_my_source->chunk_ready())
 		{
 		//	_my_raw_output->process();
-			
+			_my_controller->next(_my_pk_det);
 			_my_controller->process(_tracks[0], _my_pk_det);
 		}
-		_speed = _my_pk_det->p_begin.mod;
 	}
 }
 
