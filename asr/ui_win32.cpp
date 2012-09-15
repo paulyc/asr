@@ -287,18 +287,24 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_CHECK9:
 					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
 					break;
-				/*case IDC_CHECK10:
-					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+				case IDC_CHECK10:
+					ui->enable_vinyl_control(1, SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
 					break;
 				case IDC_CHECK11:
-					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					ui->enable_vinyl_control(2, SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
 					break;
 				case IDC_CHECK12:
-					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					ui->set_sync_time(1, SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
 					break;
 				case IDC_CHECK13:
-					asio->set_sync_cue(SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
-					break;*/
+					ui->set_sync_time(2, SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					break;
+				case IDC_CHECK14:
+					ui->set_add_pitch(1, SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					break;
+				case IDC_CHECK15:
+					ui->set_add_pitch(2, SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED);
+					break;
 			}
 			return TRUE;
 	}
@@ -545,6 +551,10 @@ void Win32UI::create()
 
 	//asio->GetTrack(1)->lockedpaint();
 	//asio->GetTrack(2)->lockedpaint();
+
+	_accelTable = LoadAccelerators(::GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_ACCELERATOR2));
+	_track1.pitch.set_text_pct(0.0);
+	_track2.pitch.set_text_pct(0.0);
 }
 
 void Win32UI::destroy()
@@ -572,11 +582,16 @@ void Win32UI::main_loop()
 			// Handle the error and possibly exit
 			break;
 		}
-		else if (!IsWindow(g_dlg) || !IsDialogMessage(g_dlg, &msg)) 
+		
+		if (!IsWindow(g_dlg) || !IsDialogMessage(g_dlg, &msg)) 
 		{ 
 			TranslateMessage(&msg); 
 			DispatchMessage(&msg); 
 		} 
+		else
+		{
+			TranslateAccelerator(g_dlg, _accelTable, &msg);
+		}
 	} 
 
 	destroy();

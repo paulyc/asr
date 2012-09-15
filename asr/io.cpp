@@ -13,7 +13,7 @@
 ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
-	_default_src(L"F:\\My Music\\Flip & Fill - I Wanna Dance With Somebody (Resource Mix).wav"),
+	_default_src(L"F:\\My Music\\879684_This Is Our Night_Original Mix.wav"),
 	//_default_src(L"H:\\Music\\Heatbeat - Hadoken (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Sean Tyas - Melbourne (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Super8 & Tab, Anton Sonin - Black Is The New Yellow (Activa Remix).wav"),
@@ -156,7 +156,7 @@ void ASIOProcessor::ProcessInput()
 		{
 		//	_my_raw_output->process();
 			_my_controller->next(_my_pk_det);
-			_my_controller->process(_tracks[0], _my_pk_det);
+			_my_controller->process(_ui->vinyl_control_enabled(1) ? _tracks[0] : 0, _ui->vinyl_control_enabled(2) ? _tracks[1] : 0, _my_pk_det);
 		}
 	}
 }

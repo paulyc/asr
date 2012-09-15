@@ -191,6 +191,7 @@ public: // was protected
 		> controller_t;
 	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_file_out;
+	typedef peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>::pos_info pos_info;
 
 	std::vector<track_t*> _tracks;
 	xfader<track_t> *_master_xfader;
@@ -211,6 +212,7 @@ public: // was protected
 
 	ASIOManager<chunk_t>* _iomgr;
 	bool _sync_cue;
+	
 };
 
 class fAStIOProcessor : public ASIOProcessor

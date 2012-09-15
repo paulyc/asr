@@ -100,6 +100,7 @@ public:
 		double mod;
 		bool forward;
 		bool valid;
+		bool sync_time;
 	};
 
 	const static int resampler_taps = 13;
@@ -521,10 +522,10 @@ public:
 		{
 			double freq = freqs[(*i).chk_ofs/fft_size], mod;
 			if (freq > 0.0)
-				mod = freq/2000.0;
+				mod = freq/2020.0;
 			else
 				mod = 0.0;
-			(*i).freq = freq;
+			(*i).freq = 48000.0 / mod;
 			(*i).mod = mod;
 		}
 

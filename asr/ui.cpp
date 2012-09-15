@@ -8,93 +8,6 @@ typedef ASIOProcessor ASIOP;
 typedef ASIOP::track_t track_t;
 //extern GenericUI *ui;
 
-void MagicController::do_magic()
-{
-	if (_magic_count == -1)
-		_magic_count = 0;
-	else
-		_magic_count = -1; // disable if hit button again before finishing
-}
-/*
-void MagicController::do_magic()
-{
-	if (_magic_count++ == 3)
-		_magic_count = -1;
-	wchar_t buf[64];
-	if (_magic_count == -1)
-		wsprintf(buf, L"M = ");
-	else
-		wsprintf(buf, L"M%d = %f.3", _magic_count, _magic_times[_magic_count]);
-	_io->get_ui()->set_text_field(1069, buf);
-}
-*/
-void MagicController::next_time(double t, int t_id)
-{
-	switch (_magic_count)
-	{
-	case -1:
-		break;
-	case 0:
-		_first_track = t_id;
-		_magic_times[_magic_count++] = t;
-		break;
-	case 1:
-		if (t_id == _first_track)
-		{
-			_magic_times[_magic_count++] = t;
-		}
-		break;
-	case 2:
-		if (t_id != _first_track)
-		{
-			_second_track = t_id;
-			_magic_times[_magic_count++] = t;
-		}
-		break;
-	case 3:
-		if (t_id == _second_track)
-		{
-			const double dt1 = _magic_times[1] - _magic_times[0];
-			const double dt2 = t - _magic_times[2];
-			const double ratio = dt2 / dt1;
-			const double pitch_other = _io->GetTrack(_first_track)->get_pitch();
-			_io->GetTrack(t_id)->set_pitch(ratio * pitch_other);
-			_magic_count = -1;
-		}
-		break;
-	default:
-		assert("should not happen" && false);
-		break;
-	}
-	/*
-	switch (_magic_count)
-	{
-	case -1:
-		break;
-	case 0:
-	case 1:
-		_magic_times[_magic_count] = t;
-		_first_track = t_id;
-		_second_track = t_id == 1 ? 2 : 1;
-		break;
-	case 2:
-		if (t_id == _second_track)
-			_magic_times[_magic_count] = t;
-		break;
-	case 3:
-		if (t_id == _second_track)
-		{
-			_magic_times[_magic_count] = t;
-			const double dt1 = _magic_times[1] - _magic_times[0];
-			const double dt2 = t - _magic_times[2];
-			const double ratio = dt2 / dt1;
-			const double pitch_other = _io->GetTrack(_first_track)->get_pitch();
-			_io->GetTrack(_second_track)->set_pitch(ratio * pitch_other);
-		}
-		break;
-	}*/
-}
-
 GenericUI::GenericUI(ASIOProcessor *io, UITrack t1, UITrack t2) :
 	_io(io),
 	_track1(t1),
@@ -293,6 +206,18 @@ void GenericUI::render_dirty()
         _io->GetTrack(2)->draw_if_loaded();
 }
 
+void GenericUI::set_filters_frequency(void *filt, double freq)
+{
+	if (_io->_tracks[0]->get_root_source() == filt)
+	{
+		_track1.update_frequency(freq);
+	}
+	else
+	{
+		_track2.update_frequency(freq);
+	}
+}
+
 UITrack::UITrack(GenericUI *ui, int tid, int pitch_id, int gain_id) :
 	id(tid),
 	coarse_val(48000.0),
@@ -300,16 +225,25 @@ UITrack::UITrack(GenericUI *ui, int tid, int pitch_id, int gain_id) :
 	pitch(ui, pitch_id),
 	gain(ui, gain_id),
 	clip(false),
-    dirty(false)
-{}
+    dirty(false),
+	vinyl_control(false),
+	sync_time(false),
+	add_pitch(false)
+{
+}
+
+void UITrack::update_frequency(double f)
+{
+	double val = 48000.0 / (f) - 1.0;
+	printf("track %d: %f\n", id, val*100.0);
+	pitch.set_text_pct(val*100.0);
+}
 
 void UITrack::set_coarse(double v)
 {
 	coarse_val = 48000.0 / (1.0 + .4 * v -0.2);
 //	printf("coarse_val %f\n", _track2.coarse_val);
-	double val = 48000.0 / (coarse_val+fine_val) - 1.0;
-	printf("track %d: %f\n", id, val*100.0);
-	pitch.set_text_pct(val*100.0);
+	update_frequency(coarse_val+fine_val);
 	ASR::get_io_instance()->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
 }
 
@@ -317,10 +251,13 @@ void UITrack::set_fine(double v)
 {
 	fine_val = 800.0 -  1600.*v;
 //	printf("fine_val %f\n", fine_val);
-	double val = 48000.0 / (coarse_val+fine_val) - 1.0;
-	printf("track %d: %f\n", id, val*100.0);
-	pitch.set_text_pct(val*100.0);
+	update_frequency(coarse_val+fine_val);
 	ASR::get_io_instance()->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
+}
+
+double UITrack::get_pitch()
+{
+	return 48000.0 / (coarse_val+fine_val) - 1.0;
 }
 
 UIText::UIText(GenericUI *ui, int i) :

@@ -76,6 +76,11 @@ public:
 		return shared_state.asio;
 	}
 
+	static GenericUI* get_ui_instance()
+	{
+		return shared_state.ui;
+	}
+
 protected:
 	void begin();
 	void end();

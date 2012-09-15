@@ -69,20 +69,25 @@
 #define IDC_EDIT7                       1069
 #define IDC_CHECK10                     1070
 #define IDC_CHECK11                     1071
+#define IDC_CHECK14                     1072
 #define IDC_CHECK12                     1073
 #define IDC_CHECK13                     1074
+#define IDC_CHECK15                     1075
 #define ID_EDIT_CONFIG                  40001
 #define ID_ACCELERATOR40002             40002
 #define ID_ACCELERATOR40005             40005
 #define ID_ACCELERATOR40006             40006
+#define ID_CONTROL_START                40008
+#define ID_CONTROL_STOP                 40009
+#define ID_CONTROL_QUIT                 40013
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        105
-#define _APS_NEXT_COMMAND_VALUE         40008
-#define _APS_NEXT_CONTROL_VALUE         1071
+#define _APS_NEXT_COMMAND_VALUE         40014
+#define _APS_NEXT_CONTROL_VALUE         1076
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

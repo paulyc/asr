@@ -44,7 +44,8 @@ struct UITrack
 	UIWavform wave;
 	void set_coarse(double v);
 	void set_fine(double v);
-	
+	void update_frequency(double f);
+	double get_pitch();
 	
 	int id;
 	double coarse_val;
@@ -53,26 +54,14 @@ struct UITrack
 	UIText gain;
 	bool clip;
     bool dirty;
+	bool vinyl_control;
+	bool sync_time;
+	bool add_pitch;
 };
 
 struct UISlider
 {
 	virtual void set_pos(double p) = 0;
-};
-
-class MagicController
-{
-public:
-	MagicController(ASIOProcessor *io) : _io(io), _magic_count(-1) {}
-	
-	void do_magic();
-	void next_time(double t, int t_id);
-protected:
-	ASIOProcessor *_io;
-	int _magic_count;
-	double _magic_times[4];
-	int _first_track;
-	int _second_track;
 };
 
 class GenericUI
@@ -113,7 +102,41 @@ public:
 	{
 		_magic.do_magic();
 	}
-//protected:
+	virtual bool vinyl_control_enabled(int track_id)
+	{
+		return track_id == 1 ? _track1.vinyl_control : _track2.vinyl_control;
+	}
+	virtual void enable_vinyl_control(int track_id, bool enabled)
+	{
+		if (track_id == 1)
+			_track1.vinyl_control = enabled;
+		else
+			_track2.vinyl_control = enabled;
+	}
+	virtual void set_sync_time(int track_id, bool enabled)
+	{
+		if (track_id == 1)
+			_track1.sync_time = enabled;
+		else
+			_track2.sync_time = enabled;
+	}
+	virtual bool get_sync_time(int track_id)
+	{
+		return track_id == 1 ? _track1.sync_time : _track2.sync_time;
+	}
+	virtual void set_filters_frequency(void *filt, double freq);
+	virtual void set_add_pitch(int track_id, bool enabled)
+	{
+		if (track_id == 1)
+			_track1.add_pitch = enabled;
+		else
+			_track2.add_pitch = enabled;
+	}
+	virtual bool get_add_pitch(int track_id)
+	{
+		return track_id == 1 ? _track1.add_pitch : _track2.add_pitch;
+	}
+	//protected:
 	ASIOProcessor *_io;
 	int _lastx, _lasty;
 	UITrack _track1;
@@ -142,6 +165,7 @@ public:
 
 	bool _want_render;
 	bool _want_quit;
+	HACCEL  _accelTable;
 };
 
 struct Win32UISlider : public UISlider

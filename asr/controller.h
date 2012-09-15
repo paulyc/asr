@@ -6,6 +6,21 @@
 #include "decoder.h"
 #include "filter.h"
 
+class MagicController
+{
+public:
+	MagicController(ASIOProcessor *io) : _io(io), _magic_count(-1) {}
+	
+	void do_magic();
+	void next_time(double t, int t_id);
+protected:
+	ASIOProcessor *_io;
+	int _magic_count;
+	double _magic_times[4];
+	int _first_track;
+	int _second_track;
+};
+
 template <typename Filter_T, typename Decoder_T>
 class controller
 {
@@ -14,7 +29,7 @@ public:
 	{
 		T_allocator<Decoder_T::chunk_t>::free(dec->next());
 	}
-	void process(Filter_T *filt, Decoder_T *dec)
+	void process(Filter_T *filt, Filter_T *filt2, Decoder_T *dec)
 	{
 	//	if (dec->p_begin.mod != 0.0)
 		{
@@ -33,10 +48,30 @@ public:
 			dec->p_begin.valid = false;
 		}*/
 		//filt->use_decoder(dec);
+		GenericUI *ui = ASR::get_io_instance()->get_ui();
 		while (!dec->_pos_stream.empty())
 		{
-			double freq = 44100.0 / (dec->_pos_stream.front().mod * (44100.0f /48000.0f));
-			filt->have_position(dec->_pos_stream.front().chk_ofs, dec->_pos_stream.front().smp, dec->_pos_stream.front().tm, freq);
+			double mod = dec->_pos_stream.front().mod;
+			if (filt)
+			{
+				dec->_pos_stream.front().sync_time = ui->get_sync_time(1);
+				if (ui->get_add_pitch(1))
+				{
+					dec->_pos_stream.front().mod = mod + ui->_track1.get_pitch(); 
+					dec->_pos_stream.front().freq = 48000.0 / dec->_pos_stream.front().mod;
+				}
+				filt->have_position(dec->_pos_stream.front());
+			}
+			if (filt2)
+			{
+				dec->_pos_stream.front().sync_time = ui->get_sync_time(2);
+				if (ui->get_add_pitch(2))
+				{
+					dec->_pos_stream.front().mod = mod + ui->_track2.get_pitch(); 
+					dec->_pos_stream.front().freq = 48000.0 / dec->_pos_stream.front().mod;
+				}
+				filt2->have_position(dec->_pos_stream.front());
+			}
 			dec->_pos_stream.pop_front();
 		}
 	}

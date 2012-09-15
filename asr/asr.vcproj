@@ -237,6 +237,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\controller.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\decoder.cpp"
 				>
 			</File>
@@ -514,6 +518,22 @@
 				RelativePath=".\worker.h"
 				>
 			</File>
+			<Filter
+				Name="dsp"
+				>
+				<File
+					RelativePath=".\dsp\bus.h"
+					>
+				</File>
+				<File
+					RelativePath=".\dsp\gain.h"
+					>
+				</File>
+				<File
+					RelativePath=".\dsp\mixer.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Resource Files"
