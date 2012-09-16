@@ -555,6 +555,8 @@ void Win32UI::create()
 	_accelTable = LoadAccelerators(::GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_ACCELERATOR2));
 	_track1.pitch.set_text_pct(0.0);
 	_track2.pitch.set_text_pct(0.0);
+
+	 SetUnhandledExceptionFilter(top_level_exception_filter);
 }
 
 void Win32UI::destroy()
@@ -566,10 +568,24 @@ void Win32UI::destroy()
 	DeleteObject(br);
 }
 
+LONG WINAPI Win32UI::top_level_exception_filter(struct _EXCEPTION_POINTERS *ExceptionInfo)
+{
+	printf("top level exception filter caught ");
+	
+	switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
+	{
+		case EXCEPTION_ACCESS_VIOLATION:
+			printf("EXCEPTION_ACCESS_VIOLATION\n");
+			break;
+		default:
+			printf("code %d\n", ExceptionInfo->ExceptionRecord->ExceptionCode);
+			break;
+	}
+	return EXCEPTION_CONTINUE_EXECUTION;
+}
+
 void Win32UI::main_loop()
 {
-	create();
-
 #if SLEEP
 	Sleep(10000);
 #else
@@ -593,8 +609,6 @@ void Win32UI::main_loop()
 			TranslateAccelerator(g_dlg, _accelTable, &msg);
 		}
 	} 
-
-	destroy();
 
 #endif // !SLEEP
 }

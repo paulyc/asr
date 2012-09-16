@@ -24,10 +24,7 @@ public:
 
 	void create(BufferedStream<Chunk_T> *src, double sample_rate)
 	{
-		if (_resample_filter != 0)
-		{
-			throw new std::exception("PitchableSource has already been create()d");
-		}
+		destroy();
 		_resample_filter = new lowpass_filter_td<Chunk_T, double>(src, 22050.0, sample_rate, 48000.0);
 		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
 	}
@@ -235,6 +232,7 @@ public:
 
 	void create(BufferedStream<Chunk_T> *src)
 	{
+		destroy();
 		_meta = new StreamMetadata<Chunk_T>(src);
 		_display = new WavFormDisplay<
 			StreamMetadata<Chunk_T>, 
@@ -326,19 +324,24 @@ public:
 	void create(const wchar_t *filename)
 	{
 		_filename = filename;
+		T_source<Chunk_T> *src = 0;
 
 		if (wcsstr(_filename, L".mp3") == _filename + wcslen(_filename) - 4)
 		{
-			_src = new mp3file_chunker<Chunk_T>(_filename);
+			src = new mp3file_chunker<Chunk_T>(_filename);
 		}
 		else if (wcsstr(_filename, L".wav") == _filename + wcslen(_filename) - 4)
 		{
-			_src = new wavfile_chunker<Chunk_T>(_filename);
+			src = new wavfile_chunker<Chunk_T>(_filename);
 		}
 		else
 		{
-			_src = new flacfile_chunker<Chunk_T>(_filename);
+			src = new flacfile_chunker<Chunk_T>(_filename);
 		}
+
+		destroy();
+
+		_src = src;
 		_src_buf = new BufferedStream<Chunk_T>(_src);
 	}
 
@@ -413,25 +416,21 @@ public:
 		}
 		
 		_in_config = true;
+		bool was_loaded = _loaded;
 		_loaded = false;
 		_paused = true;
+
+		try {
+			BufferedSource<Chunk_T>::create(filename);
+		} catch (std::exception &e) {
+			printf("Could not set_source_file due to %s\n", e.what());
+			_in_config = false;
+			_loaded = was_loaded;
+			_paused = true;
+			pthread_mutex_unlock(&_loading_lock);
+			return;
+		}
 		pthread_mutex_unlock(&_loading_lock);
-
-		LOCK_IF_SMP(lock);
-		ViewableMixin<Chunk_T>::destroy();
-		UNLOCK_IF_SMP(lock);
-
-		LOCK_IF_SMP(lock);
-		PitchableMixin<Chunk_T>::destroy();
-		UNLOCK_IF_SMP(lock);
-		
-		LOCK_IF_SMP(lock);
-		BufferedSource<Chunk_T>::destroy();
-		UNLOCK_IF_SMP(lock);
-
-		LOCK_IF_SMP(lock);
-		BufferedSource<Chunk_T>::create(filename);
-		UNLOCK_IF_SMP(lock);
 
 		LOCK_IF_SMP(lock);
 		PitchableMixin<Chunk_T>::create(_src_buf, _src->sample_rate());

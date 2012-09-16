@@ -192,8 +192,10 @@ END
 IDR_ACCELERATOR2 ACCELERATORS 
 BEGIN
     "S",            IDC_BUTTON1,            VIRTKEY, NOINVERT
-    "C",            IDC_BUTTON4,            VIRTKEY, NOINVERT
-    "V",            IDC_BUTTON7,            VIRTKEY, NOINVERT
+    "X",            IDC_BUTTON4,            VIRTKEY, NOINVERT
+    "M",            IDC_BUTTON7,            VIRTKEY, NOINVERT
+    "Z",            IDC_BUTTON5,            VIRTKEY, NOINVERT
+    "N",            IDC_BUTTON8,            VIRTKEY, NOINVERT
 END
 
 #endif    // English (U.S.) resources

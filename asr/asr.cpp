@@ -43,7 +43,9 @@ void ASR::execute()
 	begin();
 
 #if WINDOWS
+	shared_state.ui->create();
 	shared_state.ui->main_loop();
+	shared_state.ui->destroy();
 #else
 #error no ui loop defined
 #endif
@@ -120,9 +122,11 @@ int main()
 	return test_main();
 #endif
 
-	ASR *app = new ASR;
+	ASR *app;
+		app = new ASR;
 	app->execute();
 	delete app;
+	
 
 	return 0;
 }

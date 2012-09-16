@@ -80,13 +80,14 @@
 #define ID_CONTROL_START                40008
 #define ID_CONTROL_STOP                 40009
 #define ID_CONTROL_QUIT                 40013
+#define ID_ACCELERATOR40015             40015
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        105
-#define _APS_NEXT_COMMAND_VALUE         40014
+#define _APS_NEXT_COMMAND_VALUE         40017
 #define _APS_NEXT_CONTROL_VALUE         1076
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

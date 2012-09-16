@@ -163,6 +163,8 @@ public:
 	virtual bool running(){return !_want_quit;}
 	virtual void load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam);
 
+	static LONG WINAPI top_level_exception_filter(struct _EXCEPTION_POINTERS *ExceptionInfo);
+
 	bool _want_render;
 	bool _want_quit;
 	HACCEL  _accelTable;
