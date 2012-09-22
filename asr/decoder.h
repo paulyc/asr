@@ -185,6 +185,7 @@ public:
 				maxRpos = i;
 			}
 		}
+	//	fc = ((double(maxLpos))*(SAMPLERATE/fft_size)+(double(maxRpos))*(SAMPLERATE/fft_size))*0.5;
 #if 0
 		// v1: linear interpolate
 		y1 = magsL[maxLpos-1];
@@ -221,7 +222,10 @@ public:
 				maxpos = d;
 			}
 		}
-		double cntr = maxpos + 6.0;
+		double cntr = -maxpos - 6.0;
+		//if (cntr < -1.0 || cntr > 1.0) {
+			printf("L cntr %f +maxLpos %f\n", cntr, double(maxLpos)+cntr);
+		//}
 		fcL = (double(maxLpos)+cntr)*(SAMPLERATE/fft_size);
 
 		buf = _rs.get_tap_buffer(), buf_end = buf+resampler_taps;
@@ -244,8 +248,12 @@ public:
 				maxpos = d;
 			}
 		}
-		 cntr = maxpos + 6.0;
+		 cntr = -maxpos - 6.0;
+	//	 if (cntr < -1.0 || cntr > 1.0) {
+			printf("R cntr %f +maxRpos %f\n", cntr, double(maxRpos)+cntr);
+	//	}
 		 fcR = (double(maxRpos)+cntr)*(SAMPLERATE/fft_size);
+		 printf("maxLpos %d maxRpos %d fcL %f fcR %f\n", maxLpos, maxRpos, fcL, fcR);
 		 fc = (fcL+fcR)*0.5;
 #endif
 
@@ -496,18 +504,16 @@ public:
 		
 		Chunk_T *chk = _src->next();
 
-		double freqs[chunk_size/fft_size];
-		double mod;
-
 		SamplePairf *copy_from = chk->_data, *copy_end = copy_from+chunk_size;
 
 		//memcpy(_inBuf, chk->_data, sizeof(SamplePairf) * chunk_size);
 
 		int to_write = fft_size;
+		double new_freqs[chunk_size/fft_size];
 		for (int f_indx = 0; f_indx < chunk_size/fft_size; ++f_indx) {
 			memcpy(_inBuf, copy_from, sizeof(SamplePairf)*to_write);
 			copy_from += to_write;
-			freqs[f_indx] = fft_find_frequency();
+			new_freqs[f_indx] = fft_find_frequency();
 		//	printf("indx[%d] : %f\n", f_indx, freqs[f_indx]);
 		}
 		
@@ -520,7 +526,42 @@ public:
 		int f_indx = 0;
 		for (std::deque<pos_info>::iterator i = _pos_stream.begin(); i != _pos_stream.end(); i++)
 		{
-			double freq = freqs[(*i).chk_ofs/fft_size], mod;
+			int indx = (*i).chk_ofs/fft_size;
+			double freq = new_freqs[indx--], mod;
+			/*if (indx < 0)
+			{
+				indx = chunk_size/fft_size - 1;
+				freq += _freqs[indx--];
+				freq += _freqs[indx--];
+				freq += _freqs[indx--];
+			}
+			else
+			{
+				freq += new_freqs[indx--];
+				if (indx < 0)
+				{
+					indx = chunk_size/fft_size - 1;
+					freq += _freqs[indx--];
+					freq += _freqs[indx--];
+				}
+				else
+				{
+					freq += new_freqs[indx--];
+					if (indx < 0)
+					{
+						indx = chunk_size/fft_size - 1;
+						freq += _freqs[indx];
+					}
+					else
+						freq += new_freqs[indx];
+				}
+			}
+
+			freq /= 4;
+
+			for (int j=0; j<chunk_size/fft_size; ++j)
+				_freqs[j] = new_freqs[j];*/
+
 			if (freq > 0.0)
 				mod = freq/2020.0;
 			else
@@ -553,6 +594,8 @@ public:
 	smp_ofs_t _smp; // handle overflow of this thing
 
 	int _bit_smp_list[24];
+
+	double _freqs[chunk_size/fft_size];
 	
 	//int _little_fft_size;
 	//float *_little_fft_buf;

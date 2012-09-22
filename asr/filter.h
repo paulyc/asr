@@ -224,7 +224,7 @@ public:
 						double freq = pos_stream.front().freq;
 						set_output_sampling_frequency(freq);
 						printf("sampling freq %f\n", freq);
-						ASR::get_io_instance()->get_ui()->set_filters_frequency(this, freq);
+						ASR::get_io_instance()->get_ui()->set_filters_frequency(this, freq); 
 					}
 					
 				}

@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "io.h"
+#include "future.h"
 
 class ASIOProcessor;
 class GenericUI;
@@ -34,7 +35,7 @@ struct UIText
 	void set_text(const wchar_t *txt);
 	void set_text_pct(double v);
 	void set_text_db(double db);
-	functor2<GenericUI, int, const wchar_t *> callback;
+	GenericUI *_ui;
 	int id;
 };
 
@@ -47,6 +48,7 @@ struct UITrack
 	void update_frequency(double f);
 	double get_pitch();
 	
+	GenericUI *_ui;
 	int id;
 	double coarse_val;
 	double fine_val;
@@ -136,12 +138,17 @@ public:
 	{
 		return track_id == 1 ? _track1.add_pitch : _track2.add_pitch;
 	}
+	virtual void future_task(deferred *d)
+	{
+		_future.submit(d);
+	}
 	//protected:
 	ASIOProcessor *_io;
 	int _lastx, _lasty;
 	UITrack _track1;
 	UITrack _track2;
 	MagicController _magic;
+	FutureExecutor _future;
 };
 
 #if WINDOWS

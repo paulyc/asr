@@ -48,6 +48,7 @@ template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
 class asio_source : public T_source<Chunk_T>
 {
 public:
+	typedef typename Chunk_T chunk_t;
 	asio_source();
 	~asio_source();
 	

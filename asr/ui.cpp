@@ -219,6 +219,7 @@ void GenericUI::set_filters_frequency(void *filt, double freq)
 }
 
 UITrack::UITrack(GenericUI *ui, int tid, int pitch_id, int gain_id) :
+	_ui(ui),
 	id(tid),
 	coarse_val(48000.0),
 	fine_val(0.0),
@@ -260,27 +261,26 @@ double UITrack::get_pitch()
 	return 48000.0 / (coarse_val+fine_val) - 1.0;
 }
 
-UIText::UIText(GenericUI *ui, int i) :
-	callback(ui, &GenericUI::set_text_field),
-	id(i)
+UIText::UIText(GenericUI *ui, int i) : _ui(ui), id(i)
 {
 }
 
 void UIText::set_text(const wchar_t *txt)
 {
-	callback(id, txt);
+//	callback(id, txt);
+	_ui->future_task(new deferred2<GenericUI, int, const wchar_t*>(_ui, &GenericUI::set_text_field, id, txt));
 }
 
 void UIText::set_text_pct(double pct)
 {
-	wchar_t buf[64];
+	wchar_t *buf = new wchar_t[32];
 	swprintf(buf, L"%.02f%%", pct);
 	set_text(buf);
 }
 
 void UIText::set_text_db(double db)
 {
-	wchar_t buf[64];
+	wchar_t *buf = new wchar_t[64];
 	swprintf(buf, L"%.02f dB", db);
 	set_text(buf);
 }

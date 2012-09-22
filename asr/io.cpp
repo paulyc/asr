@@ -70,6 +70,8 @@ void ASIOProcessor::Init()
 
 #if CARE_ABOUT_INPUT
 		_my_source = new asio_source<short, SamplePairf, chunk_t>;
+	//	_my_gain = new gain<asio_source<short, SamplePairf, chunk_t> >(_my_source);
+	//	_my_gain->set_gain_db(36.0);
 		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>(_my_source);
 
 	//	_my_raw_output = new file_raw_output<chunk_t>(_my_pk_det);
@@ -114,6 +116,10 @@ void ASIOProcessor::Destroy()
 {
 	delete _iomgr;
 	CoUninitialize();
+
+	delete _my_pk_det;
+//	delete _my_gain;
+	delete _my_source;
 	
 	delete _file_out;
 	delete _cue;

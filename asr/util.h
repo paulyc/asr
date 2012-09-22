@@ -423,6 +423,20 @@ private:
 	void(T::*_f)(Param1,Param2);
 };
 
+template <typename T, typename Param1, typename Param2>
+class deferred2 : public functor2<T, Param1, Param2>, public deferred
+{
+public:
+	deferred2(T *obj, void(T::*f)(Param1, Param2), Param1 p1, Param2 p2) : functor2(obj, f), _p1(p1), _p2(p2) {}
+	void operator()()
+	{
+		functor2<T, Param1, Param2>::operator ()(_p1, _p2);
+	}
+private:
+	Param1 _p1;
+	Param2 _p2;
+};
+
 template <typename T, typename Param1, typename Param2, typename Param3>
 class functor3
 {
@@ -542,5 +556,29 @@ private:
 
 #define LOCK_IF_SMP(lock) pthread_mutex_lock(lock);
 #define UNLOCK_IF_SMP(lock) pthread_mutex_unlock(lock);
+
+template <int N, typename T=double>
+class moving_average
+{
+public:
+	moving_average() : _next(_points) {}
+	void set(T point)
+	{
+		*_next++ = point;
+		if (_next == N)
+			_next = _points;
+	}
+
+	T get()
+	{
+		T sum = Zero<T>::val;
+		for (int i=0; i<N; ++i)
+			sum += _points[i];
+		return sum / N;
+	}
+protected:
+	T _points[N];
+	T *_next;
+};
 
 #endif

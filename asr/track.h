@@ -193,10 +193,11 @@ public:
 
 	void nudge_time(double dt)
 	{
-		lock();
+		//deadlock on  ui!!
+	//	lock();
 		if (loaded())
 			get_root_source()->seek_time(get_root_source()->get_time()+dt);
-		unlock();
+	//	unlock();
 	}
 
 	double get_cuepoint_pos()

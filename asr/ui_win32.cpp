@@ -658,8 +658,9 @@ void Win32UI::set_position(void *t, double p, bool invalidate)
 void Win32UI::set_text_field(int id, const wchar_t *txt)
 {
 	SetDlgItemTextW(g_dlg, id, txt);
+	delete [] txt;
 }
-
+//ui deadlock!!
 void Win32UI::set_clip(int t_id)
 {
 	SendMessage(GetDlgItem(g_dlg, t_id==1?IDC_CHECK7:IDC_CHECK8), BM_SETCHECK, BST_CHECKED, BST_CHECKED);

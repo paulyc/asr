@@ -189,6 +189,7 @@ public: // was protected
 	typedef controller<track_t, 
 		peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> 
 		> controller_t;
+	gain<asio_source<short, SamplePairf, chunk_t> > *_my_gain;
 	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_file_out;
 	typedef peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>::pos_info pos_info;
