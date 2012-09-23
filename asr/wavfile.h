@@ -2,6 +2,7 @@
 #define _WAVFILE_H
 
 #include "file.h"
+#include "io.h"
 #include <string>
 #include <exception>
 
@@ -9,6 +10,7 @@
 #include <cmath>
 
 #include <mad.h>
+#include <sched.h>
 
 struct RIFFHeader
 {
@@ -216,12 +218,13 @@ template <typename Chunk_T>
 class mp3file_chunker : public T_source<Chunk_T>, public file_chunker
 {
 public:
-	mp3file_chunker(const wchar_t * filename) :
+	mp3file_chunker(const wchar_t * filename, pthread_mutex_t *lock=0) :
 		file_chunker(filename),
 		_smp_read(0),
 		_eof(false),
 		_max(0.0f),
-		_sample_rate(44100.0)
+		_sample_rate(44100.0),
+		_lock(lock)
 	{
 		mad_stream_init(&_stream);
 		mad_frame_init(&_frame);
@@ -236,6 +239,8 @@ public:
 	}
 	Chunk_T* next()
 	{
+		ASIOProcessor *io = ASR::get_io_instance();
+		if (_lock) pthread_mutex_lock(_lock);
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		unsigned n = 0;
 		size_t rd;
@@ -276,8 +281,10 @@ public:
 				{
 					_inputBufferFilled = 0;
 				}
-
+				if (_lock) pthread_mutex_unlock(_lock);
+				if (io->is_waiting()) sched_yield();
 				rd = _file->read((char*)_inputBuffer+_inputBufferFilled, 1, INPUT_BUFFER_SIZE-_inputBufferFilled);
+				if (_lock) pthread_mutex_lock(_lock);
 				if (rd <= 0)
 				{
 					_eof = true;
@@ -331,6 +338,7 @@ public:
 		} while (n == 0 || smp_out < smp_end);
 		for (; smp_out < smp_end; ++smp_out)
 			Zero<Chunk_T::sample_t>::set(*smp_out);
+		if (_lock) pthread_mutex_unlock(_lock);
 		return chk;
 	}
 
@@ -361,6 +369,7 @@ private:
 
 	float _max;
 	double _sample_rate;
+	pthread_mutex_t *_lock;
 };
 
 #include <FLAC/stream_decoder.h>
@@ -369,7 +378,7 @@ template <typename Chunk_T>
 class flacfile_chunker : public T_source<Chunk_T>
 {
 public:
-	flacfile_chunker(const wchar_t * filename) :
+	flacfile_chunker(const wchar_t * filename, pthread_mutex_t *lock=0) :
 		_decoder(0),
 		_sample_rate(44100.0),
 		_eof(false),
@@ -378,7 +387,8 @@ public:
 		_blocksize(0),
 		_ofs(0),
 		_samples(0),
-		_half_rate(false)
+		_half_rate(false),
+		_lock(lock)
 	{
 		if((_decoder = FLAC__stream_decoder_new()) == NULL) {
 			throw std::exception("ERROR: allocating decoder");
@@ -488,6 +498,8 @@ public:
 
 	Chunk_T* next()
 	{
+		ASIOProcessor *io = ASR::get_io_instance();
+		if (_lock) pthread_mutex_lock(_lock);
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		typename Chunk_T::sample_t *smp = chk->_data, *end = smp + Chunk_T::chunk_size;
 		for (; smp != end; )
@@ -508,8 +520,14 @@ public:
 					++_ofs;
 			}
 			if (_ofs == _blocksize)
+			{
+				if (_lock) pthread_mutex_unlock(_lock);
+				if (io->is_waiting()) sched_yield();
+				if (_lock) pthread_mutex_lock(_lock);
 				load_frame();
+			}
 		}
+		if (_lock) pthread_mutex_unlock(_lock);
 		return chk;
 	}
 
@@ -537,6 +555,7 @@ protected:
 	float _smp_min_inv;
 	float _smp_max_inv;
 	bool _half_rate;
+	pthread_mutex_t *_lock;
 };
 
 #endif

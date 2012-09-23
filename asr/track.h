@@ -322,9 +322,8 @@ public:
 	{
 	}
 
-	void create(const wchar_t *filename)
+	void create(const wchar_t *filename, pthread_mutex_t *lock)
 	{
-		_filename = filename;
 		T_source<Chunk_T> *src = 0;
 
 		if (wcsstr(_filename, L".mp3") == _filename + wcslen(_filename) - 4)
@@ -337,13 +336,15 @@ public:
 		}
 		else
 		{
-			src = new flacfile_chunker<Chunk_T>(_filename);
+			src = new flacfile_chunker<Chunk_T>(_filename, lock);
 		}
 
 		destroy();
 
 		_src = src;
 		_src_buf = new BufferedStream<Chunk_T>(_src);
+
+		_filename = filename;
 	}
 
 	void destroy()
@@ -417,16 +418,15 @@ public:
 		}
 		
 		_in_config = true;
-		bool was_loaded = _loaded;
 		_loaded = false;
 		_paused = true;
 
 		try {
-			BufferedSource<Chunk_T>::create(filename);
+			BufferedSource<Chunk_T>::create(filename, lock);
 		} catch (std::exception &e) {
 			printf("Could not set_source_file due to %s\n", e.what());
 			_in_config = false;
-			_loaded = was_loaded;
+			_loaded = true;
 			_paused = true;
 			pthread_mutex_unlock(&_loading_lock);
 			return;
@@ -492,9 +492,9 @@ public:
 	{
 		while (len().samples < 0)
 		{
-			if (lock) pthread_mutex_lock(lock);
+		//	if (lock) pthread_mutex_lock(lock);
 			_src_buf->load_next();
-			if (lock) pthread_mutex_unlock(lock);
+		//	if (lock) pthread_mutex_unlock(lock);
 			//return true;
 		}
         
@@ -506,7 +506,7 @@ public:
 	//	{
 		//	GenericUI *ui;
 	//		pthread_mutex_unlock(lock);
-			_meta->load_metadata(lock);
+			_meta->load_metadata(lock, _io);
 			
 			_resample_filter->set_output_scale(1.0f / _src->maxval());
 			//_meta->load_metadata(lock);

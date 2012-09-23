@@ -47,17 +47,18 @@ public:
 		return _src->len();
 	}
 
-	void load_metadata(pthread_mutex_t *lock)
+	void load_metadata(pthread_mutex_t *lock, ASIOProcessor *io)
 	{
 		for (int chk_ofs=0; chk_ofs < _src->len().chunks; ++chk_ofs)
 		{
 			get_metadata(chk_ofs, lock);
-			sched_yield();
+			if (io->is_waiting()) sched_yield();
 		}
 	}
 
 	const ChunkMetadata& get_metadata(int chk_ofs, pthread_mutex_t *lock=0)
 	{
+		ASIOProcessor *io = ASR::get_io_instance();
 		int i, indx;
 		if (_chk_data.size() <= chk_ofs)
 		{
@@ -67,9 +68,9 @@ public:
 		Sample_T dabs;
 		if (!meta.valid)
 		{
-			if (lock) pthread_mutex_lock(lock);
+		//	if (lock) pthread_mutex_lock(lock);
 			Chunk_T *chk = _src->get_chunk(chk_ofs);
-			if (lock) pthread_mutex_unlock(lock);
+		//	if (lock) pthread_mutex_unlock(lock);
 
 			if (lock) pthread_mutex_lock(lock);
 			for (i = 0; i < 10; ++i)
@@ -117,6 +118,7 @@ public:
 			dBm<Sample_T>::calc(meta.peak_db, meta.peak);
 			meta.valid = true;
 			if (lock) pthread_mutex_unlock(lock);
+			if (io->is_waiting()) sched_yield();
 		}
 		return meta;
 	}

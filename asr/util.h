@@ -581,4 +581,9 @@ protected:
 	T *_next;
 };
 
+#define CRITICAL_SECTION_GUARD(lock, yield_condition) if (lock) { \
+pthread_mutex_lock(lock); \
+pthread_mutex_unlock(lock); \
+if (yield_condition) sched_yield(); }
+
 #endif

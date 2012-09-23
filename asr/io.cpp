@@ -169,7 +169,9 @@ void ASIOProcessor::ProcessInput()
 
 void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
+	_waiting = true;
 	pthread_mutex_lock(&_io_lock);
+	_waiting = false;
 	_doubleBufferIndex = doubleBufferIndex;
 
 #if CARE_ABOUT_INPUT

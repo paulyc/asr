@@ -1,6 +1,7 @@
 #ifndef _WAVFORMDISPLAY_H
 #define _WAVFORMDISPLAY_H
 
+#include <sched.h>
 #include <pthread.h>
 #include "type.h"
 #include "ui.h"
@@ -58,12 +59,21 @@ public:
   {
 	  return _width;
   }
+
+  void calc_far_zoom() {}
+  void calc_near_zoom() {}
+  void do_mid_zoom() {}
   
   // fix file not expected length!!
   virtual void set_wav_heights(pthread_mutex_t *lock=0)
   {
+	  ASIOProcessor *io = ASR::get_io_instance();
 	//  printf("display::set_wav_heights\n");
-	  if (lock) pthread_mutex_lock(lock);
+	  if (lock)
+	  {
+		  pthread_mutex_lock(lock);
+		  pthread_mutex_unlock(lock);
+	  }
 	  int chunks_total = _src->len().chunks;
 	  int left_chunk = _left * chunks_total;
 	  int right_chunk = _right * chunks_total;
@@ -78,6 +88,7 @@ public:
 	  {
 		  for (int p = 0; p < _width; ++p)
 		  {
+			  CRITICAL_SECTION_GUARD(lock, io->is_waiting());
 			  int chk = double(left_chunk) + p*chunks_per_pixel_d;
 			    const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				  double ofs_d = p*chunks_per_pixel_d - floor(p*chunks_per_pixel_d);
@@ -85,11 +96,6 @@ public:
 				  _wav_heights[p].peak_top = max(meta.subband[sub].peak[0], meta.subband[sub].peak[1]);
 				  _wav_heights[p].avg_top = max(meta.subband[sub].avg[0], meta.subband[sub].avg[1]);
 				  _wav_heights[p].peak_bot = min(meta.subband[sub].peak_lo[0], meta.subband[sub].peak_lo[1]);
-				  if (lock)
-			  {
-				  pthread_mutex_unlock(lock);
-				  pthread_mutex_lock(lock);
-			   }
 		  }
 		   
 	  }
@@ -114,6 +120,7 @@ public:
 			  if (lock)
 			  {
 				  pthread_mutex_unlock(lock);
+				  if (io->is_waiting()) sched_yield();
 				  pthread_mutex_lock(lock);
 			   }
 		  }
@@ -144,7 +151,10 @@ public:
 			  int smp = 0;
 			  while (smp < num_smp)
 			  {
+				  if (lock) pthread_mutex_unlock(lock);
+				  if (io->is_waiting()) sched_yield();
 				  Source_T::chunk_t *the_chk = _src->getSrc()->get_chunk(chk);
+				  if (lock) pthread_mutex_lock(lock);
 				  for (; ofs < Source_T::chunk_t::chunk_size && smp < num_smp; ++ofs, ++smp)
 				  {
 					  _wav_heights[p].avg_top += fabs(the_chk->_data[ofs][0]);
@@ -184,6 +194,7 @@ public:
 			  if (lock)
 			  {
 				  pthread_mutex_unlock(lock);
+				  if (io->is_waiting()) sched_yield();
 				  pthread_mutex_lock(lock);
 			  }
 		  }

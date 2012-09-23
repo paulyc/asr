@@ -556,7 +556,7 @@ void Win32UI::create()
 	_track1.pitch.set_text_pct(0.0);
 	_track2.pitch.set_text_pct(0.0);
 
-	 SetUnhandledExceptionFilter(top_level_exception_filter);
+//	 SetUnhandledExceptionFilter(top_level_exception_filter);
 }
 
 void Win32UI::destroy()

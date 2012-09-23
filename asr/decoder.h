@@ -224,7 +224,7 @@ public:
 		}
 		double cntr = -maxpos - 6.0;
 		//if (cntr < -1.0 || cntr > 1.0) {
-			printf("L cntr %f +maxLpos %f\n", cntr, double(maxLpos)+cntr);
+		//	printf("L cntr %f +maxLpos %f\n", cntr, double(maxLpos)+cntr);
 		//}
 		fcL = (double(maxLpos)+cntr)*(SAMPLERATE/fft_size);
 
@@ -250,10 +250,10 @@ public:
 		}
 		 cntr = -maxpos - 6.0;
 	//	 if (cntr < -1.0 || cntr > 1.0) {
-			printf("R cntr %f +maxRpos %f\n", cntr, double(maxRpos)+cntr);
+		//	printf("R cntr %f +maxRpos %f\n", cntr, double(maxRpos)+cntr);
 	//	}
 		 fcR = (double(maxRpos)+cntr)*(SAMPLERATE/fft_size);
-		 printf("maxLpos %d maxRpos %d fcL %f fcR %f\n", maxLpos, maxRpos, fcL, fcR);
+		// printf("maxLpos %d maxRpos %d fcL %f fcR %f\n", maxLpos, maxRpos, fcL, fcR);
 		 fc = (fcL+fcR)*0.5;
 #endif
 

@@ -162,6 +162,8 @@ public:
 		}
 	}
 
+	bool is_waiting() const { return true; }
+
 	long _doubleBufferIndex;
 	bool _running;
 	double _speed;
@@ -213,6 +215,8 @@ public: // was protected
 
 	ASIOManager<chunk_t>* _iomgr;
 	bool _sync_cue;
+
+	bool _waiting;
 	
 };
 
