@@ -142,6 +142,7 @@ public:
 		{
 			if (!track->load_step(_lock))
 			{
+				T_allocator<Track_T::chunk_t>::gc();
 				done = true;
 				printf("job done %p\n", this);
 			}

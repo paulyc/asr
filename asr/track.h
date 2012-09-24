@@ -334,9 +334,13 @@ public:
 		{
 			src = new wavfile_chunker<Chunk_T>(_filename);
 		}
-		else
+		else if (wcsstr(_filename, L".flac") == _filename + wcslen(_filename) - 5)
 		{
 			src = new flacfile_chunker<Chunk_T>(_filename, lock);
+		}
+		else
+		{
+			throw std::exception("Don't know how to handle this file extension");
 		}
 
 		destroy();

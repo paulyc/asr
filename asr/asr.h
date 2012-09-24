@@ -58,6 +58,7 @@ SamplePairf& operator*=(SamplePairf &lhs, float rhs)
 
 #include "chunk.h"
 #include "malloc.h"
+#include "lock.h"
 #include "stream.h"
 
 class ASIOProcessor;

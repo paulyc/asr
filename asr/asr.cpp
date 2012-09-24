@@ -87,10 +87,8 @@ void ASR::end()
 
 int main()
 {
-#if 0
-#include <queue>
-	std::queue<int> q;
-	std::queue<int>::reference r = q.front();
+#if 1
+	FastUserSyscallLock2::test();
 	return 0;
 #endif
 #if 0

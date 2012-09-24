@@ -73,14 +73,11 @@ public:
 
 	static void free(T* t)
 	{
-		if (t)
+		if (t && t->release() == 0)
 		{
-			if (t->release() == 0)
-			{
-				pthread_mutex_lock(&_lock);
-				_T_queue.push(t);
-				pthread_mutex_unlock(&_lock);
-			}
+			pthread_mutex_lock(&_lock);
+			_T_queue.push(t);
+			pthread_mutex_unlock(&_lock);
 		}
 	}
 
