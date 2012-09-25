@@ -261,6 +261,7 @@ do_acquire:
 		}
 	}
 	void release() {
+		int val;
 		__asm {
 			jmp get_checker_flag3
 spin5:
@@ -297,6 +298,14 @@ check_for_waiters:
 
 			test eax, eax
 			jnz release_the_locks_and_dont_check_again
+
+			push ecx
+		}
+		sem_getvalue(&_sem, &val);
+		if (val > 0)
+			sem_wait(&_sem); // undo
+		__asm {
+			pop ecx
 
 release_the_locks_and_check_again:
 			lea edx, dword ptr[ecx+_own_flag]
