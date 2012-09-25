@@ -3,6 +3,55 @@
 
 #include <pthread.h>
 #include <semaphore.h>
+#include <sched.h>
+
+#define YIELD_IF_1CPU sched_yield
+
+template <typename T>
+class ThreadTester
+{
+public:
+	ThreadTester() :
+	  shared_var(0),
+	  shared_var_p(0)
+	{
+	}
+
+	T lock;
+	int shared_var;
+	int *shared_var_p;
+
+	static void* testth(void *param) {
+		ThreadTester<T> *tester = (ThreadTester<T>*)(param);
+		int count;
+		for (count = 0; count < 10000000; ++count) {
+			tester->lock.acquire();
+			tester->shared_var_p = &tester->shared_var;
+			(*tester->shared_var_p)++; 
+			tester->shared_var_p = 0;
+			tester->lock.release();
+		}
+		return (void*)count;
+	}
+	void test() {
+		pthread_t tid1, tid2, tid3, tid4;
+		int dunno;
+		pthread_create(&tid1, 0, testth, (void*)this);
+		pthread_create(&tid2, 0, testth, (void*)this);
+		pthread_create(&tid3, 0, testth, (void*)this);
+		pthread_create(&tid4, 0, testth, (void*)this);
+
+		pthread_join(tid1,(void**)&dunno);
+		printf("dunno is %d\n", dunno);
+		pthread_join(tid2,(void**)&dunno);
+		printf("dunno is %d\n", dunno);
+		pthread_join(tid3,(void**)&dunno);
+		printf("dunno is %d\n", dunno);
+		pthread_join(tid4,(void**)&dunno);
+		printf("dunno is %d\n", dunno);
+		printf("shared var is %d\n", shared_var);
+	}
+};
 
 class Lock
 {
@@ -26,8 +75,6 @@ protected:
 	pthread_mutex_t _lock;
 	int _count;
 };
-
-
 
 class MultiLock : public Lock
 {
@@ -66,10 +113,18 @@ public:
 	}
 	void acquire() {
 		__asm {
+			jmp after_yield
 spin:
+			push ecx
+		}
+
+		YIELD_IF_1CPU();
+
+		__asm {
+			pop ecx
+after_yield:
 			lea edx, dword ptr[ecx+_own_flag]
 			mov eax, dword ptr[edx]
-
 			test eax, eax
 			jnz spin
 
@@ -88,46 +143,19 @@ spin:
 			lock cmpxchg dword ptr[edx], ebx
 		}
 	}
-	static int shared_var;
-	static int *shared_var_p;
-	static void* testth(void *param) {
-		FastUserSpinLock *lock = (FastUserSpinLock*)param;
-		int count;
-		for (count = 0; count < 100000000; ++count) {
-			lock->acquire();
-			shared_var_p = &shared_var;
-			(*shared_var_p)++; 
-			shared_var_p = 0;
-			lock->release();
-		}
-		return (void*)count;
-	}
-	static void test() {
-		FastUserSpinLock *l = new FastUserSpinLock;
-		pthread_t tid1, tid2, tid3, tid4;
-		int dunno;
-		pthread_create(&tid1, 0, testth, (void*)l);
-		pthread_create(&tid2, 0, testth, (void*)l);
-		pthread_create(&tid3, 0, testth, (void*)l);
-		pthread_create(&tid4, 0, testth, (void*)l);
 
-		pthread_join(tid1,(void**)&dunno);
-		printf("dunno is %d\n", dunno);
-		pthread_join(tid2,(void**)&dunno);
-		printf("dunno is %d\n", dunno);
-		printf("shared var is %d\n", shared_var);
-		delete l;
-	}
 protected:
 	int _own_flag;
 };
 
-class FastUserSyscallLock : public FastUserSpinLock
+class FastUserSyscallLock : public Lock
 {
 public:
 	FastUserSyscallLock() : 
-	  FastUserSpinLock(),
-	  _waiters(0)
+	  Lock(),
+	  _waiters(0),
+	  _checker_flag(0),
+	  _own_flag(0)
 	{
 		sem_init(&_sem, 0, 0);
 	}
@@ -136,170 +164,177 @@ public:
 		sem_destroy(&_sem);
 	}
 	void acquire() {
-	//	_check_lock.acquire();
-		
 		__asm {
-			jmp check_lock_FastUserSyscallLock
+			jmp get_checker_flag
+spin2:
+			push ecx
+		}
+		sched_yield();
+		__asm {
+			pop ecx
 
-sem_wait_for_lock_FastUserSyscallLock:
-			mov eax, 1
-			lock xadd dword ptr[ecx+_waiters], eax
-
-			mov edx, dword ptr[ecx+_own_flag]
-
-			lea eax, dword ptr[ecx+_sem]
-			push eax ; calling convention?
-			call sem_wait
-
-		;	xor eax,eax
-		;	mov ebx, 1
-		;	lock cmpxchg dword ptr[edx], ebx
-
-		;	test eax, eax
-		;	jnz spin_FastUserSyscallLock
-
-			mov eax, -1
-			lock xadd dword ptr[ecx+_waiters], eax
-
-check_lock_FastUserSyscallLock:
-			mov edx, dword ptr[ecx+_own_flag]
+get_checker_flag:
+			lea edx, dword ptr[ecx+_checker_flag]
 			mov eax, dword ptr[edx]
-			mov ebx, 1
 			test eax, eax
-			jnz sem_wait_for_lock_FastUserSyscallLock
+			jnz spin2
 
+			mov ebx, 1
 			lock cmpxchg dword ptr[edx], ebx
 
 			test eax, eax
-			jnz sem_wait_for_lock_FastUserSyscallLock
+			jnz spin2
 
-end_FastUserSyscallLock:
-		}
-	//	_check_lock.acquire();
-	}
-	void release() {
-	//	_check_lock.acquire();
-		__asm {
-			jmp chk_waiters
-debug_breakpoint:
-			int 3
-hello:
-			xor ebx, ebx
-			jmp state
-chk_waiters:
-			lea edx, dword ptr[ecx+_waiters] ; edx = &waiters
-			mov ebx, dword ptr[edx]          ; ebx = waiters
-			mov eax, ebx
-			dec ebx                          ; ebx = waiters-1
-
-			test ebx,ebx
-			jl hello
-state:
-			push eax
-			lock xadd dword ptr[ecx+_waiters], ebx ;promise?
-			pop ebx
-			test eax, ebx
-			jne wakeup_waiter
-			jmp done
-releaseme:
-
+check_for_owner:
 			lea edx, dword ptr[ecx+_own_flag]
 			mov eax, dword ptr[edx]
-			mov ebx, eax
+			test eax, eax
+			jz do_acquire
 
+do_wait:
+			lea edx, dword ptr[ecx+_waiters]
+			mov eax, 1
+			lock xadd dword ptr[edx], eax
+
+			; release check lock & sem_wait
+			lea edx, dword ptr[ecx+_checker_flag]
+			mov eax, 1
+			mov ebx, 0
 			lock cmpxchg dword ptr[edx], ebx
-			test eax, eax
-			jnz debug_breakpoint
 
-wakeup_waiter:
-			; wakeup could move here probly
-			lea eax, dword ptr[ecx+_sem]
-			push eax
-			call sem_post
-			test eax, eax
-			jz wakeup_waiter
-done:
+			push ecx
 		}
-	//	_check_lock.release();
+		sem_wait(&_sem);
+		__asm {
+			pop ecx
+			jmp get_checker_flag_again
+
+spin3:
+			push ecx
+		}
+		sched_yield();
+		__asm {
+			pop ecx
+
+get_checker_flag_again:
+			lea edx, dword ptr[ecx+_checker_flag]
+			mov eax, dword ptr[edx]
+			test eax, eax
+			jnz spin3
+
+			mov ebx, 1
+			lock cmpxchg dword ptr[edx], ebx
+
+			test eax, eax
+			jnz spin3
+
+			lea edx, dword ptr[ecx+_waiters]
+			mov eax, -1
+			lock xadd dword ptr[edx], eax
+
+			; have checker flag need to see if locked
+			jmp check_for_owner
+
+spin4:
+			push ecx
+		}
+		sched_yield();
+		__asm {
+			pop ecx
+
+do_acquire:
+			lea edx, dword ptr[ecx+_own_flag]
+			mov eax, dword ptr[edx]
+			test eax, eax
+			jnz do_wait
+
+			mov ebx, 1
+			lock cmpxchg dword ptr[edx], ebx
+
+			test eax, eax
+			jnz do_wait
+
+			lea edx, dword ptr[ecx+_checker_flag]
+			mov eax, 1
+			mov ebx, 0
+			lock cmpxchg dword ptr[edx], ebx
+		}
 	}
+	void release() {
+		__asm {
+			jmp get_checker_flag3
+spin5:
+			push ecx
+		}
+		sched_yield();
+		__asm {
+			pop ecx
+
+get_checker_flag3:
+			lea edx, dword ptr[ecx+_checker_flag]
+			mov eax, dword ptr[edx]
+			test eax, eax
+			jnz spin5
+
+			mov ebx, 1
+			lock cmpxchg dword ptr[edx], ebx
+
+			test eax, eax
+			jnz spin5
+
+check_for_waiters:
+			mov eax, dword ptr[ecx+_waiters]
+			test eax,eax
+			jz release_the_locks_and_dont_check_again
+
+			; someone is waiting or is about to be
+			lea eax, dword ptr[ecx+_sem]
+			push ecx
+		}
+		sem_post(&_sem);
+		__asm {
+			pop ecx
+
+			test eax, eax
+			jnz release_the_locks_and_dont_check_again
+
+release_the_locks_and_check_again:
+			lea edx, dword ptr[ecx+_own_flag]
+			mov eax, 1
+			mov ebx, 0
+			lock cmpxchg dword ptr[edx], ebx
+
+			lea edx, dword ptr[ecx+_checker_flag]
+			mov eax, 1
+			mov ebx, 0
+			lock cmpxchg dword ptr[edx], ebx
+			
+			jmp get_checker_flag3
+
+		
+release_the_locks_and_dont_check_again:
+			lea edx, dword ptr[ecx+_own_flag]
+			mov eax, 1
+			mov ebx, 0
+			lock cmpxchg dword ptr[edx], ebx
+			
+			lea edx, dword ptr[ecx+_checker_flag]
+			mov eax, 1
+			mov ebx, 0
+			lock cmpxchg dword ptr[edx], ebx
+
+end_of_story:
+		}
+	}
+	
 protected:
 	sem_t _sem;
 	int _waiters;
-	FastUserSpinLock _check_lock;
+	int _checker_flag;
+	int _own_flag;
 };
 
-class FastUserSyscallLock2 : public FastUserSyscallLock
-{
-public:
-	void acquire() {
-		_check_lock.acquire();
-		
-		__asm {
-			jmp sem_wait_for_lock_FastUserSyscallLock2
-
-sem_wait_for_lock_FastUserSyscallLock2:
-			mov eax, dword ptr[ecx+_waiters]
-			mov eax, dword ptr[eax]
-			lock cmpxchg dword ptr[edx], ebx
-
-			call FastUserSyscallLock2::release
-			lea eax, dword ptr[ecx+_sem]
-			push eax
-			call sem_wait
-			call FastUserSyscallLock2::acquire
-check_lock_FastUserSyscallLock2:
-			mov ebx, 1
-			lea edx, dword ptr[ecx+_own_flag]
-			mov eax, dword ptr[edx]
-			test eax, eax
-			jnz sem_wait_for_lock_FastUserSyscallLock2
-
-			lock cmpxchg dword ptr[edx], ebx
-
-			test eax, eax
-			jnz sem_wait_for_lock_FastUserSyscallLock2
-		}
-		_check_lock.release();
-	}
-	void release() {
-		_check_lock.acquire();
-		__asm {
-		;	mov edx, dword ptr[ecx+_p_own_flag]
-		;	mov eax, 1
-		;	mov ebx, 0
-
-		;	lock cmpxchg dword ptr[edx], ebx
-check_waiters_FastUserSyscallLock2:
-		;	lea edx, dword ptr[ecx+_p_waiters]
-		;	mov edx, dword ptr[edx]
-			lea ebx, dword ptr[ecx+_waiters]
-			mov ebx, dword ptr[ebx]
-			test ebx, ebx
-			jz done_FastUserSyscallLock2
-
-		;	lock cmpxchg dword ptr[edx], ebx
-
-		;	test eax, eax
-		;	jnz done_FastUserSyscallLock2
-wakeup_waiter_FastUserSyscallLock2:
-		;	lea eax, dword ptr[ecx+_waiters]
-		;	mov eax, dword ptr[eax]
-
-			; wakeup could move here probly
-			lea eax, dword ptr[ecx+_sem]
-			push eax
-			call sem_post
-			test eax, eax
-			jnz wakeup_waiter_FastUserSyscallLock2
-			mov eax, -1
-			lock xadd dword ptr[ecx+_waiters], eax
-done_FastUserSyscallLock2:
-		}
-		_check_lock.release();
-	}
-};
-
-#define FastUserLock FastUserSpinLock
+#define FastUserLock FastUserSyscallLock
 
 class FastCriticalSection : public FastUserLock
 {

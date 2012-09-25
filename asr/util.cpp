@@ -1,8 +1,5 @@
 #include "util.h"
 
-int FastUserSpinLock::shared_var = 0;
-int* FastUserSpinLock::shared_var_p = 0;
-
 const char* asio_error_str(ASIOError e)
 {
 	switch (e)
