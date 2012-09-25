@@ -326,17 +326,17 @@ public:
 	{
 		T_source<Chunk_T> *src = 0;
 
-		if (wcsstr(_filename, L".mp3") == _filename + wcslen(_filename) - 4)
+		if (wcsstr(filename, L".mp3") == filename + wcslen(filename) - 4)
 		{
-			src = new mp3file_chunker<Chunk_T>(_filename);
+			src = new mp3file_chunker<Chunk_T>(filename);
 		}
-		else if (wcsstr(_filename, L".wav") == _filename + wcslen(_filename) - 4)
+		else if (wcsstr(filename, L".wav") == filename + wcslen(filename) - 4)
 		{
-			src = new wavfile_chunker<Chunk_T>(_filename);
+			src = new wavfile_chunker<Chunk_T>(filename);
 		}
-		else if (wcsstr(_filename, L".flac") == _filename + wcslen(_filename) - 5)
+		else if (wcsstr(filename, L".flac") == filename + wcslen(filename) - 5)
 		{
-			src = new flacfile_chunker<Chunk_T>(_filename, lock);
+			src = new flacfile_chunker<Chunk_T>(filename, lock);
 		}
 		else
 		{
