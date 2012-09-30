@@ -129,10 +129,7 @@ public:
 	virtual void set_filters_frequency(void *filt, double freq);
 	virtual void set_add_pitch(int track_id, bool enabled)
 	{
-		if (track_id == 1)
-			_track1.add_pitch = enabled;
-		else
-			_track2.add_pitch = enabled;
+		get_track(track_id).add_pitch = enabled;
 	}
 	virtual bool get_add_pitch(int track_id)
 	{
@@ -142,6 +139,8 @@ public:
 	{
 		_future.submit(d);
 	}
+	UITrack& get_track(int track_id) { return track_id == 1 ? _track1 : _track2; }
+	double get_track_pitch(int track_id) { return get_track(track_id).get_pitch(); }
 	//protected:
 	ASIOProcessor *_io;
 	int _lastx, _lasty;

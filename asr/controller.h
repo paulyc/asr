@@ -48,7 +48,7 @@ public:
 			dec->p_begin.valid = false;
 		}*/
 		//filt->use_decoder(dec);
-		GenericUI *ui = ASR::get_io_instance()->get_ui();
+	/*	GenericUI *ui = ASR::get_io_instance()->get_ui();
 		while (!dec->_pos_stream.empty())
 		{
 			double mod = dec->_pos_stream.front().mod;
@@ -73,7 +73,7 @@ public:
 				filt2->have_position(dec->_pos_stream.front());
 			}
 			dec->_pos_stream.pop_front();
-		}
+		}*/
 	}
 	void set_output_sampling_frequency(Filter_T *filt, double freq)
 	{

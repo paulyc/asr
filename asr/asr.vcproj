@@ -345,6 +345,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\malloc.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\speedparser.cpp"
 				>
 				<FileConfiguration

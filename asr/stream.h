@@ -33,8 +33,8 @@ public:
 	{
 		pos_info() : samples(-1), chunks(-1), smp_ofs_in_chk(-1), time(HUGE_VAL) {}
 		smp_ofs_t samples;
-		int chunks;
-		int smp_ofs_in_chk;
+		smp_ofs_t chunks;
+		smp_ofs_t smp_ofs_in_chk;
 		double time;
 	} _len;
 

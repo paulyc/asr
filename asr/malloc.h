@@ -3,6 +3,130 @@
 
 #include <queue>
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+template <int PageSize=0x1000>
+struct Page {
+	Page(void *ptr) : p(ptr) {}
+	const static int size = PageSize;
+	void *p;
+};
+
+template <int PageSize=0x1000>
+class PageAllocator
+{
+public:
+	static Page<PageSize> alloc() {
+		return Page<PageSize>(new char[PageSize]);
+	}
+	static void free(Page<PageSize> p) {
+		delete[] (char*)p.p;
+	}
+};
+
+template <int PageSize=0x1000>
+struct PageListNode {
+	PageListNode(Page<PageSize> p, PageListNode<PageSize> *prev_ptr, PageListNode<PageSize> *next_ptr) : 
+		page(p),
+		prev(prev_ptr),
+		next(next_ptr) {}
+	Page<PageSize> page;
+	PageListNode<PageSize> *prev, *next;
+};
+
+
+class StackAllocator
+{
+public:
+	StackAllocator() {
+		Page<> p = PageAllocator<>::alloc();
+		_top = (char*)p.p;
+
+	}
+	void* alloc(int n) {
+		if (n > Page<>::size - sizeof(PageListNode<>))
+			throw std::exception("StackAllocator size too large " + n);
+		if (_top + n >= (char*)_last->page.p + Page<>::size)
+		{
+			Page<> new_page = PageAllocator<>::alloc();
+			char *top = (char*)new_page.p;
+			PageListNode<> *new_node = (PageListNode<> *)top;
+			top += sizeof(PageListNode<>);
+			new_node->page = new_page;
+			new_node->prev = this->_last;
+			new_node->next = 0;
+			this->_last->next = new_node;
+			this->_last = new_node;
+			this->_top = top;
+		}
+		void *ptr = (void*)_top;
+		_top += n;
+		return ptr;
+	}
+	static StackAllocator* create() {
+		Page<> p = PageAllocator<>::alloc();
+		StackAllocator *the_alloc = (StackAllocator*)p.p;
+		char *top = (char*)p.p;
+		top += sizeof(StackAllocator);
+		PageListNode<> *first = (PageListNode<> *)top;
+		first->page = p;
+		first->prev = 0;
+		first->next = 0;
+		top += sizeof(PageListNode<>);
+		the_alloc->_first = first;
+		the_alloc->_last = first;
+		the_alloc->_top = top;
+		return the_alloc;
+	}
+private:
+	PageListNode<> *_first;
+	PageListNode<> *_last;
+	char *_top;
+};
+
+template <int PageSize=0x1000>
+class PageList
+{
+public:
+	//void push_back(Page p
+private:
+	PageListNode<PageSize> *_first;
+};
+
+
+
+
+
+
+template <int N>
+class Pooled_N_Allocator
+{
+public:
+	Pooled_N_Allocator() :
+	  _first(PageAllocator<>::alloc())
+	{
+		_last = &_first;
+		_top_ptr = _first.p;
+	}
+	void* alloc()
+	{
+		return 0;
+	}
+private:
+	PageListNode<> _first;
+	PageListNode<> *_last;
+	char *_top_ptr;
+};
+
+template <typename T>
+class Pooled_T_Allocator
+{
+public:
+private:
+};
+
 #if DEBUG_MALLOC
 void dump_malloc();
 void *operator new(size_t by, const char *f, int l);
@@ -12,6 +136,8 @@ void operator delete[](void *m);
 
 #define new new(__FILE__, __LINE__)
 #endif
+
+#include "lock.h"
 
 template <typename T>
 class T_allocator
@@ -23,8 +149,7 @@ protected:
 		pthread_mutex_init(&_lock, 0);
 	}
 	static std::queue<T*> _T_queue;
-	static pthread_mutex_t _lock;
-	static pthread_once_t once_control; 
+	static PthreadLock _lock;
 #if DEBUG_ALLOCATOR
 	struct t_info
 	{
@@ -37,28 +162,26 @@ public:
 	~T_allocator<T>() // no virtual destruct?
 	{
 		gc();
-		pthread_mutex_destroy(&_lock);
 	}
 
 	static T* alloc_from(const char *file, int line)
 	{
 		//printf("%s %d\n", file, line);
-		pthread_mutex_lock(&_lock);
+		_lock.acquire();
 		T *t = alloc(false);
 		_info_map[t].file = file;
 		_info_map[t].line = line;
-		pthread_mutex_unlock(&_lock);
+		_lock.release();
 		return t;
 	}
 
 	static T* alloc(bool lock=true)
 	{
-		pthread_once(&once_control, init);
-		if (lock) pthread_mutex_lock(&_lock);
+		if (lock) _lock.acquire();
 		if (_T_queue.empty())
 		{
 			T *t = new T;
-			if (lock) pthread_mutex_unlock(&_lock);
+			if (lock) _lock.release();
 			return t;
 		}
 		else
@@ -66,7 +189,7 @@ public:
 			T* t = _T_queue.front();
 			_T_queue.pop();
 			t->add_ref();
-			if (lock) pthread_mutex_unlock(&_lock);
+			if (lock) _lock.release();
 			return t;
 		}
 	}
@@ -75,15 +198,15 @@ public:
 	{
 		if (t && t->release() == 0)
 		{
-			pthread_mutex_lock(&_lock);
+			_lock.acquire();
 			_T_queue.push(t);
-			pthread_mutex_unlock(&_lock);
+			_lock.release();
 		}
 	}
 
 	static void gc()
 	{
-		pthread_mutex_lock(&_lock);
+		_lock.acquire();
 		while (!_T_queue.empty())
 		{
 #if DEBUG_ALLOCATOR
@@ -92,7 +215,7 @@ public:
 			delete _T_queue.front();
 			_T_queue.pop();
 		}
-		pthread_mutex_unlock(&_lock);
+		_lock.release();
 	}
 
 #if DEBUG_ALLOCATOR
@@ -222,10 +345,7 @@ template <typename T>
 std::queue<T*> T_allocator<T>::_T_queue;
 
 template <typename T>
-pthread_mutex_t T_allocator<T>::_lock;
-
-template <typename T>
-pthread_once_t T_allocator<T>::once_control = PTHREAD_ONCE_INIT;
+PthreadLock T_allocator<T>::_lock;
 
 //template <typename T>
 //std::queue<T*> T_allocator<T>::_T_queue;
@@ -320,6 +440,10 @@ void dump_malloc()
 			i->second.bytes);
 	}
 }
+#endif
+
+#if DEBUG_MALLOC
+#define new new(__FILE__, __LINE__)
 #endif
 
 #endif // !defined(MALLOC_H)

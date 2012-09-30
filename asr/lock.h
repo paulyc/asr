@@ -82,14 +82,14 @@ public:
 	}
 };
 
-class Lock
+class PthreadLock
 {
-	friend class Condition;
+	friend class PthreadCondition;
 public:
-	Lock() : _count(0) {
+	PthreadLock() : _count(0) {
 		pthread_mutex_init(&_lock, NULL);
 	}
-	~Lock() {
+	~PthreadLock() {
 		pthread_mutex_destroy(&_lock);
 	}
 	void acquire() {
@@ -108,16 +108,16 @@ protected:
 	int _count;
 };
 
-class Condition
+class PthreadCondition
 {
 public:
-	Condition() {
+	PthreadCondition() {
 		pthread_cond_init(&_cond, NULL);
 	}
-	~Condition() {
+	~PthreadCondition() {
 		pthread_cond_destroy(&_cond);
 	}
-	void wait(Lock *lock) {
+	void wait(PthreadLock *lock) {
 		pthread_cond_wait(&_cond, &lock->_lock);
 	}
 	void signal() {
@@ -127,10 +127,10 @@ protected:
 	pthread_cond_t _cond;
 };
 
-class MultiLock : public Lock
+class MultiLock : public PthreadLock
 {
 public:
-	MultiLock() : Lock()
+	MultiLock() : PthreadLock()
 	{
 		_p_own_flag = &_own_flag;
 	}
@@ -140,12 +140,12 @@ public:
 			if (pthread_equal(_owner, current)) {
 				++_count;
 			} else {
-				Lock::acquire();
+				PthreadLock::acquire();
 			}
 		} else if (_count == 0) {
 			_owner = pthread_self();
 			++_count;
-			Lock::acquire();
+			PthreadLock::acquire();
 		} else {
 			printf("Something strange happened. _count is %d\n", _count);
 		}
@@ -156,7 +156,7 @@ protected:
 	pthread_t _owner;
 };
 
-class FastUserSpinLock : public Lock
+class FastUserSpinLock
 {
 public:
 	FastUserSpinLock() {
@@ -194,11 +194,10 @@ protected:
 	int _own_flag;
 };
 
-class FastUserSyscallLock : public Lock
+class FastUserSyscallLock
 {
 public:
 	FastUserSyscallLock() : 
-	  Lock(),
 	  _waiters(0),
 	  _checker_flag(0),
 	  _own_flag(0)
@@ -368,7 +367,7 @@ protected:
 	int _own_flag;
 };
 
-class PriorityLock : public FastUserSpinLock
+class PriorityLock
 {
 public:
 private:
@@ -376,9 +375,10 @@ private:
 
 #define FastUserLock FastUserSyscallLock
 
-#if 0
+#if 1
 #ifdef WIN32
-class PreemptableSpinLock : public Lock
+#include <windows.h>
+class PreemptableSpinLock
 {
 public:
 	PreemptableSpinLock() :
@@ -631,7 +631,7 @@ public:
 #endif
 #endif
 
-typedef Lock Lock_T;
+typedef PthreadLock Lock_T;
 
 
 #endif // !defined(_LOCK_H)

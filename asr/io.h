@@ -119,6 +119,11 @@ public:
 		pthread_mutex_unlock(&_io_lock);
 	}
 
+	int get_track_id_for_filter(void *filt) const
+	{
+		return _tracks[0]->get_source() == filt ? 1 : 2;
+	}
+
 	void set_file_output(const wchar_t *filename)
 	{
 		pthread_mutex_lock(&_io_lock);
@@ -195,6 +200,8 @@ public: // was protected
 	controller_t *_my_controller;
 	file_raw_output<chunk_t> *_file_out;
 	typedef peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>::pos_info pos_info;
+
+	const std::deque<pos_info>& get_pos_stream() const { return _my_pk_det->_pos_stream; }
 
 	std::vector<track_t*> _tracks;
 	xfader<track_t> *_master_xfader;

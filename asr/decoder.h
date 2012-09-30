@@ -227,6 +227,7 @@ public:
 		//	printf("L cntr %f +maxLpos %f\n", cntr, double(maxLpos)+cntr);
 		//}
 		fcL = (double(maxLpos)+cntr)*(SAMPLERATE/fft_size);
+		
 
 		buf = _rs.get_tap_buffer(), buf_end = buf+resampler_taps;
 		tap = maxRpos - resampler_taps/2;
@@ -255,6 +256,8 @@ public:
 		 fcR = (double(maxRpos)+cntr)*(SAMPLERATE/fft_size);
 		// printf("maxLpos %d maxRpos %d fcL %f fcR %f\n", maxLpos, maxRpos, fcL, fcR);
 		 fc = (fcL+fcR)*0.5;
+		 // ???
+		// printf("fcL == %f fcR == %f fc == %f maxL == %f maxposL == %d\n", fcL, fcR, fc, maxL, maxLpos);
 #endif
 
 		//printf("_speed %f fc %f magL %f magR %f phaseL - phaseR %f\n", 1000.0/fc, fc, maxL, maxR, phL- phR);
@@ -460,6 +463,7 @@ public:
 				//if (when)
 				//    *when = tc->timecode_ticker * tc->dt;
 				//return r;
+				//	printf("valid %d\n", _valid_counter);
 					if (_valid_counter > 23)
 					{
 					//pk_out << "hello "<< r<<std::endl;
@@ -513,9 +517,13 @@ public:
 		for (int f_indx = 0; f_indx < chunk_size/fft_size; ++f_indx) {
 			memcpy(_inBuf, copy_from, sizeof(SamplePairf)*to_write);
 			copy_from += to_write;
-			new_freqs[f_indx] = fft_find_frequency();
+			double f = fft_find_frequency();
+			//if (f != 0.0/* && f > 1800.0 && f < 2200.0*/)
+				new_freqs[f_indx] = f;
 		//	printf("indx[%d] : %f\n", f_indx, freqs[f_indx]);
 		}
+
+		_pos_stream.clear();
 		
 		process_samples(chk);
 
@@ -524,23 +532,31 @@ public:
 		decode_stream();
 
 		int f_indx = 0;
-		for (std::deque<pos_info>::iterator i = _pos_stream.begin(); i != _pos_stream.end(); i++)
+		if (_pos_stream.empty())
 		{
-			int indx = (*i).chk_ofs/fft_size;
-			double freq = new_freqs[indx--], mod;
-			/*if (indx < 0)
-			{
-				indx = chunk_size/fft_size - 1;
-				freq += _freqs[indx--];
-				freq += _freqs[indx--];
-				freq += _freqs[indx--];
+			for (int f_indx = 0; f_indx < chunk_size/fft_size; ++f_indx) {
+				pos_info p;
+				p.forward = true;
+				p.sync_time = false;
+				p.chk_ofs = f_indx*fft_size;
+				if (new_freqs[f_indx] > 0.0)
+					p.mod = new_freqs[f_indx]/2000.0;///990.0;///2020.0;
+				else
+					p.mod = 0.0;
+				p.freq = p.mod > 0.0 ? 48000.0 / p.mod : 0.0;
+				_pos_stream.push_back(p);
 			}
-			else
+		}
+		else 
+		{
+			for (std::deque<pos_info>::iterator i = _pos_stream.begin(); i != _pos_stream.end(); i++)
 			{
-				freq += new_freqs[indx--];
-				if (indx < 0)
+				const int indx = i->chk_ofs/fft_size;
+				double freq = new_freqs[indx], mod;
+				/*if (indx < 0)
 				{
 					indx = chunk_size/fft_size - 1;
+					freq += _freqs[indx--];
 					freq += _freqs[indx--];
 					freq += _freqs[indx--];
 				}
@@ -550,24 +566,34 @@ public:
 					if (indx < 0)
 					{
 						indx = chunk_size/fft_size - 1;
-						freq += _freqs[indx];
+						freq += _freqs[indx--];
+						freq += _freqs[indx--];
 					}
 					else
-						freq += new_freqs[indx];
+					{
+						freq += new_freqs[indx--];
+						if (indx < 0)
+						{
+							indx = chunk_size/fft_size - 1;
+							freq += _freqs[indx];
+						}
+						else
+							freq += new_freqs[indx];
+					}
 				}
+
+				freq /= 4;
+
+				for (int j=0; j<chunk_size/fft_size; ++j)
+					_freqs[j] = new_freqs[j];*/
+
+				if (freq > 0.0)
+					mod = freq/2000.0;
+				else
+					mod = 0.0;
+				i->freq = mod > 0.0 ? 48000.0 / mod : 0.0;
+				i->mod = mod;
 			}
-
-			freq /= 4;
-
-			for (int j=0; j<chunk_size/fft_size; ++j)
-				_freqs[j] = new_freqs[j];*/
-
-			if (freq > 0.0)
-				mod = freq/2020.0;
-			else
-				mod = 0.0;
-			(*i).freq = 48000.0 / mod;
-			(*i).mod = mod;
 		}
 
 		

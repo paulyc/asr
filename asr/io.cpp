@@ -162,7 +162,7 @@ void ASIOProcessor::ProcessInput()
 		{
 		//	_my_raw_output->process();
 			_my_controller->next(_my_pk_det);
-			_my_controller->process(_ui->vinyl_control_enabled(1) ? _tracks[0] : 0, _ui->vinyl_control_enabled(2) ? _tracks[1] : 0, _my_pk_det);
+		//	_my_controller->process(_ui->vinyl_control_enabled(1) ? _tracks[0] : 0, _ui->vinyl_control_enabled(2) ? _tracks[1] : 0, _my_pk_det);
 		}
 	}
 }

@@ -200,9 +200,19 @@ public:
 
 		Sample_T *key_smp = 0;
 	//	printf("pos %d\n", pos_stream.size());
-		if (!pos_stream.empty())
+		ASIOProcessor *io = ASR::get_io_instance();
+		GenericUI *ui = ASR::get_ui_instance();
+		const std::deque<ASIOProcessor::pos_info>& pos_stream = io->get_pos_stream();
+		std::deque<ASIOProcessor::pos_info>::const_iterator it = pos_stream.begin();
+		
+		const int track_id = io->get_track_id_for_filter(this);
+		const bool vinyl_control_enabled = ui->vinyl_control_enabled(track_id);
+		const bool sync_time_enabled = ui->get_sync_time(track_id);
+		const bool add_pitch_enabled = ui->get_add_pitch(track_id);
+
+		if (vinyl_control_enabled && it != pos_stream.end())
 		{
-			key_smp = chk->_data + pos_stream.front().chk_ofs;
+			key_smp = chk->_data + it->chk_ofs;
 		}
 
 		for (smp = chk->_data, end = smp + Chunk_T::chunk_size; smp != end; ++smp)
@@ -212,19 +222,23 @@ public:
 				//if (abs(_output_time - pos_stream.front().tm) > 0.01)
 				{
 				//	printf("sync time %d\n", pos_stream.front().sync_time);
-					if (pos_stream.front().sync_time && abs(_last_tm - pos_stream.front().tm) > 1.0)
+					if (sync_time_enabled && abs(_last_tm - it->tm) > 1.0)
 					{
 				//		printf("key_samp output time %f\n", _output_time);
-						_output_time = pos_stream.front().tm;
+						_output_time = it->tm;
 					}
-					_last_tm = pos_stream.front().tm;
-					if (pos_stream.front().freq != 0.0)
+					_last_tm = it->tm;
+					double freq = it->freq;
+					if (freq != 0.0)
 					{
-						
-						double freq = pos_stream.front().freq;
+						if (add_pitch_enabled)
+						{
+							const double mod = it->mod + ui->get_track_pitch(track_id); 
+							freq = 48000.0 / mod;
+						}
 						set_output_sampling_frequency(freq);
 				//		printf("sampling freq %f\n", freq);
-						ASR::get_io_instance()->get_ui()->set_filters_frequency(this, freq); 
+						ui->set_filters_frequency(this, freq); 
 					}
 					
 				}
@@ -238,11 +252,10 @@ public:
 			//	{
 				//	set_output_sampling_frequency(48000);
 			//	}
-				last = pos_stream.front();
-				pos_stream.pop();
-				if (!pos_stream.empty())
+				it++;
+				if (it != pos_stream.end())
 				{
-					key_smp = chk->_data + pos_stream.front().chk_ofs;
+					key_smp = chk->_data + it->chk_ofs;
 				} else
 				{
 					key_smp = 0;
@@ -286,11 +299,6 @@ public:
 		return chk;
 	}
 	
-	std::queue<typename ASIOProcessor::pos_info> pos_stream;
-	void have_position(const typename ASIOProcessor::pos_info &pos)
-	{
-		pos_stream.push(pos);
-	}
 	typename ASIOProcessor::pos_info last;
 	
 	friend class Controller;
