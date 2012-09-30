@@ -211,10 +211,10 @@ public:
 			{
 				//if (abs(_output_time - pos_stream.front().tm) > 0.01)
 				{
-					printf("sync time %d\n", pos_stream.front().sync_time);
+				//	printf("sync time %d\n", pos_stream.front().sync_time);
 					if (pos_stream.front().sync_time && abs(_last_tm - pos_stream.front().tm) > 1.0)
 					{
-						printf("key_samp output time %f\n", _output_time);
+				//		printf("key_samp output time %f\n", _output_time);
 						_output_time = pos_stream.front().tm;
 					}
 					_last_tm = pos_stream.front().tm;
@@ -223,7 +223,7 @@ public:
 						
 						double freq = pos_stream.front().freq;
 						set_output_sampling_frequency(freq);
-						printf("sampling freq %f\n", freq);
+				//		printf("sampling freq %f\n", freq);
 						ASR::get_io_instance()->get_ui()->set_filters_frequency(this, freq); 
 					}
 					

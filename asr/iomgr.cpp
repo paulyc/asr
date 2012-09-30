@@ -147,16 +147,21 @@ void ASIOManager<Chunk_T>::createBuffers()
 {
 	ASIOError e;
 
-	int ch_input_l, ch_input_r, ch_output_l, ch_output_r;
+	int ch_input_l, ch_input_r, ch_output1_l, ch_output1_r, ch_output2_l, ch_output2_r;
 #if CHOOSE_CHANNELS
 	printf("choose 4 channels (in L, in R, out L, out R) or -1 to quit, maybe: ");
 	std::cin >> ch_input_l;
 	std::cin >> ch_input_r >> ch_output_l >> ch_output_r;
 #else
+	// aux
 	ch_input_l = 18;
 	ch_input_r = 19;
-	ch_output_l = 2;
-	ch_output_r = 3;
+	//ch_input_l = 0;
+	//ch_input_r = 1;
+	ch_output1_l = 2;
+	ch_output1_r = 3;
+	ch_output2_l = 4;
+	ch_output2_r = 5;
 #endif
 
 	_buffer_infos_len = 6;
@@ -168,13 +173,13 @@ void ASIOManager<Chunk_T>::createBuffers()
 	//_buffer_infos[1].channelNum = 3;
 	_buffer_infos[1].channelNum = ch_input_r;
 	_buffer_infos[2].isInput = ASIOFalse;
-	_buffer_infos[2].channelNum = ch_output_l;
+	_buffer_infos[2].channelNum = ch_output1_l;
 	_buffer_infos[3].isInput = ASIOFalse;
-	_buffer_infos[3].channelNum = ch_output_r;
+	_buffer_infos[3].channelNum = ch_output1_r;
 	_buffer_infos[4].isInput = ASIOFalse;
-	_buffer_infos[4].channelNum = 4;
+	_buffer_infos[4].channelNum = ch_output2_l;
 	_buffer_infos[5].isInput = ASIOFalse;
-	_buffer_infos[5].channelNum = 5;
+	_buffer_infos[5].channelNum = ch_output2_r;
 
 	_cb.bufferSwitch = bufferSwitch;
 	_cb.bufferSwitchTimeInfo = bufferSwitchTimeInfo;

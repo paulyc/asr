@@ -236,7 +236,7 @@ UITrack::UITrack(GenericUI *ui, int tid, int pitch_id, int gain_id) :
 void UITrack::update_frequency(double f)
 {
 	double val = 48000.0 / (f) - 1.0;
-	printf("track %d: %f\n", id, val*100.0);
+	//printf("track %d: %f\n", id, val*100.0);
 	pitch.set_text_pct(val*100.0);
 }
 

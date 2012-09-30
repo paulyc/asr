@@ -88,7 +88,8 @@ void ASR::end()
 int main()
 {
 #if 0
-	ThreadTester<FastUserSyscallLock> *tester = new ThreadTester<FastUserSyscallLock>;
+	//ThreadTester<FastUserSyscallLock> *tester = new ThreadTester<FastUserSyscallLock>;
+	PreemptableLockTester *tester = new PreemptableLockTester;
 	tester->test();
 	delete tester;
 	return 0;
