@@ -378,6 +378,7 @@ private:
 #if 1
 #ifdef WIN32
 #include <windows.h>
+#include <map>
 class PreemptableSpinLock
 {
 public:
@@ -389,6 +390,12 @@ public:
 	  _owner_thread(NULL),
 	  _suspended_owner_thread(NULL)
 	{
+	}
+	~PreemptableSpinLock() {
+		for (std::map<DWORD, HANDLE>::iterator it = _thread_id_to_handle_map.begin(); 
+			it != _thread_id_to_handle_map.end(); it++) {
+			::CloseHandle(it->second);
+		}
 	}
 	void acquire_preemptable() {
 		__asm {
@@ -438,14 +445,20 @@ configure:
 			push ecx
 		}
 		_is_preemptable = true;
-		_owner_thread = ::GetCurrentThread();
+		DWORD thread_id = ::GetCurrentThreadId();
+		std::map<DWORD, HANDLE>::iterator it = _thread_id_to_handle_map.find(thread_id);
+		HANDLE hThread;
+		if (it == _thread_id_to_handle_map.end()) {
+			hThread = ::OpenThread(THREAD_ALL_ACCESS, FALSE, thread_id);
+			_thread_id_to_handle_map[thread_id] = hThread;
+		} else {
+			hThread = it->second;
+		}
+		_owner_thread = hThread;
 		__asm {
 			pop ecx
-			lea edx, dword ptr[ecx+_checker_flag]
-			mov eax, 1
-			mov ebx, 0
-			lock cmpxchg dword ptr[edx], ebx
 		}
+		RELEASE_USERLOCK(_checker_flag)
 	}
 	void acquire_preempt() {
 		__asm {
@@ -488,29 +501,34 @@ try_preempt:
 		if (_is_preemptable) {
 			::SuspendThread(_owner_thread);
 			_suspended_owner_thread = _owner_thread;
-			_owner_thread = ::GetCurrentThread();
+			DWORD thread_id = ::GetCurrentThreadId();
+			std::map<DWORD, HANDLE>::iterator it = _thread_id_to_handle_map.find(thread_id);
+			HANDLE hThread;
+			if (it == _thread_id_to_handle_map.end()) {
+				hThread = ::OpenThread(THREAD_ALL_ACCESS, FALSE, thread_id);
+				_thread_id_to_handle_map[thread_id] = hThread;
+			} else {
+				hThread = it->second;
+			}
+			_owner_thread = hThread;
 			_was_preempted = true;
 			_is_preemptable = false;
 		} else {
 			__asm {
 				pop ecx
+			}
 
-				lea edx, dword ptr[ecx+_checker_flag]
-				mov eax, 1
-				mov ebx, 0
-				lock cmpxchg dword ptr[edx], ebx
+			RELEASE_USERLOCK(_checker_flag)
 
+			__asm {
 				jmp spin_acquire_preempt
 			}
 		}
 		__asm {
 			pop ecx
 now_own_lock:
-			lea edx, dword ptr[ecx+_checker_flag]
-			mov eax, 1
-			mov ebx, 0
-			lock cmpxchg dword ptr[edx], ebx
 		}
+		RELEASE_USERLOCK(_checker_flag)
 	}
 	void release() {
 		__asm {
@@ -547,27 +565,17 @@ after_yield_preemptable_release:
 
 			__asm {
 				pop ecx
-				lea edx, dword ptr[ecx+_checker_flag]
-				mov eax, 1
-				mov ebx, 0
-				lock cmpxchg dword ptr[edx], ebx
 			}
+			RELEASE_USERLOCK(_checker_flag)
 		} else {
 			_is_preemptable = false;
 			_owner_thread = NULL;
 			__asm {
 				pop ecx
-
-				lea edx, dword ptr[ecx+_owner_flag]
-				mov eax, 1
-				mov ebx, 0
-				lock cmpxchg dword ptr[edx], ebx
-
-				lea edx, dword ptr[ecx+_checker_flag]
-				mov eax, 1
-				mov ebx, 0
-				lock cmpxchg dword ptr[edx], ebx
 			}
+
+			RELEASE_USERLOCK(_owner_flag)
+			RELEASE_USERLOCK(_checker_flag)
 		}
 	}
 
@@ -578,6 +586,7 @@ protected:
 	bool _was_preempted;
 	HANDLE _owner_thread;
 	HANDLE _suspended_owner_thread;
+	std::map<DWORD, HANDLE> _thread_id_to_handle_map;
 };
 
 class PreemptableLockTester : public ThreadTester<PreemptableSpinLock>
@@ -599,7 +608,7 @@ public:
 	static void* testth_preempter(void *param) {
 		PreemptableLockTester *tester = (PreemptableLockTester*)(param);
 		int count;
-		for (count = 0; count < 5000000; ++count) {
+		for (count = 0; count < 10000000; ++count) {
 			tester->lock.acquire_preempt();
 			tester->shared_var_p = &tester->shared_var;
 			(*tester->shared_var_p)++; 
@@ -612,10 +621,10 @@ public:
 	void test() {
 		pthread_t tid1, tid2, tid3, tid4;
 		int dunno;
-		pthread_create(&tid1, 0, testth_preemptable, (void*)this);
+		pthread_create(&tid1, 0, testth_preempter, (void*)this);
 		pthread_create(&tid2, 0, testth_preemptable, (void*)this);
 		pthread_create(&tid3, 0, testth_preemptable, (void*)this);
-		pthread_create(&tid4, 0, testth_preempter, (void*)this);
+		pthread_create(&tid4, 0, testth_preemptable, (void*)this);
 
 		pthread_join(tid1,(void**)&dunno);
 		printf("dunno is %d\n", dunno);
