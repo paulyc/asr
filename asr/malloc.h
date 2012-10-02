@@ -36,12 +36,13 @@ struct PageListNode {
 	PageListNode<PageSize> *prev, *next;
 };
 
-
 class StackAllocator
 {
 public:
 	StackAllocator() {
 		Page<> p = PageAllocator<>::alloc();
+		//_first = &p;
+		//_last = _first;
 		_top = (char*)p.p;
 
 	}
@@ -90,14 +91,14 @@ template <int PageSize=0x1000>
 class PageList
 {
 public:
-	//void push_back(Page p
+	PageList() : _first(0), _last(0) {}
+	void append(Page<PageSize> p)
+	{
+	}
 private:
 	PageListNode<PageSize> *_first;
+	PageListNode<PageSize> *_last;
 };
-
-
-
-
 
 
 template <int N>
@@ -113,6 +114,20 @@ public:
 	void* alloc()
 	{
 		return 0;
+	}
+	static Pooled_N_Allocator<N>* create() {
+		Page<> p = PageAllocator<>::alloc();
+		Pooled_N_Allocator<N> *the_alloc = (Pooled_N_Allocator<N>*)p.p;
+		char *top = (char*)p.p + sizeof(Pooled_N_Allocator<N>);
+		PageListNode<> *first = (PageListNode<> *)top;
+		first->page = p;
+		first->prev = 0;
+		first->next = 0;
+		top += sizeof(PageListNode<>);
+		the_alloc->_first = first;
+		the_alloc->_last = first;
+		the_alloc->_top = top;
+		return the_alloc;
 	}
 private:
 	PageListNode<> _first;

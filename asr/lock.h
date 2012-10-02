@@ -214,7 +214,7 @@ public:
 spin2:
 			push ecx
 		}
-		sched_yield();
+		YIELD_IF_1CPU();
 		__asm {
 			pop ecx
 
@@ -256,7 +256,7 @@ do_wait:
 spin3:
 			push ecx
 		}
-		sched_yield();
+		YIELD_IF_1CPU();
 		__asm {
 			pop ecx
 
@@ -282,7 +282,7 @@ get_checker_flag_again:
 spin4:
 			push ecx
 		}
-		sched_yield();
+		YIELD_IF_1CPU();
 		__asm {
 			pop ecx
 
@@ -307,7 +307,7 @@ do_acquire:
 spin5:
 			push ecx
 		}
-		sched_yield();
+		YIELD_IF_1CPU();
 		__asm {
 			pop ecx
 
