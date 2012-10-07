@@ -328,7 +328,7 @@ public:
 
 		if (wcsstr(filename, L".mp3") == filename + wcslen(filename) - 4)
 		{
-			src = new mp3file_chunker<Chunk_T>(filename);
+			src = new mp3file_chunker<Chunk_T>(filename, lock);
 		}
 		else if (wcsstr(filename, L".wav") == filename + wcslen(filename) - 4)
 		{
@@ -389,10 +389,10 @@ public:
 		pthread_mutex_init(&_loading_lock, 0);
 		pthread_cond_init(&_track_loaded, 0);
 
-		if (filename)
-			set_source_file(filename, _io->get_lock());
-
 		_future = new FutureExecutor;
+
+		if (filename)
+			set_source_file_impl(filename, _io->get_lock());
 	}
 
 	virtual ~SeekablePitchableFileSource()
@@ -414,6 +414,16 @@ public:
 	}
 
 	void set_source_file(const wchar_t *filename, pthread_mutex_t *lock)
+	{
+		_future->submit(
+			new deferred2<SeekablePitchableFileSource<Chunk_T>, const wchar_t *, pthread_mutex_t*>(
+				this, 
+				&SeekablePitchableFileSource<Chunk_T>::set_source_file_impl, 
+				filename, 
+				lock));
+	}
+
+	void set_source_file_impl(const wchar_t *filename, pthread_mutex_t *lock)
 	{
 		pthread_mutex_lock(&_loading_lock);
 		while (_in_config || !_loaded)
