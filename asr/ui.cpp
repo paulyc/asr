@@ -27,21 +27,15 @@ void GenericUI::mouse_down(MouseButton b, int x, int y)
 	{
 		case Left:
 		{
-			_track1.wave.mousedown = y >= _track1.wave.windowr.top && y < _track1.wave.windowr.bottom &&
-				x >= _track1.wave.windowr.left && x < _track1.wave.windowr.right;
+			_track1.wave.mousedown = _track1.wave.isover(x, y);
 			if (_track1.wave.mousedown)
 			{
-				_lastx=x;
-				_lasty=y;
 				_io->GetTrack(1)->lock_pos(x-_track1.wave.windowr.left);
 			}
 
-			_track2.wave.mousedown = y >= _track2.wave.windowr.top && y < _track2.wave.windowr.bottom &&
-				x >= _track2.wave.windowr.left && x < _track2.wave.windowr.right;
+			_track2.wave.mousedown = _track2.wave.isover(x, y);
 			if (_track2.wave.mousedown)
 			{
-				_lastx=x;
-				_lasty=y;
 				_io->GetTrack(2)->lock_pos(x-_track2.wave.windowr.left);
 			}
 			break;
@@ -151,6 +145,9 @@ void GenericUI::mouse_move(int x, int y)
 	int dx = x-_lastx;
 	int dy = y-_lasty;
 
+	_track1.wave.mouseover = _track1.wave.isover(x, y);
+	_track2.wave.mouseover = _track2.wave.isover(x, y);
+
 	if (_track1.wave.mousedown)
 	{
 		if (dy)
@@ -162,8 +159,6 @@ void GenericUI::mouse_move(int x, int y)
 			_io->GetTrack(1)->move_px(dx);
 			_io->GetTrack(1)->lock_pos(x-_track1.wave.windowr.left);
 		}
-		_lastx = x;
-		_lasty = y;
 	}
 	else if (_track2.wave.mousedown)
 	{
@@ -176,9 +171,9 @@ void GenericUI::mouse_move(int x, int y)
 			_io->GetTrack(2)->move_px(dx);
 			_io->GetTrack(2)->lock_pos(x-_track2.wave.windowr.left);
 		}
-		_lastx = x;
-		_lasty = y;
 	}
+	_lastx = x;
+	_lasty = y;
 }
 
 void GenericUI::slider_move(double pos, SliderType t, int x)
@@ -218,11 +213,24 @@ void GenericUI::set_filters_frequency(void *filt, double freq)
 	}
 }
 
-UITrack::UITrack(GenericUI *ui, int tid, int pitch_id, int gain_id) :
+void GenericUI::drop_file(const wchar_t *filename, bool track1)
+{
+	if (track1)
+	{
+		_io->GetTrack(1)->set_source_file(std::wstring(filename), _io->get_lock());
+	}
+	else
+	{
+		_io->GetTrack(2)->set_source_file(std::wstring(filename), _io->get_lock());
+	}
+}
+
+UITrack::UITrack(GenericUI *ui, int tid, int filename_id, int pitch_id, int gain_id) :
 	_ui(ui),
 	id(tid),
 	coarse_val(48000.0),
 	fine_val(0.0),
+	filename(ui, filename_id),
 	pitch(ui, pitch_id),
 	gain(ui, gain_id),
 	clip(false),
@@ -265,10 +273,10 @@ UIText::UIText(GenericUI *ui, int i) : _ui(ui), id(i)
 {
 }
 
-void UIText::set_text(const wchar_t *txt)
+void UIText::set_text(const wchar_t *txt, bool del=true)
 {
 //	callback(id, txt);
-	_ui->future_task(new deferred2<GenericUI, int, const wchar_t*>(_ui, &GenericUI::set_text_field, id, txt));
+	_ui->future_task(new deferred3<GenericUI, int, const wchar_t*, bool>(_ui, &GenericUI::set_text_field, id, txt, del));
 }
 
 void UIText::set_text_pct(double pct)

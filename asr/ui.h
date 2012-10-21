@@ -12,7 +12,7 @@ struct UIWavform
 {
 	UIWavform() :
 		playback_pos(0.0),
-		px(0),cpx(0), mousedown(false) {}
+		px(0),cpx(0), mousedown(false), mouseover(false) {}
 	double playback_pos;
 	int px, cpx;
 	RECT r;
@@ -20,7 +20,13 @@ struct UIWavform
 	int width(){return r.right - r.left;}
 	int height(){return r.bottom - r.top;}
 
+	bool isover(int x, int y) {
+		return  y >= windowr.top && y < windowr.bottom &&
+				x >= windowr.left && x < windowr.right;
+	}
+
 	bool mousedown;
+	bool mouseover;
 };
 
 struct UIButton
@@ -32,7 +38,7 @@ struct UIButton
 struct UIText
 {
 	UIText(GenericUI *ui, int i);
-	void set_text(const wchar_t *txt);
+	void set_text(const wchar_t *txt, bool del);
 	void set_text_pct(double v);
 	void set_text_db(double db);
 	GenericUI *_ui;
@@ -41,7 +47,7 @@ struct UIText
 
 struct UITrack
 {
-	UITrack(GenericUI *ui, int tid, int pitch_id, int gain_id);
+	UITrack(GenericUI *ui, int tid, int filename_id, int pitch_id, int gain_id);
 	UIWavform wave;
 	void set_coarse(double v);
 	void set_fine(double v);
@@ -52,6 +58,7 @@ struct UITrack
 	int id;
 	double coarse_val;
 	double fine_val;
+	UIText filename;
 	UIText pitch;
 	UIText gain;
 	bool clip;
@@ -91,7 +98,7 @@ public:
 	virtual void do_paint();
 	enum SliderType { PitchCoarse, PitchFine, Gain, XfadeMaster, XfadeCue };
 	virtual void slider_move(double pos, SliderType t, int x);
-	virtual void set_text_field(int id, const wchar_t *txt) = 0;
+	virtual void set_text_field(int id, const wchar_t *txt, bool del) = 0;
 	virtual void set_main_mix(double pos){}
     virtual void set_dirty(int track_id)
     {
@@ -139,6 +146,7 @@ public:
 	{
 		_future.submit(d);
 	}
+	virtual void drop_file(const wchar_t *filename, bool track1);
 	UITrack& get_track(int track_id) { return track_id == 1 ? _track1 : _track2; }
 	double get_track_pitch(int track_id) { return get_track(track_id).get_pitch(); }
 	//protected:
@@ -164,7 +172,7 @@ public:
 	virtual void set_position(void *t, double tm, bool invalidate);
 	virtual void set_clip(int);
 	virtual bool want_render(){ bool r = _want_render; _want_render = false; return r; }
-	virtual void set_text_field(int id, const wchar_t *txt);
+	virtual void set_text_field(int id, const wchar_t *txt, bool del);
 	virtual void do_quit(){_want_quit=true;}
 	virtual bool running(){return !_want_quit;}
 	virtual void load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam);

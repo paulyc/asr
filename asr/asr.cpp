@@ -123,8 +123,10 @@ int main()
 	return test_main();
 #endif
 
+	//freopen("stdout.txt", "w", stdout);
+
 	ASR *app;
-		app = new ASR;
+	app = new ASR;
 	app->execute();
 	delete app;
 	

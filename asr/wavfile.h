@@ -523,8 +523,8 @@ public:
 			{
 				if (_lock) pthread_mutex_unlock(_lock);
 				if (io->is_waiting()) sched_yield();
-				if (_lock) pthread_mutex_lock(_lock);
 				load_frame();
+				if (_lock) pthread_mutex_lock(_lock);
 			}
 		}
 		if (_lock) pthread_mutex_unlock(_lock);

@@ -236,8 +236,11 @@ public:
 							const double mod = it->mod + ui->get_track_pitch(track_id); 
 							freq = 48000.0 / mod;
 						}
+						double df = get_output_sampling_frequency() - freq;
+						if (abs(df) > 0.01)
+							printf("set sampling freq = %f.02 df = %f.02\n", freq, df);
 						set_output_sampling_frequency(freq);
-				//		printf("sampling freq %f\n", freq);
+						
 						ui->set_filters_frequency(this, freq); 
 					}
 					

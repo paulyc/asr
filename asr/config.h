@@ -62,4 +62,6 @@
 #define BUFFER_BEFORE_COPY 0
 #endif
 
+#define HANDLE_TOPLEVEL_EXCEPTIONS 0
+
 #endif // !defined(_CONFIG_H)

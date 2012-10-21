@@ -392,7 +392,7 @@ public:
 		_future = new FutureExecutor;
 
 		if (filename)
-			set_source_file_impl(filename, _io->get_lock());
+			set_source_file_impl(std::wstring(filename), _io->get_lock());
 	}
 
 	virtual ~SeekablePitchableFileSource()
@@ -413,17 +413,17 @@ public:
 		BufferedSource<Chunk_T>::destroy();
 	}
 
-	void set_source_file(const wchar_t *filename, pthread_mutex_t *lock)
+	void set_source_file(std::wstring filename, pthread_mutex_t *lock)
 	{
 		_future->submit(
-			new deferred2<SeekablePitchableFileSource<Chunk_T>, const wchar_t *, pthread_mutex_t*>(
+			new deferred2<SeekablePitchableFileSource<Chunk_T>, std::wstring, pthread_mutex_t*>(
 				this, 
 				&SeekablePitchableFileSource<Chunk_T>::set_source_file_impl, 
 				filename, 
 				lock));
 	}
 
-	void set_source_file_impl(const wchar_t *filename, pthread_mutex_t *lock)
+	void set_source_file_impl(std::wstring filename, pthread_mutex_t *lock)
 	{
 		pthread_mutex_lock(&_loading_lock);
 		while (_in_config || !_loaded)
@@ -436,7 +436,7 @@ public:
 		_paused = true;
 
 		try {
-			BufferedSource<Chunk_T>::create(filename, lock);
+			BufferedSource<Chunk_T>::create(filename.c_str(), lock);
 		} catch (std::exception &e) {
 			printf("Could not set_source_file due to %s\n", e.what());
 			_in_config = false;
@@ -456,6 +456,8 @@ public:
 		_in_config = false;
 		_last_time = 0.0;
 		pthread_mutex_unlock(&_loading_lock);
+
+		_filename = filename;
 
 		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
 	}
@@ -504,13 +506,18 @@ public:
 
 	bool load_step(pthread_mutex_t *lock=0)
 	{
-		while (len().samples < 0)
-		{
-		//	if (lock) pthread_mutex_lock(lock);
-			_src_buf->load_next();
-		//	if (lock) pthread_mutex_unlock(lock);
-			//return true;
-		}
+		//try {
+			while (len().samples < 0)
+			{
+			//	if (lock) pthread_mutex_lock(lock);
+				_src_buf->load_next();
+			//	if (lock) pthread_mutex_unlock(lock);
+				//return true;
+			}
+		//} catch (...) {
+		//	printf("fatal error decoding file. aborting\n");
+		//	return false;
+		//}
         
 		_display->set_zoom(100.0);
 		_display->set_left(0.0);
@@ -534,6 +541,8 @@ public:
 
             pthread_cond_signal(&_track_loaded);
 			pthread_mutex_unlock(&_loading_lock);
+
+			_io->get_ui()->get_track(_track_id).filename.set_text(_filename.c_str(), false);
 			
 			return false;
 	//	}
@@ -664,6 +673,10 @@ protected:
 	
 	FutureExecutor *_future;
 	double _last_time;
+
+	std::wstring _filename;
 };
+
+typedef SeekablePitchableFileSource<chunk_t> Track_T;
 
 #endif // !defined(TRACK_H)

@@ -7,6 +7,7 @@ typedef ASIOProcessor ASIOP;
 typedef ASIOP::track_t track_t;
 
 #if WINDOWS
+#include <shellapi.h>
 #include <commctrl.h>
 #include <wingdi.h>
 #include "resource.h"
@@ -29,7 +30,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 )
 {
 	ASIOProcessor *asio = ASR::get_io_instance();
-	GenericUI *ui = asio->get_ui();
+	Win32UI *ui = dynamic_cast<Win32UI*>(asio->get_ui());
 
 	switch (uMsg)
 	{
@@ -118,6 +119,19 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 			return TRUE;
 		case WM_KEYUP:
 			break;
+		case WM_DROPFILES:
+		{
+			POINT p;
+			wchar_t buffer[1024];
+			HDROP hDrop = (HDROP) wParam;
+			UINT len = DragQueryFile(hDrop, 0, buffer, sizeof(buffer));
+			DragQueryPoint(hDrop, &p);
+			DragFinish(hDrop);
+			bool track1 = p.y < 340;
+			SetDlgItemText(hwndDlg, track1 ? IDC_EDIT1 : IDC_EDIT2, buffer);
+			ui->drop_file(buffer, p.y < 340);
+			break;
+		}
 		case WM_COMMAND: 
             switch (LOWORD(wParam)) 
             { 
@@ -175,7 +189,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON6:
 				case IDC_BUTTON25:
 				{
-					dynamic_cast<Win32UI*>(ui)->load_track(hwndDlg, wParam, lParam);
+					ui->load_track(hwndDlg, wParam, lParam);
 					return TRUE;
 				}
 				case IDC_BUTTON4: // cue src
@@ -352,7 +366,7 @@ void Win32UI::load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam)
 		if (LOWORD(wParam)!=IDC_BUTTON25)
 		{
 			SetDlgItemText(hwndDlg, LOWORD(wParam)==IDC_BUTTON3 ? IDC_EDIT1 : IDC_EDIT2, filepath);
-			_io->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->set_source_file(filepath, &_io->_io_lock);
+			_io->GetTrack(LOWORD(wParam)==IDC_BUTTON3 ? 1 : 2)->set_source_file(std::wstring(filepath), _io->get_lock());
 		}
 		else
 		{
@@ -394,8 +408,8 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
 
 Win32UI::Win32UI(ASIOProcessor *io) :
 	GenericUI(io, 
-		UITrack(this, 1, IDC_EDIT3, IDC_EDIT5), 
-		UITrack(this, 2, IDC_EDIT4, IDC_EDIT6)),
+		UITrack(this, 1, IDC_EDIT1, IDC_EDIT3, IDC_EDIT5), 
+		UITrack(this, 2, IDC_EDIT2, IDC_EDIT4, IDC_EDIT6)),
 	_want_render(false),
 	_want_quit(false)
 {}
@@ -556,7 +570,9 @@ void Win32UI::create()
 	_track1.pitch.set_text_pct(0.0);
 	_track2.pitch.set_text_pct(0.0);
 
-//	 SetUnhandledExceptionFilter(top_level_exception_filter);
+#if HANDLE_TOPLEVEL_EXCEPTIONS
+	 SetUnhandledExceptionFilter(top_level_exception_filter);
+#endif
 }
 
 void Win32UI::destroy()
@@ -575,12 +591,13 @@ LONG WINAPI Win32UI::top_level_exception_filter(struct _EXCEPTION_POINTERS *Exce
 	switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
 	{
 		case EXCEPTION_ACCESS_VIOLATION:
-			printf("EXCEPTION_ACCESS_VIOLATION\n");
+			printf("EXCEPTION_ACCESS_VIOLATION eip = %x\n", ExceptionInfo->ContextRecord->Eip);
 			break;
 		default:
 			printf("code %d\n", ExceptionInfo->ExceptionRecord->ExceptionCode);
 			break;
 	}
+	::TerminateProcess(::GetCurrentProcess(), 1);
 	return EXCEPTION_CONTINUE_EXECUTION;
 }
 
@@ -655,10 +672,10 @@ void Win32UI::set_position(void *t, double p, bool invalidate)
 	}
 }
 
-void Win32UI::set_text_field(int id, const wchar_t *txt)
+void Win32UI::set_text_field(int id, const wchar_t *txt, bool del=true)
 {
 	SetDlgItemTextW(g_dlg, id, txt);
-	delete [] txt;
+	if (del) delete [] txt;
 }
 //ui deadlock!!
 void Win32UI::set_clip(int t_id)
