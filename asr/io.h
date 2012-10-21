@@ -179,7 +179,6 @@ public:
 public: // was protected
 	void Init();
 	void Reconfig();
-	void ProcessInput();
 	void Destroy();
 	void Finish();
 
@@ -191,13 +190,12 @@ public: // was protected
 	SpeedParser2<BUFFERSIZE> _sp;
 	std::ofstream _log;
 
-	asio_source<short, SamplePairf, chunk_t> *_my_source;
 	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *_my_pk_det;
-	typedef controller<track_t, 
-		peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> 
-		> controller_t;
+	//typedef controller<track_t, 
+	//	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> 
+	//	> controller_t;
 	gain<asio_source<short, SamplePairf, chunk_t> > *_my_gain;
-	controller_t *_my_controller;
+	//controller_t *_my_controller;
 	file_raw_output<chunk_t> *_file_out;
 	typedef peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>::pos_info pos_info;
 
@@ -224,6 +222,9 @@ public: // was protected
 	bool _sync_cue;
 
 	bool _waiting;
+
+	T_sink<chunk_t> *_dummy_sink;
+	T_sink<chunk_t> *_dummy_sink2;
 	
 };
 

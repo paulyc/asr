@@ -86,6 +86,7 @@ public:
 
 	void setOutputSource(int id);
 	void processOutputs();
+	void processInputs(long doubleBufferIndex, T_sink<Chunk_T> *sink1, T_sink<Chunk_T> *sink2);
 	void switchBuffers(long doubleBufferIndex);
 
 //protected:
@@ -119,6 +120,9 @@ public:
 
 	asio_sink<chunk_t, chunk_buffer, short> *_main_out;
 	asio_sink<chunk_t, chunk_buffer, short> *_out_2;
+
+	asio_source<short, SamplePairf, chunk_t> *_my_source;
+	asio_source<short, SamplePairf, chunk_t> *_my_source2;
 };
 
 #endif // !defined(IOMGR_H)

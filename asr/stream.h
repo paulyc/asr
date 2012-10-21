@@ -73,6 +73,11 @@ public:
 	{
 		if (freeme) T_allocator<T>::free(t);
 	}
+
+	void set_src(T_source<T> *s)
+	{
+		_src = s;
+	}
 };
 
 template <typename T>

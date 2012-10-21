@@ -22,12 +22,13 @@ ASIOProcessor::ASIOProcessor() :
 	_outputTime(0.0),
 	_src_active(false),
 	_log("mylog.txt"),
-	_my_source(0),
 	_file_out(0),
 	_ui(0),
 	_finishing(false),
 	_iomgr(0),
-	_sync_cue(false)
+	_sync_cue(false),
+	_dummy_sink(0),
+	_dummy_sink2(0)
 {
 	Init();
 }
@@ -39,6 +40,8 @@ ASIOProcessor::~ASIOProcessor()
 
 void ASIOProcessor::CreateTracks()
 {
+	
+
 	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 1, _default_src));
 	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 2, _default_src));
 	
@@ -48,8 +51,21 @@ void ASIOProcessor::CreateTracks()
 
 	_iomgr->createIOs(&_main_mgr, &_2_mgr);
 
+	try {
+	//	_my_gain = new gain<asio_source<short, SamplePairf, chunk_t> >(_my_source);
+	//	_my_gain->set_gain_db(36.0);
+		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>(_iomgr->_my_source);
+
+	//	_my_raw_output = new file_raw_output<chunk_t>(_my_pk_det);
+	} catch (std::exception e) {
+		throw e;
+	}
+
 	_main_src = _master_xfader;
 	_file_src = 0;
+
+	_dummy_sink = new T_sink<chunk_t>(_my_pk_det);
+	_dummy_sink2 = new T_sink<chunk_t>(_iomgr->_my_source2);
 
 #if GENERATE_LOOP
 	Worker::do_job(new Worker::callback_th_job<ASIOProcessor>(
@@ -64,21 +80,6 @@ void ASIOProcessor::Init()
 	pthread_mutex_init(&_io_lock, 0);
 	pthread_cond_init(&_gen_done, 0);
 	pthread_cond_init(&_do_gen, 0);
-
-	try {
-		_my_controller = new controller_t;
-
-#if CARE_ABOUT_INPUT
-		_my_source = new asio_source<short, SamplePairf, chunk_t>;
-	//	_my_gain = new gain<asio_source<short, SamplePairf, chunk_t> >(_my_source);
-	//	_my_gain->set_gain_db(36.0);
-		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>(_my_source);
-
-	//	_my_raw_output = new file_raw_output<chunk_t>(_my_pk_det);
-#endif
-	} catch (std::exception e) {
-		throw e;
-	}
 
 	CoInitialize(0);
 	ASIODriver drv(L"CreativeASIO");
@@ -117,9 +118,10 @@ void ASIOProcessor::Destroy()
 	delete _iomgr;
 	CoUninitialize();
 
+	delete _dummy_sink;
+	delete _dummy_sink2;
 	delete _my_pk_det;
 //	delete _my_gain;
-	delete _my_source;
 	
 	delete _file_out;
 	delete _cue;
@@ -150,23 +152,6 @@ ASIOError ASIOProcessor::Stop()
 	return ASIOStop();
 }
 
-void ASIOProcessor::ProcessInput()
-{
-	//throw std::exception("Not implemented");
-	if (_my_source)
-	{
-		_my_source->copy_data(_iomgr->_bufSize,
-			(short*)_iomgr->_buffer_infos[0].buffers[_doubleBufferIndex],
-			(short*)_iomgr->_buffer_infos[1].buffers[_doubleBufferIndex]);
-		while (_my_source->chunk_ready())
-		{
-		//	_my_raw_output->process();
-			_my_controller->next(_my_pk_det);
-		//	_my_controller->process(_ui->vinyl_control_enabled(1) ? _tracks[0] : 0, _ui->vinyl_control_enabled(2) ? _tracks[1] : 0, _my_pk_det);
-		}
-	}
-}
-
 void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
 	_waiting = true;
@@ -175,7 +160,7 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	_doubleBufferIndex = doubleBufferIndex;
 
 #if CARE_ABOUT_INPUT
-	this->ProcessInput();
+	_iomgr->processInputs(_doubleBufferIndex, _dummy_sink, _dummy_sink2);
 #endif	
 
 #if DO_OUTPUT

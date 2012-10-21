@@ -22,14 +22,15 @@ protected:
 };
 
 template <typename Filter_T, typename Decoder_T>
-class controller
+class controller : public T_sink<typename Filter_T::chunk_t>
 {
 public:
-	void next(Decoder_T *dec)
+	controller(Decoder_T *dec) : _decoder(dec) {}
+	void process()
 	{
-		T_allocator<Decoder_T::chunk_t>::free(dec->next());
+		T_allocator<Decoder_T::chunk_t>::free(_decoder->next());
 	}
-	void process(Filter_T *filt, Filter_T *filt2, Decoder_T *dec)
+	void process(Filter_T *filt, Filter_T *filt2)
 	{
 	//	if (dec->p_begin.mod != 0.0)
 		{
@@ -84,6 +85,8 @@ public:
 	{
 		filt->seek_time(t);
 	}
+
+	Decoder_T *_decoder;
 };
 
 #endif // !defined(CONTROLLER_H)

@@ -77,7 +77,9 @@ ASIOManager<Chunk_T>::ASIOManager(IASIO *drv) :
 	_input_channel_infos(0),
 	_output_channel_infos(0),
 	_main_out(0),
-	_out_2(0)
+	_out_2(0),
+	_my_source(0),
+	_my_source2(0)
 {
 	ASIOError e;
 
@@ -97,6 +99,8 @@ ASIOManager<Chunk_T>::~ASIOManager()
 	free(_output_channel_infos);
 	free(_input_channel_infos);
 
+	delete _my_source2;
+	delete _my_source;
 	delete _main_out;
 	delete _out_2;
 }
@@ -147,7 +151,7 @@ void ASIOManager<Chunk_T>::createBuffers()
 {
 	ASIOError e;
 
-	int ch_input_l, ch_input_r, ch_output1_l, ch_output1_r, ch_output2_l, ch_output2_r;
+	int ch_input_l, ch_input_r, ch_input2_l, ch_input2_r, ch_output1_l, ch_output1_r, ch_output2_l, ch_output2_r;
 #if CHOOSE_CHANNELS
 	printf("choose 4 channels (in L, in R, out L, out R) or -1 to quit, maybe: ");
 	std::cin >> ch_input_l;
@@ -156,6 +160,9 @@ void ASIOManager<Chunk_T>::createBuffers()
 	// mic/line in 2
 	ch_input_l = 16;
 	ch_input_r = 17;
+	// aux 2
+	ch_input2_l = 18;
+	ch_input2_r = 19;
 	// aux
 	//ch_input_l = 18;
 	//ch_input_r = 19;
@@ -167,7 +174,7 @@ void ASIOManager<Chunk_T>::createBuffers()
 	ch_output2_r = 5;
 #endif
 
-	_buffer_infos_len = 6;
+	_buffer_infos_len = 8;
 	_buffer_infos = (ASIOBufferInfo*)malloc(_buffer_infos_len*sizeof(ASIOBufferInfo));
 	_buffer_infos[0].isInput = ASIOTrue;
 	//_buffer_infos[0].channelNum = 2;
@@ -183,6 +190,10 @@ void ASIOManager<Chunk_T>::createBuffers()
 	_buffer_infos[4].channelNum = ch_output2_l;
 	_buffer_infos[5].isInput = ASIOFalse;
 	_buffer_infos[5].channelNum = ch_output2_r;
+	_buffer_infos[6].isInput = ASIOTrue;
+	_buffer_infos[6].channelNum = ch_input2_l;
+	_buffer_infos[7].isInput = ASIOTrue;
+	_buffer_infos[7].channelNum = ch_input2_r;
 
 	_cb.bufferSwitch = bufferSwitch;
 	_cb.bufferSwitchTimeInfo = bufferSwitchTimeInfo;
@@ -231,6 +242,9 @@ void ASIOManager<Chunk_T>::createIOs(chunk_buffer *src, chunk_buffer *src2)
 		(short**)_buffer_infos[4].buffers, 
 		(short**)_buffer_infos[5].buffers,
 		_bufSize);
+
+	_my_source = new asio_source<short, SamplePairf, chunk_t>;
+	_my_source2 = new asio_source<short, SamplePairf, chunk_t>;
 }
 
 template <typename Chunk_T>
@@ -238,6 +252,28 @@ void ASIOManager<Chunk_T>::processOutputs()
 {
 	_main_out->process();
 	_out_2->process();
+}
+
+template <typename Chunk_T>
+void ASIOManager<Chunk_T>::processInputs(long doubleBufferIndex, T_sink<Chunk_T> *sink1, T_sink<Chunk_T> *sink2)
+{
+	_my_source->copy_data(_bufSize,
+		(short*)_buffer_infos[0].buffers[doubleBufferIndex],
+		(short*)_buffer_infos[1].buffers[doubleBufferIndex]);
+
+	_my_source2->copy_data(_bufSize,
+		(short*)_buffer_infos[0].buffers[doubleBufferIndex],
+		(short*)_buffer_infos[1].buffers[doubleBufferIndex]);
+
+	while (_my_source->chunk_ready())
+	{
+		sink1->process();
+	}
+
+	while (_my_source2->chunk_ready())
+	{
+		sink2->process();
+	}
 }
 
 template <typename Chunk_T>
