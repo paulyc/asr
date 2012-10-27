@@ -28,10 +28,55 @@
 class ASIOProcessor;
 class GenericUI;
 
+template <typename Input_Chunk_T, typename Output_Chunk_T>
+class ChunkConverter : public T_source<Output_Chunk_T>, public T_sink<Input_Chunk_T>
+{
+public:
+	ChunkConverter(T_source<Input_Chunk_T> *src) : T_sink(src) {}
+	Output_Chunk_T *next() { return 0; }
+};
+
+template <>
+class ChunkConverter<chunk_time_domain_1d<SamplePairf, 4096>, chunk_time_domain_1d<SamplePairInt16, 4096> >  : 
+	public T_source<chunk_time_domain_1d<SamplePairInt16, 4096> >, 
+	public T_sink<chunk_time_domain_1d<SamplePairf, 4096> >
+{
+	typedef chunk_time_domain_1d<SamplePairf, 4096> input_chunk_t;
+	typedef chunk_time_domain_1d<SamplePairInt16, 4096> output_chunk_t;
+public:
+	ChunkConverter(T_source<input_chunk_t> *src) : T_sink(src) {}
+	output_chunk_t *next() 
+	{
+		input_chunk_t *in_chk = _src->next();
+		SamplePairf *in_data = in_chk->_data;
+		float in;
+		output_chunk_t *out_chk = T_allocator<output_chunk_t>::alloc();
+		SamplePairInt16 *out_data = out_chk->_data;
+		short out;
+		for (int i=0; i<4096; ++i)
+		{
+			in = in_data[i][0];
+			if (in < 0.0f)
+				out_data[i][0] = short(max(-1.0f, in) * -SHRT_MIN);
+			else
+				out_data[i][0] = short(min(1.0f, in) * SHRT_MAX);
+
+			in = in_data[i][1];
+			if (in < 0.0f)
+				out_data[i][1] = short(max(-1.0f, in) * -SHRT_MIN);
+			else
+				out_data[i][1] = short(min(1.0f, in) * SHRT_MAX);
+		}
+		T_allocator<input_chunk_t>::free(in_chk);
+		return out_chk;
+	}
+};
+
 class ASIOProcessor
 {
 public:
-	chunk_buffer _main_mgr, _file_mgr, _2_mgr;
+	chunk_buffer _main_mgr, /*_file_mgr,*/ _2_mgr;
+	chunk_buffer_t<chunk_time_domain_1d<SamplePairInt16, 4096> > _file_mgr;
 	
 	ASIOProcessor();
 	virtual ~ASIOProcessor();
@@ -53,7 +98,6 @@ public:
 	void SetMix(int m)
 	{
 		_master_xfader->set_mix(m);
-	//	_bus_matrix->xfade_2(m, _tracks[0], _tracks[1], _master_bus);
 	}
 
 	void set_ui(GenericUI *ui)
@@ -106,13 +150,13 @@ public:
 					_file_src = 0;
 					break;
 				case Master:
-					_file_src = _master_xfader;
+				//	_file_src = _master_xfader;
 					break;
 				case Cue:
-					_file_src = _cue;
+				//	_file_src = _cue;
 					break;
 				case Aux:
-				//	_file_src = _aux;
+					_file_src = _aux;
 					break;
 			}
 		}
@@ -132,15 +176,11 @@ public:
 			delete _file_out;
 			_file_out = 0;
 		}
-		_file_out = new file_raw_output<chunk_t>(&_file_mgr, filename);
+		//_file_out = new file_raw_output<chunk_t>(&_file_mgr, filename);
+		//_file_out = new file_raw_output<chunk_time_domain_1d<SamplePairInt16, 4096> >(&_file_mgr, filename);
+		_file_out = new file_raw_output<chunk_time_domain_1d<SamplePairInt16, 4096> >(_aux, filename);
 		pthread_mutex_unlock(&_io_lock);
 	}
-    
-    void load_step()
-    {
-        _tracks[0]->load_step_if();
-        _tracks[1]->load_step_if();
-    }
 
 	pthread_mutex_t *get_lock()
 	{
@@ -191,12 +231,9 @@ public: // was protected
 	std::ofstream _log;
 
 	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *_my_pk_det;
-	//typedef controller<track_t, 
-	//	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> 
-	//	> controller_t;
 	gain<asio_source<short, SamplePairf, chunk_t> > *_my_gain;
-	//controller_t *_my_controller;
-	file_raw_output<chunk_t> *_file_out;
+	//file_raw_output<chunk_t> *_file_out;
+	file_raw_output<chunk_time_domain_1d<SamplePairInt16, 4096> > *_file_out;
 	typedef peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>::pos_info pos_info;
 
 	const std::deque<pos_info>& get_pos_stream() const { return _my_pk_det->_pos_stream; }
@@ -204,10 +241,12 @@ public: // was protected
 	std::vector<track_t*> _tracks;
 	xfader<track_t> *_master_xfader;
 	xfader<track_t> *_cue;
-	xfader<track_t> *_aux;
+	//xfader<track_t> *_aux;
+	T_source<chunk_time_domain_1d<SamplePairInt16, 4096> > *_aux;
 
 	xfader<track_t> *_main_src;
-	xfader<track_t> *_file_src;
+	//xfader<track_t> *_file_src;
+	T_source<chunk_time_domain_1d<SamplePairInt16, 4096> > *_file_src;
 
 	pthread_mutex_t _io_lock;
 	GenericUI *_ui;

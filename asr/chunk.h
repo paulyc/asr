@@ -188,6 +188,7 @@ public:
 	}
 
 	static const int chunk_size = n0;
+	static const int sample_size = sizeof(Sample_T);
 	static fftwf_plan _plan;
 	static fftwf_plan _iplan;
 };

@@ -182,7 +182,7 @@ public:
 	virtual void process()
 	{
 		Chunk_T *t = _src->next();
-		fwrite(t->_data, 8, Chunk_T::chunk_size, _f);
+		fwrite(t->_data, Chunk_T::sample_size, Chunk_T::chunk_size, _f);
 		T_allocator<Chunk_T>::free(t);
 	}
 };

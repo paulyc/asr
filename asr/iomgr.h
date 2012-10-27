@@ -74,6 +74,20 @@ struct chunk_buffer : public T_source<chunk_t>
 };
 
 template <typename Chunk_T>
+struct chunk_buffer_t : public T_source<Chunk_T>
+{
+	chunk_buffer_t():_c(0){}
+	Chunk_T* _c;
+	Chunk_T* next()
+	{
+		assert(_c);
+		Chunk_T *r = _c;
+		_c = 0;
+		return r;
+	}
+};
+
+template <typename Chunk_T>
 class ASIOManager : public IOManager<Chunk_T>
 {
 public:

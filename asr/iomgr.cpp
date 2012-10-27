@@ -262,15 +262,15 @@ void ASIOManager<Chunk_T>::processInputs(long doubleBufferIndex, T_sink<Chunk_T>
 		(short*)_buffer_infos[1].buffers[doubleBufferIndex]);
 
 	_my_source2->copy_data(_bufSize,
-		(short*)_buffer_infos[0].buffers[doubleBufferIndex],
-		(short*)_buffer_infos[1].buffers[doubleBufferIndex]);
+		(short*)_buffer_infos[6].buffers[doubleBufferIndex],
+		(short*)_buffer_infos[7].buffers[doubleBufferIndex]);
 
-	while (_my_source->chunk_ready())
+	while (sink1 && _my_source->chunk_ready())
 	{
 		sink1->process();
 	}
 
-	while (_my_source2->chunk_ready())
+	while (sink2 && _my_source2->chunk_ready())
 	{
 		sink2->process();
 	}

@@ -40,16 +40,15 @@ ASIOProcessor::~ASIOProcessor()
 
 void ASIOProcessor::CreateTracks()
 {
-	
-
 	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 1, _default_src));
 	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 2, _default_src));
 	
 	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
 	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
-	_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
+	//_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
 
 	_iomgr->createIOs(&_main_mgr, &_2_mgr);
+	_aux = new ChunkConverter<chunk_time_domain_1d<SamplePairf, 4096>, chunk_time_domain_1d<SamplePairInt16, 4096> >(_iomgr->_my_source2);
 
 	try {
 	//	_my_gain = new gain<asio_source<short, SamplePairf, chunk_t> >(_my_source);
@@ -160,7 +159,11 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	_doubleBufferIndex = doubleBufferIndex;
 
 #if CARE_ABOUT_INPUT
-	_iomgr->processInputs(_doubleBufferIndex, _dummy_sink, _dummy_sink2);
+	_iomgr->processInputs(_doubleBufferIndex, _dummy_sink, 0);
+	while (_file_out && _iomgr->_my_source2->chunk_ready())
+	{
+		_file_out->process();
+	}
 #endif	
 
 #if DO_OUTPUT
@@ -220,7 +223,7 @@ void ASIOProcessor::GenerateOutput()
 		_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
     
 	_main_mgr._c = out;
-	if (_file_src == _main_src) 
+/*	if (_file_src == _main_src) 
 	{
 		out->add_ref();
 		_file_mgr._c = out;
@@ -234,7 +237,7 @@ void ASIOProcessor::GenerateOutput()
 			_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
 	}
 	else
-	{
+*/	{
 		T_allocator<chunk_t>::free(chk1);
 		T_allocator<chunk_t>::free(chk2);
 	}
