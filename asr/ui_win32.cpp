@@ -10,6 +10,7 @@ typedef ASIOP::track_t track_t;
 #include <shellapi.h>
 #include <commctrl.h>
 #include <wingdi.h>
+#include <dbghelp.h>
 #include "resource.h"
 #define SLEEP 0
 
@@ -586,19 +587,41 @@ void Win32UI::destroy()
 
 LONG WINAPI Win32UI::top_level_exception_filter(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
+	// return address = esp + 4
+	ASR::get_io_instance()->Stop();
+
 	printf("top level exception filter caught ");
-	
+
+	FILE *ftxt = fopen("error.txt", "w");
+	FILE *fbin = fopen("exception_info.bin", "wb");
+	fwrite((const void*)ExceptionInfo->ExceptionRecord, sizeof(EXCEPTION_RECORD), 1, fbin);
+	fwrite((const void*)ExceptionInfo->ContextRecord, sizeof(CONTEXT), 1, fbin);
 	switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
 	{
 		case EXCEPTION_ACCESS_VIOLATION:
-			printf("EXCEPTION_ACCESS_VIOLATION eip = %x\n", ExceptionInfo->ContextRecord->Eip);
+			fprintf(ftxt, "EXCEPTION_ACCESS_VIOLATION eip = %x\n", ExceptionInfo->ContextRecord->Eip);
 			break;
 		default:
-			printf("code %d\n", ExceptionInfo->ExceptionRecord->ExceptionCode);
+			fprintf(ftxt, "code %d\n", ExceptionInfo->ExceptionRecord->ExceptionCode);
 			break;
 	}
-	::TerminateProcess(::GetCurrentProcess(), 1);
-	return EXCEPTION_CONTINUE_EXECUTION;
+	fclose(fbin);
+	fclose(ftxt);
+
+	HANDLE hFile = ::CreateFile(L"crash.dmp", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	MINIDUMP_EXCEPTION_INFORMATION info;
+	info.ThreadId = ::GetCurrentThreadId();
+	info.ClientPointers = FALSE;
+	info.ExceptionPointers = ExceptionInfo;
+	MiniDumpWriteDump(::GetCurrentProcess(), ::GetCurrentProcessId(), hFile, MiniDumpWithFullMemory, &info, NULL, NULL);
+	CloseHandle(hFile);
+	//void *ip = (void*)ExceptionInfo->ContextRecord->Esp;
+	//while (ip) {
+	//}
+	
+	//::TerminateProcess(::GetCurrentProcess(), 1);
+	//return EXCEPTION_CONTINUE_EXECUTION;
+	return EXCEPTION_EXECUTE_HANDLER;
 }
 
 void Win32UI::main_loop()
