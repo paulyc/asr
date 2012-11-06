@@ -275,10 +275,21 @@ class KaiserWindowTable : public KaiserWindowBase<T>
 {
 protected:
 	typedef T(*sqrt_func)(T);
+	
+	sqrt_func get_sqrt_f();
+	static KaiserWindowTable *_inst;
+	T m_kaiserTable[TblSz];
+	T m_alpha;
+	T m_pitimesalpha;
+	T m_d;
+	T m_inversed;
+	sqrt_func m_sqrt;
+public:
 	KaiserWindowTable()
 	{
 		T time;
-		m_sqrt = get_sqrt_f();
+	//	m_sqrt = get_sqrt_f();
+		m_sqrt = sqrt;	//hack
 		m_alpha = T(2.0);
 		m_pitimesalpha = T(M_PI)*m_alpha;
 		m_d = I_0<T>(m_pitimesalpha);
@@ -289,15 +300,7 @@ protected:
 			m_kaiserTable[i] = I_0<T>(m_pitimesalpha*m_sqrt(1-time*time))*m_inversed;
 		}
 	}
-	sqrt_func get_sqrt_f();
-	static KaiserWindowTable *_inst;
-	T m_kaiserTable[TblSz];
-	T m_alpha;
-	T m_pitimesalpha;
-	T m_d;
-	T m_inversed;
-	sqrt_func m_sqrt;
-public:
+
 	static KaiserWindowTable* get()
 	{
 		if (!_inst)

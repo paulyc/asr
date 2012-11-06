@@ -206,10 +206,12 @@ public:
 		int tap = maxLpos - resampler_taps/2;
 		int last_tap = tap + resampler_taps;
 		
+		i=0;
 		while (buf < buf_end)
 		{
-			*buf++ = (tap < 0 || tap > fft_size/2) ? 0.0 : magsL[tap];
+			*buf++ = (tap < 0 || tap > fft_size/2) ? 0.0 : magsL[tap] * _window_resample.get_i(i);
 			++tap;
+			++i;
 		} 
 
 		double max = 0.0;
@@ -227,7 +229,6 @@ public:
 		//	printf("L cntr %f +maxLpos %f\n", cntr, double(maxLpos)+cntr);
 		//}
 		fcL = (double(maxLpos)+cntr)*(SAMPLERATE/fft_size);
-		
 
 		buf = _rs.get_tap_buffer(), buf_end = buf+resampler_taps;
 		tap = maxRpos - resampler_taps/2;
@@ -517,6 +518,12 @@ public:
 		for (int f_indx = 0; f_indx < chunk_size/fft_size; ++f_indx) {
 			memcpy(_inBuf, copy_from, sizeof(SamplePairf)*to_write);
 			copy_from += to_write;
+			for (int i=0; i<fft_size; ++i)
+			{
+				const double wconst = _window.get_i(i);
+				_inBuf[i*2] *= wconst;
+				_inBuf[i*2+1] *= wconst;
+			}
 			double f = fft_find_frequency();
 			//if (f != 0.0/* && f > 1800.0 && f < 2200.0*/)
 				new_freqs[f_indx] = f;
@@ -622,6 +629,8 @@ public:
 	int _bit_smp_list[24];
 
 	double _freqs[chunk_size/fft_size];
+	KaiserWindowTable<double, fft_size> _window;
+	KaiserWindowTable<double, 2*resampler_taps> _window_resample;
 	
 	//int _little_fft_size;
 	//float *_little_fft_buf;
