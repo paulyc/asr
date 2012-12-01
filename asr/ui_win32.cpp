@@ -613,7 +613,7 @@ LONG WINAPI Win32UI::top_level_exception_filter(struct _EXCEPTION_POINTERS *Exce
 	info.ThreadId = ::GetCurrentThreadId();
 	info.ClientPointers = FALSE;
 	info.ExceptionPointers = ExceptionInfo;
-	MiniDumpWriteDump(::GetCurrentProcess(), ::GetCurrentProcessId(), hFile, MiniDumpWithFullMemory, &info, NULL, NULL);
+	MiniDumpWriteDump(::GetCurrentProcess(), ::GetCurrentProcessId(), hFile, /*MiniDumpWithFullMemory*/MiniDumpNormal, &info, NULL, NULL);
 	CloseHandle(hFile);
 	//void *ip = (void*)ExceptionInfo->ContextRecord->Esp;
 	//while (ip) {
