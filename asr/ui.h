@@ -156,6 +156,11 @@ public:
 	UITrack _track2;
 	MagicController _magic;
 	FutureExecutor _future;
+
+private:
+#if USE_QUEUES
+	std::queue<deferred*> _task_q;
+#endif
 };
 
 #if WINDOWS
@@ -182,6 +187,11 @@ public:
 	bool _want_render;
 	bool _want_quit;
 	HACCEL  _accelTable;
+
+private:
+	void set_text_field_impl(int id, const wchar_t *txt, bool del);
+	void set_clip_impl(int t_id);
+	void render_impl(int t_id);
 };
 
 struct Win32UISlider : public UISlider

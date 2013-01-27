@@ -10,6 +10,17 @@ typedef T_source<my_chunk> my_source;
 typedef T_sink<my_chunk> my_sink;
 */
 
+typedef char int8_t;
+typedef unsigned char uint8_t;
+typedef short int16_t;
+typedef unsigned short uint16_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
+typedef __int64 int64_t;
+typedef unsigned __int64 uint64_t;
+
+typedef __int64 smp_ofs_t;
+
 #include "chunk.h"
 typedef chunk_time_domain_1d<SamplePairf, 4096> chunk_t;
 typedef chunk_freq_domain_1d<fftwf_complex, 4096> cchunk_t;

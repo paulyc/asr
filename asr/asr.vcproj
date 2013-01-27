@@ -491,6 +491,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\mpeg.h"
+				>
+			</File>
+			<File
 				RelativePath=".\myasio.h"
 				>
 			</File>

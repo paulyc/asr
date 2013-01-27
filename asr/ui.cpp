@@ -17,8 +17,8 @@ GenericUI::GenericUI(ASIOProcessor *io, UITrack t1, UITrack t2) :
 
 void GenericUI::do_paint()
 {
-	_io->GetTrack(1)->lockedpaint();
-	_io->GetTrack(2)->lockedpaint();
+	_io->GetTrack(1)->draw_if_loaded();
+	_io->GetTrack(2)->draw_if_loaded();
 }
 
 void GenericUI::mouse_down(MouseButton b, int x, int y)
@@ -275,8 +275,7 @@ UIText::UIText(GenericUI *ui, int i) : _ui(ui), id(i)
 
 void UIText::set_text(const wchar_t *txt, bool del=true)
 {
-//	callback(id, txt);
-	_ui->future_task(new deferred3<GenericUI, int, const wchar_t*, bool>(_ui, &GenericUI::set_text_field, id, txt, del));
+	_ui->set_text_field(id, txt, del);
 }
 
 void UIText::set_text_pct(double pct)

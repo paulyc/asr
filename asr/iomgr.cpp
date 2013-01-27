@@ -55,8 +55,8 @@ IOManager<chunk_t>* ASIODriver::loadDriver()
 	// Creative ASIO {48653F81-8A2E-11D3-9EF0-00C0F02DD390}
 	// SB Audigy 2 ZS ASIO {4C46559D-03A7-467A-8C58-2ABC5B749A1E}
 	// SB Audigy 2 ZS ASIO 24/96 {98B6A52A-4FF7-4147-B224-CC256C3C4C64}
-	const char * drvdll = "d:\\program files\\presonus\\1394audiodriver_firebox\\ps_asio.dll";
-	CLSIDFromString(OLESTR("{48653F81-8A2E-11D3-9EF0-00C0F02DD390}"), &clsid);
+	//const char * drvdll = "d:\\program files\\presonus\\1394audiodriver_firebox\\ps_asio.dll";
+	CLSIDFromString(OLESTR("{23638883-0B8C-4324-BBD5-35C3CF1B73BF}"), &clsid);
 #endif
 	HRESULT rc = CoCreateInstance(clsid, 0, CLSCTX_INPROC_SERVER, clsid, (LPVOID *)&asiodrv);
 
@@ -158,11 +158,11 @@ void ASIOManager<Chunk_T>::createBuffers()
 	std::cin >> ch_input_r >> ch_output_l >> ch_output_r;
 #else
 	// mic/line in 2
-	ch_input_l = 16;
-	ch_input_r = 17;
+	ch_input_l = 0;
+	ch_input_r = 1;
 	// aux 2
-	ch_input2_l = 18;
-	ch_input2_r = 19;
+	ch_input2_l = 2;
+	ch_input2_r = 3;
 	// aux
 	//ch_input_l = 18;
 	//ch_input_r = 19;

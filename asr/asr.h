@@ -31,8 +31,6 @@ typedef short SamplePairInt16[2];
 typedef fftwf_complex ComplexPairf[2];
 typedef fftw_complex ComplexPaird[2];
 
-typedef __int64 smp_ofs_t;
-
 #include "type.h"
 
 /*

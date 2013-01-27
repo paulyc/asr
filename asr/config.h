@@ -46,7 +46,7 @@
 
 #define USE_BUFFER_MGR 1
 
-#define DEBUG_ALLOCATOR 0
+#define DEBUG_ALLOCATOR 1
 #define DEBUG_MALLOC 0
 #define USE_NEW_WAVE 0
 
@@ -62,6 +62,8 @@
 #define BUFFER_BEFORE_COPY 0
 #endif
 
-#define HANDLE_TOPLEVEL_EXCEPTIONS 1
+#define HANDLE_TOPLEVEL_EXCEPTIONS 0
+
+#define USE_QUEUES 0
 
 #endif // !defined(_CONFIG_H)

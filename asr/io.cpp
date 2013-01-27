@@ -159,7 +159,7 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	_doubleBufferIndex = doubleBufferIndex;
 
 #if CARE_ABOUT_INPUT
-	_iomgr->processInputs(_doubleBufferIndex, _dummy_sink, 0);
+	_iomgr->processInputs(_doubleBufferIndex, _dummy_sink, _dummy_sink2);
 	while (_file_out && _iomgr->_my_source2->chunk_ready())
 	{
 		_file_out->process();

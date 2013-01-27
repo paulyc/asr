@@ -631,6 +631,28 @@ void Win32UI::main_loop()
 #else
 	BOOL bRet;
 	MSG msg;
+#if USE_QUEUES
+	while (true)
+	{
+		while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0) 
+		{
+			if (msg.message == WM_QUIT)
+			{
+				return;
+			}
+			if (!IsWindow(g_dlg) || !IsDialogMessage(g_dlg, &msg)) 
+			{ 
+				TranslateMessage(&msg); 
+				DispatchMessage(&msg); 
+			} 
+			else
+			{
+				TranslateAccelerator(g_dlg, _accelTable, &msg);
+			}
+		} 
+		_future->process_calls();
+	}
+#else
 	while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0) 
 	{ 
 		if (bRet == -1)
@@ -649,6 +671,7 @@ void Win32UI::main_loop()
 			TranslateAccelerator(g_dlg, _accelTable, &msg);
 		}
 	} 
+#endif
 
 #endif // !SLEEP
 }
@@ -697,16 +720,31 @@ void Win32UI::set_position(void *t, double p, bool invalidate)
 
 void Win32UI::set_text_field(int id, const wchar_t *txt, bool del=true)
 {
+	future_task(new deferred3<Win32UI, int, const wchar_t*, bool>(this, &Win32UI::set_text_field_impl, id, txt, del));
+}
+
+void Win32UI::set_text_field_impl(int id, const wchar_t *txt, bool del)
+{
 	SetDlgItemTextW(g_dlg, id, txt);
 	if (del) delete [] txt;
 }
 //ui deadlock!!
 void Win32UI::set_clip(int t_id)
 {
+	future_task(new deferred1<Win32UI, int>(this, &Win32UI::set_clip_impl, t_id));
+}
+
+void Win32UI::set_clip_impl(int t_id)
+{
 	SendMessage(GetDlgItem(g_dlg, t_id==1?IDC_CHECK7:IDC_CHECK8), BM_SETCHECK, BST_CHECKED, BST_CHECKED);
 }
 
 void Win32UI::render(int t_id)
+{
+	render_impl(t_id);
+}
+
+void Win32UI::render_impl(int t_id)
 {
 	//PAINTSTRUCT ps;
 	HDC hdc, hdc_old;

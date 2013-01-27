@@ -46,7 +46,7 @@ public:
 		}
 	}
 
-	Chunk_T *get_chunk(int chk_ofs)
+	Chunk_T *get_chunk(unsigned int chk_ofs)
 	{
 		// dont think this needs locked??
 		if (_src->_len.chunks != -1 && chk_ofs >= _src->_len.chunks)

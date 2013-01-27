@@ -97,41 +97,6 @@ public:
 		_resample_filter->pos_stream(this);
 	}
 
-	/*pos_info next_pos()
-	{
-		if (!_decoder->_pos_stream.empty())
-		{
-			pos_info p = _decoder->_pos_stream.front();
-			_decoder->_pos_stream.pop();
-			return p;
-		}
-		else
-		{
-			pos_info p;
-			p.valid = false;
-			return p;
-		}
-	}
-
-	typedef typename peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>::pos_info pos_info;
-	const pos_info& next_pos_info()
-	{
-		if (_decoder->_pos_stream.empty())
-		{
-			return 
-		}
-		else
-		{
-			const pos_info &pos = _decoder->_pos_stream.front();
-			_decoder->_pos_stream.pop();
-			return pos
-		}
-		
-	}
-
-	double last_time;
-	smp_ofs_t last_smp;*/
-
 protected:
 	lowpass_filter_td<Chunk_T, double> *_resample_filter;
 	double _pitchpoint;
@@ -281,12 +246,26 @@ public:
 
 	void lock_pos(int y)
 	{
+		lock();
 		_display->lock_pos(y);
+		unlock();
 	}
 
 	void unlock_pos()
 	{
+		lock();
 		_display->unlock_pos();
+		unlock();
+	}
+
+	void zoom_px(int d)
+	{
+		_display->zoom_px(d);
+	}
+
+	void move_px(int d)
+	{
+		_display->move_px(d);
 	}
 
 	void set_wav_heights(bool unlock=true, bool lock=false)
@@ -308,7 +287,7 @@ public:
 		return _display->get_wav_height(pixel);
 	}
 
-protected:
+protected: //should be private!!
 	StreamMetadata<Chunk_T> *_meta;
 	display_t *_display;
 	int _display_width;
@@ -391,6 +370,9 @@ public:
 
 		_future = new FutureExecutor;
 
+	//	int sz = (char*)&_display - (char*)this;
+	//	printf("sz = 0x%x\n", sz);
+
 		if (filename)
 			set_source_file_impl(std::wstring(filename), _io->get_lock());
 	}
@@ -423,6 +405,7 @@ public:
 				lock));
 	}
 
+private:
 	void set_source_file_impl(std::wstring filename, pthread_mutex_t *lock)
 	{
 		pthread_mutex_lock(&_loading_lock);
@@ -445,23 +428,23 @@ public:
 			pthread_mutex_unlock(&_loading_lock);
 			return;
 		}
-		pthread_mutex_unlock(&_loading_lock);
+	//	pthread_mutex_unlock(&_loading_lock);
 
-		LOCK_IF_SMP(lock);
+	//	LOCK_IF_SMP(lock);
 		PitchableMixin<Chunk_T>::create(_src_buf, _src->sample_rate());
 		ViewableMixin<Chunk_T>::create(_src_buf);
-		UNLOCK_IF_SMP(lock);
+	//	UNLOCK_IF_SMP(lock);
 
-		pthread_mutex_lock(&_loading_lock);
+	//	pthread_mutex_lock(&_loading_lock);
 		_in_config = false;
 		_last_time = 0.0;
-		pthread_mutex_unlock(&_loading_lock);
-
 		_filename = filename;
+		pthread_mutex_unlock(&_loading_lock);
 
 		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
 	}
 
+public:
 	Chunk_T* next(void *dummy=0)
 	{
 		Chunk_T *chk;
@@ -475,6 +458,8 @@ public:
 		else
 		{
 			chk = _resample_filter->next();
+			if (true && _resample_filter->get_time() >= len().time)
+				_resample_filter->seek_time(0.0);
 			pthread_mutex_unlock(&_loading_lock);
 			render();
 		}
@@ -549,21 +534,22 @@ public:
 		//pthread_mutex_unlock(lock);
 	}
 
-	void lockedpaint()
-	{
-	//	printf("track::lockedpaint\n");
-		pthread_mutex_lock(&_loading_lock);
-		_io->get_ui()->render(_track_id);
-		pthread_mutex_unlock(&_loading_lock);
-	}
-
 	void draw_if_loaded()
 	{
 		if (loaded())
 		{
-			set_wav_heights(false, false);
-			lockedpaint();
+			set_wav_heights(false, true);
+			pthread_mutex_lock(&_loading_lock);
+			_io->get_ui()->render(_track_id);
+			pthread_mutex_unlock(&_loading_lock);
 		}
+	}
+
+	//using ViewableMixin<Chunk_T>::get_display_pos;
+
+	double get_display_pos(double tm)
+	{
+		return ViewableMixin<Chunk_T>::get_display_pos(tm);
 	}
 
 	void zoom_px(int d)
@@ -571,7 +557,7 @@ public:
 	//	printf("track::zoom_px\n");
 		if (!_loaded) return;
 	//	pthread_mutex_lock(&_config_lock);
-		_display->zoom_px(d);
+		ViewableMixin<Chunk_T>::zoom_px(d);
 		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
     //	pthread_mutex_unlock(&_config_lock);
 	}
@@ -581,7 +567,7 @@ public:
 	//	printf("track::move_px\n");
 	//	pthread_mutex_lock(&_config_lock);
 		if (!_loaded) return;
-		_display->move_px(d);
+		ViewableMixin<Chunk_T>::move_px(d);
 		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
 	//	pthread_mutex_unlock(&_config_lock);
 	}
@@ -602,17 +588,12 @@ public:
 			_io->trigger_sync_cue(_track_id);
 		}
 		_last_time = tm;
-        _io->get_ui()->set_position(this, _display->get_display_pos(tm), true);
+		_io->get_ui()->set_position(this, get_display_pos(tm), true);
     }
 
 	void deferred_call(deferred *d)
 	{
 		_future->submit(d);
-	}
-
-	double get_display_pos(double f)
-	{
-		return ViewableMixin<Chunk_T>::get_display_pos(f);
 	}
 
 	typename const T_source<Chunk_T>::pos_info& len()
@@ -636,11 +617,6 @@ public:
 	}
 
 	void set_clip(int id)
-	{
-		deferred_call(new deferred1<track_t, int>(this, &track_t::set_clip_impl, id));
-	}
-
-	void set_clip_impl(int id)
 	{
 		_io->_ui->set_clip(id);
 	}
