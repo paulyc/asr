@@ -58,11 +58,13 @@ class GenericUI;
 
 class ASR
 {
-public:
 	ASR();
 	~ASR();
 
-	void execute();
+	static ASR *instance;
+
+public:
+	static void execute();
 
 	static ASIOProcessor* get_io_instance()
 	{
@@ -75,8 +77,6 @@ public:
 	}
 
 protected:
-	static ASR *instance;
-
 	ASIOProcessor * asio;
 	GenericUI *ui;
 };

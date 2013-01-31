@@ -38,13 +38,13 @@ typable(double)
 
 ASR *ASR::instance = 0;
 
-ASR::ASR() : asio(0), ui(0)
+ASR::ASR()
 {
-	instance = this;
-
 	asio = new ASIOProcessor;
 #if WINDOWS
 	ui = new Win32UI(asio);
+#else
+#error no ui defined
 #endif
 	asio->set_ui(ui);
 }
@@ -53,22 +53,17 @@ ASR::~ASR()
 {
 	asio->Finish();
 	delete ui;
-	ui = 0;
 	delete asio;
-	asio = 0;
-
-	instance = 0;
 }
 
 void ASR::execute()
 {
-#if WINDOWS
-	ui->create();
-	ui->main_loop();
-	ui->destroy();
-#else
-#error no ui loop defined
-#endif
+	instance = new ASR;
+	instance->ui->create();
+	instance->ui->main_loop();
+	instance->ui->destroy();
+	delete instance;
+	instance = 0;
 }
 
 int main()
@@ -111,9 +106,7 @@ int main()
 
 	//freopen("stdout.txt", "w", stdout);
 
-	ASR *app = new ASR;
-	app->execute();
-	delete app;
+	ASR::execute();
 	
 #if DEBUG_MALLOC
 	dump_malloc();

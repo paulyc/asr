@@ -3,6 +3,8 @@
 
 #include <semaphore.h>
 
+class ASIOProcessor;
+
 class MyASIOCallbacks
 {
 public:
