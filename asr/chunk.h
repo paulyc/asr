@@ -1,6 +1,9 @@
 #ifndef _CHUNK_H
 #define _CHUNK_H
 
+#include <fftw3.h>
+#include <list>
+
 struct countable
 {
 	countable() : _refs(1) {}

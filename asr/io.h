@@ -27,6 +27,7 @@
 
 class ASIOProcessor;
 class GenericUI;
+class IMIDIDevice;
 
 template <typename Input_Chunk_T, typename Output_Chunk_T>
 class ChunkConverter : public T_source<Output_Chunk_T>, public T_sink<Input_Chunk_T>
@@ -36,13 +37,13 @@ public:
 	Output_Chunk_T *next() { return 0; }
 };
 
-template <>
-class ChunkConverter<chunk_time_domain_1d<SamplePairf, 4096>, chunk_time_domain_1d<SamplePairInt16, 4096> >  : 
-	public T_source<chunk_time_domain_1d<SamplePairInt16, 4096> >, 
-	public T_sink<chunk_time_domain_1d<SamplePairf, 4096> >
+template <int chunk_size>
+class ChunkConverter<chunk_time_domain_1d<SamplePairf, chunk_size>, chunk_time_domain_1d<SamplePairInt16, chunk_size> >  : 
+	public T_source<chunk_time_domain_1d<SamplePairInt16, chunk_size> >, 
+	public T_sink<chunk_time_domain_1d<SamplePairf, chunk_size> >
 {
-	typedef chunk_time_domain_1d<SamplePairf, 4096> input_chunk_t;
-	typedef chunk_time_domain_1d<SamplePairInt16, 4096> output_chunk_t;
+	typedef chunk_time_domain_1d<SamplePairf, chunk_size> input_chunk_t;
+	typedef chunk_time_domain_1d<SamplePairInt16, chunk_size> output_chunk_t;
 public:
 	ChunkConverter(T_source<input_chunk_t> *src) : T_sink(src) {}
 	output_chunk_t *next() 
@@ -53,7 +54,7 @@ public:
 		output_chunk_t *out_chk = T_allocator<output_chunk_t>::alloc();
 		SamplePairInt16 *out_data = out_chk->_data;
 		short out;
-		for (int i=0; i<4096; ++i)
+		for (int i=0; i<chunk_size; ++i)
 		{
 			in = in_data[i][0];
 			if (in < 0.0f)
@@ -233,7 +234,7 @@ public: // was protected
 	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *_my_pk_det;
 	gain<asio_source<short, SamplePairf, chunk_t> > *_my_gain;
 	//file_raw_output<chunk_t> *_file_out;
-	file_raw_output<chunk_time_domain_1d<SamplePairInt16, 4096> > *_file_out;
+	file_raw_output<chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> > *_file_out;
 	typedef peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>::pos_info pos_info;
 
 	const std::deque<pos_info>& get_pos_stream() const { return _my_pk_det->_pos_stream; }
@@ -242,11 +243,11 @@ public: // was protected
 	xfader<track_t> *_master_xfader;
 	xfader<track_t> *_cue;
 	//xfader<track_t> *_aux;
-	T_source<chunk_time_domain_1d<SamplePairInt16, 4096> > *_aux;
+	T_source<chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> > *_aux;
 
 	xfader<track_t> *_main_src;
 	//xfader<track_t> *_file_src;
-	T_source<chunk_time_domain_1d<SamplePairInt16, 4096> > *_file_src;
+	T_source<chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> > *_file_src;
 
 	pthread_mutex_t _io_lock;
 	GenericUI *_ui;
@@ -265,6 +266,7 @@ public: // was protected
 	T_sink<chunk_t> *_dummy_sink;
 	T_sink<chunk_t> *_dummy_sink2;
 	
+	IMIDIDevice *_midi_controller;
 };
 
 class fAStIOProcessor : public ASIOProcessor

@@ -10,6 +10,19 @@ typedef T_source<my_chunk> my_source;
 typedef T_sink<my_chunk> my_sink;
 */
 
+#include <fftw3.h>
+
+#include "config.h"
+
+typedef float SamplePairf[2];
+typedef float SamplePairFloat32[2];
+typedef double SamplePaird[2];
+typedef double SamplePairFloat64[2];
+typedef short SamplePairInt16[2];
+
+typedef fftwf_complex ComplexPairf[2];
+typedef fftw_complex ComplexPaird[2];
+
 typedef char int8_t;
 typedef unsigned char uint8_t;
 typedef short int16_t;

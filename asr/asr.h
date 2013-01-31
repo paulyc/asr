@@ -22,15 +22,6 @@
 #include "config.h"
 #include "malloc.h"
 
-typedef float SamplePairf[2];
-typedef float SamplePairFloat32[2];
-typedef double SamplePaird[2];
-typedef double SamplePairFloat64[2];
-typedef short SamplePairInt16[2];
-
-typedef fftwf_complex ComplexPairf[2];
-typedef fftw_complex ComplexPaird[2];
-
 #include "type.h"
 
 /*
@@ -60,6 +51,7 @@ SamplePairf& operator*=(SamplePairf &lhs, float rhs)
 #include "chunk.h"
 #include "malloc.h"
 #include "stream.h"
+#include "midi.h"
 
 class ASIOProcessor;
 class GenericUI;
