@@ -25,7 +25,7 @@ public:
 	void create(BufferedStream<Chunk_T> *src, double sample_rate)
 	{
 		destroy();
-		_resample_filter = new lowpass_filter_td<Chunk_T, double>(src, 22050.0, sample_rate, 48000.0);
+		_resample_filter = new controllable_resampling_filter<Chunk_T, double>(src, 22050.0, sample_rate, 48000.0);
 		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
 	}
 
@@ -98,7 +98,8 @@ public:
 	}
 
 protected:
-	lowpass_filter_td<Chunk_T, double> *_resample_filter;
+	typedef controllable_resampling_filter<Chunk_T, double> filter_t;
+	controllable_resampling_filter<Chunk_T, double> *_resample_filter;
 	double _pitchpoint;
 	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *_decoder;
 };
@@ -301,7 +302,7 @@ public:
 	{
 	}
 
-	void create(const wchar_t *filename, pthread_mutex_t *lock)
+	void create(ASIOProcessor *io, const wchar_t *filename, pthread_mutex_t *lock)
 	{
 		T_source<Chunk_T> *src = 0;
 
@@ -325,7 +326,7 @@ public:
 		destroy();
 
 		_src = src;
-		_src_buf = new BufferedStream<Chunk_T>(_src);
+		_src_buf = new BufferedStream<Chunk_T>(io, _src);
 
 		_filename = filename;
 	}
@@ -419,7 +420,7 @@ private:
 		_paused = true;
 
 		try {
-			BufferedSource<Chunk_T>::create(filename.c_str(), lock);
+			BufferedSource<Chunk_T>::create(_io, filename.c_str(), lock);
 		} catch (std::exception &e) {
 			printf("Could not set_source_file due to %s\n", e.what());
 			_in_config = false;

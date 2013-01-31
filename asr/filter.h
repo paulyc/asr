@@ -198,10 +198,97 @@ public:
 		Precision_T t_input, t_diff = Precision_T(_sample_precision) * _input_sampling_period;
 		Sample_T *smp, *end, *conv_ptr;
 
+	//	printf("pos %d\n", pos_stream.size());
+
+		for (smp = chk->_data, end = smp + Chunk_T::chunk_size; smp != end; ++smp)
+		{
+			t_input = _output_time - t_diff;
+			smp_ofs_t ofs = smp_ofs_t(t_input * _input_sampling_rate) + 1;
+			t_input = ofs / _input_sampling_rate;
+			conv_ptr = _buffer_mgr->get_at_ofs(ofs);
+
+			Precision_T acc[2] = {0.0, 0.0};
+			Precision_T mul;
+			for (Sample_T *conv_end = conv_ptr + (_sample_precision*2); conv_ptr != conv_end; ++conv_ptr)
+			{
+#if 1 //direct calculation instead of table. slower but more accurate
+				mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
+#else
+				
+			//	int indx = _default_tbl_size/2+int((_default_tbl_size/2)*(t_input-_output_time)/t_diff);
+			/*	t_diff = Precision_T(_sample_precision+1) * _input_sampling_period;
+				int indx = (t_input-_output_time+t_diff)/(2.0*t_diff / (_default_tbl_size));		
+				assert(indx >= 0 && indx < _default_tbl_size);*/
+			//	mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
+			//	printf("%f\n", mul-_coeff_tbl[indx]
+			//		//,(t_input-_output_time)-Precision_T(_sample_precision) * _input_sampling_period + indx*2.0*Precision_T(_sample_precision) * _input_sampling_period / (_default_tbl_size)
+			//		);
+			//	mul = _coeff_tbl[indx];
+				mul = get_coeff(t_input-_output_time);
+#endif
+				acc[0] += (*conv_ptr)[0] * mul;
+				acc[1] += (*conv_ptr)[1] * mul;
+				
+				t_input += _input_sampling_period;
+			}
+
+			(*smp)[0] = (float)acc[0];
+			(*smp)[1] = (float)acc[1];
+			_output_time += _output_sampling_period;
+		}
+		
+		return chk;
+	}
+	
+	typename ASIOProcessor::pos_info last;
+	
+	friend class Controller;
+	typedef typename Chunk_T chunk_t;
+};
+
+template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
+class lowpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim, SampleBufSz>
+{
+public:
+	lowpass_filter_td(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
+		filter_td_base(src, cutoff, input_rate, output_rate)
+	{
+		__asm
+		{
+			push 0;offset string "ASIOProcessor::BufferSwitch"
+			mov eax, next
+			push eax
+			call Tracer::hook
+			add esp, 8
+		}
+	}
+protected:
+	Precision_T _h(Precision_T t)
+	{
+		return sinc<Precision_T>(_impulse_response_frequency*t);
+	}
+};
+
+template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
+class controllable_resampling_filter : public lowpass_filter_td<Chunk_T, Precision_T, Dim, SampleBufSz>
+{
+public:
+	controllable_resampling_filter(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
+		lowpass_filter_td(src, cutoff, input_rate, output_rate)
+	{
+		_io = src->get_io();
+	}
+
+	Chunk_T* next()
+	{
+		Chunk_T *chk = T_allocator<Chunk_T>::alloc();
+		Precision_T t_input, t_diff = Precision_T(_sample_precision) * _input_sampling_period;
+		Sample_T *smp, *end, *conv_ptr;
+
 		Sample_T *key_smp = 0;
 	//	printf("pos %d\n", pos_stream.size());
-		ASIOProcessor *io = ASR::get_io_instance();
-		GenericUI *ui = ASR::get_ui_instance();
+		ASIOProcessor *io = _io;
+		GenericUI *ui = _io->_ui;
 		const std::deque<ASIOProcessor::pos_info>& pos_stream = io->get_pos_stream();
 		std::deque<ASIOProcessor::pos_info>::const_iterator it = pos_stream.begin();
 		
@@ -302,34 +389,10 @@ public:
 		
 		return chk;
 	}
-	
-	typename ASIOProcessor::pos_info last;
-	
-	friend class Controller;
-	typedef typename Chunk_T chunk_t;
-};
 
-template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
-class lowpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim, SampleBufSz>
-{
-public:
-	lowpass_filter_td(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
-		filter_td_base(src, cutoff, input_rate, output_rate)
-	{
-		__asm
-		{
-			push 0;offset string "ASIOProcessor::BufferSwitch"
-			mov eax, next
-			push eax
-			call Tracer::hook
-			add esp, 8
-		}
-	}
-protected:
-	Precision_T _h(Precision_T t)
-	{
-		return sinc<Precision_T>(_impulse_response_frequency*t);
-	}
+private:
+	ASIOProcessor *_io;
+	//FilterController<
 };
 
 template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>

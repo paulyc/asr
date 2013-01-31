@@ -21,6 +21,15 @@ protected:
 	int _second_track;
 };
 
+template <typename Filter_T>
+class FilterController
+{
+public:
+	FilterController(ASIOProcessor *io) : _io(io) {}
+private:
+	ASIOProcessor *_io;
+};
+
 template <typename Filter_T, typename Decoder_T>
 class controller : public T_sink<typename Filter_T::chunk_t>
 {

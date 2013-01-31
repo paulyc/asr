@@ -3,10 +3,14 @@
 
 #include <semaphore.h>
 
-void bufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
-ASIOTime* bufferSwitchTimeInfo(ASIOTime *params, long doubleBufferIndex, ASIOBool directProcess);
-void sampleRateDidChange(ASIOSampleRate sRate);
-long asioMessage(long selector, long value, void *message, double *opt);
+class MyASIOCallbacks
+{
+public:
+	static void bufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
+	static ASIOTime* bufferSwitchTimeInfo(ASIOTime *params, long doubleBufferIndex, ASIOBool directProcess);
+	static void sampleRateDidChange(ASIOSampleRate sRate);
+	static long asioMessage(long selector, long value, void *message, double *opt);
+};
 
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
 class asio_sink : public T_sink_sourceable<Chunk_T>

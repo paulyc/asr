@@ -19,8 +19,9 @@ class BufferedStream : public T_source<Chunk_T>, T_sink<Chunk_T>
 public:
 	typedef Chunk_T chunk_t;
 
-	BufferedStream(T_source<Chunk_T> *src, bool preload=true) :
+	BufferedStream(ASIOProcessor *io, T_source<Chunk_T> *src, bool preload=true) :
 	  T_sink(src),
+	  _io(io),
 	  _chks(10000, 0),
 	  _chk_ofs(0),
 	  _smp_ofs(0),
@@ -247,7 +248,10 @@ public:
 		return true;
 	}
 
+	ASIOProcessor *get_io() { return _io; }
+
 protected:
+	ASIOProcessor *_io;
 	std::vector<Chunk_T *> _chks;
 	smp_ofs_t _chk_ofs;
 	smp_ofs_t _smp_ofs;

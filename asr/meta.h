@@ -40,6 +40,7 @@ public:
 	  _chk_data(10000),
 	  _chk_ofs(0)
 	  {
+		  _io = _src->get_io();
 	  }
 
 	const typename T_source<Chunk_T>::pos_info& len()
@@ -52,13 +53,12 @@ public:
 		for (int chk_ofs=0; chk_ofs < _src->len().chunks; ++chk_ofs)
 		{
 			get_metadata(chk_ofs, lock);
-			if (io->is_waiting()) sched_yield();
+			if (_io->is_waiting()) sched_yield();
 		}
 	}
 
 	const ChunkMetadata& get_metadata(int chk_ofs, pthread_mutex_t *lock=0)
 	{
-		ASIOProcessor *io = ASR::get_io_instance();
 		int i, indx;
 		if (_chk_data.size() <= chk_ofs)
 		{
@@ -118,7 +118,7 @@ public:
 			dBm<Sample_T>::calc(meta.peak_db, meta.peak);
 			meta.valid = true;
 			if (lock) pthread_mutex_unlock(lock);
-			if (io->is_waiting()) sched_yield();
+			if (_io->is_waiting()) sched_yield();
 		}
 		return meta;
 	}
@@ -127,6 +127,7 @@ protected:
 	std::vector<ChunkMetadata> _chk_data;
 	//std::vector<ChunkMetadata> _chk_data_micro;
 	int _chk_ofs;
+	ASIOProcessor *_io;
 };
 
 #endif // !defined(_META_H)

@@ -137,12 +137,12 @@ bufferSwitchTimeInfo indicates that both input and output are to be processed. I
 extended time information (time code for synchronization purposes) to the host application and
 back to the driver.
 */
-void bufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
+void MyASIOCallbacks::bufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
 	ASR::get_io_instance()->BufferSwitch(doubleBufferIndex, directProcess);
 }
 
-ASIOTime* bufferSwitchTimeInfo(ASIOTime *params, long doubleBufferIndex, ASIOBool directProcess)
+ASIOTime* MyASIOCallbacks::bufferSwitchTimeInfo(ASIOTime *params, long doubleBufferIndex, ASIOBool directProcess)
 {
 	bufferSwitch(doubleBufferIndex, directProcess);
 	return params;
@@ -152,11 +152,11 @@ ASIOTime* bufferSwitchTimeInfo(ASIOTime *params, long doubleBufferIndex, ASIOBoo
 This callback will inform the host application that a sample rate change was detected (e.g. sample
 rate status bit in an incoming S/PDIF or AES/EBU signal changes).
 */
-void sampleRateDidChange(ASIOSampleRate sRate)
+void MyASIOCallbacks::sampleRateDidChange(ASIOSampleRate sRate)
 {// dont care
 }
 
-long asioMessage(long selector, long value, void *message, double *opt)
+long MyASIOCallbacks::asioMessage(long selector, long value, void *message, double *opt)
 {
 	switch (selector)
 	{

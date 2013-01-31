@@ -195,10 +195,10 @@ void ASIOManager<Chunk_T>::createBuffers()
 	_buffer_infos[7].isInput = ASIOTrue;
 	_buffer_infos[7].channelNum = ch_input2_r;
 
-	_cb.bufferSwitch = bufferSwitch;
-	_cb.bufferSwitchTimeInfo = bufferSwitchTimeInfo;
-	_cb.sampleRateDidChange = sampleRateDidChange;
-	_cb.asioMessage = asioMessage;
+	_cb.bufferSwitch = MyASIOCallbacks::bufferSwitch;
+	_cb.bufferSwitchTimeInfo = MyASIOCallbacks::bufferSwitchTimeInfo;
+	_cb.sampleRateDidChange = MyASIOCallbacks::sampleRateDidChange;
+	_cb.asioMessage = MyASIOCallbacks::asioMessage;
 	_bufSize = _preferredSize;
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 
