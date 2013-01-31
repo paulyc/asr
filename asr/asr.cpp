@@ -36,52 +36,38 @@ using std::exception;
 typable(float)
 typable(double)
 
-ASR::shared_state_t ASR::shared_state;
+ASR *ASR::instance = 0;
+
+ASR::ASR() : asio(0), ui(0)
+{
+	instance = this;
+
+	asio = new ASIOProcessor;
+#if WINDOWS
+	ui = new Win32UI(asio);
+#endif
+	asio->set_ui(ui);
+}
+
+ASR::~ASR()
+{
+	asio->Finish();
+	delete ui;
+	ui = 0;
+	delete asio;
+	asio = 0;
+
+	instance = 0;
+}
 
 void ASR::execute()
 {
-	begin();
-
 #if WINDOWS
-	shared_state.ui->create();
-	shared_state.ui->main_loop();
-	shared_state.ui->destroy();
+	ui->create();
+	ui->main_loop();
+	ui->destroy();
 #else
 #error no ui loop defined
-#endif
-
-	end();
-}
-
-void ASR::begin()
-{
-	shared_state.asio = new ASIOProcessor;
-#if WINDOWS
-	shared_state.ui = new Win32UI(shared_state.asio);
-#endif
-	shared_state.asio->set_ui(shared_state.ui);
-#if RUN
-	asio->Start();
-	//ASIOStart();
-#endif
-
-#if TEST2
-	asio->Start();
-#endif
-}
-
-void ASR::end()
-{
-#if RUN
-	//ASIOStop();
-	asio->Stop();
-#endif
-	shared_state.asio->Finish();
-	delete shared_state.ui;
-	delete shared_state.asio;
-
-#if DEBUG_MALLOC
-	dump_malloc();
 #endif
 }
 
@@ -125,11 +111,13 @@ int main()
 
 	//freopen("stdout.txt", "w", stdout);
 
-	ASR *app;
-	app = new ASR;
+	ASR *app = new ASR;
 	app->execute();
 	delete app;
 	
+#if DEBUG_MALLOC
+	dump_malloc();
+#endif
 
 	return 0;
 }

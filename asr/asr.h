@@ -59,31 +59,26 @@ class GenericUI;
 class ASR
 {
 public:
-	ASR() {}
-	~ASR() {}
+	ASR();
+	~ASR();
 
 	void execute();
 
 	static ASIOProcessor* get_io_instance()
 	{
-		return shared_state.asio;
+		return instance->asio;
 	}
 
 	static GenericUI* get_ui_instance()
 	{
-		return shared_state.ui;
+		return instance->ui;
 	}
 
 protected:
-	void begin();
-	void end();
+	static ASR *instance;
 
-	static struct shared_state_t {
-		shared_state_t() : asio(0), ui(0), running(true) {}
-		ASIOProcessor * asio;
-		GenericUI *ui;
-		bool running;
-	} shared_state;
+	ASIOProcessor * asio;
+	GenericUI *ui;
 };
 
 #endif // !defined(_ASR_H)
