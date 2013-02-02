@@ -57,7 +57,7 @@ public:
 		}
 	}
 
-	const ChunkMetadata& get_metadata(int chk_ofs, pthread_mutex_t *lock=0)
+	const ChunkMetadata& get_metadata(smp_ofs_t chk_ofs, pthread_mutex_t *lock=0)
 	{
 		int i, indx;
 		if (_chk_data.size() <= chk_ofs)

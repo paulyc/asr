@@ -279,7 +279,7 @@ get_checker_flag_again:
 			; have checker flag need to see if locked
 			jmp check_for_owner
 
-spin4:
+;spin4:
 			push ecx
 		}
 		YIELD_IF_1CPU();
@@ -323,7 +323,7 @@ get_checker_flag3:
 			test eax, eax
 			jnz spin5
 
-check_for_waiters:
+;check_for_waiters:
 			mov eax, dword ptr[ecx+_waiters]
 			test eax,eax
 			jz release_the_locks_and_dont_check_again
@@ -347,7 +347,7 @@ check_for_waiters:
 		__asm {
 			pop ecx
 
-release_the_locks_and_check_again:
+;release_the_locks_and_check_again:
 		}
 		RELEASE_USERLOCK(_own_flag)
 		RELEASE_USERLOCK(_checker_flag)
@@ -441,7 +441,7 @@ try_acquire_and_release:
 			test eax, eax
 			jnz release_and_start_over
 
-configure:
+;configure:
 			push ecx
 		}
 		_is_preemptable = true;
@@ -483,7 +483,7 @@ after_yield_acquire_preempt:
 			test eax, eax
 			jnz spin_acquire_preempt
 
-check_if_owned:
+;check_if_owned:
 			lea edx, dword ptr[ecx+_owner_flag]
 			mov eax, dword ptr[edx]
 			test eax, eax

@@ -18,11 +18,13 @@ IOManager<chunk_t>* ASIODriver::loadDriver()
 #define COM_CLSID			L"clsid"
 #define MAXPATHLEN			512
 #define MAXDRVNAMELEN		128
+
 	CLSID clsid;// = {0x835F8B5B, 0xF546, 0x4881, 0xB4, 0xA3, 0xB6, 0xB5, 0xE8, 0xE3, 0x35, 0xEF};
+#if 0
 	HKEY hkEnum, hkSub;
 	TCHAR keyname[MAXDRVNAMELEN];
 	DWORD index = 0;
-#if 0
+
 	cr = RegOpenKey(HKEY_LOCAL_MACHINE, ASIO_PATH, &hkEnum);
 	while (cr == ERROR_SUCCESS) {
 		if ((cr = RegEnumKey(hkEnum, index++, keyname, MAXDRVNAMELEN))== ERROR_SUCCESS) {

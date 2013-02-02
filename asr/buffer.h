@@ -66,7 +66,7 @@ public:
 				pthread_mutex_lock(&_src_lock);
 				_src->seek_chk(chk_ofs);
 			} 
-			catch (std::exception &e)
+			catch (std::exception)
 			{
 				pthread_mutex_unlock(&_src_lock);
 				return zero_source<Chunk_T>::get()->next();
@@ -81,7 +81,7 @@ public:
 		return r;
 	}
 
-	Chunk_T *next_chunk(int chk_ofs)
+	Chunk_T *next_chunk(smp_ofs_t chk_ofs)
 	{
 		Chunk_T *c;
 		pthread_mutex_lock(&_buffer_lock);
@@ -134,7 +134,7 @@ public:
 		return chk;
 	}
 
-	void seek_chk(int chk_ofs)
+	void seek_chk(smp_ofs_t chk_ofs)
 	{
 		seek_smp(chk_ofs*Chunk_T::chunk_size);
 	}

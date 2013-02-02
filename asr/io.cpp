@@ -13,7 +13,7 @@
 ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
-	_default_src(L"F:\\My Music\\879684_This Is Our Night_Original Mix.wav"),
+	_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
 	//_default_src(L"H:\\Music\\Heatbeat - Hadoken (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Sean Tyas - Melbourne (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Super8 & Tab, Anton Sonin - Black Is The New Yellow (Activa Remix).wav"),
@@ -89,6 +89,19 @@ void ASIOProcessor::Init()
 #if BUFFER_BEFORE_COPY
     _need_buffers = true;
 #endif
+
+	Win32MIDIDeviceFactory fac;
+//	IMIDIDevice *dev = fac.Instantiate(0, true);
+//	if (dev)
+//	{
+//		_midi_controller = new CDJ350MIDIController(dev);
+//		_midi_controller->RegisterCallback(ControllerCallback, this);
+//	}
+}
+
+void ASIOProcessor::ControllerCallback(ControlMsg *msg, void *cbParam)
+{
+	ASIOProcessor *io = static_cast<ASIOProcessor*>(cbParam);
 }
 
 void ASIOProcessor::Reconfig()

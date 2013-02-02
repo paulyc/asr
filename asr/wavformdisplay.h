@@ -75,6 +75,17 @@ public:
 		  pthread_mutex_unlock(lock);
 	  }
 	  int chunks_total = _src->len().chunks;
+	  if (chunks_total == -1)
+	  {
+		  for (int p = 0; p < _width; ++p)
+		  {
+			  //int chk = double(left_chunk) + p*chunks_per_pixel_d;
+			  _wav_heights[p].peak_top = 0.0;
+			  _wav_heights[p].avg_top = 0.0;
+			  _wav_heights[p].peak_bot = 0.0;
+		  }
+		  return;
+	  }
 	  int left_chunk = _left * chunks_total;
 	  int right_chunk = _right * chunks_total;
 	  int chunks = right_chunk-left_chunk;

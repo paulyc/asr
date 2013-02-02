@@ -4,7 +4,7 @@
 #include <cstdio>
 
 #include "decoder.h"
-#include "filter.h"
+#include "dsp/filter.h"
 
 class MagicController
 {

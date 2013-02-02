@@ -32,14 +32,18 @@ typedef unsigned int uint32_t;
 typedef __int64 int64_t;
 typedef unsigned __int64 uint64_t;
 
-typedef __int64 smp_ofs_t;
+typedef float float32_t;
+typedef double float64_t;
+
+typedef size_t smp_ofs_t;
+typedef int32_t ssmp_ofs_t;
 
 #include "chunk.h"
 typedef chunk_time_domain_1d<SamplePairf, 4096> chunk_t;
 typedef chunk_freq_domain_1d<fftwf_complex, 4096> cchunk_t;
 
-typedef fftwf_complex default_internal_sample_type;
-typedef chunk_time_domain_2d<fftwf_complex, 2, BUFFERSIZE> default_internal_chunk_type;
+//typedef fftwf_complex default_internal_sample_type;
+//typedef chunk_time_domain_2d<fftwf_complex, 2, BUFFERSIZE> default_internal_chunk_type;
 
 #if 0
 #if !USE_SSE2 && !NON_SSE_INTS

@@ -167,9 +167,9 @@ protected:
 	FILE *_f;
 public:
 	file_raw_output(T_source<Chunk_T> *src, const wchar_t *filename=L"output.raw") :
-	  T_sink_sourceable(src),
-	  _f(_wfopen(filename, L"wb"))
+	  T_sink_sourceable(src)
 	{
+		_wfopen_s(&_f, filename, L"wb");
 	}
 	  ~file_raw_output()
 	  {

@@ -1,13 +1,13 @@
 #ifndef _FILTER_H
 #define _FILTER_H
 
-#include "util.h"
-#include "buffer.h"
-#include "tracer.h"
+#include "../util.h"
+#include "../buffer.h"
+#include "../tracer.h"
 
-#include "dsp/gain.h"
-#include "dsp/mixer.h"
-#include "dsp/bus.h"
+#include "gain.h"
+#include "mixer.h"
+#include "bus.h"
 
 template <typename Sample_T, typename Chunk_T>
 class full_wave_rectifier;
@@ -273,7 +273,15 @@ template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBu
 class controllable_resampling_filter : public lowpass_filter_td<Chunk_T, Precision_T, Dim, SampleBufSz>
 {
 public:
-	controllable_resampling_filter(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
+	//typedef FilterController<
+	//	controllable_resampling_filter<Chunk_T, Precision_T, Dim, SampleBufSz> 
+	//> controller_t;
+
+	controllable_resampling_filter(
+		BufferedStream<Chunk_T> *src, 
+		Precision_T cutoff=22050.0, 
+		Precision_T input_rate=44100.0, 
+		Precision_T output_rate=44100.0) :
 		lowpass_filter_td(src, cutoff, input_rate, output_rate)
 	{
 		_io = src->get_io();

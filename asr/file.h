@@ -55,7 +55,9 @@ class DiskFile : public GenericFile
 public:
 	DiskFile(const wchar_t *filename, const wchar_t *mode=L"rb")
 	{
-		_File = _wfopen(filename, mode);
+		_wfopen_s(&_File, filename, mode);
+		if (_File == 0)
+			throw std::exception("file open failed");
 	}
 	~DiskFile()
 	{

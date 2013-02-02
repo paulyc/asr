@@ -2,7 +2,7 @@
 #define _DECODER_H
 
 #include "asr.h"
-#include "filter.h"
+#include "dsp/filter.h"
 
 typedef unsigned int bits_t;
 
@@ -155,8 +155,7 @@ public:
 	}
 	double fft_find_frequency()
 	{
-		float x, y, mag, maxL=0.0f, maxR=0.0f, phL, phR;
-		double y1, y2, y3, dbin, fc, fcR, fcL;
+		double fc, fcR, fcL, x, y, maxL=0.0, maxR=0.0;
 		/*if (data) memcpy(_inBuf, data, sizeof(float) * chunk_size * 2);*/
 		fftwf_execute(_plan);
 		int i, maxLpos, maxRpos;
@@ -187,6 +186,8 @@ public:
 		}
 	//	fc = ((double(maxLpos))*(SAMPLERATE/fft_size)+(double(maxRpos))*(SAMPLERATE/fft_size))*0.5;
 #if 0
+		double y1, y2, y3, dbin;
+		float mag, phL, phR;
 		// v1: linear interpolate
 		y1 = magsL[maxLpos-1];
 		y2 = magsL[maxLpos];
@@ -337,7 +338,7 @@ public:
 	{
 		_rng_mid[0] = (_rng_max[0] + _rng_min[0]) * 0.5f;
 		_rng_mid[1] = (_rng_max[1] + _rng_min[1]) * 0.5f;
-		bit_info b;
+
 		while (_pks.size() > 0)
 		{
 			pk_info pi = _pks.front();

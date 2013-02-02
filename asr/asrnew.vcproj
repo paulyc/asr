@@ -294,10 +294,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\filter.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\io.cpp"
 				>
 			</File>
@@ -464,10 +460,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\filter.h"
-				>
-			</File>
-			<File
 				RelativePath=".\future.h"
 				>
 			</File>
@@ -564,6 +556,10 @@
 				>
 				<File
 					RelativePath=".\dsp\bus.h"
+					>
+				</File>
+				<File
+					RelativePath=".\dsp\filter.h"
 					>
 				</File>
 				<File

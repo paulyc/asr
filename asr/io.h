@@ -14,7 +14,7 @@
 
 #include "asr.h"
 #include "type.h"
-#include "filter.h"
+#include "dsp/filter.h"
 #include "buffer.h"
 #include "decoder.h"
 #include "asiodrv.h"
@@ -53,7 +53,7 @@ public:
 		float in;
 		output_chunk_t *out_chk = T_allocator<output_chunk_t>::alloc();
 		SamplePairInt16 *out_data = out_chk->_data;
-		short out;
+
 		for (int i=0; i<chunk_size; ++i)
 		{
 			in = in_data[i][0];
@@ -222,6 +222,7 @@ public: // was protected
 	void Reconfig();
 	void Destroy();
 	void Finish();
+	static void ControllerCallback(ControlMsg *msg, void *cbParam);
 
 	const static int inputBuffersize = 4*BUFFERSIZE;
 	
@@ -266,7 +267,7 @@ public: // was protected
 	T_sink<chunk_t> *_dummy_sink;
 	T_sink<chunk_t> *_dummy_sink2;
 	
-	IMIDIDevice *_midi_controller;
+	IMIDIController *_midi_controller;
 };
 
 class fAStIOProcessor : public ASIOProcessor

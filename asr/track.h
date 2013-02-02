@@ -13,7 +13,7 @@ template <typename Chunk_T>
 class PitchableMixin
 {
 public:
-	PitchableMixin() : _resample_filter(0), _pitchpoint(48000.0), _decoder(0)
+	PitchableMixin() : _resample_filter(0), _pitchpoint(48000.0)
 	{
 	}
 
@@ -22,10 +22,13 @@ public:
 	virtual bool loaded() = 0;
 	virtual void deferred_call(deferred *d) = 0;
 
+	typedef controllable_resampling_filter<Chunk_T, double> filter_t;
+	typedef FilterController<filter_t> controller_t;
+
 	void create(BufferedStream<Chunk_T> *src, double sample_rate)
 	{
 		destroy();
-		_resample_filter = new controllable_resampling_filter<Chunk_T, double>(src, 22050.0, sample_rate, 48000.0);
+		_resample_filter = new filter_t(src, 22050.0, sample_rate, 48000.0);
 		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
 	}
 
@@ -98,10 +101,9 @@ public:
 	}
 
 protected:
-	typedef controllable_resampling_filter<Chunk_T, double> filter_t;
-	controllable_resampling_filter<Chunk_T, double> *_resample_filter;
+	filter_t *_resample_filter;
+	controller_t *_filter_controller;
 	double _pitchpoint;
-	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *_decoder;
 };
 
 template <typename Chunk_T>
@@ -331,6 +333,13 @@ public:
 		_filename = filename;
 	}
 
+	void createZero(ASIOProcessor *io)
+	{
+		_src = zero_source<Chunk_T>::get();
+		_src_buf = new BufferedStream<Chunk_T>(io, _src);
+		_filename = L"(No source)";
+	}
+
 	void destroy()
 	{
 		delete _src_buf;
@@ -426,6 +435,7 @@ private:
 			_in_config = false;
 			_loaded = true;
 			_paused = true;
+		//	BufferedSource<Chunk_T>::createZero(_io);
 			pthread_mutex_unlock(&_loading_lock);
 			return;
 		}
@@ -442,7 +452,8 @@ private:
 		_filename = filename;
 		pthread_mutex_unlock(&_loading_lock);
 
-		Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
+		if (!_loaded)
+			Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
 	}
 
 public:

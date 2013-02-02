@@ -25,7 +25,7 @@ using std::exception;
 #include "fftw.h"
 
 #include "wavfile.h"
-#include "filter.h"
+#include "dsp/filter.h"
 #include "display.h"
 #include "asiodrv.cpp"
 #include "io.h"
@@ -76,7 +76,7 @@ int main()
 	return 0;
 #endif
 #if 0
-#include "filter.h"
+#include "dsp/filter.h"
 #include <iostream>
 	using namespace std;
 	dumb_resampler<double,double> rs(13);
