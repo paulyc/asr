@@ -35,6 +35,48 @@ public:
 };
 
 template <typename T>
+class MinVal
+{
+public:
+	const static T val;
+};
+
+template <>
+class MinVal<int16_t>
+{
+public:
+	const static int16_t val = (-32768);
+};
+
+template <>
+class MinVal<int32_t>
+{
+public:
+	const static int32_t val = 0x80000000;
+};
+
+template <typename T>
+class MaxVal
+{
+public:
+	const static T val;
+};
+
+template <>
+class MaxVal<int16_t>
+{
+public:
+	const static int16_t val = 0x7FFF;
+};
+
+template <>
+class MaxVal<int32_t>
+{
+public:
+	const static int32_t val = 0x7FFFFFFF;
+};
+
+template <typename T>
 class BinaryOperator
 {
 public:

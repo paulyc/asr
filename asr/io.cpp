@@ -13,8 +13,8 @@
 ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
-	_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
-	//_default_src(L"F:\\Beatport Music\\z Dm 124 Screamin' Rachel - The Real Thing (Original Mix).wav"),
+	//_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
+	_default_src(L"I:\\Beatport Music\\z Dm 124 Screamin' Rachel - The Real Thing (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Heatbeat - Hadoken (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Sean Tyas - Melbourne (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Super8 & Tab, Anton Sonin - Black Is The New Yellow (Activa Remix).wav"),
@@ -49,12 +49,12 @@ void ASIOProcessor::CreateTracks()
 	//_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
 
 	_iomgr->createIOs(&_main_mgr, &_2_mgr);
-	_aux = new ChunkConverter<chunk_time_domain_1d<SamplePairf, 4096>, chunk_time_domain_1d<SamplePairInt16, 4096> >(_iomgr->_my_source2);
+	_aux = new ChunkConverter<chunk_t, chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> >(_iomgr->_my_source2);
 
 	try {
 	//	_my_gain = new gain<asio_source<short, SamplePairf, chunk_t> >(_my_source);
 	//	_my_gain->set_gain_db(36.0);
-		_my_pk_det = new peak_detector<SamplePairf, chunk_time_domain_1d<SamplePairf, 4096>, 4096>(_iomgr->_my_source);
+		_my_pk_det = new peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>(_iomgr->_my_source);
 
 	//	_my_raw_output = new file_raw_output<chunk_t>(_my_pk_det);
 	} catch (std::exception e) {

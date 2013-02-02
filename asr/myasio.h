@@ -14,8 +14,17 @@ public:
 	static long asioMessage(long selector, long value, void *message, double *opt);
 };
 
+class IASIOSink
+{
+public:
+	virtual ~IASIOSink() {}
+
+	virtual void process() = 0;
+	virtual void switchBuffers(int dbIndex) = 0;
+};
+
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
-class asio_sink : public T_sink_sourceable<Chunk_T>
+class asio_sink : public IASIOSink, public T_sink_sourceable<Chunk_T>
 {
 public:
 	asio_sink(Source_T *src, Output_Sample_T **bufs1, Output_Sample_T **bufs2, long bufSz) :
@@ -29,8 +38,8 @@ public:
 		_read = 0;
 		_buffers[0] = bufs1;
 		_buffers[1] = bufs2;
-		_bufL = new short[_buf_size];
-		_bufR = new short[_buf_size];
+		_bufL = new Output_Sample_T[_buf_size];
+		_bufR = new Output_Sample_T[_buf_size];
 	}
 	virtual ~asio_sink()
 	{
@@ -46,8 +55,8 @@ protected:
 	Output_Sample_T **_buffers[2];
 	long _buf_size;
 	Source_T *_src_t;
-	short *_bufL;
-    short *_bufR;
+	Output_Sample_T *_bufL;
+    Output_Sample_T *_bufR;
 };
 
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
@@ -58,7 +67,7 @@ public:
 	asio_source();
 	~asio_source();
 	
-	void copy_data(size_t buf_sz, short *bufL, short *bufR);
+	void copy_data(size_t buf_sz, Input_Sample_T *bufL, Input_Sample_T *bufR);
 	bool chunk_ready() { return _chks_next.size() > 0; }
 	Chunk_T* next();
 protected:

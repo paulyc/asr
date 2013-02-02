@@ -11,8 +11,8 @@ void asio_sink<Input_Sample_T, Output_Sample_T, Chunk_T, chunk_size, false>::pro
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
 void asio_sink<Chunk_T, Source_T, Output_Sample_T>::switchBuffers(int dbIndex)
 {
-	memcpy(_buffers[0][dbIndex], _bufL, _buf_size*sizeof(short));
-    memcpy(_buffers[1][dbIndex], _bufR, _buf_size*sizeof(short));
+	memcpy(_buffers[0][dbIndex], _bufL, _buf_size*sizeof(Output_Sample_T));
+	memcpy(_buffers[1][dbIndex], _bufR, _buf_size*sizeof(Output_Sample_T));
 }
 
 
@@ -43,9 +43,9 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process()
 			++write, ++read)
 		{
 			if ((*read)[0] < 0.0f)
-				*write = Output_Sample_T(max(-1.0f, (*read)[0]) * -SHRT_MIN);
+				*write = -(Output_Sample_T(min(1.0f, -((*read)[0])) * MaxVal<Output_Sample_T>::val));
 			else
-				*write = Output_Sample_T(min(1.0f, (*read)[0]) * SHRT_MAX);
+				*write = Output_Sample_T(min(1.0f, (*read)[0]) * MaxVal<Output_Sample_T>::val);
 		}
 		for (write = _bufR + written,
 			end_write = write + loop_write,
@@ -54,9 +54,9 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process()
 			++write, ++read)
 		{
 			if ((*read)[1] < 0.0f)
-				*write = Output_Sample_T(max(-1.0f, (*read)[1]) * -SHRT_MIN);
+				*write = -(Output_Sample_T(min(1.0f, -((*read)[1])) * MaxVal<Output_Sample_T>::val));
 			else
-				*write = Output_Sample_T(min(1.0f, (*read)[1]) * SHRT_MAX);
+				*write = Output_Sample_T(min(1.0f, (*read)[1]) * MaxVal<Output_Sample_T>::val);
 		}
 		_read += loop_write;
 		to_write -= loop_write;
@@ -79,10 +79,10 @@ asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::~asio_source()
 	T_allocator<Chunk_T>::free(_chk_working);
 }
 
-template <>
-void asio_source<short, SamplePairf, chunk_t>::copy_data(size_t buf_sz, short *bufL, short *bufR)
+template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
+void asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::copy_data(size_t buf_sz, Input_Sample_T *bufL, Input_Sample_T *bufR)
 {
-	short *input0 = bufL, 
+	Input_Sample_T *input0 = bufL, 
 		*input1 = bufR, 
 		*end0 = input0 + buf_sz, 
 		*end1 = input1 + buf_sz;
@@ -92,14 +92,14 @@ void asio_source<short, SamplePairf, chunk_t>::copy_data(size_t buf_sz, short *b
 		while (input0 < end0 && input1 < end1 && _chk_ptr < end_chk)
 		{
 			if (*input0 >= 0)
-				(*_chk_ptr)[0] = *input0++ / float(SHRT_MAX);
+				(*_chk_ptr)[0] = *input0++ / float(MaxVal<Input_Sample_T>::val);
 			else
-				(*_chk_ptr)[0] = *input0++ / float(-SHRT_MIN);
+				(*_chk_ptr)[0] = *input0++ / float(-MinVal<Input_Sample_T>::val);
 
 			if (*input1 >= 0)
-				(*_chk_ptr++)[1] = *input1++ / float(SHRT_MAX);
+				(*_chk_ptr++)[1] = *input1++ / float(MaxVal<Input_Sample_T>::val);
 			else
-				(*_chk_ptr++)[1] = *input1++ / float(-SHRT_MIN);
+				(*_chk_ptr++)[1] = *input1++ / float(-MinVal<Input_Sample_T>::val);
 		}
 		if (_chk_ptr == end_chk)
 		{

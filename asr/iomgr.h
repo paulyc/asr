@@ -132,11 +132,14 @@ public:
 	std::vector<T_source<Chunk_T>*> _inputs;
 	std::vector<T_sink<Chunk_T>*> _outputs;
 
-	asio_sink<chunk_t, chunk_buffer, int16_t> *_main_out;
-	asio_sink<chunk_t, chunk_buffer, int16_t> *_out_2;
+	//asio_sink<chunk_t, chunk_buffer, int16_t> *_main_out;
+	//asio_sink<chunk_t, chunk_buffer, int16_t> *_out_2;
+	IASIOSink *_main_out;
+	IASIOSink *_out_2;
 
-	asio_source<int16_t, SamplePairf, chunk_t> *_my_source;
-	asio_source<int16_t, SamplePairf, chunk_t> *_my_source2;
+	// these definitions should be changed as above
+	asio_source<int32_t, SamplePairf, chunk_t> *_my_source;
+	asio_source<int32_t, SamplePairf, chunk_t> *_my_source2;
 };
 
 #endif // !defined(IOMGR_H)

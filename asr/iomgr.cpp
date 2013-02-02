@@ -212,8 +212,9 @@ void ASIOManager<Chunk_T>::createBuffers()
 	printf("At a sampling rate of %f\n", r);
 //	ASIOSetSampleRate(44100.0);
 
-	__asm
-	{
+//	TRACE_FUNCTION(ASIOProcessor::BufferSwitch);
+//	TRACE_FUNCTION(ASIOProcessor::GenerateOutput);
+		/*__asm {
 		push 0;offset string "ASIOProcessor::BufferSwitch"
 		mov eax, ASIOProcessor::BufferSwitch
 		push eax
@@ -229,24 +230,24 @@ void ASIOManager<Chunk_T>::createBuffers()
 	;;	push eax
 	;	call Tracer::hook
 	;	add esp, 8
-	}
+	}*/
 }
 
 template <typename Chunk_T>
 void ASIOManager<Chunk_T>::createIOs(chunk_buffer *src, chunk_buffer *src2)
 {
-	_main_out = new asio_sink<chunk_t, chunk_buffer, short>(src,
-		(short**)_buffer_infos[2].buffers, 
-		(short**)_buffer_infos[3].buffers,
+	_main_out = new asio_sink<chunk_t, chunk_buffer, int32_t>(src,
+		(int32_t**)_buffer_infos[2].buffers, 
+		(int32_t**)_buffer_infos[3].buffers,
 		_bufSize);
 
-	_out_2 = new asio_sink<chunk_t, chunk_buffer, short>(src2,
-		(short**)_buffer_infos[4].buffers, 
-		(short**)_buffer_infos[5].buffers,
+	_out_2 = new asio_sink<chunk_t, chunk_buffer, int32_t>(src2,
+		(int32_t**)_buffer_infos[4].buffers, 
+		(int32_t**)_buffer_infos[5].buffers,
 		_bufSize);
 
-	_my_source = new asio_source<short, SamplePairf, chunk_t>;
-	_my_source2 = new asio_source<short, SamplePairf, chunk_t>;
+	_my_source = new asio_source<int32_t, SamplePairf, chunk_t>;
+	_my_source2 = new asio_source<int32_t, SamplePairf, chunk_t>;
 }
 
 template <typename Chunk_T>
@@ -260,12 +261,12 @@ template <typename Chunk_T>
 void ASIOManager<Chunk_T>::processInputs(long doubleBufferIndex, T_sink<Chunk_T> *sink1, T_sink<Chunk_T> *sink2)
 {
 	_my_source->copy_data(_bufSize,
-		(short*)_buffer_infos[0].buffers[doubleBufferIndex],
-		(short*)_buffer_infos[1].buffers[doubleBufferIndex]);
+		(int32_t*)_buffer_infos[0].buffers[doubleBufferIndex],
+		(int32_t*)_buffer_infos[1].buffers[doubleBufferIndex]);
 
 	_my_source2->copy_data(_bufSize,
-		(short*)_buffer_infos[6].buffers[doubleBufferIndex],
-		(short*)_buffer_infos[7].buffers[doubleBufferIndex]);
+		(int32_t*)_buffer_infos[6].buffers[doubleBufferIndex],
+		(int32_t*)_buffer_infos[7].buffers[doubleBufferIndex]);
 
 	while (sink1 && _my_source->chunk_ready())
 	{
