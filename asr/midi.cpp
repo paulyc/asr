@@ -70,9 +70,9 @@ IMIDIDevice* Win32MIDIDeviceFactory::Instantiate(int id, bool input)
 	return 0;
 }
 
-CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev) : 
+CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev, IControlListener *listener) : 
 	_dev(dev),
-	_cb(0)
+	_listener(listener)
 {
 	_dev->RegisterCallback(DeviceCallback, this);
 }
@@ -80,12 +80,6 @@ CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev) :
 CDJ350MIDIController::~CDJ350MIDIController() 
 {
 	delete _dev;
-}
-
-void CDJ350MIDIController::RegisterCallback(MIDIControlCallback cb, void *param)
-{
-	_cb = cb;
-	_cbParam = param;
 }
 
 void CDJ350MIDIController::Start()
@@ -109,15 +103,25 @@ void CDJ350MIDIController::DeviceCallback(uint32_t msg, uint32_t param, float64_
 	case JogScratch: // jog scratch
 	case JogSpin: // jog spin
 		printf("jog\n");
-		control->_cb(new BendPitchMsg(ch, time+control->_startTime, 0), control->_cbParam);
+		control->_listener->HandleBendPitch(ch, time + control->_startTime, 0);
 		break;
 	case Tempo: // tempo
 		printf("tempo\n");
-		control->_cb(new SetPitchMsg(ch, time+control->_startTime, 0), control->_cbParam);
+		control->_listener->HandleSetPitch(ch, time + control->_startTime, 0);
 		break;
 	case PlayPause: // play/pause
-		printf("playpause\n");
-		control->_cb(new PlayPauseMsg(ch, time+control->_startTime), control->_cbParam);
+		if (code)
+		{
+			printf("playpause\n");
+			control->_listener->HandlePlayPause(ch, time + control->_startTime);
+		}
+		break;
+	case Cue: // play/pause
+		if (code)
+		{
+			printf("cue\n");
+			control->_listener->HandleCue(ch, time + control->_startTime);
+		}
 		break;
 	default:
 		printf("%x %x %f\n", msg, param, time+control->_startTime);

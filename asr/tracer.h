@@ -177,11 +177,11 @@ protected:
 #define EXPAND_AND_QUOTE(str) QUOTE(str)
 
 #define TRACE_FUNCTION(name) __asm { \
-__asm push offset string EXPAND_AND_QUOTE(name) \
+__asm push offset string QUOTE(name)  \
 __asm mov eax, name \
 __asm push eax \
 __asm call Tracer::hook \
 __asm add esp, 8 \
-}*/
-
+}
+*/
 #endif // !defined(_TRACER_H)

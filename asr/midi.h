@@ -88,13 +88,30 @@ struct BendPitchMsg : public ControlMsg
 	double value;
 };
 
+class IControlListener
+{
+public:
+	virtual void HandlePlayPause(int channel, float64_t time) {}
+	virtual void HandleCue(int channel, float64_t time) {}
+	virtual void HandleSetPitch(int channel, float64_t time, float64_t pitch) {}
+	virtual void HandleBendPitch(int channel, float64_t time, float64_t dpitch) {}
+};
+
 class IMIDIController
 {
 public:
-	typedef void (*MIDIControlCallback)(ControlMsg *msg, void *cbParam);
 	virtual ~IMIDIController() {}
 
-	virtual void RegisterCallback(MIDIControlCallback cb, void *cbParam) = 0;
+	enum Event
+	{
+		PlayPauseEvent,
+		CueEvent,
+		SetPitchEvent,
+		BendPitchEvent,
+		NUM_EVENTS
+	};
+
+	virtual void RegisterControlListener(IControlListener *listener) = 0;
 
 	virtual void Start() = 0;
 	virtual void Stop() = 0;
@@ -103,10 +120,11 @@ public:
 class CDJ350MIDIController : public IMIDIController
 {
 public:
-	CDJ350MIDIController(IMIDIDevice *dev);
+	CDJ350MIDIController(IMIDIDevice *dev, IControlListener *listener);
 	~CDJ350MIDIController();
 
-	void RegisterCallback(MIDIControlCallback cb, void *cbParam);
+	void RegisterControlListener(IControlListener *listener) { _listener = listener; }
+
 	static void DeviceCallback(uint32_t msg, uint32_t param, float64_t time, void *cbParam); // time is MIDI time
 
 	void Start();
@@ -115,6 +133,7 @@ public:
 	enum MsgType
 	{
 		PlayPause  = 0x00,
+		Cue        = 0x01, // WRONG
 		JogScratch = 0x10,
 		JogSpin    = 0x30,
 		Tempo      = 0x1d
@@ -127,9 +146,9 @@ public:
 
 private:
 	IMIDIDevice *_dev;
-	MIDIControlCallback _cb;
-	void *_cbParam;
 	float64_t _startTime;
+
+	IControlListener *_listener;
 };
 
 #endif // !defined(_MIDI_H)
