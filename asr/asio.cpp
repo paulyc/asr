@@ -65,7 +65,10 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process()
 }
 
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
-asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::asio_source()
+asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::asio_source(size_t buf_sz, Input_Sample_T **bufsL, Input_Sample_T **bufsR) :
+	_buf_sz(buf_sz),
+	_bufsL(bufsL),
+	_bufsR(bufsR)
 {
 	_chk_working = T_allocator<Chunk_T>::alloc();
 	_chk_ptr = _chk_working->_data;
@@ -80,12 +83,12 @@ asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::~asio_source()
 }
 
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
-void asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::copy_data(size_t buf_sz, Input_Sample_T *bufL, Input_Sample_T *bufR)
+void asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::copy_data(long doubleBufferIndex)
 {
-	Input_Sample_T *input0 = bufL, 
-		*input1 = bufR, 
-		*end0 = input0 + buf_sz, 
-		*end1 = input1 + buf_sz;
+	Input_Sample_T *input0 = _bufsL[doubleBufferIndex], 
+		*input1 = _bufsR[doubleBufferIndex], 
+		*end0 = input0 + _buf_sz, 
+		*end1 = input1 + _buf_sz;
 	SamplePairf *end_chk = _chk_working->_data + chunk_t::chunk_size;
 	do
 	{

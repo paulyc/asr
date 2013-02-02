@@ -23,6 +23,15 @@ public:
 	virtual void switchBuffers(int dbIndex) = 0;
 };
 
+class IASIOSource
+{
+public:
+	virtual ~IASIOSource() {}
+
+	virtual void copy_data(long doubleBufferIndex) = 0;
+	virtual bool chunk_ready() = 0;
+};
+
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
 class asio_sink : public IASIOSink, public T_sink_sourceable<Chunk_T>
 {
@@ -59,18 +68,28 @@ protected:
     Output_Sample_T *_bufR;
 };
 
+template <typename Chunk_T>
+class ASIOChunkSource : public IASIOSource, public T_source<Chunk_T>
+{
+public:
+	Chunk_T* next() = 0;
+};
+
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
-class asio_source : public T_source<Chunk_T>
+class asio_source : public ASIOChunkSource<Chunk_T>
 {
 public:
 	typedef typename Chunk_T chunk_t;
-	asio_source();
+	asio_source(size_t buf_sz, Input_Sample_T **bufsL, Input_Sample_T **bufsR);
 	~asio_source();
 	
-	void copy_data(size_t buf_sz, Input_Sample_T *bufL, Input_Sample_T *bufR);
+	void copy_data(long doubleBufferIndex);
 	bool chunk_ready() { return _chks_next.size() > 0; }
 	Chunk_T* next();
 protected:
+	size_t _buf_sz;
+	Input_Sample_T **_bufsL, **_bufsR;
+
 	Chunk_T *_chk_working;
 	std::queue<Chunk_T *> _chks_next;
 	Output_Sample_T *_chk_ptr;

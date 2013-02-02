@@ -138,8 +138,10 @@ public:
 	IASIOSink *_out_2;
 
 	// these definitions should be changed as above
-	asio_source<int32_t, SamplePairf, chunk_t> *_my_source;
-	asio_source<int32_t, SamplePairf, chunk_t> *_my_source2;
+	//asio_source<int32_t, SamplePairf, chunk_t> *_my_source;
+	//asio_source<int32_t, SamplePairf, chunk_t> *_my_source2;
+	ASIOChunkSource<chunk_t> *_my_source;
+	ASIOChunkSource<chunk_t> *_my_source2;
 };
 
 #endif // !defined(IOMGR_H)
