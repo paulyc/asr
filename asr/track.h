@@ -329,6 +329,7 @@ public:
 
 		_src = src;
 		_src_buf = new BufferedStream<Chunk_T>(io, _src);
+	//	_src_buf->load_complete();
 
 		_filename = filename;
 	}
@@ -503,18 +504,14 @@ public:
 
 	bool load_step(pthread_mutex_t *lock=0)
 	{
-		//try {
-			while (len().samples < 0)
-			{
-			//	if (lock) pthread_mutex_lock(lock);
-				_src_buf->load_next();
-			//	if (lock) pthread_mutex_unlock(lock);
-				//return true;
-			}
-		//} catch (...) {
-		//	printf("fatal error decoding file. aborting\n");
-		//	return false;
-		//}
+		while (_src_buf->len().chunks == -1)
+		{
+			_src_buf->load_next();
+		}
+
+		printf("len %d\n", _src_buf->len().samples);
+
+		_meta->load_metadata(lock, _io);
         
 		_display->set_zoom(100.0);
 		_display->set_left(0.0);
@@ -524,7 +521,6 @@ public:
 	//	{
 		//	GenericUI *ui;
 	//		pthread_mutex_unlock(lock);
-			_meta->load_metadata(lock, _io);
 			
 			_resample_filter->set_output_scale(1.0f / _src->maxval());
 			//_meta->load_metadata(lock);

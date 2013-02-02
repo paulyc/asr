@@ -284,15 +284,14 @@ public:
 				if (_lock) pthread_mutex_unlock(_lock);
 				if (io->is_waiting()) sched_yield();
 				rd = _file->read((char*)_inputBuffer+_inputBufferFilled, 1, INPUT_BUFFER_SIZE-_inputBufferFilled);
-				if (_lock) pthread_mutex_lock(_lock);
-				if (rd <= 0)
+				if (_file->eof())
 				{
 					_eof = true;
-					break;
 				}
+				if (_lock) pthread_mutex_lock(_lock);
 				_inputBufferFilled += rd;
 
-				if (_file->eof())
+				if (_eof)
 				{
 					memset(_inputBuffer+_inputBufferFilled, 0, MAD_BUFFER_GUARD);
 					_inputBufferFilled += MAD_BUFFER_GUARD;

@@ -14,6 +14,7 @@ ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
 	_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
+	//_default_src(L"F:\\Beatport Music\\z Dm 124 Screamin' Rachel - The Real Thing (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Heatbeat - Hadoken (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Sean Tyas - Melbourne (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Super8 & Tab, Anton Sonin - Black Is The New Yellow (Activa Remix).wav"),
