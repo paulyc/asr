@@ -125,8 +125,6 @@ public:
 		{
 			_bytesPerSample = _fmtChk.bitsPerSample >> 3;
 		}
-		if (_bytesPerSample != 2)
-			throw std::exception("Can't handle bits per sample not 16");
 
 		// read next chunk header - should be data
 		_file->read(&ch, sizeof(ch), 1);
@@ -203,11 +201,10 @@ public:
 		if (rd < bytes_to_read)
 		{
 			_eof = true;
-			for (short *b=(short*)_buffer+(bytes_to_read-rd)/_bytesPerSample; 
-				b < (short*)_buffer+_fmtChk.nChannels*Chunk_T::chunk_size; ++b)
+			for (char *b= _buffer + (bytes_to_read - rd); b < _buffer + bytes_to_read; ++b)
 				*b = 0;
 		}
-		chk->load_from<short>((short*)_buffer);
+		chk->load_from_bytes((uint8_t*)_buffer, _bytesPerSample);
 		return chk;
 	}
 protected:
@@ -436,12 +433,13 @@ public:
 			case FLAC__METADATA_TYPE_STREAMINFO: // 	STREAMINFO block
 				memcpy(&_this->_stream_info, &metadata->data.stream_info, sizeof(FLAC__StreamMetadata_StreamInfo));
 				_this->_sample_rate = _this->_stream_info.sample_rate ? (double)_this->_stream_info.sample_rate : 44100.;
-				if (_this->_sample_rate > 48001.0f)
-				{
-					_this->_sample_rate *= 0.5f;
-					_this->_stream_info.total_samples /= 2;
-					_this->_half_rate = true;
-				}
+			// this doesn't work, not sure why. purpose is to save memory for high sample rate files
+			//	if (_this->_sample_rate > 48001.0f)
+			//	{
+			//		_this->_sample_rate *= 0.5f;
+			//		_this->_stream_info.total_samples /= 2;
+			//		_this->_half_rate = true;
+			//	}
 				if (_this->_stream_info.total_samples)
 				{
 					_this->_len.samples = _this->_stream_info.total_samples;

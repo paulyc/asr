@@ -277,6 +277,8 @@ template <int n0>
 class chunk_time_domain_1d<SamplePairf, n0> : public chunk_time_domain<SamplePairf>, public chunk_1d<SamplePairf, n0>
 {
 public:
+
+	// assuming interleaved stereo samples
 	template <typename Src_T>
 	void load_from(Src_T *buf)
 	{
@@ -285,6 +287,60 @@ public:
 			PairFromT<SamplePairf, Src_T>(_data[r], buf[r*2], buf[r*2+1]);
 		}
 	}
+
+	// assuming interleaved stereo samples
+	// doesnt care about larger range of negative integers
+	void load_from_bytes(uint8_t *buf, int bytes_per_sample)
+	{
+		double multiplier = 1.0 / (0x7FFFFFFF >> (8*(4-bytes_per_sample)));
+		for (int r=0; r < chunk_size; ++r)
+		{
+			int32_t val;
+			switch (bytes_per_sample)
+			{
+			case 1:
+				val = *buf++;
+				break;
+			case 2:
+				val = *(int16_t*)buf;
+				buf += 2;
+				break;
+			case 3:
+				val = (buf[2] << 16) | (buf[1] << 8) | buf[0];
+				if (buf[2] & 0x80)
+					val |= 0xFF000000;
+				buf += 3;
+				break;
+			case 4:
+				val = *(int32_t*)buf;
+				buf += 4;
+				break;
+			}
+			_data[r][0] = val * multiplier;
+			switch (bytes_per_sample)
+			{
+			case 1:
+				val = *buf++;
+				break;
+			case 2:
+				val = *(int16_t*)buf;
+				buf += 2;
+				break;
+			case 3:
+				val = (buf[2] << 16) | (buf[1] << 8) | buf[0];
+				if (buf[2] & 0x80)
+					val |= 0xFF000000;
+				buf += 3;
+				break;
+			case 4:
+				val = *(int32_t*)buf;
+				buf += 4;
+				break;
+			}
+			_data[r][1] = val * multiplier;
+		}
+	}
+
 #if 0
 	template <unsigned int bytes_per_sample>
 	void load_from_buffer(char *buf)

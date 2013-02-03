@@ -29,7 +29,7 @@ public:
 	{
 		destroy();
 		_resample_filter = new filter_t(src, 22050.0, sample_rate, 48000.0);
-		_resample_filter->fill_coeff_tbl(); // wtf cause cant call virtual function _h from c'tor
+		_resample_filter->fill_coeff_tbl();
 	}
 
 	void destroy()

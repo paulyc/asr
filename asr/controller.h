@@ -5,6 +5,7 @@
 
 #include "decoder.h"
 #include "dsp/filter.h"
+#include "midi.h"
 
 class MagicController
 {
@@ -22,12 +23,39 @@ protected:
 };
 
 template <typename Filter_T>
-class FilterController
+class FilterController : public IControlListener
 {
 public:
-	FilterController(ASIOProcessor *io) : _io(io) {}
+//	FilterController(ASIOProcessor *io) : _io(io) {}
+	FilterController();
+
+	virtual void HandlePlayPause(int channel, float64_t time);
+	virtual void HandleCue(int channel, float64_t time);
+	virtual void HandleSetPitch(int channel, float64_t time, float64_t pitch);
+	virtual void HandleBendPitch(int channel, float64_t time, float64_t dpitch);
+
+	struct ControlEvent
+	{
+		int channel;
+		float64_t time;
+		float64_t fparam1;
+		float64_t fparam2;
+		int32_t   iparam;
+	};
+	const static int MAX_EVENTS_PER_CHANNEL = 0x100;
+	const static int NUM_CHANNELS = 2;
+
+	ControlEvent *nextEvent(int ch);
 private:
-	ASIOProcessor *_io;
+	struct ControlChannel
+	{
+		ControlChannel() : eventWrite(events), eventRead(events) {}
+		ControlEvent events[MAX_EVENTS_PER_CHANNEL];
+		ControlEvent *eventWrite;
+		ControlEvent *eventRead;
+	};
+	ControlChannel _channels[NUM_CHANNELS];
+//	ASIOProcessor *_io;
 };
 
 template <typename Filter_T, typename Decoder_T>
