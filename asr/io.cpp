@@ -49,6 +49,12 @@ void ASIOProcessor::CreateTracks()
 	
 	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
 	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
+	_cue->set_mix(1000);
+	double gain = pow(10., -3./20.);
+	_cue->set_gain(1, gain);
+	_cue->set_gain(2, gain);
+	_master_xfader->set_gain(1, gain);
+	_master_xfader->set_gain(2, gain);
 	//_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
 
 	_iomgr->createIOs(&_main_mgr, &_2_mgr);
@@ -125,6 +131,11 @@ void ASIOProcessor::Finish()
 	pthread_cond_signal(&_do_gen);
 	pthread_join(_gen_th, 0);
 #endif
+
+	// something weird with this? go before the last lines?
+	pthread_mutex_lock(&_io_lock);
+	pthread_cond_signal(&_gen_done);
+	pthread_mutex_unlock(&_io_lock);
 
 	delete _tracks[0];
 	delete _tracks[1];
@@ -238,14 +249,18 @@ void ASIOProcessor::GenerateOutput()
 	chk2->add_ref();
 	
 	// fix 2nd output
-	chk2->add_ref();
-	_2_mgr._c = chk2;
+//	chk2->add_ref();
+//	_2_mgr._c = chk2;
 
+	// just replace this with output gain
 	chunk_t *out = _main_src->next(chk1, chk2);
 	if (_main_src->_clip)
 		_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
-    
 	_main_mgr._c = out;
+
+	out = _cue->next(chk1, chk2);
+	_2_mgr._c = out;
+
 /*	if (_file_src == _main_src) 
 	{
 		out->add_ref();

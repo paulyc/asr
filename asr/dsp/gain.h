@@ -14,7 +14,7 @@ public:
 	}
 
 	void set_gain_db(double g_db)
-	{
+	{//wrong, inverse
 		dBm<double>::calc(_gain, g_db);
 	}
 

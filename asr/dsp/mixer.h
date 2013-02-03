@@ -72,7 +72,7 @@ public:
 		set_mix(0);
 	}
 
-	// 0 <= m <= 100
+	// 0 <= m <= 1000
 	// -1 means keep it
 	void set_mix(int m=-1)
 	{

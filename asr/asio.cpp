@@ -42,6 +42,7 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process()
 			write != end_write;
 			++write, ++read)
 		{
+		//	*write = Output_Sample_T((*read)[0] * MaxVal<Output_Sample_T>::val);
 			if ((*read)[0] < 0.0f)
 				*write = Output_Sample_T(-max(-1.0f, (*read)[0]) * MinVal<Output_Sample_T>::val);
 			else
@@ -53,6 +54,7 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process()
 			write != end_write;
 			++write, ++read)
 		{
+		//	*write = Output_Sample_T((*read)[1] * MaxVal<Output_Sample_T>::val);
 			if ((*read)[1] < 0.0f)
 				*write = Output_Sample_T(-max(-1.0f, (*read)[1]) * MinVal<Output_Sample_T>::val);
 			else
@@ -94,11 +96,13 @@ void asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::copy_data(long doubl
 	{
 		while (input0 < end0 && input1 < end1 && _chk_ptr < end_chk)
 		{
+		//	(*_chk_ptr)[0] = *input0++ / float(MaxVal<Input_Sample_T>::val);
 			if (*input0 >= 0)
 				(*_chk_ptr)[0] = *input0++ / float(MaxVal<Input_Sample_T>::val);
 			else
 				(*_chk_ptr)[0] = -*input0++ / float(MinVal<Input_Sample_T>::val);
 
+		//	(*_chk_ptr)[1] = *input1++ / float(MaxVal<Input_Sample_T>::val);
 			if (*input1 >= 0)
 				(*_chk_ptr++)[1] = *input1++ / float(MaxVal<Input_Sample_T>::val);
 			else
