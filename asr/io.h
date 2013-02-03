@@ -203,7 +203,7 @@ public:
 		if (_sync_cue)
 		{
 			track_t *other_track = GetTrack(caller_id == 1 ? 2 : 1);
-			other_track->goto_cuepoint();
+			other_track->goto_cuepoint(false);
 			other_track->play();
 		}
 	}
@@ -269,7 +269,7 @@ public: // was protected
 	
 	IMIDIController *_midi_controller;
 public:
-	track_t::controller_t _filter_controller;
+	track_t::controller_t *_filter_controller;
 };
 
 class fAStIOProcessor : public ASIOProcessor

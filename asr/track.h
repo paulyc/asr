@@ -10,7 +10,7 @@
 #include "future.h"
 
 template <typename Chunk_T>
-class PitchableMixin
+class PitchableMixin : public ITrackController
 {
 public:
 	PitchableMixin() : _resample_filter(0), _pitchpoint(48000.0)
@@ -19,17 +19,19 @@ public:
 
 	virtual void lock() = 0;
 	virtual void unlock() = 0;
-	virtual bool loaded() = 0;
+	virtual bool loaded() const = 0;
 	virtual void deferred_call(deferred *d) = 0;
+	virtual bool play_pause(bool) = 0;
 
-	typedef controllable_resampling_filter<Chunk_T, double> filter_t;
+	typedef lowpass_filter_td<Chunk_T, double> filter_t;
 	typedef FilterController<filter_t> controller_t;
 
 	void create(BufferedStream<Chunk_T> *src, double sample_rate)
 	{
 		destroy();
-		_resample_filter = new filter_t(&src->get_io()->_filter_controller, src, 22050.0, sample_rate, 48000.0);
+		_resample_filter = new filter_t(src, 22050.0, sample_rate, 48000.0);
 		_resample_filter->fill_coeff_tbl();
+		_pitch = 1.0;
 	}
 
 	void destroy()
@@ -61,7 +63,17 @@ public:
 
 	void set_pitch(double mod)
 	{
+		lock();
+		_pitch = mod;
 		set_output_sampling_frequency(48000.0/mod);
+		unlock();
+	}
+
+	void bend_pitch(double dp)
+	{
+		lock();
+		set_output_sampling_frequency(48000.0/(_pitch+dp));
+		unlock();
 	}
 
 	double get_pitch()
@@ -85,7 +97,7 @@ public:
 		// do something with the ui
 	}
 
-	double get_pitchpoint()
+	double get_pitchpoint() const
 	{
 		return _pitchpoint;
 	}
@@ -104,6 +116,9 @@ protected:
 	filter_t *_resample_filter;
 	controller_t *_filter_controller;
 	double _pitchpoint;
+
+	double _pitch;
+	//double _dPitch;
 };
 
 template <typename Chunk_T>
@@ -114,12 +129,14 @@ public:
 
 	virtual void lock() = 0;
 	virtual void unlock() = 0;
-	virtual bool loaded() = 0;
+	virtual bool loaded() const = 0;
 	virtual lowpass_filter_td<Chunk_T, double> *get_root_source() = 0;
 	virtual void render() = 0;
 	virtual double get_display_pos(double) = 0;
 	virtual typename const T_source<Chunk_T>::pos_info& len() = 0;
 	virtual void deferred_call(deferred *d) = 0;
+	virtual bool is_paused() const = 0;
+	virtual void pause(bool) = 0;
 
 	void set_cuepoint(double pos)
 	{
@@ -173,11 +190,20 @@ public:
 		return get_display_pos(_cuepoint);
 	}
 
-	void goto_cuepoint()
+	virtual void goto_cuepoint(bool set_if_paused)
 	{
+		lock();
+		if (set_if_paused && is_paused())
+		{
+			set_cuepoint(get_root_source()->get_time());
+			pause(false);
+			unlock();
+			return;
+		}
 		double t = get_root_source()->get_time();
 		if (t <= _cuepoint || t - 0.3 > _cuepoint) //debounce (?)
 			seek_time(_cuepoint);
+		unlock();
 	}
 
 protected:
@@ -362,11 +388,17 @@ protected:
 };
 
 template <typename Chunk_T>
-class SeekablePitchableFileSource : public BufferedSource<Chunk_T>, public PitchableMixin<Chunk_T>, public SeekableMixin<Chunk_T>, public ViewableMixin<Chunk_T>
+class SeekablePitchableFileSource : 
+	public BufferedSource<Chunk_T>, 
+	public PitchableMixin<Chunk_T>, 
+	public SeekableMixin<Chunk_T>, 
+	public ViewableMixin<Chunk_T>
 {
 public:
 	typedef type chunk_t;
 	typedef SeekablePitchableFileSource<Chunk_T> track_t;
+
+	using SeekableMixin<Chunk_T>::goto_cuepoint;
 
 	SeekablePitchableFileSource(ASIOProcessor *io, int track_id, const wchar_t *filename) :
 		_io(io),
@@ -374,7 +406,8 @@ public:
 		_paused(true),
 		_loaded(true),
 		_track_id(track_id),
-		_last_time(0.0)
+		_last_time(0.0),
+		_pause_monitor(false)
 	{
 		pthread_mutex_init(&_loading_lock, 0);
 		pthread_cond_init(&_track_loaded, 0);
@@ -445,6 +478,7 @@ private:
 	//	LOCK_IF_SMP(lock);
 		PitchableMixin<Chunk_T>::create(_src_buf, _src->sample_rate());
 		ViewableMixin<Chunk_T>::create(_src_buf);
+		_cuepoint = 0.0;
 	//	UNLOCK_IF_SMP(lock);
 
 	//	pthread_mutex_lock(&_loading_lock);
@@ -463,16 +497,25 @@ public:
 		Chunk_T *chk;
 
 		pthread_mutex_lock(&_loading_lock);
-		if (!_loaded || _paused)
+		if (!_loaded || (_paused && !_pause_monitor))
 		{
 			pthread_mutex_unlock(&_loading_lock);
 			chk = zero_source<Chunk_T>::get()->next();
 		}
 		else
 		{
-			chk = _resample_filter->next();
-			if (true && _resample_filter->get_time() >= len().time)
-				_resample_filter->seek_time(0.0);
+			if (_paused && _pause_monitor)
+			{
+				double t = _resample_filter->get_time();
+				chk = _resample_filter->next();
+				_resample_filter->seek_time(t);
+			}
+			else
+			{
+				chk = _resample_filter->next();
+				if (true && _resample_filter->get_time() >= len().time)
+					_resample_filter->seek_time(0.0);
+			}
 			pthread_mutex_unlock(&_loading_lock);
 			render();
 		}
@@ -480,12 +523,19 @@ public:
 		return chk;
 	}
 
-	bool play_pause()
+	bool play_pause(bool pause_monitor=false)
 	{
-		//lock();dont know if lock
+		lock();//dont know if lock
+		_pause_monitor = pause_monitor;
 		_paused = !_paused;
-	//	unlock();
+		unlock();
 		return _paused;
+	}
+
+	void pause(bool pause_monitor)
+	{
+		_pause_monitor=pause_monitor;
+		_paused = true;
 	}
 
 	void play()
@@ -609,7 +659,7 @@ public:
 		return BufferedSource<Chunk_T>::len();
 	}
 
-	bool loaded()
+	bool loaded() const
 	{
 		return _loaded;
 	}
@@ -645,6 +695,13 @@ public:
 			src->have_position(pos);
 	}
 
+	virtual bool is_paused() const { return _paused; }
+
+	void goto_cuepoint(bool x)
+	{
+		this->SeekableMixin<Chunk_T>::goto_cuepoint(x);
+	}
+
 protected:
 	ASIOProcessor *_io;
 	bool _in_config;
@@ -659,6 +716,7 @@ protected:
 	double _last_time;
 
 	std::wstring _filename;
+	bool _pause_monitor;
 };
 
 typedef SeekablePitchableFileSource<chunk_t> Track_T;

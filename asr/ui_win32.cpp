@@ -196,13 +196,13 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				case IDC_BUTTON4: // cue src
 				case IDC_BUTTON7:
 				{
-					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON4 ? 1 : 2)->goto_cuepoint();
+					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON4 ? 1 : 2)->goto_cuepoint(false);
 					break;
 				}
 				case IDC_BUTTON5: // play/pause
 				case IDC_BUTTON8:
 				{
-					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON5 ? 1 : 2)->play_pause();
+					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON5 ? 1 : 2)->play_pause(false);
 					break;
 				}
 				case IDC_BUTTON9:

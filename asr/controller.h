@@ -21,60 +21,90 @@ protected:
 	int _second_track;
 };
 
+class ITrackController
+{
+public:
+	virtual void set_pitch(double) = 0;
+	virtual void bend_pitch(double) = 0;
+	virtual void goto_cuepoint(bool) = 0;
+	virtual bool play_pause(bool) = 0;
+};
+
 template <typename Filter_T>
 class FilterController : public IControlListener
 {
 public:
 //	FilterController(ASIOProcessor *io) : _io(io) {}
-	FilterController()
+	FilterController(ITrackController *t1, ITrackController *t2)
 	{
 		pthread_mutex_init(&_lock, 0);
+		_tracks[0] = t1;
+		_tracks[1] = t2;
 	}
 
 	virtual void HandlePlayPause(int channel, float64_t time)
 	{
+		_tracks[channel]->play_pause(true);
+		/*
 		pthread_mutex_lock(&_lock);
 		ControlEvent &cev = *_channels[channel].eventWrite++;
 
 		if (_channels[channel].eventWrite >= _channels[channel].events + MAX_EVENTS_PER_CHANNEL)
 			_channels[channel].eventWrite = _channels[channel].events;
-
+		++_channels[channel].numEvents;
+		if (_channels[channel].numEvents >= MAX_EVENTS_PER_CHANNEL) printf("help!!\n");
 		cev.ev = IMIDIController::PlayPauseEvent;
 		cev.time = time;
 		pthread_mutex_unlock(&_lock);
+		*/
 	}
 	virtual void HandleCue(int channel, float64_t time)
 	{
+		_tracks[channel]->goto_cuepoint(true);
+		/*
 		pthread_mutex_lock(&_lock);
 		ControlEvent &cev = *_channels[channel].eventWrite++;
 		if (_channels[channel].eventWrite >= _channels[channel].events + MAX_EVENTS_PER_CHANNEL)
 			_channels[channel].eventWrite = _channels[channel].events;
+		++_channels[channel].numEvents;
+		if (_channels[channel].numEvents >= MAX_EVENTS_PER_CHANNEL) printf("help!!\n");
 		cev.ev = IMIDIController::CueEvent;
 		cev.time = time;
 		pthread_mutex_unlock(&_lock);
+		*/
 	}
 	virtual void HandleSetPitch(int channel, float64_t time, float64_t pitch)
 	{
 		printf("channel %d time %f pitch %f\n", channel, time, pitch);
+		_tracks[channel]->set_pitch(pitch);
+		/*
 		pthread_mutex_lock(&_lock);
 		ControlEvent &cev = *_channels[channel].eventWrite++;
 		if (_channels[channel].eventWrite >= _channels[channel].events + MAX_EVENTS_PER_CHANNEL)
 			_channels[channel].eventWrite = _channels[channel].events;
+		++_channels[channel].numEvents;
+		if (_channels[channel].numEvents >= MAX_EVENTS_PER_CHANNEL) printf("help!!\n");
 		cev.ev = IMIDIController::SetPitchEvent;
 		cev.time = time;
 		cev.fparam1 = pitch;
 		pthread_mutex_unlock(&_lock);
+		*/
 	}
 	virtual void HandleBendPitch(int channel, float64_t time, float64_t dpitch)
 	{
+		_tracks[channel]->bend_pitch(dpitch);
+		/*
 		pthread_mutex_lock(&_lock);
 		ControlEvent &cev = *_channels[channel].eventWrite++;
 		if (_channels[channel].eventWrite >= _channels[channel].events + MAX_EVENTS_PER_CHANNEL)
 			_channels[channel].eventWrite = _channels[channel].events;
+		++_channels[channel].numEvents;
+		if (_channels[channel].numEvents >= MAX_EVENTS_PER_CHANNEL) printf("help!!\n");
 		cev.ev = IMIDIController::BendPitchEvent;
 		cev.time = time;
 		cev.fparam1 = dpitch;
 		pthread_mutex_unlock(&_lock);
+		*/
 	}
 
 	struct ControlEvent
@@ -85,33 +115,40 @@ public:
 		float64_t fparam2;
 		int32_t   iparam;
 	};
-	const static int MAX_EVENTS_PER_CHANNEL = 0x100;
+	const static int MAX_EVENTS_PER_CHANNEL = 0x1000;
 	const static int NUM_CHANNELS = 10;
 
 	ControlEvent* nextEvent(int ch)
 	{
+		return 0;
+		/*
 		ControlEvent *cev = 0;
 		pthread_mutex_lock(&_lock);
-		if (_channels[ch].eventRead < _channels[ch].eventWrite)
+		if (_channels[ch].numEvents > 0)
 		{
 			cev = _channels[ch].eventRead++;
 			if (_channels[ch].eventRead >= _channels[ch].events + MAX_EVENTS_PER_CHANNEL)
 				_channels[ch].eventRead = _channels[ch].events;
+			--_channels[ch].numEvents;
 		}
 		pthread_mutex_unlock(&_lock);
 		return cev;
+		*/
 	}
 private:
 	struct ControlChannel
 	{
-		ControlChannel() : eventWrite(events), eventRead(events) {}
+		ControlChannel() : eventWrite(events), eventRead(events), numEvents(0) {}
 		ControlEvent events[MAX_EVENTS_PER_CHANNEL];
 		ControlEvent *eventWrite;
 		ControlEvent *eventRead;
+		int numEvents;
 	};
 	ControlChannel _channels[NUM_CHANNELS];
 //	ASIOProcessor *_io;
 	pthread_mutex_t _lock;
+
+	ITrackController *_tracks[2];
 };
 
 template <typename Filter_T, typename Decoder_T>

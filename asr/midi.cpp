@@ -73,9 +73,10 @@ IMIDIDevice* Win32MIDIDeviceFactory::Instantiate(int id, bool input)
 	return 0;
 }
 
-CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev, IControlListener *listener) : 
+CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev, IControlListener **listener) : 
 	_dev(dev),
-	_listener(listener)
+	_listener(listener),
+	_track(0)
 {
 	_dev->RegisterCallback(DeviceCallback, this);
 }
@@ -107,6 +108,17 @@ static double GetTempo(int code)
 	return t;
 }
 
+static double GetBend(int code)
+{
+	double dt = 0.0;
+	if (code != 0x40)
+	{
+		double increment = 0.8 / 0x7F;
+		dt = -0.4 + code * increment;
+	}
+	return dt;
+}
+
 void CDJ350MIDIController::DeviceCallback(uint32_t msg, uint32_t param, float64_t time, void *cbParam)
 {
 	CDJ350MIDIController *control = static_cast<CDJ350MIDIController*>(cbParam);
@@ -119,24 +131,30 @@ void CDJ350MIDIController::DeviceCallback(uint32_t msg, uint32_t param, float64_
 	case JogScratch: // jog scratch
 	case JogSpin: // jog spin
 	//	printf("jog\n");
-		control->_listener->HandleBendPitch(ch, time/* + control->_startTime*/, 0);
+		(*control->_listener)->HandleBendPitch(control->_track, time/* + control->_startTime*/, GetBend(code));
 		break;
 	case Tempo: // tempo
 	//	printf("tempo\n");
-		control->_listener->HandleSetPitch(ch, time/* + control->_startTime*/, GetTempo(code));
+		(*control->_listener)->HandleSetPitch(control->_track, time/* + control->_startTime*/, GetTempo(code));
 		break;
 	case PlayPause: // play/pause
 		if (code)
 		{
 	//		printf("playpause\n");
-			control->_listener->HandlePlayPause(ch, time/* + control->_startTime*/);
+			(*control->_listener)->HandlePlayPause(control->_track, time/* + control->_startTime*/);
 		}
 		break;
 	case Cue: // play/pause
 		if (code)
 		{
 	//		printf("cue\n");
-			control->_listener->HandleCue(ch, time/* + control->_startTime*/);
+			(*control->_listener)->HandleCue(control->_track, time/* + control->_startTime*/);
+		}
+		break;
+	case SelectPush:
+		if (code)
+		{
+			control->_track ^= 1;
 		}
 		break;
 	default:

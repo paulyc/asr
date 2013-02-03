@@ -44,6 +44,8 @@ void ASIOProcessor::CreateTracks()
 {
 	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 1, _default_src));
 	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 2, _default_src));
+
+	_filter_controller = new track_t::controller_t(_tracks[0], _tracks[1]);
 	
 	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
 	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
@@ -98,7 +100,7 @@ void ASIOProcessor::Init()
 	if (dev)
 	{
 		printf("Have midi\n");
-		_midi_controller = new CDJ350MIDIController(dev, &_filter_controller);
+		_midi_controller = new CDJ350MIDIController(dev, (IControlListener**)&_filter_controller);
 		//_midi_controller->RegisterEventHandler(ControllerCallback, this);
 	}
 }

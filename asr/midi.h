@@ -111,7 +111,7 @@ public:
 		NUM_EVENTS
 	};
 
-	virtual void RegisterControlListener(IControlListener *listener) = 0;
+	virtual void RegisterControlListener(IControlListener **listener) = 0;
 
 	virtual void Start() = 0;
 	virtual void Stop() = 0;
@@ -120,10 +120,10 @@ public:
 class CDJ350MIDIController : public IMIDIController
 {
 public:
-	CDJ350MIDIController(IMIDIDevice *dev, IControlListener *listener);
+	CDJ350MIDIController(IMIDIDevice *dev, IControlListener **listener);
 	~CDJ350MIDIController();
 
-	void RegisterControlListener(IControlListener *listener) { _listener = listener; }
+	void RegisterControlListener(IControlListener **listener) { _listener = listener; }
 
 	static void DeviceCallback(uint32_t msg, uint32_t param, float64_t time, void *cbParam); // time is MIDI time
 
@@ -133,10 +133,11 @@ public:
 	enum MsgType
 	{
 		PlayPause  = 0x00,
-		Cue        = 0x01, // WRONG
+		Cue        = 0x01,
 		JogScratch = 0x10,
 		JogSpin    = 0x30,
-		Tempo      = 0x1d
+		Tempo      = 0x1d,
+		SelectPush = 0x33
 	};
 	enum ButtonPush 
 	{ 
@@ -148,7 +149,9 @@ private:
 	IMIDIDevice *_dev;
 	float64_t _startTime;
 
-	IControlListener *_listener;
+	IControlListener **_listener;
+
+	int _track;
 };
 
 #endif // !defined(_MIDI_H)
