@@ -103,14 +103,14 @@ static double GetTempo(int code)
 		double increment = 0.12 / 0x7F;
 		t = 0.94 + code * increment;
 	}
-	printf("tempo %f\n", t);
+//	printf("tempo %f\n", t);
 	return t;
 }
 
 void CDJ350MIDIController::DeviceCallback(uint32_t msg, uint32_t param, float64_t time, void *cbParam)
 {
 	CDJ350MIDIController *control = static_cast<CDJ350MIDIController*>(cbParam);
-
+	time = timeGetTime() / 1000.0;
 	int ch = param & 0xF;
 	MsgType msgType = (MsgType)((param & 0xFF00) >> 8);
 	int code = (param & 0xFF0000) >> 16;
@@ -118,24 +118,24 @@ void CDJ350MIDIController::DeviceCallback(uint32_t msg, uint32_t param, float64_
 	{
 	case JogScratch: // jog scratch
 	case JogSpin: // jog spin
-		printf("jog\n");
+	//	printf("jog\n");
 		control->_listener->HandleBendPitch(ch, time/* + control->_startTime*/, 0);
 		break;
 	case Tempo: // tempo
-		printf("tempo\n");
+	//	printf("tempo\n");
 		control->_listener->HandleSetPitch(ch, time/* + control->_startTime*/, GetTempo(code));
 		break;
 	case PlayPause: // play/pause
 		if (code)
 		{
-			printf("playpause\n");
+	//		printf("playpause\n");
 			control->_listener->HandlePlayPause(ch, time/* + control->_startTime*/);
 		}
 		break;
 	case Cue: // play/pause
 		if (code)
 		{
-			printf("cue\n");
+	//		printf("cue\n");
 			control->_listener->HandleCue(ch, time/* + control->_startTime*/);
 		}
 		break;

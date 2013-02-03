@@ -287,7 +287,8 @@ public:
 		Precision_T output_rate=44100.0) :
 		lowpass_filter_td(src, cutoff, input_rate, output_rate),
 		_controller(controller),
-		_cev(0)
+		_cev(0),
+		_frame_began_time(0.0)
 	{
 		_io = src->get_io();
 	}
@@ -300,12 +301,16 @@ public:
 
 		int t_id = ASR::get_io_instance()->get_track_id_for_filter(this);//should just be passed
 
+		double frame_begin_time = timeGetTime() / 1000.0;
+
+		double output_time_start = _output_time; // relates to _frame_began_time
+
 		if (!_cev)
 			_cev = _controller->nextEvent(t_id);
 
 	//	double timeStart = timeGetTime() / 1000.0;
 	//	double timeOutputStart = this->_output_time;
-		double nextEventTime = _cev ? _cev->time : 1e300;
+		double nextEventTime = _cev ? (_cev->time - _frame_began_time) + output_time_start : 1e300;
 
 
 	/*	Sample_T *key_smp = 0;
@@ -327,8 +332,8 @@ public:
 
 		for (smp = chk->_data, end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
-		//	if (_output_time > nextEventTime)
-			if (_cev)
+			if (_output_time > nextEventTime)
+		//	if (_cev)
 			{
 				switch (_cev->ev)
 				{
@@ -339,6 +344,8 @@ public:
 				_cev = _controller->nextEvent(t_id);
 				if (!_cev)
 					nextEventTime = 1e300;
+				else
+					nextEventTime = (_cev->time - _frame_began_time) + output_time_start;
 			
 #if VINYL_CONTROL
 				//if (abs(_output_time - pos_stream.front().tm) > 0.01)
@@ -426,6 +433,7 @@ public:
 		}
 
 	//	_last_time = timeGetTime() / 1000.0;
+		_frame_began_time = frame_begin_time;
 		
 		return chk;
 	}
@@ -434,6 +442,7 @@ private:
 	ASIOProcessor *_io;
 	controller_t *_controller;
 	typename controller_t::ControlEvent *_cev;
+	double _frame_began_time;
 	//FilterController<
 };
 
