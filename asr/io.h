@@ -268,6 +268,8 @@ public: // was protected
 	T_sink<chunk_t> *_dummy_sink2;
 	
 	IMIDIController *_midi_controller;
+public:
+	track_t::controller_t _filter_controller;
 };
 
 class fAStIOProcessor : public ASIOProcessor

@@ -29,7 +29,8 @@ ASIOProcessor::ASIOProcessor() :
 	_iomgr(0),
 	_sync_cue(false),
 	_dummy_sink(0),
-	_dummy_sink2(0)
+	_dummy_sink2(0),
+	_midi_controller(0)
 {
 	Init();
 }
@@ -92,12 +93,14 @@ void ASIOProcessor::Init()
 #endif
 
 	Win32MIDIDeviceFactory fac;
-//	IMIDIDevice *dev = fac.Instantiate(0, true);
-//	if (dev)
-//	{
-//		_midi_controller = new CDJ350MIDIController(dev);
-//		_midi_controller->RegisterCallback(ControllerCallback, this);
-//	}
+	fac.Enumerate();
+	IMIDIDevice *dev = fac.Instantiate(1, true);
+	if (dev)
+	{
+		printf("Have midi\n");
+		_midi_controller = new CDJ350MIDIController(dev, &_filter_controller);
+		//_midi_controller->RegisterEventHandler(ControllerCallback, this);
+	}
 }
 
 void ASIOProcessor::ControllerCallback(ControlMsg *msg, void *cbParam)
@@ -155,6 +158,8 @@ ASIOError ASIOProcessor::Start()
 {
 	_running = true;
 	_src_active = true;
+	if (_midi_controller)
+		_midi_controller->Start();
 	return ASIOStart();
 }
 
@@ -162,6 +167,8 @@ ASIOError ASIOProcessor::Stop()
 {
 	_running = false;
 	_src_active = false;
+	if (_midi_controller)
+		_midi_controller->Stop();
 	return ASIOStop();
 }
 

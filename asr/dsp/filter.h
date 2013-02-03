@@ -269,20 +269,25 @@ protected:
 	}
 };
 
+#include "../controller.h"
+
 template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
 class controllable_resampling_filter : public lowpass_filter_td<Chunk_T, Precision_T, Dim, SampleBufSz>
 {
 public:
-	//typedef FilterController<
-	//	controllable_resampling_filter<Chunk_T, Precision_T, Dim, SampleBufSz> 
-	//> controller_t;
+	typedef FilterController<
+		controllable_resampling_filter<Chunk_T, Precision_T, Dim, SampleBufSz> 
+	> controller_t;
 
 	controllable_resampling_filter(
+		controller_t *controller,
 		BufferedStream<Chunk_T> *src, 
 		Precision_T cutoff=22050.0, 
 		Precision_T input_rate=44100.0, 
 		Precision_T output_rate=44100.0) :
-		lowpass_filter_td(src, cutoff, input_rate, output_rate)
+		lowpass_filter_td(src, cutoff, input_rate, output_rate),
+		_controller(controller),
+		_cev(0)
 	{
 		_io = src->get_io();
 	}
@@ -293,7 +298,17 @@ public:
 		Precision_T t_input, t_diff = Precision_T(_sample_precision) * _input_sampling_period;
 		Sample_T *smp, *end, *conv_ptr;
 
-		Sample_T *key_smp = 0;
+		int t_id = ASR::get_io_instance()->get_track_id_for_filter(this);//should just be passed
+
+		if (!_cev)
+			_cev = _controller->nextEvent(t_id);
+
+	//	double timeStart = timeGetTime() / 1000.0;
+	//	double timeOutputStart = this->_output_time;
+		double nextEventTime = _cev ? _cev->time : 1e300;
+
+
+	/*	Sample_T *key_smp = 0;
 	//	printf("pos %d\n", pos_stream.size());
 		ASIOProcessor *io = _io;
 		GenericUI *ui = _io->_ui;
@@ -308,12 +323,24 @@ public:
 		if (vinyl_control_enabled && it != pos_stream.end())
 		{
 			key_smp = chk->_data + it->chk_ofs;
-		}
+		}*/
 
 		for (smp = chk->_data, end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
-			if (smp == key_smp)
+		//	if (_output_time > nextEventTime)
+			if (_cev)
 			{
+				switch (_cev->ev)
+				{
+				case IMIDIController::Event::SetPitchEvent:
+					set_output_sampling_frequency(48000.0/_cev->fparam1);
+					break;
+				}
+				_cev = _controller->nextEvent(t_id);
+				if (!_cev)
+					nextEventTime = 1e300;
+			
+#if VINYL_CONTROL
 				//if (abs(_output_time - pos_stream.front().tm) > 0.01)
 				{
 				//	printf("sync time %d\n", pos_stream.front().sync_time);
@@ -341,6 +368,7 @@ public:
 					}
 					
 				}
+
 			//	if (last.tm != 0.0) {
 			//		double record_time = (pos_stream.front().tm - last.tm);
 			//		double real_time = (pos_stream.front().smp - last.smp) / 48000.0;
@@ -359,7 +387,9 @@ public:
 				{
 					key_smp = 0;
 				}
+#endif
 			}
+
 			t_input = _output_time - t_diff;
 			smp_ofs_t ofs = smp_ofs_t(t_input * _input_sampling_rate) + 1;
 			t_input = ofs / _input_sampling_rate;
@@ -394,12 +424,16 @@ public:
 			(*smp)[1] = (float)acc[1];
 			_output_time += _output_sampling_period;
 		}
+
+	//	_last_time = timeGetTime() / 1000.0;
 		
 		return chk;
 	}
 
 private:
 	ASIOProcessor *_io;
+	controller_t *_controller;
+	typename controller_t::ControlEvent *_cev;
 	//FilterController<
 };
 

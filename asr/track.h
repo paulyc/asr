@@ -28,7 +28,7 @@ public:
 	void create(BufferedStream<Chunk_T> *src, double sample_rate)
 	{
 		destroy();
-		_resample_filter = new filter_t(src, 22050.0, sample_rate, 48000.0);
+		_resample_filter = new filter_t(&src->get_io()->_filter_controller, src, 22050.0, sample_rate, 48000.0);
 		_resample_filter->fill_coeff_tbl();
 	}
 

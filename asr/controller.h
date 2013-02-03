@@ -3,9 +3,8 @@
 
 #include <cstdio>
 
-#include "decoder.h"
-#include "dsp/filter.h"
 #include "midi.h"
+#include "lock.h"
 
 class MagicController
 {
@@ -27,25 +26,81 @@ class FilterController : public IControlListener
 {
 public:
 //	FilterController(ASIOProcessor *io) : _io(io) {}
-	FilterController();
+	FilterController()
+	{
+		pthread_mutex_init(&_lock, 0);
+	}
 
-	virtual void HandlePlayPause(int channel, float64_t time);
-	virtual void HandleCue(int channel, float64_t time);
-	virtual void HandleSetPitch(int channel, float64_t time, float64_t pitch);
-	virtual void HandleBendPitch(int channel, float64_t time, float64_t dpitch);
+	virtual void HandlePlayPause(int channel, float64_t time)
+	{
+		pthread_mutex_lock(&_lock);
+		ControlEvent &cev = *_channels[channel].eventWrite++;
+
+		if (_channels[channel].eventWrite >= _channels[channel].events + MAX_EVENTS_PER_CHANNEL)
+			_channels[channel].eventWrite = _channels[channel].events;
+
+		cev.ev = IMIDIController::PlayPauseEvent;
+		cev.time = time;
+		pthread_mutex_unlock(&_lock);
+	}
+	virtual void HandleCue(int channel, float64_t time)
+	{
+		pthread_mutex_lock(&_lock);
+		ControlEvent &cev = *_channels[channel].eventWrite++;
+		if (_channels[channel].eventWrite >= _channels[channel].events + MAX_EVENTS_PER_CHANNEL)
+			_channels[channel].eventWrite = _channels[channel].events;
+		cev.ev = IMIDIController::CueEvent;
+		cev.time = time;
+		pthread_mutex_unlock(&_lock);
+	}
+	virtual void HandleSetPitch(int channel, float64_t time, float64_t pitch)
+	{
+		printf("channel %d time %f pitch %f\n", channel, time, pitch);
+		pthread_mutex_lock(&_lock);
+		ControlEvent &cev = *_channels[channel].eventWrite++;
+		if (_channels[channel].eventWrite >= _channels[channel].events + MAX_EVENTS_PER_CHANNEL)
+			_channels[channel].eventWrite = _channels[channel].events;
+		cev.ev = IMIDIController::SetPitchEvent;
+		cev.time = time;
+		cev.fparam1 = pitch;
+		pthread_mutex_unlock(&_lock);
+	}
+	virtual void HandleBendPitch(int channel, float64_t time, float64_t dpitch)
+	{
+		pthread_mutex_lock(&_lock);
+		ControlEvent &cev = *_channels[channel].eventWrite++;
+		if (_channels[channel].eventWrite >= _channels[channel].events + MAX_EVENTS_PER_CHANNEL)
+			_channels[channel].eventWrite = _channels[channel].events;
+		cev.ev = IMIDIController::BendPitchEvent;
+		cev.time = time;
+		cev.fparam1 = dpitch;
+		pthread_mutex_unlock(&_lock);
+	}
 
 	struct ControlEvent
 	{
-		int channel;
+		IMIDIController::Event ev;
 		float64_t time;
 		float64_t fparam1;
 		float64_t fparam2;
 		int32_t   iparam;
 	};
 	const static int MAX_EVENTS_PER_CHANNEL = 0x100;
-	const static int NUM_CHANNELS = 2;
+	const static int NUM_CHANNELS = 10;
 
-	ControlEvent *nextEvent(int ch);
+	ControlEvent* nextEvent(int ch)
+	{
+		ControlEvent *cev = 0;
+		pthread_mutex_lock(&_lock);
+		if (_channels[ch].eventRead < _channels[ch].eventWrite)
+		{
+			cev = _channels[ch].eventRead++;
+			if (_channels[ch].eventRead >= _channels[ch].events + MAX_EVENTS_PER_CHANNEL)
+				_channels[ch].eventRead = _channels[ch].events;
+		}
+		pthread_mutex_unlock(&_lock);
+		return cev;
+	}
 private:
 	struct ControlChannel
 	{
@@ -56,6 +111,7 @@ private:
 	};
 	ControlChannel _channels[NUM_CHANNELS];
 //	ASIOProcessor *_io;
+	pthread_mutex_t _lock;
 };
 
 template <typename Filter_T, typename Decoder_T>

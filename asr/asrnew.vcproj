@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="winmm.lib libFLAC_dynamic.lib libmad.lib libfftw3f-3.lib comctl32.lib Comdlg32.lib pthreadVC2.lib"
+				AdditionalDependencies="DbgHelp.lib winmm.lib libFLAC_dynamic.lib libmad.lib libfftw3f-3.lib comctl32.lib Comdlg32.lib pthreadVC2.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;E:\cygwin\home\haxor\flac-1.2.1\obj\release\lib&quot;;&quot;E:\cygwin\home\haxor\mycode\asr2\libmad-0.15.1b\msvc++\Debug&quot;;E:\cygwin\home\haxor\pthreads.2;&quot;E:\cygwin\home\haxor\fftw-3.2.2.pl1-dll32&quot;"
 				GenerateDebugInformation="true"

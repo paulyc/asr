@@ -1,12 +1,14 @@
 #include "midi.h"
 
 Win32MIDIDevice::Win32MIDIDevice() :
-	_handle(NULL)
+	_handle(NULL),
+	_cb(0)
 {
 }
 
 Win32MIDIDevice::Win32MIDIDevice(HMIDIIN handle) :
-	_handle(handle)
+	_handle(handle),
+	_cb(0)
 {
 }
 
@@ -19,7 +21,8 @@ Win32MIDIDevice::~Win32MIDIDevice()
 void Win32MIDIDevice::Callback(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
 {
 	Win32MIDIDevice *dev = (Win32MIDIDevice*)dwInstance;
-	dev->_cb(wMsg, dwParam1, dwParam2/1000., dev->_cbParam);
+	if (dev->_cb)
+		dev->_cb(wMsg, dwParam1, dwParam2/1000., dev->_cbParam);
 }
 
 float64_t Win32MIDIDevice::Start()
@@ -92,9 +95,22 @@ void CDJ350MIDIController::Stop()
 	_dev->Stop();
 }
 
+static double GetTempo(int code)
+{
+	double t = 1.0;
+	if (code != 0x40)
+	{
+		double increment = 0.12 / 0x7F;
+		t = 0.94 + code * increment;
+	}
+	printf("tempo %f\n", t);
+	return t;
+}
+
 void CDJ350MIDIController::DeviceCallback(uint32_t msg, uint32_t param, float64_t time, void *cbParam)
 {
 	CDJ350MIDIController *control = static_cast<CDJ350MIDIController*>(cbParam);
+
 	int ch = param & 0xF;
 	MsgType msgType = (MsgType)((param & 0xFF00) >> 8);
 	int code = (param & 0xFF0000) >> 16;
@@ -103,24 +119,24 @@ void CDJ350MIDIController::DeviceCallback(uint32_t msg, uint32_t param, float64_
 	case JogScratch: // jog scratch
 	case JogSpin: // jog spin
 		printf("jog\n");
-		control->_listener->HandleBendPitch(ch, time + control->_startTime, 0);
+		control->_listener->HandleBendPitch(ch, time/* + control->_startTime*/, 0);
 		break;
 	case Tempo: // tempo
 		printf("tempo\n");
-		control->_listener->HandleSetPitch(ch, time + control->_startTime, 0);
+		control->_listener->HandleSetPitch(ch, time/* + control->_startTime*/, GetTempo(code));
 		break;
 	case PlayPause: // play/pause
 		if (code)
 		{
 			printf("playpause\n");
-			control->_listener->HandlePlayPause(ch, time + control->_startTime);
+			control->_listener->HandlePlayPause(ch, time/* + control->_startTime*/);
 		}
 		break;
 	case Cue: // play/pause
 		if (code)
 		{
 			printf("cue\n");
-			control->_listener->HandleCue(ch, time + control->_startTime);
+			control->_listener->HandleCue(ch, time/* + control->_startTime*/);
 		}
 		break;
 	default:

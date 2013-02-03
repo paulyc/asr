@@ -1,5 +1,5 @@
-#include "controller.h"
 #include "io.h"
+#include "controller.h"
 
 void MagicController::do_magic()
 {
