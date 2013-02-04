@@ -201,7 +201,8 @@ void ASIOManager<Chunk_T>::createBuffers()
 	_cb.bufferSwitchTimeInfo = MyASIOCallbacks::bufferSwitchTimeInfo;
 	_cb.sampleRateDidChange = MyASIOCallbacks::sampleRateDidChange;
 	_cb.asioMessage = MyASIOCallbacks::asioMessage;
-	_bufSize = _preferredSize;
+//	_bufSize = _preferredSize;
+	_bufSize = 1024;
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 
 	ASIOSampleRate r;
@@ -209,7 +210,7 @@ void ASIOManager<Chunk_T>::createBuffers()
 	r = 44100.0;
 	e = ASIOCanSampleRate(r); */
 	ASIO_ASSERT_NO_ERROR(ASIOGetSampleRate(&r));
-	printf("At a sampling rate of %f\n", r);
+	printf("At a sampling rate of %f buffer size %d\n", r, _bufSize);
 //	ASIOSetSampleRate(44100.0);
 
 //	TRACE_FUNCTION(ASIOProcessor::BufferSwitch);
