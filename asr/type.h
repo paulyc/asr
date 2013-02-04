@@ -39,8 +39,8 @@ typedef size_t smp_ofs_t;
 typedef int32_t ssmp_ofs_t;
 
 #include "chunk.h"
-typedef chunk_time_domain_1d<SamplePairf, 4096> chunk_t;
-typedef chunk_freq_domain_1d<fftwf_complex, 4096> cchunk_t;
+typedef chunk_time_domain_1d<SamplePairf, 1024> chunk_t;
+typedef chunk_freq_domain_1d<fftwf_complex, 1024> cchunk_t;
 
 //typedef fftwf_complex default_internal_sample_type;
 //typedef chunk_time_domain_2d<fftwf_complex, 2, BUFFERSIZE> default_internal_chunk_type;
