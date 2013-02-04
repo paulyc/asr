@@ -28,6 +28,7 @@ public:
 	virtual void bend_pitch(double) = 0;
 	virtual void goto_cuepoint(bool) = 0;
 	virtual bool play_pause(bool) = 0;
+	virtual void seek_time(double) = 0;
 };
 
 template <typename Filter_T>
@@ -105,6 +106,12 @@ public:
 		cev.fparam1 = dpitch;
 		pthread_mutex_unlock(&_lock);
 		*/
+	}
+
+	virtual void HandleSeekTrack(int channel, float64_t time, bool backward)
+	{
+		if (backward)
+			_tracks[channel]->seek_time(0.0);
 	}
 
 	struct ControlEvent

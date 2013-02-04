@@ -54,13 +54,7 @@
 
 #define ASYNC_GENERATE 0
 
-#if 1
 #define GENERATE_LOOP 1
-#define BUFFER_BEFORE_COPY 1
-#else
-#define GENERATE_LOOP 1
-#define BUFFER_BEFORE_COPY 0
-#endif
 
 #define HANDLE_TOPLEVEL_EXCEPTIONS 0
 

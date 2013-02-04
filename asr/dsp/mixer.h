@@ -37,8 +37,8 @@ public:
 		//	Product<typename Source_T::chunk_t::sample_t>::calc(*s2, *s2, _src2_mul);
 		//	Sum<typename Source_T::chunk_t::sample_t>::calc(*sout, *s1, *s2);
 		}
-		T_allocator<typename Source_T::chunk_t>::free(chk1);
-		T_allocator<typename Source_T::chunk_t>::free(chk2);
+	//	T_allocator<typename Source_T::chunk_t>::free(chk1);
+	//	T_allocator<typename Source_T::chunk_t>::free(chk2);
 		return chk_out;
 	}
 

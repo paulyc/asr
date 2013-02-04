@@ -157,6 +157,18 @@ void CDJ350MIDIController::DeviceCallback(uint32_t msg, uint32_t param, float64_
 			control->_track ^= 1;
 		}
 		break;
+	case SeekTrackBack:
+		if (code)
+		{
+			(*control->_listener)->HandleSeekTrack(control->_track, time, true);
+		}
+		break;
+	case SeekTrackForward:
+		if (code)
+		{
+			(*control->_listener)->HandleSeekTrack(control->_track, time, false);
+		}
+		break;
 	default:
 		printf("%x %x %f\n", msg, param, time+control->_startTime);
 	}

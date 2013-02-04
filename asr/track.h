@@ -148,7 +148,7 @@ public:
 		return _cuepoint;
 	}
 
-	void seek_time(double t)
+	virtual void seek_time(double t)
 	{
 		deferred_call(new deferred1<SeekableMixin<Chunk_T>, double>(this, &SeekableMixin<Chunk_T>::seek_time_impl, t));
 	}
@@ -202,7 +202,10 @@ public:
 		}
 		double t = get_root_source()->get_time();
 		if (t <= _cuepoint || t - 0.3 > _cuepoint) //debounce (?)
+		{
 			seek_time(_cuepoint);
+			pause(false);
+		}
 		unlock();
 	}
 
@@ -399,6 +402,7 @@ public:
 	typedef SeekablePitchableFileSource<Chunk_T> track_t;
 
 	using SeekableMixin<Chunk_T>::goto_cuepoint;
+	using SeekableMixin<Chunk_T>::seek_time;
 
 	SeekablePitchableFileSource(ASIOProcessor *io, int track_id, const wchar_t *filename) :
 		_io(io),
@@ -700,6 +704,11 @@ public:
 	void goto_cuepoint(bool x)
 	{
 		this->SeekableMixin<Chunk_T>::goto_cuepoint(x);
+	}
+
+	void seek_time(double d)
+	{
+		SeekableMixin<Chunk_T>::seek_time(d);
 	}
 
 protected:

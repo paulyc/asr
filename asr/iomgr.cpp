@@ -160,11 +160,11 @@ void ASIOManager<Chunk_T>::createBuffers()
 	std::cin >> ch_input_r >> ch_output_l >> ch_output_r;
 #else
 	// mic/line in 2
-	ch_input_l = 0;
-	ch_input_r = 1;
+	ch_input_l = 2;
+	ch_input_r = 3;
 	// aux 2
-	ch_input2_l = 2;
-	ch_input2_r = 3;
+	ch_input2_l = 0;
+	ch_input2_r = 1;
 	// aux
 	//ch_input_l = 18;
 	//ch_input_r = 19;

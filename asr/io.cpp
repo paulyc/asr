@@ -96,9 +96,7 @@ void ASIOProcessor::Init()
 	
 	_iomgr->createBuffers();
 
-#if BUFFER_BEFORE_COPY
     _need_buffers = true;
-#endif
 
 	Win32MIDIDeviceFactory fac;
 	fac.Enumerate();
@@ -202,29 +200,12 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 
 #if DO_OUTPUT
 	
-#if !BUFFER_BEFORE_COPY
-	while (_main_mgr._c == 0)
-	{
-		pthread_cond_wait(&_gen_done, &_io_lock);
-	}
-	
-	//chunk_t *cue_chk = _cue->next(chk1, chk2);
-	_main_out->process(_doubleBufferIndex);
-	
-	ASIOOutputReady();
-	
-	if (_file_out && _file_src && _file_mgr._c)
-	{
-		_file_out->process();
-	}
-#else
     while (_need_buffers)
     {
         pthread_cond_wait(&_gen_done, &_io_lock);
     }
 	_iomgr->switchBuffers(doubleBufferIndex);
     _need_buffers = true;
-#endif
 
 	pthread_cond_signal(&_do_gen);
 #endif
@@ -240,54 +221,39 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 
 void ASIOProcessor::GenerateOutput()
 {
-#ifdef BUFFER_BEFORE_COPY
 	if (!_main_mgr._c) {
-#endif
-	chunk_t *chk1 = _tracks[0]->next();
-	chk1->add_ref();
-	chunk_t *chk2 = _tracks[1]->next();
-	chk2->add_ref();
-	
-	// fix 2nd output
-//	chk2->add_ref();
-//	_2_mgr._c = chk2;
+		chunk_t *chk1 = _tracks[0]->next();
+		chunk_t *chk2 = _tracks[1]->next();
 
-	// just replace this with output gain
-	chunk_t *out = _main_src->next(chk1, chk2);
-	if (_main_src->_clip)
-		_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
-	_main_mgr._c = out;
+		// just replace this with output gain
+		chunk_t *out = _main_src->next(chk1, chk2);
+		if (_main_src->_clip)
+			_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
+		_main_mgr._c = out;
 
-	out = _cue->next(chk1, chk2);
-	_2_mgr._c = out;
+		out = _cue->next(chk1, chk2);
+		_2_mgr._c = out;
 
-/*	if (_file_src == _main_src) 
-	{
-		out->add_ref();
-		_file_mgr._c = out;
-		T_allocator<chunk_t>::free(chk1);
-		T_allocator<chunk_t>::free(chk2);
+	/*	if (_file_src == _main_src) 
+		{
+			out->add_ref();
+			_file_mgr._c = out;
+			T_allocator<chunk_t>::free(chk1);
+			T_allocator<chunk_t>::free(chk2);
+		}
+		else if (_file_src)
+		{
+			_file_mgr._c = _file_src->next(chk1, chk2);
+			if (_file_src->_clip)
+				_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
+		}
+		else
+	*/	{
+			T_allocator<chunk_t>::free(chk1);
+			T_allocator<chunk_t>::free(chk2);
+		}
 	}
-	else if (_file_src)
-	{
-		_file_mgr._c = _file_src->next(chk1, chk2);
-		if (_file_src->_clip)
-			_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
-	}
-	else
-*/	{
-		T_allocator<chunk_t>::free(chk1);
-		T_allocator<chunk_t>::free(chk2);
-	}
-#ifdef BUFFER_BEFORE_COPY
-	}
-	//else
-//	{
-//		assert("shouldnt really happen" && false);
-//	}
-#endif
 
-#if BUFFER_BEFORE_COPY
     _iomgr->processOutputs();
     _need_buffers = false;
 	pthread_cond_signal(&_gen_done);
@@ -296,7 +262,6 @@ void ASIOProcessor::GenerateOutput()
 	{
 		_file_out->process();
 	}
-#endif
 }
 
 void ASIOProcessor::GenerateLoop(pthread_t th)
@@ -308,82 +273,13 @@ void ASIOProcessor::GenerateLoop(pthread_t th)
 	_gen_th = th;
 	while (!_finishing)
 	{
-#if BUFFER_BEFORE_COPY
 		while (_need_buffers)
-#else
-		if (_main_mgr._c == 0)
-#endif
 		{
 			GenerateOutput();
 			pthread_cond_signal(&_gen_done);
 		}
-#if !BUFFER_BEFORE_COPY
-		else
-#endif
-		{
-			pthread_cond_wait(&_do_gen, &_io_lock);
-		}
+		pthread_cond_wait(&_do_gen, &_io_lock);
 	}
 	pthread_mutex_unlock(&_io_lock);
 	pthread_exit(0);
 }
-
-#if 0
-void fAStIOProcessor::MainLoop()
-{
-	while (!_finishing)
-	{
-		if (_buf_q.count() == 0)
-		{
-Generate:
-			GenerateOutput();
-		}
-
-		// render
-
-		if (_buf_q.count() == 0)
-			goto Generate;
-
-		// load track
-	}
-}
-
-void fAStIOProcessor::GenerateOutput()
-{
-	chunk_t *chk1 = _tracks[0]->next();
-	chk1->add_ref();
-	chunk_t *chk2 = _tracks[1]->next();
-	chk2->add_ref();
-	chunk_t *out = _main_src->next(chk1, chk2);
-	if (_main_src->_clip)
-		_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
-	//_main_mgr._c = out;
-	if (_file_src == _main_src) 
-	{
-		out->add_ref();
-		_file_mgr._c = out;
-		T_allocator<chunk_t>::free(chk1);
-		T_allocator<chunk_t>::free(chk2);
-	}
-	else if (_file_src)
-	{
-		_file_mgr._c = _file_src->next(chk1, chk2);
-		if (_file_src->_clip)
-			_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
-	}
-	else
-	{
-		T_allocator<chunk_t>::free(chk1);
-		T_allocator<chunk_t>::free(chk2);
-	}
-}
-
-void fAStIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
-{
-	//sem_wait(&_sem);
-	char *bufs = _buf_q.pop_wait();
-	memcpy(_buffer_infos[2].buffers[doubleBufferIndex], bufs, _bufSize);
-	memcpy(_buffer_infos[3].buffers[doubleBufferIndex], bufs+_bufSize, _bufSize);
-	//sem_post(&_sem);
-}
-#endif

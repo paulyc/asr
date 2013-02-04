@@ -171,7 +171,7 @@ public:
 
 	void set_file_output(const wchar_t *filename)
 	{
-		pthread_mutex_lock(&_io_lock);
+	//	pthread_mutex_lock(&_io_lock);
 		if (_file_out)
 		{
 			delete _file_out;
@@ -180,7 +180,7 @@ public:
 		//_file_out = new file_raw_output<chunk_t>(&_file_mgr, filename);
 		//_file_out = new file_raw_output<chunk_time_domain_1d<SamplePairInt16, 4096> >(&_file_mgr, filename);
 		_file_out = new file_raw_output<chunk_time_domain_1d<SamplePairInt16, 4096> >(_aux, filename);
-		pthread_mutex_unlock(&_io_lock);
+	//	pthread_mutex_unlock(&_io_lock);
 	}
 
 	pthread_mutex_t *get_lock()

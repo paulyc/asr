@@ -95,6 +95,7 @@ public:
 	virtual void HandleCue(int channel, float64_t time) {}
 	virtual void HandleSetPitch(int channel, float64_t time, float64_t pitch) {}
 	virtual void HandleBendPitch(int channel, float64_t time, float64_t dpitch) {}
+	virtual void HandleSeekTrack(int channel, float64_t time, bool backward) {}
 };
 
 class IMIDIController
@@ -132,12 +133,14 @@ public:
 
 	enum MsgType
 	{
-		PlayPause  = 0x00,
-		Cue        = 0x01,
-		JogScratch = 0x10,
-		JogSpin    = 0x30,
-		Tempo      = 0x1d,
-		SelectPush = 0x33
+		PlayPause        = 0x00,
+		Cue              = 0x01,
+		JogScratch       = 0x10,
+		JogSpin          = 0x30,
+		Tempo            = 0x1d,
+		SelectPush       = 0x33,
+		SeekTrackBack    = 0x05,
+		SeekTrackForward = 0x04
 	};
 	enum ButtonPush 
 	{ 

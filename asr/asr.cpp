@@ -107,7 +107,7 @@ int main()
 	//freopen("stdout.txt", "w", stdout);
 
 	ASR::execute();
-	
+	T_allocator<chunk_t>::dump_leaks();
 #if DEBUG_MALLOC
 	dump_malloc();
 #endif
