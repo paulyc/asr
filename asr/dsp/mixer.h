@@ -33,12 +33,7 @@ public:
 			(*sout)[1] = (*s1)[1]*_src1_mul + (*s2)[1]*_src2_mul;
 			if (fabs((*sout)[0]) > 1.0 || fabs((*sout)[1]) > 1.0)
 				_clip = true;
-		//	Product<typename Source_T::chunk_t::sample_t>::calc(*s1, *s1, _src1_mul);
-		//	Product<typename Source_T::chunk_t::sample_t>::calc(*s2, *s2, _src2_mul);
-		//	Sum<typename Source_T::chunk_t::sample_t>::calc(*sout, *s1, *s2);
 		}
-	//	T_allocator<typename Source_T::chunk_t>::free(chk1);
-	//	T_allocator<typename Source_T::chunk_t>::free(chk2);
 		return chk_out;
 	}
 

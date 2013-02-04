@@ -77,7 +77,7 @@ class ASIOProcessor
 {
 public:
 	chunk_buffer _main_mgr, /*_file_mgr,*/ _2_mgr;
-	chunk_buffer_t<chunk_time_domain_1d<SamplePairInt16, 4096> > _file_mgr;
+	chunk_buffer_t<chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> > _file_mgr;
 	
 	ASIOProcessor();
 	virtual ~ASIOProcessor();
@@ -179,7 +179,7 @@ public:
 		}
 		//_file_out = new file_raw_output<chunk_t>(&_file_mgr, filename);
 		//_file_out = new file_raw_output<chunk_time_domain_1d<SamplePairInt16, 4096> >(&_file_mgr, filename);
-		_file_out = new file_raw_output<chunk_time_domain_1d<SamplePairInt16, 4096> >(_aux, filename);
+		_file_out = new file_raw_output<chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> >(_aux, filename);
 	//	pthread_mutex_unlock(&_io_lock);
 	}
 

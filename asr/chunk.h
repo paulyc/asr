@@ -151,9 +151,9 @@ public:
 		_data = (Sample_T*)fftwf_malloc(size_as_bytes()+n0*sizeof(Sample_T)); // padding for inplace DFT
 		if (!_plan)
 		{
-			_plan = fftwf_plan_dft_r2c_2d(4096, 2,
+			_plan = fftwf_plan_dft_r2c_2d(n0, 2,
 				(float*)_data, (fftwf_complex*)_data, FFTW_MEASURE);
-			_iplan = fftwf_plan_dft_c2r_2d(4096, 2,
+			_iplan = fftwf_plan_dft_c2r_2d(n0, 2,
 				(fftwf_complex*)_data, (float*)_data, FFTW_MEASURE);
 		}
 		_domain = time;
