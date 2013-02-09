@@ -7,10 +7,10 @@
 #include "util.h"
 
 template <typename Chunk_T, typename Sample_T>
-class CircularBuffer
+class RingBuffer
 {
 public:
-	CircularBuffer(T_source<Chunk_T> *src);
+	RingBuffer(T_source<Chunk_T> *src);
 };
 
 template <typename Chunk_T>
@@ -19,13 +19,17 @@ class BufferedStream : public T_source<Chunk_T>, T_sink<Chunk_T>
 public:
 	typedef Chunk_T chunk_t;
 
-	BufferedStream(ASIOProcessor *io, T_source<Chunk_T> *src, bool preload=true) :
+	const static int BufSz = 0x3000;
+
+	BufferedStream(ASIOProcessor *io, T_source<Chunk_T> *src, double smp_rate=44100.0, bool preload=true) :
 	  T_sink(src),
 	  _io(io),
 	  _chks(10000, 0),
 	  _chk_ofs(0),
 	  _smp_ofs(0),
-	  _chk_ofs_loading(0)
+	  _chk_ofs_loading(0),
+	  _buffer_p(0),
+	  _sample_rate(smp_rate)
 	{
 		int chks = len().chunks;
 		if (chks != -1)
@@ -33,6 +37,8 @@ public:
 		pthread_mutex_init(&_buffer_lock, 0);
 		pthread_mutex_init(&_src_lock, 0);
 		pthread_mutex_init(&_data_lock, 0);
+
+		_sample_period = 1.0 / _sample_rate;
 	}
 
 	~BufferedStream()
@@ -250,31 +256,7 @@ public:
 
 	ASIOProcessor *get_io() { return _io; }
 
-protected:
-	ASIOProcessor *_io;
-	std::vector<Chunk_T *> _chks;
-	smp_ofs_t _chk_ofs;
-	smp_ofs_t _smp_ofs;
-	smp_ofs_t _chk_ofs_loading;
-	pthread_mutex_t _buffer_lock;
-	pthread_mutex_t _src_lock;
-	pthread_mutex_t _data_lock;
-};
-
-template <typename Source_T, int BufSz=0x1000>
-class BufferMgr
-{
-public:
-	typedef typename Source_T::type::sample_t Sample_T;
-
-	BufferMgr(Source_T *src, double smp_rate=44100.0) :
-	  _src(src),
-	  _buffer_p(0),
-	  _sample_rate(smp_rate)
-	{
-		_sample_period = 1.0 / _sample_rate;
-
-	}
+	typedef typename Chunk_T::sample_t Sample_T;
 
 	Sample_T* load(double tm)
 	{
@@ -314,17 +296,20 @@ public:
 
 	Sample_T* get_at_ofs(smp_ofs_t ofs)
 	{
-		_src->get_samples(ofs, _buffer, 30);
+		get_samples(ofs, _buffer, 30); // wont need more than 30 samples
 		return _buffer;
 	}
 
-	const typename Source_T::pos_info& len()
-	{
-		return _src->len();
-	}
-
 protected:
-	Source_T *_src;
+	ASIOProcessor *_io;
+	std::vector<Chunk_T *> _chks;
+	smp_ofs_t _chk_ofs;
+	smp_ofs_t _smp_ofs;
+	smp_ofs_t _chk_ofs_loading;
+	pthread_mutex_t _buffer_lock;
+	pthread_mutex_t _src_lock;
+	pthread_mutex_t _data_lock;
+
 	Sample_T _buffer[BufSz];
 	Sample_T *_buffer_p;
 	double _buffer_tm;

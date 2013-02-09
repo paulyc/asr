@@ -9,6 +9,8 @@
 #include "ui.h"
 #include "future.h"
 
+typedef lowpass_filter_td<chunk_t, double> filter_t;
+
 template <typename Chunk_T>
 class PitchableMixin : public ITrackController
 {
@@ -22,15 +24,14 @@ public:
 	virtual bool loaded() const = 0;
 	virtual void deferred_call(deferred *d) = 0;
 	virtual bool play_pause(bool) = 0;
-
-	typedef lowpass_filter_td<Chunk_T, double> filter_t;
+	
 	typedef FilterController<filter_t> controller_t;
 
 	void create(BufferedStream<Chunk_T> *src, double sample_rate)
 	{
 		destroy();
-		_resample_filter = new filter_t(src, 22050.0, sample_rate, 48000.0);
-		_resample_filter->fill_coeff_tbl();
+		_resample_filter = new filter_t(src, 22100.0, sample_rate, 48000.0);
+	//	_resample_filter->fill_coeff_tbl();
 		_pitch = 1.0;
 	}
 
@@ -102,7 +103,7 @@ public:
 		return _pitchpoint;
 	}
 
-	lowpass_filter_td<Chunk_T, double> *get_source()
+	filter_t *get_source()
 	{
 		return _resample_filter;
 	}
@@ -130,7 +131,7 @@ public:
 	virtual void lock() = 0;
 	virtual void unlock() = 0;
 	virtual bool loaded() const = 0;
-	virtual lowpass_filter_td<Chunk_T, double> *get_root_source() = 0;
+	virtual filter_t *get_root_source() = 0;
 	virtual void render() = 0;
 	virtual double get_display_pos(double) = 0;
 	virtual typename const T_source<Chunk_T>::pos_info& len() = 0;
@@ -683,7 +684,7 @@ public:
 		_io->_ui->set_clip(id);
 	}
 
-	lowpass_filter_td<Chunk_T, double> *get_root_source()
+	filter_t *get_root_source()
 	{
 		return PitchableMixin<Chunk_T>::get_source();
 	}
@@ -694,7 +695,7 @@ public:
 		{
 			return;
 		}
-		lowpass_filter_td<Chunk_T, double> *src = get_root_source();
+		filter_t *src = get_root_source();
 		if (src)
 			src->have_position(pos);
 	}

@@ -241,12 +241,12 @@ public: // was protected
 	const std::deque<pos_info>& get_pos_stream() const { return _my_pk_det->_pos_stream; }
 
 	std::vector<track_t*> _tracks;
-	xfader<track_t> *_master_xfader;
-	xfader<track_t> *_cue;
+	xfader<T_source<chunk_t> > *_master_xfader;
+	xfader<T_source<chunk_t> > *_cue;
 	//xfader<track_t> *_aux;
 	T_source<chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> > *_aux;
 
-	xfader<track_t> *_main_src;
+	xfader<T_source<chunk_t> > *_main_src;
 	//xfader<track_t> *_file_src;
 	T_source<chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> > *_file_src;
 
@@ -270,6 +270,8 @@ public: // was protected
 	IMIDIController *_midi_controller;
 public:
 	track_t::controller_t *_filter_controller;
+
+	bandpass_filter_td<chunk_t> *_bp_filter;
 };
 
 class fAStIOProcessor : public ASIOProcessor

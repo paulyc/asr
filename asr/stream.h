@@ -5,6 +5,7 @@ template <typename T>
 class T_source
 {
 public:
+	typedef T chunk_t;
 	typedef T type;
 	virtual ~T_source()
 	{

@@ -559,6 +559,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\compressor.h"
+					>
+				</File>
+				<File
 					RelativePath=".\dsp\filter.h"
 					>
 				</File>

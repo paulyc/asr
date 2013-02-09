@@ -44,7 +44,7 @@ protected:
 
 	virtual Precision_T filter_h(Precision_T, Precision_T) = 0;
 
-	void fill_coeff_tbl(Precision_T input_sampling_period)
+	virtual void fill_coeff_tbl(Precision_T input_sampling_period)
 	{
 		_input_sampling_period = input_sampling_period;
 		Precision_T t_diff = Precision_T(Sample_Precision+1) * _input_sampling_period;
@@ -65,7 +65,7 @@ protected:
 	}
 };
 
-template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
+template <typename Chunk_T, typename Precision_T=double, int Dim=1>
 class filter_td_base : public T_source<Chunk_T>, public T_sink<Chunk_T>, public filter_coeff_table<>
 {
 protected:
@@ -105,26 +105,24 @@ protected:
 	}
 
 	BufferedStream<Chunk_T> *_buffered_stream;
-	BufferMgr<BufferedStream<Chunk_T> > *_buffer_mgr;
 
 public:
 	filter_td_base(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=48000.0) :
 		T_sink<Chunk_T>(src),
-		_cutoff(cutoff),
 		_input_sampling_rate(input_rate),
 		_output_scale(Precision_T(1.0)),
-		_output_time(Precision_T(0.0))
+		_output_time(Precision_T(0.0)),
+		_buffered_stream(src)
 	{
 		_kwt = KaiserWindowTable<Precision_T>::get();
 
-		_buffer_mgr = new BufferMgr<BufferedStream<Chunk_T> >(src);
 		_input_sampling_period = Precision_T(1.0) / _input_sampling_rate;
+		set_cutoff(cutoff);
 		set_output_sampling_frequency(output_rate);
 	}
 
 	virtual ~filter_td_base()
 	{
-		delete _buffer_mgr;
 	}
 
 	void set_output_sampling_frequency(Precision_T f)
@@ -139,7 +137,7 @@ public:
 		
 		_rho = _output_sampling_rate / _input_sampling_rate;
 		_impulse_response_scale = min(Precision_T(1.0), _rho);
-	//	fill_coeff_tbl();
+	//	fill_coeff_tbl(_input_sampling_period);
 	}
 
 	Precision_T get_output_sampling_frequency()
@@ -152,16 +150,11 @@ public:
 		return _output_scale*_impulse_response_scale * _h(t) * _kwt->get(t/t_diff);
 	}
 
-	void fill_coeff_tbl()
-	{
-		filter_coeff_table::fill_coeff_tbl(_input_sampling_period);
-	}
-
 	void set_output_scale(Precision_T s)
 	{
 		_output_scale = s;
 		_impulse_response_scale = min(Precision_T(1.0), _rho);
-		fill_coeff_tbl();
+	//	fill_coeff_tbl(_input_sampling_period);
 	}
 
 	void seek_time(Precision_T t)
@@ -181,7 +174,7 @@ public:
 		_impulse_response_period = Precision_T(1.0) / _impulse_response_frequency;
 	//	_rho = _output_sampling_rate / _input_sampling_rate;
 		_impulse_response_scale = min(_impulse_response_frequency / _input_sampling_rate, _rho);
-		fill_coeff_tbl();
+		fill_coeff_tbl(_input_sampling_period);
 	}
 
 	double _last_tm;
@@ -205,7 +198,7 @@ public:
 			t_input = _output_time - t_diff;
 			smp_ofs_t ofs = smp_ofs_t(t_input * _input_sampling_rate) + 1;
 			t_input = ofs / _input_sampling_rate;
-			conv_ptr = _buffer_mgr->get_at_ofs(ofs);
+			conv_ptr = _buffered_stream->get_at_ofs(ofs);
 
 			Precision_T acc[2] = {0.0, 0.0};
 			Precision_T mul;
@@ -246,8 +239,14 @@ public:
 	typedef typename Chunk_T chunk_t;
 };
 
-template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
-class lowpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim, SampleBufSz>
+//template <typename Chunk_T, typename Precision_T=double, int Dim=1>
+//class sinc_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim>
+//{
+//};
+
+// cutoff fixed?
+template <typename Chunk_T, typename Precision_T=double, int Dim=1>
+class lowpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim>
 {
 public:
 	lowpass_filter_td(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
@@ -269,8 +268,9 @@ protected:
 	}
 };
 
-template <typename Chunk_T, typename Precision_T=double, int Dim=1, int SampleBufSz=0x400>
-class highpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim, SampleBufSz>
+// cutoff fixed?
+template <typename Chunk_T, typename Precision_T=double, int Dim=1>
+class highpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim>
 {
 public:
 	highpass_filter_td(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
@@ -286,14 +286,50 @@ protected:
 			return -sinc<Precision_T>(_impulse_response_frequency*t);
 		//return delta(t)-sinc<Precision_T>(_impulse_response_frequency*t)
 	}
-	/*
-	Precision_T _h(int n)
+};
+
+template <typename Chunk_T, typename Precision_T=double, int Dim=1>
+class bandpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim>
+{
+public:
+	bandpass_filter_td(BufferedStream<Chunk_T> *src, Precision_T low_cutoff, Precision_T high_cutoff, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
+		filter_td_base(src, low_cutoff, input_rate, output_rate)
 	{
-		if (n == 0)
-			return Precision_T(2.0);
+		_h_f_lo = 2*low_cutoff;
+		_h_f_hi = 2*high_cutoff;
+	}
+protected:
+	Precision_T _h(Precision_T t)
+	{
+		Precision_T sum = Precision_T(0.0);
+		for (Precision_T t1=t; t1 < Precision_T(_sample_precision+1); t1 += Precision_T(1.0))
+		{
+			sum += _h_lp(t1) * _h_hp(t-t1);
+		}
+		for (Precision_T t2 = t - Precision_T(1.0); t2 > -Precision_T(_sample_precision+1); t2 -= Precision_T(1.0))
+		{
+			sum += _h_lp(t2) * _h_hp(t-t2);
+		}
+		return sum;
+	}
+
+	Precision_T _h_lp(Precision_T t)
+	{
+		return sinc<Precision_T>(_h_f_lo*t);
+	}
+
+	Precision_T _h_hp(Precision_T t) // could be an "n" integer -13 <-> 13 or w/e
+	{
+		if (t == Precision_T(0.0))
+			return Precision_T(1.0) - sinc<Precision_T>(_h_f_hi*t); // wtf check this?
 		else
-			return ???
-	}*/
+			return -sinc<Precision_T>(_h_f_hi*t);
+		//return delta(t)-sinc<Precision_T>(_impulse_response_frequency*t)
+	}
+
+
+	Precision_T _h_f_hi;
+	Precision_T _h_f_lo;
 };
 
 template <typename Sample_T=double, typename Precision_T=double>

@@ -10,6 +10,8 @@
 #include "asio.cpp"
 #include "iomgr.cpp"
 
+#include "compressor.h"
+
 ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
@@ -30,7 +32,8 @@ ASIOProcessor::ASIOProcessor() :
 	_sync_cue(false),
 	_dummy_sink(0),
 	_dummy_sink2(0),
-	_midi_controller(0)
+	_midi_controller(0),
+	_bp_filter(0)
 {
 	Init();
 }
@@ -46,11 +49,14 @@ void ASIOProcessor::CreateTracks()
 	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 2, _default_src));
 
 	_filter_controller = new track_t::controller_t(_tracks[0], _tracks[1]);
+
+	//_bp_filter = new bandpass_filter_td<chunk_t>(_tracks[0], 20.0, 200.0, 48000.0, 48000.0);
 	
-	_master_xfader = new xfader<track_t>(_tracks[0], _tracks[1]);
-	_cue = new xfader<track_t>(_tracks[0], _tracks[1]);
+	_master_xfader = new xfader<T_source<chunk_t> >(_tracks[0], _tracks[1]);
+	_cue = new xfader<T_source<chunk_t> >(_tracks[0], _tracks[1]);
 	_cue->set_mix(1000);
-	double gain = pow(10., -3./20.);
+	const double gain = pow(10., -3./20.);
+	//const double gain = 1.0;
 	_cue->set_gain(1, gain);
 	_cue->set_gain(2, gain);
 	_master_xfader->set_gain(1, gain);
@@ -227,11 +233,14 @@ void ASIOProcessor::GenerateOutput()
 
 		// just replace this with output gain
 		chunk_t *out = _main_src->next(chk1, chk2);
+	//	NormalizingCompressor<chunk_t>::process(out);
+
 		if (_main_src->_clip)
 			_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
 		_main_mgr._c = out;
 
 		out = _cue->next(chk1, chk2);
+	//	NormalizingCompressor<chunk_t>::process(out);
 		_2_mgr._c = out;
 
 	/*	if (_file_src == _main_src) 
