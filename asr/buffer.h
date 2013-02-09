@@ -6,11 +6,87 @@
 
 #include "util.h"
 
-template <typename Chunk_T, typename Sample_T>
+template <typename T>
 class RingBuffer
 {
 public:
-	RingBuffer(T_source<Chunk_T> *src);
+	RingBuffer(int sizeTs) : _sizeTs(sizeTs) 
+	{
+		_buffer = new T[sizeTs];
+		_read = _write = _buffer;
+	}
+
+	~RingBuffer()
+	{
+		delete [] _buffer;
+	}
+
+	int count()
+	{
+		const int c = _write - _read;
+		if (c < 0)
+			return c + sizeTs;
+		else
+			return c;
+	}
+
+	int write(T *data, int Ts_requested)
+	{
+		// actual max data is _sizeTs - 1
+		// but you shouldn't be filling it up like that anyway!
+		if (count() + Ts_requested > _sizeTs - 1)
+		{
+			fprintf(stderr, "Warning, RingBuffer truncating write\n");
+			Ts_requested = _sizeTs - 1 - count();
+		}
+
+		int Ts = Ts_requested;
+
+		if (_write + Ts >= _buffer + _sizeTs)
+		{
+			const int n = _buffer + _sizeTs - _write;
+			memcpy(_write, data, n * sizeof(T));
+			data += n;
+			Ts -= n;
+			_write = _buffer;
+		}
+
+		memcpy(_write, data, Ts * sizeof(T));
+		_write += Ts;
+
+		return Ts_requested;
+	}
+
+	int read(T *data, int Ts_requested)
+	{
+		if (Ts_requested > count())
+		{
+			fprintf(stderr, "Warning, RingBuffer truncating read\n");
+			Ts_requested = count();
+		}
+
+		int Ts = Ts_requested;
+
+		if (_read + Ts >= _buffer + _sizeTs)
+		{
+			const int n = _buffer + _sizeTs - _read;
+			memcpy(data, _read, n * sizeof(T));
+			data += n;
+			Ts -= n;
+			_read = _buffer;
+		}
+
+		memcpy(data, _read, Ts * sizeof(T));
+		_read += Ts;
+
+		return Ts_requested;
+	}
+
+private:
+	int _sizeTs;
+	T *_buffer;
+	T *_write;
+	T *_read;
 };
 
 template <typename Chunk_T>
