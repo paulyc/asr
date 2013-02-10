@@ -24,12 +24,18 @@ public:
 	}
 	virtual bool eof()
 	{
-		return false;
+		throw std::exception("not implemented");
 	}
 	virtual double sample_rate()
 	{
 		return 44100.0;
 	}
+	
+	virtual float maxval()
+	{
+		return 1.0f;
+	}
+
 	struct pos_info
 	{
 		pos_info() : samples(-1), chunks(-1), smp_ofs_in_chk(-1), time(HUGE_VAL) {}
@@ -37,17 +43,14 @@ public:
 		smp_ofs_t chunks;
 		smp_ofs_t smp_ofs_in_chk;
 		double time;
-	} _len;
+	};
 
-	virtual const pos_info& len()
+	virtual pos_info& len()
 	{
 		return _len;
 	}
-
-	virtual float maxval()
-	{
-		return 1.0f;
-	}
+protected:
+	pos_info _len;
 };
 
 template <typename T>

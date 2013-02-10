@@ -8,8 +8,9 @@
 #include "type.h"
 #include "ui.h"
 #include "future.h"
+#include "dsp/beats.h"
 
-typedef lowpass_filter_td<chunk_t, double> filter_t;
+typedef resampling_filter_td<chunk_t, double> filter_t;
 
 template <typename Chunk_T>
 class PitchableMixin : public ITrackController
@@ -30,7 +31,7 @@ public:
 	void create(BufferedStream<Chunk_T> *src, double sample_rate)
 	{
 		destroy();
-		_resample_filter = new filter_t(src, 22100.0, sample_rate, 48000.0);
+		_resample_filter = new filter_t(src, sample_rate, 48000.0);
 	//	_resample_filter->fill_coeff_tbl();
 		_pitch = 1.0;
 	}
@@ -358,8 +359,12 @@ public:
 		destroy();
 
 		_src = src;
-		_src_buf = new BufferedStream<Chunk_T>(io, _src);
-	//	_src_buf->load_complete();
+
+		_filterSource = new FilterSourceImpl(src);
+		_lpf = new lowpass_filter(_filterSource, 1000.0, 44100.0);
+		
+		_src_buf = new BufferedStream<Chunk_T>(io, _lpf);
+		_src_buf->load_complete();
 
 		_filename = filename;
 	}
@@ -380,7 +385,7 @@ public:
 		_filename = 0;
 	}
 
-	virtual typename const T_source<Chunk_T>::pos_info& len()
+	virtual typename T_source<Chunk_T>::pos_info& len()
 	{
 		return _src_buf->len();
 	}
@@ -389,6 +394,9 @@ protected:
 	T_source<Chunk_T> *_src;
 	BufferedStream<Chunk_T> *_src_buf;
 	const wchar_t *_filename;
+
+	FilterSourceImpl *_filterSource;
+	lowpass_filter *_lpf;
 };
 
 template <typename Chunk_T>
@@ -659,7 +667,7 @@ public:
 		_future->submit(d);
 	}
 
-	typename const T_source<Chunk_T>::pos_info& len()
+	typename T_source<Chunk_T>::pos_info& len()
 	{
 		return BufferedSource<Chunk_T>::len();
 	}

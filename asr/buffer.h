@@ -10,7 +10,7 @@ template <typename T>
 class RingBuffer
 {
 public:
-	RingBuffer(int sizeTs) : _sizeTs(sizeTs) 
+	RingBuffer(int sizeTs) : _sizeTs(sizeTs) , _peekBuffer(0), _peekBufferSize(0)
 	{
 		_buffer = new T[sizeTs];
 		_read = _write = _buffer;
@@ -19,13 +19,14 @@ public:
 	~RingBuffer()
 	{
 		delete [] _buffer;
+		delete [] _peekBuffer;
 	}
 
 	int count()
 	{
 		const int c = _write - _read;
 		if (c < 0)
-			return c + sizeTs;
+			return c + _sizeTs;
 		else
 			return c;
 	}
@@ -82,15 +83,69 @@ public:
 		return Ts_requested;
 	}
 
+	void clear()
+	{
+		_read = _write = _buffer;
+	}
+
+	void ignore(int Ts)
+	{
+		if (Ts > count())
+		{
+			fprintf(stderr, "Warning, RingBuffer truncating ignore\n");
+			Ts = count();
+		}
+		_read += Ts;
+		if (_read >= _buffer + _sizeTs)
+			_read -= _sizeTs;
+	}
+
+	T *peek(int Ts)
+	{
+		if (Ts > count())
+		{
+			fprintf(stderr, "Warning, RingBuffer truncating peek\n");
+			Ts = count();
+		}
+
+		if (_read + Ts >= _buffer + _sizeTs)
+		{
+			if (Ts > _peekBufferSize)
+			{
+				delete _peekBuffer;
+				_peekBuffer = new T[Ts];
+				_peekBufferSize = Ts;
+			}
+			const int n = _buffer + _sizeTs - _read;		
+			memcpy(_peekBuffer, _read, n * sizeof(T));
+			memcpy(_peekBuffer + n, _buffer, (Ts - n) * sizeof(T));
+			return _peekBuffer;
+		}
+		return _read;
+	}
+
 private:
 	int _sizeTs;
 	T *_buffer;
 	T *_write;
 	T *_read;
+
+	T *_peekBuffer;
+	int _peekBufferSize;
 };
 
 template <typename Chunk_T>
-class BufferedStream : public T_source<Chunk_T>, T_sink<Chunk_T>
+class FilterSource : public T_source<Chunk_T>, public T_sink<Chunk_T>
+{
+public:
+	FilterSource(T_source<Chunk_T> *src) :
+	  T_sink(src) {}
+
+	virtual typename Chunk_T::sample_t* get_at_ofs(smp_ofs_t ofs, int n) = 0;
+};
+
+template <typename Chunk_T>
+class BufferedStream : public FilterSource<Chunk_T>
 {
 public:
 	typedef Chunk_T chunk_t;
@@ -98,7 +153,7 @@ public:
 	const static int BufSz = 0x3000;
 
 	BufferedStream(ASIOProcessor *io, T_source<Chunk_T> *src, double smp_rate=44100.0, bool preload=true) :
-	  T_sink(src),
+	  FilterSource(src),
 	  _io(io),
 	  _chks(10000, 0),
 	  _chk_ofs(0),
@@ -132,7 +187,7 @@ public:
 	Chunk_T *get_chunk(unsigned int chk_ofs)
 	{
 		// dont think this needs locked??
-		if (_src->_len.chunks != -1 && chk_ofs >= _src->_len.chunks)
+		if (_src->len().chunks != -1 && chk_ofs >= _src->len().chunks)
 		{
 			return zero_source<Chunk_T>::get()->next();
 		}
@@ -141,6 +196,7 @@ public:
 			_chks.resize(chk_ofs*2, 0);
 		if (!_chks[chk_ofs])
 		{
+			printf("Shouldnt happen anymore\n");
 			pthread_mutex_unlock(&_buffer_lock);
 			// possible race condition where mp3 chunk not loaded
 			try
@@ -148,8 +204,9 @@ public:
 				pthread_mutex_lock(&_src_lock);
 				_src->seek_chk(chk_ofs);
 			} 
-			catch (std::exception)
+			catch (std::exception e)
 			{
+				printf("%s\n", e.what());
 				pthread_mutex_unlock(&_src_lock);
 				return zero_source<Chunk_T>::get()->next();
 			}
@@ -291,7 +348,7 @@ public:
 		return written;
 	}
 
-	const pos_info& len()
+	pos_info& len()
 	{
 		return _src->len();
 	}
@@ -305,10 +362,10 @@ public:
 		}
 		_len.chunks = chk-1;
 		pthread_mutex_lock(&_src_lock);
-		_src->_len.chunks = chk-1;
-		_src->_len.samples = _src->_len.chunks*Chunk_T::chunk_size;
-		_src->_len.smp_ofs_in_chk = _src->_len.samples % _src->_len.chunks;
-		_src->_len.time = _src->_len.samples/_src->sample_rate();
+		_src->len().chunks = chk-1;
+		_src->len().samples = _src->len().chunks*Chunk_T::chunk_size;
+		_src->len().smp_ofs_in_chk = _src->len().samples % _src->len().chunks;
+		_src->len().time = _src->len().samples/_src->sample_rate();
 		pthread_mutex_unlock(&_src_lock);
 		return _len.chunks;
 	}
@@ -319,10 +376,10 @@ public:
 		{
 			_len.chunks = _chk_ofs_loading-1;
 			pthread_mutex_lock(&_src_lock);
-			_src->_len.chunks = _chk_ofs_loading-1;
-			_src->_len.samples = _src->_len.chunks*Chunk_T::chunk_size;
-			_src->_len.smp_ofs_in_chk = _src->_len.samples % _src->_len.chunks;
-			_src->_len.time = _src->_len.samples/_src->sample_rate();
+			_src->len().chunks = _chk_ofs_loading-1;
+			_src->len().samples = _src->len().chunks*Chunk_T::chunk_size;
+			_src->len().smp_ofs_in_chk = _src->len().samples % _src->len().chunks;
+			_src->len().time = _src->len().samples/_src->sample_rate();
 			pthread_mutex_unlock(&_src_lock);
 			return false;
 		}
@@ -370,9 +427,9 @@ public:
 		}
 	}
 
-	Sample_T* get_at_ofs(smp_ofs_t ofs)
+	Sample_T* get_at_ofs(smp_ofs_t ofs, int n)
 	{
-		get_samples(ofs, _buffer, 30); // wont need more than 30 samples
+		get_samples(ofs, _buffer, n);
 		return _buffer;
 	}
 

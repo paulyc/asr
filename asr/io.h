@@ -271,7 +271,7 @@ public: // was protected
 public:
 	track_t::controller_t *_filter_controller;
 
-	bandpass_filter_td<chunk_t> *_bp_filter;
+//	bandpass_filter_td<chunk_t> *_bp_filter;
 };
 
 class fAStIOProcessor : public ASIOProcessor

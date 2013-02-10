@@ -32,8 +32,7 @@ ASIOProcessor::ASIOProcessor() :
 	_sync_cue(false),
 	_dummy_sink(0),
 	_dummy_sink2(0),
-	_midi_controller(0),
-	_bp_filter(0)
+	_midi_controller(0)
 {
 	Init();
 }

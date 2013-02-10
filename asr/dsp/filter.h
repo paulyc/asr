@@ -66,7 +66,7 @@ protected:
 };
 
 template <typename Chunk_T, typename Precision_T=double, int Dim=1>
-class filter_td_base : public T_source<Chunk_T>, public T_sink<Chunk_T>, public filter_coeff_table<>
+class resampling_filter_td : public T_source<Chunk_T>, public T_sink<Chunk_T>, public filter_coeff_table<>
 {
 protected:
 	typedef typename Chunk_T::sample_t Sample_T;
@@ -94,20 +94,15 @@ protected:
 
 	KaiserWindowTable<Precision_T> *_kwt;
 	
-	virtual Precision_T _h(Precision_T t)
+	Precision_T _h(Precision_T t)
 	{
-		return Precision_T(1.0);
-	}
-
-	virtual Precision_T _h_n(int n)
-	{
-		return Precision_T(1.0);
+		return sinc<Precision_T>(_impulse_response_frequency*t);
 	}
 
 	BufferedStream<Chunk_T> *_buffered_stream;
 
 public:
-	filter_td_base(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=48000.0) :
+	resampling_filter_td(BufferedStream<Chunk_T> *src, Precision_T input_rate=44100.0, Precision_T output_rate=48000.0) :
 		T_sink<Chunk_T>(src),
 		_input_sampling_rate(input_rate),
 		_output_scale(Precision_T(1.0)),
@@ -117,11 +112,10 @@ public:
 		_kwt = KaiserWindowTable<Precision_T>::get();
 
 		_input_sampling_period = Precision_T(1.0) / _input_sampling_rate;
-		set_cutoff(cutoff);
 		set_output_sampling_frequency(output_rate);
 	}
 
-	virtual ~filter_td_base()
+	virtual ~resampling_filter_td()
 	{
 	}
 
@@ -167,7 +161,7 @@ public:
 		return _output_time;
 	}
 
-	void set_cutoff(Precision_T f)
+/*	void set_cutoff(Precision_T f)
 	{
 		_cutoff = f;
 		_impulse_response_frequency = 2*f;
@@ -176,7 +170,7 @@ public:
 		_impulse_response_scale = min(_impulse_response_frequency / _input_sampling_rate, _rho);
 		fill_coeff_tbl(_input_sampling_period);
 	}
-
+*/
 	double _last_tm;
 
 	/*
@@ -198,7 +192,7 @@ public:
 			t_input = _output_time - t_diff;
 			smp_ofs_t ofs = smp_ofs_t(t_input * _input_sampling_rate) + 1;
 			t_input = ofs / _input_sampling_rate;
-			conv_ptr = _buffered_stream->get_at_ofs(ofs);
+			conv_ptr = _buffered_stream->get_at_ofs(ofs, 30);
 
 			Precision_T acc[2] = {0.0, 0.0};
 			Precision_T mul;
@@ -239,36 +233,92 @@ public:
 	typedef typename Chunk_T chunk_t;
 };
 
-//template <typename Chunk_T, typename Precision_T=double, int Dim=1>
-//class sinc_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim>
-//{
-//};
-
-// cutoff fixed?
-template <typename Chunk_T, typename Precision_T=double, int Dim=1>
-class lowpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim>
+class lowpass_filter : public T_source<chunk_t>
 {
 public:
-	lowpass_filter_td(BufferedStream<Chunk_T> *src, Precision_T cutoff=22050.0, Precision_T input_rate=44100.0, Precision_T output_rate=44100.0) :
-		filter_td_base(src, cutoff, input_rate, output_rate)
+	lowpass_filter(FilterSource<chunk_t> *src, double cutoff, double sampleRate) :
+	  _src(src),
+	  _fCutoff(cutoff),
+	  _fSampleRate(sampleRate),
+	  _tOutputSample(0.0)
 	{
-		__asm
+		KaiserWindowTable<double> * kwt = KaiserWindowTable<double>::get();
+		_nCoeffs = sampleRate / cutoff ;
+	//	_nCoeffs = 100;
+		_coeffs = new double[_nCoeffs*2 + 1];
+		for (int k=-_nCoeffs; k <= _nCoeffs; ++k)
+			_coeffs[k+_nCoeffs] = (2*_fCutoff/_fSampleRate)*sinc(2*_fCutoff*(k/_fSampleRate)) * kwt->get(k / _nCoeffs);
+	}
+  ~lowpass_filter()
+  {
+	  delete [] _coeffs;
+  }
+
+	 static double sinc(double x)
+	 {
+		 if (x == 0.0)
+			 return 1.0;
+		 else
+			 return sin(M_PI*x)/(M_PI*x);
+	 }
+
+	chunk_t *next()
+	{
+		chunk_t * chk = T_allocator<chunk_t>::alloc();
+		
+		for (SamplePairf *smp = chk->_data; smp < chk->_data + chunk_t::chunk_size; ++smp)
 		{
-			push 0;offset string "ASIOProcessor::BufferSwitch"
-			mov eax, next
-			push eax
-			call Tracer::hook
-			add esp, 8
+			double tInputSample = _tOutputSample - _nCoeffs / _fSampleRate;
+			smp_ofs_t sampleOffset = tInputSample * _fSampleRate;
+			SamplePairf * inputSample = _src->get_at_ofs(sampleOffset, 3*_nCoeffs);
+			tInputSample = sampleOffset / _fSampleRate;
+		//	double t = -130. / _fSampleRate; // .000294784
+			double acc[2] = {0.0, 0.0};
+
+			for (int k = -_nCoeffs; k <= _nCoeffs; ++k)
+			{
+			//	double h = (2*_fCutoff/_fSampleRate)*sinc(2*_fCutoff*(k/_fSampleRate));
+				acc[0] += (*inputSample)[0] * _coeffs[k+_nCoeffs] ;
+				acc[1] += (*inputSample)[1] * _coeffs[k+_nCoeffs];
+			//	t += 1. / _fSampleRate;
+				++inputSample;
+			}
+
+			(*smp)[0] = acc[0];
+			(*smp)[1] = acc[1];
+
+			_tOutputSample += 1.0 / _fSampleRate;
 		}
+		return chk;
 	}
-protected:
-	Precision_T _h(Precision_T t)
+
+	void seek_smp(smp_ofs_t smp_ofs)
 	{
-		return sinc<Precision_T>(_impulse_response_frequency*t);
+		_src->seek_smp(smp_ofs);
+		_tOutputSample = smp_ofs / _fSampleRate;
 	}
+
+	T_source<chunk_t>::pos_info& len()
+	{
+		return _src->len();
+	}
+
+	bool eof()
+	{
+		return _src->eof();
+	}
+
+	FilterSource<chunk_t> *_src;
+	double _fCutoff;
+	double _fSampleRate;
+	int _nCoeffs;
+	double *_coeffs;
+
+	double _tOutputSample;
 };
 
-// cutoff fixed?
+
+/*
 template <typename Chunk_T, typename Precision_T=double, int Dim=1>
 class highpass_filter_td : public filter_td_base<Chunk_T, Precision_T, Dim>
 {
@@ -330,7 +380,7 @@ protected:
 
 	Precision_T _h_f_hi;
 	Precision_T _h_f_lo;
-};
+};*/
 
 template <typename Sample_T=double, typename Precision_T=double>
 class dumb_resampler : public filter_coeff_table<>

@@ -555,6 +555,10 @@
 				Name="dsp"
 				>
 				<File
+					RelativePath=".\dsp\beats.h"
+					>
+				</File>
+				<File
 					RelativePath=".\dsp\bus.h"
 					>
 				</File>

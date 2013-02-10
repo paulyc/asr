@@ -38,7 +38,6 @@ public:
 //	FilterController(ASIOProcessor *io) : _io(io) {}
 	FilterController(ITrackController *t1, ITrackController *t2)
 	{
-		pthread_mutex_init(&_lock, 0);
 		_tracks[0] = t1;
 		_tracks[1] = t2;
 	}
@@ -153,7 +152,7 @@ private:
 	};
 	ControlChannel _channels[NUM_CHANNELS];
 //	ASIOProcessor *_io;
-	pthread_mutex_t _lock;
+	PthreadLock _lock;
 
 	ITrackController *_tracks[2];
 };

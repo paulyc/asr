@@ -35,7 +35,7 @@ typedef unsigned __int64 uint64_t;
 typedef float float32_t;
 typedef double float64_t;
 
-typedef size_t smp_ofs_t;
+typedef int32_t smp_ofs_t;
 typedef int32_t ssmp_ofs_t;
 
 #include "chunk.h"

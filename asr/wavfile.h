@@ -156,7 +156,7 @@ public:
 		seek(smp_ofs);
 	}
 
-	const pos_info& len()
+	pos_info& len()
 	{
 		return _len;
 	}
@@ -164,6 +164,11 @@ public:
 	virtual double sample_rate()
 	{
 		return double(_fmtChk.sampleRate);
+	}
+
+	bool eof()
+	{
+		return _eof;
 	}
 
 protected:
