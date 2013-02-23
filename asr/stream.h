@@ -119,9 +119,9 @@ public:
 	{
 		return _src->eof();
 	}
-	virtual int length_samples()
+	virtual pos_info& len()
 	{
-		return _src->length_samples();
+		return _src->len();
 	}
 };
 

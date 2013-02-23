@@ -22,15 +22,7 @@ public:
 	{
 	}
 
-	bool eof()
-	{
-		return _src->eof();
-	}
-
-	virtual T_source<chunk_t>::pos_info& len()
-	{
-		return _src->len();
-	}
+	
 
 	void seek_smp(smp_ofs_t smp_ofs)
 	{
@@ -49,12 +41,14 @@ public:
 
 	SamplePairf *get_at_ofs(smp_ofs_t ofs, int n)
 	{
-		if (ofs + n > _bufferReadOfs + _ringBuffer.count())
+		_ringBuffer.ignore(ofs - _bufferReadOfs);
+		_bufferReadOfs += ofs - _bufferReadOfs;
+		while (ofs + n > _bufferReadOfs + _ringBuffer.count())
 		{
-			int skip = _ringBuffer.count() - (n+100) ;
-			if (skip <= 0) fprintf(stderr, "this is not supposed to happen!\n");
-			_ringBuffer.ignore(skip);
-			_bufferReadOfs += skip;
+		//	int skip = _ringBuffer.count() - (n+100) ;
+		//	if (skip <= 0) fprintf(stderr, "this is not supposed to happen!\n");
+		//	_ringBuffer.ignore(skip);
+		//	_bufferReadOfs += skip;
 
 			chunk_t *chk = _src->next();
 			_ringBuffer.write(chk->_data, chunk_t::chunk_size);

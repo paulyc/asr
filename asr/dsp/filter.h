@@ -13,11 +13,11 @@ template <typename Sample_T, typename Chunk_T>
 class full_wave_rectifier;
 
 template <typename Chunk_T>
-class full_wave_rectifier<SamplePairf, Chunk_T> : public T_source<Chunk_T>, public T_sink<Chunk_T>
+class full_wave_rectifier<SamplePairf, Chunk_T> : public T_sink_source<Chunk_T>
 {
 public:
 	full_wave_rectifier(T_source<Chunk_T> *src) :
-		T_sink<Chunk_T>(src)
+		T_sink_source<Chunk_T>(src)
 	{
 	}
 	Chunk_T *next()

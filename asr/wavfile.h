@@ -33,6 +33,7 @@ struct WAVFormatChunk
 	long byteRate;
 	short blockAlign;
 	short bitsPerSample;
+	short padding; // hack for files that do not conform to wav standard
 };
 
 inline const char * cwcs_to_ccs(const wchar_t *str)
@@ -101,14 +102,14 @@ public:
 			throw std::exception(cwcs_to_ccs((std::wstring(filename) + L" is not a valid WAVE file: format chunk not found").c_str()));
 		}
 
-		if (ch.len != sizeof(WAVFormatChunk))
+		if (ch.len > sizeof(WAVFormatChunk))
 		{
 			delete _file;
 			_file = 0;
 			throw std::exception("Can't handle this type of WAVE file");
 		}
 
-		_file->read(&_fmtChk, sizeof(_fmtChk), 1);
+		_file->read(&_fmtChk, ch.len, 1);
 		if (_fmtChk.format != 0x0001)
 		{
 			delete _file;
@@ -128,6 +129,12 @@ public:
 
 		// read next chunk header - should be data
 		_file->read(&ch, sizeof(ch), 1);
+		while (ch.id != 'atad')
+		{
+			fseek(_file->_File, ch.len, SEEK_CUR);
+			_file->read(&ch, sizeof(ch), 1);
+		}
+
 		if (ch.id != 'atad')
 		{
 			delete _file;

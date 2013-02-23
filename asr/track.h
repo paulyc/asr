@@ -360,8 +360,10 @@ public:
 
 		_src = src;
 
-		_filterSource = new FilterSourceImpl(src);
-		_lpf = new lowpass_filter(_filterSource, 1000.0, 44100.0);
+		_rectifier = new full_wave_rectifier<SamplePairf, Chunk_T>(_src); // leak!
+
+		_filterSource = new FilterSourceImpl(_rectifier); // leak!
+		_lpf = new lowpass_filter(_filterSource, 200.0, 44100.0); // leak!
 		
 		_src_buf = new BufferedStream<Chunk_T>(io, _lpf);
 		_src_buf->load_complete();
@@ -382,6 +384,7 @@ public:
 		_src_buf = 0;
 		delete _src;
 		_src = 0;
+
 		_filename = 0;
 	}
 
@@ -397,6 +400,7 @@ protected:
 
 	FilterSourceImpl *_filterSource;
 	lowpass_filter *_lpf;
+	full_wave_rectifier<SamplePairf, Chunk_T> *_rectifier;
 };
 
 template <typename Chunk_T>
