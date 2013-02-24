@@ -1,6 +1,9 @@
 #ifndef _FILTER_H
 #define _FILTER_H
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include "../util.h"
 #include "../buffer.h"
 #include "../tracer.h"
