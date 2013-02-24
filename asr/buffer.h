@@ -135,11 +135,11 @@ private:
 };
 
 template <typename Chunk_T>
-class FilterSource : public T_source<Chunk_T>, public T_sink<Chunk_T>
+class FilterSource : public T_sink_source<Chunk_T>
 {
 public:
 	FilterSource(T_source<Chunk_T> *src) :
-	  T_sink(src) {}
+	  T_sink_source(src) {}
 
 	virtual typename Chunk_T::sample_t* get_at_ofs(smp_ofs_t ofs, int n) = 0;
 };
