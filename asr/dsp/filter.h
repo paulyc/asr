@@ -243,7 +243,9 @@ public:
 	  _tOutputSample(0.0)
 	{
 		KaiserWindowTable<double> * kwt = KaiserWindowTable<double>::get();
-		_nCoeffs = sampleRate / cutoff ;
+		_nCoeffs = int(sampleRate / cutoff);
+		if (_nCoeffs > 200)
+			_nCoeffs = 200;
 	//	_nCoeffs = 100;
 		_coeffs = new double[_nCoeffs*2 + 1];
 		for (int k=-_nCoeffs; k <= _nCoeffs; ++k)

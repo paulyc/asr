@@ -120,7 +120,9 @@ public:
 		_t_max_points = 0;
 		_t = 0.0;
 		_t_points = 0;
+		_pos = true;
 		_start = false;
+		_x_max = 0.0;
 	}
 
 	~BeatDetector()
@@ -133,6 +135,17 @@ public:
 		delete _my_src;
 	}
 
+	struct point
+	{
+		point() : valid(false), t(0.0),x(0.0), dx(0.0){}
+		point(double _t, double _x, double _dx) : valid(true), t(_t), x(_x),dx(_dx){}
+		bool valid;
+		double t;
+		double x;
+		double dx;
+	};
+	
+/*
 	Chunk_T *next()
 	{
 		Chunk_T *process_chk = _passthrough_sink->next();
@@ -141,10 +154,17 @@ public:
 		SamplePairf last = {0.0f, 0.0f};
 		for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
-			if (_start && (*smp)[0] < 0.01)
+			double x = (*smp)[0];
+			if (x > _x_max)
 			{
-				if (_d_dt_max[0] != 0.0f)
+				_x_max = x;
+				_start = true;
+			}
+			else if (x < 0.1 * _x_max)
+			{
+				if (_start)
 				{
+				//	printf("hello\n");
 					_start = false;
 
 					++_t_points;
@@ -156,11 +176,8 @@ public:
 					_d_dt_max[0] = 0.0f;
 					_d_dt_max[1] = 0.0f;
 				//	printf("d_dtmax %f %f dt_max %f %f\n", _d_dt_max[0], _d_dt_max[1], d_tmax0, d_tmax1);
-					
-					double davg = _d_t_max_sum[0] / _t_max_points;
-					if (_t_points < 10 || abs(d_tmax0 - davg) < .05)
-					{
-						// good point of beat
+
+					// good point of beat
 						if (_t_points > 1) // dont include first in average
 						{
 							++_t_max_points;
@@ -169,13 +186,12 @@ public:
 						//	printf("avg d/t_max %f %f now d_t_max %f %f\n", _d_t_max_sum[0] / _t_max_points, _d_t_max_sum[1] / _t_max_points, d_tmax0, d_tmax1);
 							printf("beat at t=%f bpm = %f avg = %f\n", _t_max[0], 60.0/(d_tmax0), 60.0/(_d_t_max_sum[0] / _t_max_points));
 						}
-						
-					}
-					_t_max[0] = 0.0;
-					_t_max[1] = 0.0;
+
+						//_d_dt_max[0] = 0.0;
 				}
+			//	continue;
 			}
-			else if ((*smp)[0] > 0.02)
+			else
 			{
 				_start = true;
 				_d.next((*smp)[0]);
@@ -191,6 +207,101 @@ public:
 				{
 					_d_dt_max[1] = d_dt;
 					_t_max[1] = _t - 2.0 / 44100.0;
+				}
+			}
+			_t += 1.0 / 44100.0;
+		}
+		//	avg[0] /= Chunk_T::chunk_size;
+	//	avg[1] /= Chunk_T::chunk_size;
+	//	printf("avg values of envelope %f %f\n", avg[0], avg[1]);
+		T_allocator<Chunk_T>::free(passthru_chk);
+
+		return process_chk;
+	}
+	Differentiator _d, _d2;
+	*/
+
+	std::list<point> _peak_list;
+	std::list<point> _beat_list;
+	Chunk_T *next()
+	{
+		Chunk_T *process_chk = _passthrough_sink->next();
+		Chunk_T *passthru_chk = _my_src->get_next();
+		
+		SamplePairf last = {0.0f, 0.0f};
+		for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
+		{
+			double x = (*smp)[0];
+			if (x > _x_max)
+			{
+				_x_max = x;
+				_start = true;
+			}
+			else if (x < 0.1 * _x_max)
+			{
+				if (_start)
+				{
+				//	printf("hello\n");
+					_start = false;
+					// pick point with highest dx
+					point max;
+					for (std::list<point>::iterator i = _peak_list.begin(); i != _peak_list.end(); i++)
+					{
+						if (i->dx > max.dx && i->x > 0.1 * _x_max)
+						{
+							max = *i;
+						}
+					}
+					
+					if (max.valid)
+					{
+						_peak_list.clear();
+						printf("beat at t=%f x=%f dx=%f ", max.t, max.x, max.dx);
+						if (_max_last.valid)
+						{
+							printf(" dt=%f bpm=%f\n", max.t - _max_last.t, 60.0/(max.t - _max_last.t));
+							_beat_list.push_back(max);
+						}
+						else
+						{
+							printf(" no last\n");
+						}
+						_max_last = max;
+					}
+					//_d_dt_max[0] = 0.0;
+				}
+			//	continue;
+			}
+			else
+			{
+				_start = true;
+			}
+			_diff.next(x);
+			double dx = _diff.dx();
+			_diff2.next(dx);
+			double ddx = _diff2.dx();
+			(*smp)[0] = dx*1000;
+			(*smp)[1] = dx*1000;
+
+			if (ddx > 0.0)
+			{
+				if (!_pos) // min
+				{
+				//	printf("min dx = %f, x = %f, t = %f\n", dx, x, _t);
+					_pos = !_pos;
+				}
+			}
+			else
+			{
+				if (_start && _pos)
+				{
+				//	printf("max dx = %f, x = %f, t = %f\n", dx, x, _t);
+				//	if (x < 0.1*_x_max)
+					_peak_list.push_back(point(_t, x, dx));
+				//	if (dx > _d_dt_max[0])
+				//		_d_dt_max[0] = dx;
+
+					_pos = !_pos;
 				}
 			}
 			_t += 1.0 / 44100.0;
@@ -219,9 +330,11 @@ private:
 	full_wave_rectifier<SamplePairf, Chunk_T> *_rectifier;
 	FilterSourceImpl *_filterSource, *_filterSource2;
 	lowpass_filter *_lpf1,*_lpf2;
-	bool _start;
+	bool _start, _pos;
 	int _t_points;
-	Differentiator _d, _d2;
+	Differentiator _diff, _diff2;
+	double _x_max;
+	point _max_last;
 };
 
 #endif
