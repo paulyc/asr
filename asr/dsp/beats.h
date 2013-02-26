@@ -60,6 +60,40 @@ private:
 	smp_ofs_t _bufferReadOfs;
 };
 
+class Differentiator
+{
+public:
+	Differentiator(int size=5)
+	{
+		_size = size;
+		_buffer = new double[size];
+		_ptr = _buffer;
+		for (int i=0; i<size; ++i)
+			_buffer[i] = 0.0;
+	}
+	~Differentiator()
+	{
+		delete [] _buffer;
+	}
+	double dx()
+	{
+		if (_ptr == _buffer)
+			return *_ptr - *(_ptr + _size -1);
+		else
+			return *_ptr - *(_ptr-1);
+	}
+	void next(double x)
+	{
+		*_ptr++ = x;
+		if (_ptr >= _buffer + _size)
+			_ptr = _buffer;
+	}
+private:
+	int _size;
+	double *_buffer;
+	double *_ptr;
+};
+
 template <typename Chunk_T>
 class BeatDetector : public T_sink_source<Chunk_T>
 {
@@ -84,7 +118,9 @@ public:
 		_t_max_points = 0;
 		_t = 0.0;
 		_t_points = 0;
+		_pos = true;
 		_start = false;
+		_x_max = 0.0;
 	}
 
 	~BeatDetector()
@@ -97,6 +133,18 @@ public:
 		delete _my_src;
 	}
 
+	struct point
+	{
+		point() : valid(false), t(0.0),x(0.0), dx(0.0){}
+		point(double _t, double _x, double _dx) : valid(true), t(_t), x(_x),dx(_dx){}
+		bool valid;
+		double t;
+		double x;
+		double dx;
+	};
+	std::list<point> _peak_list;
+	std::list<point> _beat_list;
+
 	Chunk_T *next()
 	{
 		Chunk_T *process_chk = _passthrough_sink->next();
@@ -105,53 +153,77 @@ public:
 		SamplePairf last = {0.0f, 0.0f};
 		for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
-			if (_start && (*smp)[0] < 0.01)
+			double x = (*smp)[0];
+			if (x > _x_max)
 			{
-				if (_d_dt_max[0] != 0.0f)
+				_x_max = x;
+				_start = true;
+			}
+			else if (x < 0.1 * _x_max)
+			{
+				if (_start)
 				{
+				//	printf("hello\n");
 					_start = false;
-
-					++_t_points;
-					
-					double d_tmax0 = _t_max[0] - _t_max_last[0];
-					double d_tmax1 = _t_max[1] - _t_max_last[1];
-					_t_max_last[0] = _t_max[0];
-					_t_max_last[1] = _t_max[1];
-					_d_dt_max[0] = 0.0f;
-					_d_dt_max[1] = 0.0f;
-					printf("d_dtmax %f %f dt_max %f %f\n", _d_dt_max[0], _d_dt_max[1], d_tmax0, d_tmax1);
-					
-					double davg = _d_t_max_sum[0] / _t_max_points;
-					if (_t_points < 10 || abs(d_tmax0 - davg) < .05)
+					// pick point with highest dx
+					point max;
+					for (std::list<point>::iterator i = _peak_list.begin(); i != _peak_list.end(); i++)
 					{
-						// good point of beat
-						printf("beat at %f\n", _t_max[0]);
-						if (_t_points > 1) // dont include first in average
+						if (i->dx > max.dx && i->x > 0.1 * _x_max)
 						{
-							++_t_max_points;
-							_d_t_max_sum[0] += d_tmax0;
-							_d_t_max_sum[1] += d_tmax1;
-							printf("avg d/t_max %f %f now d_t_max %f %f\n", _d_t_max_sum[0] / _t_max_points, _d_t_max_sum[1] / _t_max_points, d_tmax0, d_tmax1);
+							max = *i;
 						}
 					}
-					_t_max[0] = 0.0;
-					_t_max[1] = 0.0;
+					
+					if (max.valid)
+					{
+						_peak_list.clear();
+						printf("beat at t=%f x=%f dx=%f ", max.t, max.x, max.dx);
+						if (_max_last.valid)
+						{
+							printf(" dt=%f bpm=%f\n", max.t - _max_last.t, 60.0/(max.t - _max_last.t));
+							_beat_list.push_back(max);
+						}
+						else
+						{
+							printf(" no last\n");
+						}
+						_max_last = max;
+					}
+					//_d_dt_max[0] = 0.0;
 				}
+			//	continue;
 			}
-			else if ((*smp)[0] > 0.02)
+			else
 			{
 				_start = true;
-				float d_dt = (*smp)[0] - last[0];
-				if (d_dt > _d_dt_max[0])
+			}
+			_diff.next(x);
+			double dx = _diff.dx();
+			_diff2.next(dx);
+			double ddx = _diff2.dx();
+			(*smp)[0] = dx*1000;
+			(*smp)[1] = dx*1000;
+
+			if (ddx > 0.0)
+			{
+				if (!_pos) // min
 				{
-					_d_dt_max[0] = d_dt;
-					_t_max[0] = _t;
+				//	printf("min dx = %f, x = %f, t = %f\n", dx, x, _t);
+					_pos = !_pos;
 				}
-				d_dt = (*smp)[1] - last[1];
-				if (d_dt > _d_dt_max[1])
+			}
+			else
+			{
+				if (_start && _pos)
 				{
-					_d_dt_max[1] = d_dt;
-					_t_max[1] = _t;
+				//	printf("max dx = %f, x = %f, t = %f\n", dx, x, _t);
+				//	if (x < 0.1*_x_max)
+					_peak_list.push_back(point(_t, x, dx));
+				//	if (dx > _d_dt_max[0])
+				//		_d_dt_max[0] = dx;
+
+					_pos = !_pos;
 				}
 			}
 			_t += 1.0 / 44100.0;
@@ -180,8 +252,11 @@ private:
 	full_wave_rectifier<SamplePairf, Chunk_T> *_rectifier;
 	FilterSourceImpl *_filterSource, *_filterSource2;
 	lowpass_filter *_lpf1,*_lpf2;
-	bool _start;
+	bool _start, _pos;
 	int _t_points;
+	Differentiator _diff, _diff2;
+	double _x_max;
+	point _max_last;
 };
 
 #endif

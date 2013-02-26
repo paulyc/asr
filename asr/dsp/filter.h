@@ -247,8 +247,8 @@ public:
 	{
 		KaiserWindowTable<double> * kwt = KaiserWindowTable<double>::get();
 		_nCoeffs = int(sampleRate / cutoff);
-		if (_nCoeffs > 2000)
-			_nCoeffs = 2000;
+		if (_nCoeffs > 200)
+			_nCoeffs = 200;
 	//	_nCoeffs = 100;
 		_coeffs = new double[_nCoeffs*2 + 1];
 		for (int k=-_nCoeffs; k <= _nCoeffs; ++k)
