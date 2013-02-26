@@ -390,6 +390,11 @@ public:
 		return _src_buf->len();
 	}
 
+	const std::list<typename BeatDetector<Chunk_T>::point>& beats()
+	{
+		return _detector->beats();
+	}
+
 protected:
 	T_source<Chunk_T> *_src;
 	BufferedStream<Chunk_T> *_src_buf;

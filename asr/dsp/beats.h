@@ -84,9 +84,10 @@ public:
 	}
 	void next(double x)
 	{
-		*_ptr++ = x;
+		++_ptr;
 		if (_ptr >= _buffer + _size)
 			_ptr = _buffer;
+		*_ptr = x;
 	}
 private:
 	int _size;
@@ -145,6 +146,11 @@ public:
 	std::list<point> _peak_list;
 	std::list<point> _beat_list;
 
+	const std::list<point>& beats()
+	{
+		return _beat_list;
+	}
+
 	Chunk_T *next()
 	{
 		Chunk_T *process_chk = _passthrough_sink->next();
@@ -179,14 +185,51 @@ public:
 					{
 						_peak_list.clear();
 						printf("beat at t=%f x=%f dx=%f ", max.t, max.x, max.dx);
+						
+						
+						
 						if (_max_last.valid)
 						{
-							printf(" dt=%f bpm=%f\n", max.t - _max_last.t, 60.0/(max.t - _max_last.t));
-							_beat_list.push_back(max);
+							double dt =  max.t - _max_last.t;
+							double bpm_last =60.0/(dt);
+							if (_t_max_points > 5)
+							{
+								double dt_avg = _d_t_max_sum[0]/_t_max_points;
+								if (abs(dt_avg - dt) <= 0.05)
+								{
+									_d_t_max_sum[0] += dt;
+									_t_max_points++;
+									dt_avg = _d_t_max_sum[0]/_t_max_points;
+									double bpm_avg = 60.0/(dt_avg);
+									printf(" dt=%f bpm=%f avg=%f\n", dt, bpm_last, bpm_avg);
+									_max_last = max;
+									_beat_list.push_back(max);
+								}
+								else
+								{
+									printf("rejected %f\n", 60.0/dt);
+								}
+							}
+							else
+							{
+								_d_t_max_sum[0] += dt;
+								_t_max_points++;
+								double dt_avg = _d_t_max_sum[0]/_t_max_points;
+								double bpm_avg = 60.0/(dt_avg);
+								printf(" dt=%f bpm=%f avg=%f\n", dt, bpm_last, bpm_avg);
+							//	_max_last = max;
+								_beat_list.push_back(max);
+							}
+						//	_d_t_max_sum[0] += dt;
+						//	_t_max_points++;
+						//	bpm_avg = 60.0/(_d_t_max_sum[0]/_t_max_points);
+						//	printf(" new avg bpm=%f\n", bpm_avg);
 						}
 						else
 						{
 							printf(" no last\n");
+						//	_max_last = max;
+							_beat_list.push_back(max);
 						}
 						_max_last = max;
 					}
@@ -194,35 +237,39 @@ public:
 				}
 			//	continue;
 			}
-			else
+			else if (x > 0.2 * _x_max)
 			{
 				_start = true;
 			}
+
 			_diff.next(x);
 			double dx = _diff.dx();
 			_diff2.next(dx);
 			double ddx = _diff2.dx();
-			(*smp)[0] = dx*1000;
-			(*smp)[1] = dx*1000;
+			(*smp)[0] = 3000*dx;
+			(*smp)[1] = 3000*dx;
 
 			if (ddx > 0.0)
 			{
-				if (!_pos) // min
-				{
-				//	printf("min dx = %f, x = %f, t = %f\n", dx, x, _t);
-					_pos = !_pos;
-				}
-			}
-			else
-			{
-				if (_start && _pos)
+				if (!_pos)
 				{
 				//	printf("max dx = %f, x = %f, t = %f\n", dx, x, _t);
 				//	if (x < 0.1*_x_max)
-					_peak_list.push_back(point(_t, x, dx));
+					//if (_start)
+						
 				//	if (dx > _d_dt_max[0])
 				//		_d_dt_max[0] = dx;
 
+					_pos = !_pos;
+				}
+				
+			}
+			else
+			{
+				if (_pos) // min
+				{
+				//	printf("min dx = %f, x = %f, t = %f\n", dx, x, _t);
+					_peak_list.push_back(point(_t-2.0/44100.0, x, dx));
 					_pos = !_pos;
 				}
 			}
@@ -257,6 +304,7 @@ private:
 	Differentiator _diff, _diff2;
 	double _x_max;
 	point _max_last;
+	point _max_peak;
 };
 
 #endif
