@@ -331,7 +331,7 @@ template <typename Chunk_T>
 class BufferedSource : public T_source<Chunk_T>
 {
 public:
-	BufferedSource() : _src(0), _src_buf(0), _filename(0)
+	BufferedSource() : _src(0), _src_buf(0), _filename(0), _detector(0)
 	{
 	}
 
@@ -359,29 +359,26 @@ public:
 		destroy();
 
 		_src = src;
-
-		_rectifier = new full_wave_rectifier<SamplePairf, Chunk_T>(_src); // leak!
-
-		_filterSource = new FilterSourceImpl(_rectifier); // leak!
-		_lpf = new lowpass_filter(_filterSource, 200.0, 44100.0); // leak!
-		
-		_src_buf = new BufferedStream<Chunk_T>(io, _lpf);
+		_detector = new BeatDetector<Chunk_T>(_src);
+		_src_buf = new BufferedStream<Chunk_T>(io, _detector);
 		_src_buf->load_complete();
 
 		_filename = filename;
 	}
 
-	void createZero(ASIOProcessor *io)
-	{
-		_src = zero_source<Chunk_T>::get();
-		_src_buf = new BufferedStream<Chunk_T>(io, _src);
-		_filename = L"(No source)";
-	}
+//	void createZero(ASIOProcessor *io)
+//	{
+//		_src = zero_source<Chunk_T>::get();
+//		_src_buf = new BufferedStream<Chunk_T>(io, _src);
+//		_filename = L"(No source)";
+//	}
 
 	void destroy()
 	{
 		delete _src_buf;
 		_src_buf = 0;
+		delete _detector;
+		_detector = 0;
 		delete _src;
 		_src = 0;
 
@@ -398,9 +395,7 @@ protected:
 	BufferedStream<Chunk_T> *_src_buf;
 	const wchar_t *_filename;
 
-	FilterSourceImpl *_filterSource;
-	lowpass_filter *_lpf;
-	full_wave_rectifier<SamplePairf, Chunk_T> *_rectifier;
+	BeatDetector<Chunk_T> *_detector;
 };
 
 template <typename Chunk_T>
