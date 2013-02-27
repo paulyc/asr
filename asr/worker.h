@@ -35,6 +35,7 @@ public:
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
+		(new Worker)->spin(false);
 	}
 
 	static void destroy()

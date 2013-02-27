@@ -196,7 +196,7 @@ public:
 			_chks.resize(chk_ofs*2, 0);
 		if (!_chks[chk_ofs])
 		{
-			printf("Shouldnt happen anymore\n");
+		//	printf("Shouldnt happen anymore\n");
 			pthread_mutex_unlock(&_buffer_lock);
 			// possible race condition where mp3 chunk not loaded
 			try
@@ -271,11 +271,6 @@ public:
 		}
 		pthread_mutex_unlock(&_data_lock);
 		return chk;
-	}
-
-	void seek_chk(smp_ofs_t chk_ofs)
-	{
-		seek_smp(chk_ofs*Chunk_T::chunk_size);
 	}
 
 	void seek_smp(smp_ofs_t smp_ofs)

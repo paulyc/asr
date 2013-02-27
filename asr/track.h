@@ -360,13 +360,10 @@ public:
 
 		_src = src;
 
-		_rectifier = new full_wave_rectifier<SamplePairf, Chunk_T>(_src); // leak!
-
-		_filterSource = new FilterSourceImpl(_rectifier); // leak!
-		_lpf = new lowpass_filter(_filterSource, 200.0, 44100.0); // leak!
+		_detector = new BeatDetector<Chunk_T>(_src);
 		
-		_src_buf = new BufferedStream<Chunk_T>(io, _lpf);
-		_src_buf->load_complete();
+		_src_buf = new BufferedStream<Chunk_T>(io, _detector);
+	//	_src_buf->load_complete();
 
 		_filename = filename;
 	}
@@ -406,6 +403,7 @@ protected:
 	FilterSourceImpl *_filterSource;
 	lowpass_filter *_lpf;
 	full_wave_rectifier<SamplePairf, Chunk_T> *_rectifier;
+	BeatDetector<Chunk_T> *_detector;
 };
 
 template <typename Chunk_T>
@@ -581,7 +579,7 @@ public:
 			_src_buf->load_next();
 		}
 
-		printf("len %d\n", _src_buf->len().samples);
+		printf("len %d samples %d chunks\n", _src_buf->len().samples, _src_buf->len().chunks);
 
 		_meta->load_metadata(lock, _io);
         

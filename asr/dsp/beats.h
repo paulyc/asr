@@ -33,6 +33,10 @@ public:
 		_ringBuffer.clear();
 		_ringBuffer.write(chk->_data, chunk_t::chunk_size);
 	}
+	virtual void seek_chk(int chk_ofs)
+	{
+	//	_src->seek_chk(chk_ofs);
+	}
 //	void process(bool freeme=true)
 //	{
 //		Chunk_T *chk = next();
@@ -65,7 +69,7 @@ private:
 class Differentiator
 {
 public:
-	Differentiator(int size=5)
+	Differentiator(int size=3)
 	{
 		_size = size;
 		_buffer = new double[size];
@@ -124,6 +128,7 @@ public:
 		_pos = true;
 		_start = false;
 		_x_max = 0.0;
+		_chk_ofs = 0;
 	}
 
 	~BeatDetector()
@@ -145,6 +150,23 @@ public:
 		double x;
 		double dx;
 	};
+	int _chk_ofs;
+
+	virtual void seek_chk(int chk_ofs)
+	{
+		if (chk_ofs == _chk_ofs)
+		{
+			++_chk_ofs;
+			if (_chk_ofs % 100 == 0)
+			{
+				printf("chk %d\n", _chk_ofs);
+			}
+		}
+		else
+		{
+			printf("hello\n");
+		}
+	}
 	
 /*
 	Chunk_T *next()
@@ -227,7 +249,7 @@ public:
 
 	const std::list<point>& beats()
 	{
-		return _peak_list;
+		return _beat_list;
 	}
 
 	Chunk_T *next()
@@ -239,6 +261,12 @@ public:
 		for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
 			double x = (*smp)[0];
+			_diff.next(x);
+			double dx = _diff.dx();
+			_diff2.next(dx);
+			double ddx = _diff2.dx();
+			(*smp)[0] = x;//3000*dx;
+			(*smp)[1] = x;//3000*dx;
 			if (x > _x_max)
 			{
 				_x_max = x;
@@ -251,21 +279,39 @@ public:
 				//	printf("hello\n");
 					_start = false;
 					// pick point with highest dx
-					point max;
 					for (std::list<point>::iterator i = _peak_list.begin(); i != _peak_list.end(); i++)
 					{
-						if (i->dx > max.dx && i->x > 0.1 * _x_max)
+						if (i->dx > _max.dx && i->x > 0.15 * _x_max)
 						{
-							max = *i;
+							_max = *i;
+							_maxs.push_back(_max);
 						}
+						else if (!_maxs.empty() && i->x < 0.05 * _x_max)//_max.x)
+						{
+							// pick first
+						//	point m = *_maxs.begin();
+							if (_last_beat.valid)
+							{
+								double dt = _maxs.begin()->t - _last_beat.t;
+								printf("bpm %f\n", 60.0/dt);
+							}
+							_last_beat = *_maxs.begin();
+							_beat_list.push_back(*_maxs.begin());
+							if (_beat_list.size() == 9)
+							{
+								printf("hello\n");
+							}
+							_max = point();
+							_maxs.clear();
+						}
+						
 					}
-					
+					_peak_list.clear();
+					/*
 					if (max.valid)
 					{
-						_peak_list.clear();
+						
 						printf("beat at t=%f x=%f dx=%f ", max.t, max.x, max.dx);
-						
-						
 						
 						if (_max_last.valid)
 						{
@@ -313,6 +359,7 @@ public:
 						_max_last = max;
 					}
 					//_d_dt_max[0] = 0.0;
+					*/
 				}
 			//	continue;
 			}
@@ -321,13 +368,7 @@ public:
 				_start = true;
 			}
 
-			_diff.next(x);
-			double dx = _diff.dx();
-			_diff2.next(dx);
-			double ddx = _diff2.dx();
-			(*smp)[0] = 3000*dx;
-			(*smp)[1] = 3000*dx;
-
+/*
 			if (ddx > 0.0)
 			{
 				if (!_pos)
@@ -352,20 +393,18 @@ public:
 					_pos = !_pos;
 				}
 			}*/
-			_diff.next(x);
-			double dx = _diff.dx();
-			_diff2.next(dx);
-			double ddx = _diff2.dx();
-			(*smp)[0] = 3000*dx;
-			(*smp)[1] = 3000*dx;
+
 			if (dx < 0)
 			{
 				if (_pos)
 				{
 					_pos = false;
 					// record max
-					_peak_list.push_back(_max_peak);
-					_max_peak = point();
+					if (_max_peak.valid)
+					{
+						_peak_list.push_back(_max_peak);
+						_max_peak = point();
+					}
 				}
 			}
 			else
@@ -376,6 +415,8 @@ public:
 				{
 					_max_peak.t = _t - 2.0/44100.0;
 					_max_peak.dx = dx;
+					_max_peak.x = x;
+					_max_peak.valid = true;
 				}
 			}
 			_t += 1.0 / 44100.0;
@@ -411,6 +452,9 @@ private:
 	double _dx_max;
 	point _max_last;
 	point _max_peak;
+	point _max;
+	std::list<point> _maxs;
+	point _last_beat;
 };
 
 #endif
