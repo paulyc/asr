@@ -148,7 +148,7 @@ public:
 
 	const std::list<point>& beats()
 	{
-		return _beat_list;
+		return _peak_list;
 	}
 
 	Chunk_T *next()
@@ -160,7 +160,7 @@ public:
 		for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
 			double x = (*smp)[0];
-			if (x > _x_max)
+			/*if (x > _x_max)
 			{
 				_x_max = x;
 				_start = true;
@@ -272,6 +272,32 @@ public:
 					_peak_list.push_back(point(_t-2.0/44100.0, x, dx));
 					_pos = !_pos;
 				}
+			}*/
+			_diff.next(x);
+			double dx = _diff.dx();
+			_diff2.next(dx);
+			double ddx = _diff2.dx();
+			(*smp)[0] = 3000*dx;
+			(*smp)[1] = 3000*dx;
+			if (dx < 0)
+			{
+				if (_pos)
+				{
+					_pos = false;
+					// record max
+					_peak_list.push_back(_max_peak);
+					_max_peak = point();
+				}
+			}
+			else
+			{
+				if (!_pos)
+					_pos = true;
+				if (dx > _max_peak.dx)
+				{
+					_max_peak.t = _t - 2.0/44100.0;
+					_max_peak.dx = dx;
+				}
 			}
 			_t += 1.0 / 44100.0;
 		}
@@ -303,6 +329,7 @@ private:
 	int _t_points;
 	Differentiator _diff, _diff2;
 	double _x_max;
+	double _dx_max;
 	point _max_last;
 	point _max_peak;
 };
