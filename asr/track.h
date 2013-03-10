@@ -359,8 +359,8 @@ public:
 		destroy();
 
 		_src = src;
-		_detector = new BeatDetector<Chunk_T>(_src);
-		_src_buf = new BufferedStream<Chunk_T>(io, _detector);
+	//	_detector = new BeatDetector<Chunk_T>(_src);
+		_src_buf = new BufferedStream<Chunk_T>(io, _src);
 		_src_buf->load_complete();
 
 		_filename = filename;
