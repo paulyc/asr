@@ -850,7 +850,7 @@ void Win32UI::render_impl(int t_id)
 	SelectObject(hdc, pen_oran);
 	LineTo(hdc, r.left+uit->wave.cpx, r.top+height);
 
-	const std::list<typename BeatDetector<chunk_t>::point>& beats = track->beats();
+/*	const std::list<typename BeatDetector<chunk_t>::point>& beats = track->beats();
 	for (std::list<typename BeatDetector<chunk_t>::point>::const_iterator i = beats.begin(); i != beats.end(); i++)
 	{
 		double t = i->t;
@@ -863,7 +863,7 @@ void Win32UI::render_impl(int t_id)
 			LineTo(hdc, r.left+px, r.top+height);
 		}
 	}
-
+	*/
 	BitBlt(hdc_old, 0, 0, width, height, memDC, 0, 0, SRCCOPY);
 
 	SelectObject(memDC, hOldBmp);

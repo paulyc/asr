@@ -10,19 +10,17 @@ public:
 		: FilterSource<chunk_t>(src),
 		_ringBuffer(100000)
 	{
-		chunk_t *chk = _src->next();
+	//	chunk_t *chk = _src->next();
 		_bufferReadOfs = -10000;
 		SamplePairf values[10000] = {0.0,0.0};
 		_ringBuffer.write(values, 10000);
-		_ringBuffer.write(chk->_data, chunk_t::chunk_size);
+	//	_ringBuffer.write(chk->_data, chunk_t::chunk_size);
 		
 	}
 
 	virtual ~FilterSourceImpl()
 	{
 	}
-
-	
 
 	void seek_smp(smp_ofs_t smp_ofs)
 	{
@@ -393,7 +391,6 @@ public:
 					_pos = !_pos;
 				}
 			}*/
-
 			if (dx < 0)
 			{
 				if (_pos)

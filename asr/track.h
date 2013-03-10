@@ -331,7 +331,7 @@ template <typename Chunk_T>
 class BufferedSource : public T_source<Chunk_T>
 {
 public:
-	BufferedSource() : _src(0), _src_buf(0), _filename(0)
+	BufferedSource() : _src(0), _src_buf(0), _filename(0), _detector(0)
 	{
 	}
 
@@ -368,17 +368,19 @@ public:
 		_filename = filename;
 	}
 
-	void createZero(ASIOProcessor *io)
-	{
-		_src = zero_source<Chunk_T>::get();
-		_src_buf = new BufferedStream<Chunk_T>(io, _src);
-		_filename = L"(No source)";
-	}
+//	void createZero(ASIOProcessor *io)
+//	{
+//		_src = zero_source<Chunk_T>::get();
+//		_src_buf = new BufferedStream<Chunk_T>(io, _src);
+//		_filename = L"(No source)";
+//	}
 
 	void destroy()
 	{
 		delete _src_buf;
 		_src_buf = 0;
+		delete _detector;
+		_detector = 0;
 		delete _src;
 		_src = 0;
 
