@@ -120,7 +120,7 @@ public:
 	  T_sink(src)
 	{
 	}
-	T *next()
+	virtual T* next()
 	{
 		return _src->next();
 	}
