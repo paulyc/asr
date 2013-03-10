@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asr", "asr\asrnew.vcproj", "{66094CCE-DA65-46C7-BFB7-8EA15EAE9B03}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "asr", "asr\asrnew2.vcproj", "{66094CCE-DA65-46C7-BFB7-8EA15EAE9B03}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7A329D38-4CD9-4028-BA03-4E1EDBDC9721} = {7A329D38-4CD9-4028-BA03-4E1EDBDC9721}
 	EndProjectSection

@@ -33,6 +33,10 @@ public:
 		_ringBuffer.clear();
 		_ringBuffer.write(chk->_data, chunk_t::chunk_size);
 	}
+	virtual void seek_chk(int chk_ofs)
+	{
+	//	_src->seek_chk(chk_ofs);
+	}
 //	void process(bool freeme=true)
 //	{
 //		Chunk_T *chk = next();
@@ -65,7 +69,7 @@ private:
 class Differentiator
 {
 public:
-	Differentiator(int size=5)
+	Differentiator(int size=3)
 	{
 		_size = size;
 		_buffer = new double[size];
@@ -86,9 +90,10 @@ public:
 	}
 	void next(double x)
 	{
-		*_ptr++ = x;
+		++_ptr;
 		if (_ptr >= _buffer + _size)
 			_ptr = _buffer;
+		*_ptr = x;
 	}
 private:
 	int _size;
@@ -120,7 +125,10 @@ public:
 		_t_max_points = 0;
 		_t = 0.0;
 		_t_points = 0;
+		_pos = true;
 		_start = false;
+		_x_max = 0.0;
+		_chk_ofs = 0;
 	}
 
 	~BeatDetector()
@@ -133,6 +141,34 @@ public:
 		delete _my_src;
 	}
 
+	struct point
+	{
+		point() : valid(false), t(0.0),x(0.0), dx(0.0){}
+		point(double _t, double _x, double _dx) : valid(true), t(_t), x(_x),dx(_dx){}
+		bool valid;
+		double t;
+		double x;
+		double dx;
+	};
+	int _chk_ofs;
+
+	virtual void seek_chk(int chk_ofs)
+	{
+		if (chk_ofs == _chk_ofs)
+		{
+			++_chk_ofs;
+			if (_chk_ofs % 100 == 0)
+			{
+				printf("chk %d\n", _chk_ofs);
+			}
+		}
+		else
+		{
+			printf("hello\n");
+		}
+	}
+	
+/*
 	Chunk_T *next()
 	{
 		Chunk_T *process_chk = _passthrough_sink->next();
@@ -141,10 +177,17 @@ public:
 		SamplePairf last = {0.0f, 0.0f};
 		for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
-			if (_start && (*smp)[0] < 0.01)
+			double x = (*smp)[0];
+			/*if (x > _x_max)
 			{
-				if (_d_dt_max[0] != 0.0f)
+				_x_max = x;
+				_start = true;
+			}
+			else if (x < 0.1 * _x_max)
+			{
+				if (_start)
 				{
+				//	printf("hello\n");
 					_start = false;
 
 					++_t_points;
@@ -156,12 +199,8 @@ public:
 					_d_dt_max[0] = 0.0f;
 					_d_dt_max[1] = 0.0f;
 				//	printf("d_dtmax %f %f dt_max %f %f\n", _d_dt_max[0], _d_dt_max[1], d_tmax0, d_tmax1);
-					
-					double davg = _d_t_max_sum[0] / _t_max_points;
-					if (_t_points < 10 || abs(d_tmax0 - davg) < .05)
-					{
-						// good point of beat
-						
+
+					// good point of beat
 						if (_t_points > 1) // dont include first in average
 						{
 							++_t_max_points;
@@ -170,13 +209,12 @@ public:
 						//	printf("avg d/t_max %f %f now d_t_max %f %f\n", _d_t_max_sum[0] / _t_max_points, _d_t_max_sum[1] / _t_max_points, d_tmax0, d_tmax1);
 							printf("beat at t=%f bpm = %f avg = %f\n", _t_max[0], 60.0/(d_tmax0), 60.0/(_d_t_max_sum[0] / _t_max_points));
 						}
-						
-					}
-					_t_max[0] = 0.0;
-					_t_max[1] = 0.0;
+
+						//_d_dt_max[0] = 0.0;
 				}
+			//	continue;
 			}
-			else if ((*smp)[0] > 0.02)
+			else
 			{
 				_start = true;
 				_d.next((*smp)[0]);
@@ -192,6 +230,193 @@ public:
 				{
 					_d_dt_max[1] = d_dt;
 					_t_max[1] = _t - 2.0 / 44100.0;
+				}
+			}
+			_t += 1.0 / 44100.0;
+		}
+		//	avg[0] /= Chunk_T::chunk_size;
+	//	avg[1] /= Chunk_T::chunk_size;
+	//	printf("avg values of envelope %f %f\n", avg[0], avg[1]);
+		T_allocator<Chunk_T>::free(passthru_chk);
+
+		return process_chk;
+	}
+	Differentiator _d, _d2;
+	*/
+
+	std::list<point> _peak_list;
+	std::list<point> _beat_list;
+
+	const std::list<point>& beats()
+	{
+		return _beat_list;
+	}
+
+	Chunk_T *next()
+	{
+		Chunk_T *process_chk = _passthrough_sink->next();
+		Chunk_T *passthru_chk = _my_src->get_next();
+		
+		SamplePairf last = {0.0f, 0.0f};
+		for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
+		{
+			double x = (*smp)[0];
+			_diff.next(x);
+			double dx = _diff.dx();
+			_diff2.next(dx);
+			double ddx = _diff2.dx();
+			(*smp)[0] = x;//3000*dx;
+			(*smp)[1] = x;//3000*dx;
+			if (x > _x_max)
+			{
+				_x_max = x;
+				_start = true;
+			}
+			else if (x < 0.1 * _x_max)
+			{
+				if (_start)
+				{
+				//	printf("hello\n");
+					_start = false;
+					// pick point with highest dx
+					for (std::list<point>::iterator i = _peak_list.begin(); i != _peak_list.end(); i++)
+					{
+						if (i->dx > _max.dx && i->x > 0.15 * _x_max)
+						{
+							_max = *i;
+							_maxs.push_back(_max);
+						}
+						else if (!_maxs.empty() && i->x < 0.05 * _x_max)//_max.x)
+						{
+							// pick first
+						//	point m = *_maxs.begin();
+							if (_last_beat.valid)
+							{
+								double dt = _maxs.begin()->t - _last_beat.t;
+								printf("bpm %f\n", 60.0/dt);
+							}
+							_last_beat = *_maxs.begin();
+							_beat_list.push_back(*_maxs.begin());
+							if (_beat_list.size() == 9)
+							{
+								printf("hello\n");
+							}
+							_max = point();
+							_maxs.clear();
+						}
+						
+					}
+					_peak_list.clear();
+					/*
+					if (max.valid)
+					{
+						
+						printf("beat at t=%f x=%f dx=%f ", max.t, max.x, max.dx);
+						
+						if (_max_last.valid)
+						{
+							double dt =  max.t - _max_last.t;
+							double bpm_last =60.0/(dt);
+							if (_t_max_points > 5)
+							{
+								double dt_avg = _d_t_max_sum[0]/_t_max_points;
+								if (abs(dt_avg - dt) <= 0.05)
+								{
+									_d_t_max_sum[0] += dt;
+									_t_max_points++;
+									dt_avg = _d_t_max_sum[0]/_t_max_points;
+									double bpm_avg = 60.0/(dt_avg);
+									printf(" dt=%f bpm=%f avg=%f\n", dt, bpm_last, bpm_avg);
+									_max_last = max;
+									_beat_list.push_back(max);
+								}
+								else
+								{
+									printf("rejected %f\n", 60.0/dt);
+								}
+							}
+							else
+							{
+								_d_t_max_sum[0] += dt;
+								_t_max_points++;
+								double dt_avg = _d_t_max_sum[0]/_t_max_points;
+								double bpm_avg = 60.0/(dt_avg);
+								printf(" dt=%f bpm=%f avg=%f\n", dt, bpm_last, bpm_avg);
+							//	_max_last = max;
+								_beat_list.push_back(max);
+							}
+						//	_d_t_max_sum[0] += dt;
+						//	_t_max_points++;
+						//	bpm_avg = 60.0/(_d_t_max_sum[0]/_t_max_points);
+						//	printf(" new avg bpm=%f\n", bpm_avg);
+						}
+						else
+						{
+							printf(" no last\n");
+						//	_max_last = max;
+							_beat_list.push_back(max);
+						}
+						_max_last = max;
+					}
+					//_d_dt_max[0] = 0.0;
+					*/
+				}
+			//	continue;
+			}
+			else if (x > 0.2 * _x_max)
+			{
+				_start = true;
+			}
+
+/*
+			if (ddx > 0.0)
+			{
+				if (!_pos)
+				{
+				//	printf("max dx = %f, x = %f, t = %f\n", dx, x, _t);
+				//	if (x < 0.1*_x_max)
+					//if (_start)
+						
+				//	if (dx > _d_dt_max[0])
+				//		_d_dt_max[0] = dx;
+
+					_pos = !_pos;
+				}
+				
+			}
+			else
+			{
+				if (_pos) // min
+				{
+				//	printf("min dx = %f, x = %f, t = %f\n", dx, x, _t);
+					_peak_list.push_back(point(_t-2.0/44100.0, x, dx));
+					_pos = !_pos;
+				}
+			}*/
+
+			if (dx < 0)
+			{
+				if (_pos)
+				{
+					_pos = false;
+					// record max
+					if (_max_peak.valid)
+					{
+						_peak_list.push_back(_max_peak);
+						_max_peak = point();
+					}
+				}
+			}
+			else
+			{
+				if (!_pos)
+					_pos = true;
+				if (dx > _max_peak.dx)
+				{
+					_max_peak.t = _t - 2.0/44100.0;
+					_max_peak.dx = dx;
+					_max_peak.x = x;
+					_max_peak.valid = true;
 				}
 			}
 			_t += 1.0 / 44100.0;
@@ -220,9 +445,16 @@ private:
 	full_wave_rectifier<SamplePairf, Chunk_T> *_rectifier;
 	FilterSourceImpl *_filterSource, *_filterSource2;
 	lowpass_filter *_lpf1,*_lpf2;
-	bool _start;
+	bool _start, _pos;
 	int _t_points;
-	Differentiator _d, _d2;
+	Differentiator _diff, _diff2;
+	double _x_max;
+	double _dx_max;
+	point _max_last;
+	point _max_peak;
+	point _max;
+	std::list<point> _maxs;
+	point _last_beat;
 };
 
 #endif

@@ -60,7 +60,9 @@ IOManager<chunk_t>* ASIODriver::loadDriver()
 	//const char * drvdll = "d:\\program files\\presonus\\1394audiodriver_firebox\\ps_asio.dll";
 	CLSIDFromString(OLESTR("{23638883-0B8C-4324-BBD5-35C3CF1B73BF}"), &clsid);
 #endif
-	HRESULT rc = CoCreateInstance(clsid, 0, CLSCTX_INPROC_SERVER, clsid, (LPVOID *)&asiodrv);
+	asiodrv = new DummyASIO;
+	HRESULT rc = S_OK;
+	//HRESULT rc = CoCreateInstance(clsid, 0, CLSCTX_INPROC_SERVER, clsid, (LPVOID *)&asiodrv);
 
 	if (rc == S_OK) { // programmers making design decisions = $$$?
 		printf("i got this %p\n", asiodrv);

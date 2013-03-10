@@ -850,6 +850,20 @@ void Win32UI::render_impl(int t_id)
 	SelectObject(hdc, pen_oran);
 	LineTo(hdc, r.left+uit->wave.cpx, r.top+height);
 
+	const std::list<typename BeatDetector<chunk_t>::point>& beats = track->beats();
+	for (std::list<typename BeatDetector<chunk_t>::point>::const_iterator i = beats.begin(); i != beats.end(); i++)
+	{
+		double t = i->t;
+		double pos = track->get_display_pos(t);
+		if (pos >= 0.0 && pos <= 1.0)
+		{
+			int px = pos * width;
+			MoveToEx(hdc, r.left+px, r.top, NULL);
+			SelectObject(hdc, pen_yel);
+			LineTo(hdc, r.left+px, r.top+height);
+		}
+	}
+
 	BitBlt(hdc_old, 0, 0, width, height, memDC, 0, 0, SRCCOPY);
 
 	SelectObject(memDC, hOldBmp);

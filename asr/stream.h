@@ -115,6 +115,10 @@ public:
 	  T_sink(src)
 	{
 	}
+	virtual T* next()
+	{
+		return _src->next();
+	}
 	virtual bool eof()
 	{
 		return _src->eof();
@@ -123,6 +127,31 @@ public:
 	{
 		return _src->len();
 	}
+};
+
+template <typename T>
+class QueueingSource : public T_sink_source<T>
+{
+public:
+	QueueingSource(T_source<T> *src) : T_sink_source(src) {}
+
+	T* get_next()
+	{
+		T *n = _t_q.front();
+		_t_q.pop();
+		return n;
+	}
+
+	T *next() 
+	{ 
+		T *process_chk = _src->next();
+		T *passthru_chk = T_allocator<T>::alloc();
+		memcpy(passthru_chk->_data, process_chk->_data, T::chunk_size*sizeof(SamplePairf));
+		_t_q.push(passthru_chk);
+		return process_chk; 
+	}
+private:
+	std::queue<T*> _t_q;
 };
 
 template <typename T>
