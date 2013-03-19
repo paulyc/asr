@@ -122,6 +122,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="dsp\fft.cpp" />
     <ClCompile Include="fftw.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -163,6 +164,7 @@
     <ClInclude Include="database.h" />
     <ClInclude Include="decoder.h" />
     <ClInclude Include="display.h" />
+    <ClInclude Include="dsp\fft.h" />
     <ClInclude Include="fftw.h" />
     <ClInclude Include="file.h" />
     <ClInclude Include="future.h" />

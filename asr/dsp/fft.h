@@ -140,7 +140,7 @@ public:
 	{
 		return _fftCoeffs;
 	}
-	const double _windowConstant = 18.5918625;
+	static const double _windowConstant = 18.5918625;
 private:
 	int _N;
 	double _beta;
@@ -233,8 +233,8 @@ public:
 			}
 			while (_inPtr < _inBuf + _p*_R + _N && _sourcePtr < _sourceBuf + inp_size)
 			{
-				(*_inPtr)[0] = (*p)[0];
-				(*_inPtr++)[1] = (*p++)[1];
+				(*_inPtr)[0] = (*_p)[0];
+				(*_inPtr++)[1] = (*_p++)[1];
 			}
 		}
 	}
