@@ -1,7 +1,8 @@
 #ifndef _FILTER_H
 #define _FILTER_H
 
-#define M_PI       3.14159265358979323846
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 #include "../util.h"
 #include "../buffer.h"

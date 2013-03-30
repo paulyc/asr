@@ -68,14 +68,19 @@ public:
 	{
 	}
 
-	virtual void process(bool freeme=true)
+	virtual T* process(bool freeme=true)
 	{
-		process(_src->next(), freeme);
+		return process(_src->next(), freeme);
 	}
 
-	virtual void process(T *t, bool freeme=true)
+	virtual T* process(T *t, bool freeme=true)
 	{
-		if (freeme) T_allocator<T>::free(t);
+		if (freeme)
+		{
+			T_allocator<T>::free(t);
+			return 0;
+		}
+		return t;
 	}
 
 	void set_src(T_source<T> *s)

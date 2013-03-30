@@ -82,6 +82,10 @@
 #define ID_CONTROL_QUIT                 40013
 #define ID_ACCELERATOR40015             40015
 
+#ifndef IDC_STATIC
+#define IDC_STATIC				-1
+#endif
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
