@@ -1,3 +1,4 @@
+#if 0
 #include "fft.h"
 
 int main()
@@ -10,3 +11,4 @@ int main()
 	buffer.transform(window);
 	return 0;
 }
+#endif
