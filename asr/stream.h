@@ -1,6 +1,9 @@
 #ifndef _STREAM_H
 #define _STREAM_H
 
+#include <queue>
+#include <pthread.h>
+
 template <typename T>
 class T_source
 {

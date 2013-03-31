@@ -2,6 +2,7 @@
 #define _MALLOC_H
 
 #include <queue>
+#include <hash_map>
 
 #ifdef WIN32
 #include <windows.h>

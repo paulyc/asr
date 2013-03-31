@@ -3,6 +3,7 @@
 
 #include <fftw3.h>
 #include <list>
+#include <cassert>
 
 struct countable
 {

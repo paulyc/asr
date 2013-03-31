@@ -2,6 +2,8 @@
 #define _FFT_H
 
 #include "../type.h"
+#include "../stream.h"
+#include "../malloc.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 double I_0(double z)
@@ -30,17 +32,17 @@ class FFTPlan
 {
 public:
 	FFTPlan() : _plan(NULL) {}
-	FFTPlan(fftwf_plan p) : _plan(p) {}
+	FFTPlan(fftw_plan p) : _plan(p) {}
 	virtual ~FFTPlan()
 	{
-		fftwf_destroy_plan(_plan);
+		fftw_destroy_plan(_plan);
 	}
 	void execute()
 	{
-		fftwf_execute(_plan);
+		fftw_execute(_plan);
 	}
 protected:
-	fftwf_plan _plan;
+	fftw_plan _plan;
 };
 
 
@@ -50,10 +52,10 @@ protected:
 class Time2FrequencyPlan : public FFTPlan
 {
 public:
-	Time2FrequencyPlan(int N, SamplePairf *in, ComplexPairf *out) 
+	Time2FrequencyPlan(int N, SamplePaird *in, ComplexPaird *out) 
 	{
 		const int n[] = {N};
-		_plan = fftwf_plan_many_dft_r2c(1, n, 2, (float*)in, NULL, 2, 1, (fftwf_complex*)out, NULL, 2, 1, FFTW_MEASURE);
+		_plan = fftw_plan_many_dft_r2c(1, n, 2, (double*)in, NULL, 2, 1, (fftw_complex*)out, NULL, 2, 1, FFTW_MEASURE);
 	}
 };
 
@@ -65,10 +67,10 @@ public:
 class Frequency2TimePlan : public FFTPlan
 {
 public:
-	Frequency2TimePlan(int N, ComplexPairf *in, SamplePairf *out)
+	Frequency2TimePlan(int N, ComplexPaird *in, SamplePaird *out)
 	{
 		const int n[] = {N};
-		_plan = fftwf_plan_many_dft_c2r(1, n, 2, (fftwf_complex*)in, NULL, 2, 1, (float*)out, NULL, 2, 1, FFTW_MEASURE);
+		_plan = fftw_plan_many_dft_c2r(1, n, 2, (fftw_complex*)in, NULL, 2, 1, (double*)out, NULL, 2, 1, FFTW_MEASURE);
 	}
 };
 
@@ -77,8 +79,8 @@ class FFT
 public:
 	FFT(int N)
 	{
-		_timeBuf = (SamplePairf*)fftwf_malloc(N * sizeof(SamplePairf));
-		_freqBuf = (ComplexPairf*)fftwf_malloc((N/2+1) * sizeof(ComplexPairf));
+		_timeBuf = (SamplePaird*)fftw_malloc(N * sizeof(SamplePaird));
+		_freqBuf = (ComplexPaird*)fftw_malloc((N/2+1) * sizeof(ComplexPaird));
 
 		_forwardPlan = new Time2FrequencyPlan(N, _timeBuf, _freqBuf);
 		_inversePlan = new Frequency2TimePlan(N, _freqBuf, _timeBuf);
@@ -89,12 +91,12 @@ public:
 		delete _inversePlan;
 		delete _forwardPlan;
 
-		fftwf_free(_timeBuf);
-		fftwf_free(_freqBuf);
+		fftw_free(_timeBuf);
+		fftw_free(_freqBuf);
 	}
 private:
-	SamplePairf *_timeBuf;
-	ComplexPairf *_freqBuf;
+	SamplePaird *_timeBuf;
+	ComplexPaird *_freqBuf;
 
 	FFTPlan *_forwardPlan;
 	FFTPlan *_inversePlan;
@@ -121,7 +123,7 @@ public:
 		for (int i=0; i<_N; ++i)
 		{
 			_coeffs[i] = kaiser(t, _beta) * h_n(i - _N/2);
-		//	printf("coeff[%d] = %f\n", i, _coeffs[i]);
+			printf("coeff[%d] = %f\n", i, _coeffs[i]);
 			t += dt;
 		}
 	}
@@ -140,13 +142,15 @@ public:
 	{
 		return _fftCoeffs;
 	}
-	static const double _windowConstant = 18.5918625;
+	static const double _windowConstant;
 private:
 	int _N;
 	double _beta;
 	double *_coeffs;
 	fftw_complex *_fftCoeffs;
 };
+
+const double FFTWindowFilter::_windowConstant = 18.5918625;
 
 class KaiserWindowFilter : public FFTWindowFilter
 {
@@ -183,26 +187,43 @@ private:
 	double _f_c;
 };
 
-class STFTBuffer
+class TestSource : public T_source<chunk_t>
 {
 public:
+	chunk_t *next()
+	{
+		chunk_t *chk = T_allocator<chunk_t>::alloc();
+		for (SamplePairf *p = chk->_data; p < chk->_data + chunk_t::chunk_size; ++p)
+		{
+			(*p)[0] = 1.0f;
+			(*p)[1] = -1.0f;
+		}
+		return chk;
+	}
+};
+
+class STFTBuffer : public T_sink_source<chunk_t>
+{
+public:
+	const FFTWindowFilter &_filt;
 	// N = FFT size
 	// R = hop size
 	// hops = number of hops >= 0
 	// buffer size = N + hops * R
-	STFTBuffer(int N, int R, int hops) : _N(N), _R(R), _hops(hops)
+	STFTBuffer(T_source<chunk_t> *src, const FFTWindowFilter &filt, int N, int R, int hops) : 
+		T_sink_source(src), _filt(filt), _N(N), _R(R), _hops(hops)
 	{
-		_inBuf = (SamplePairf*)fftwf_malloc(sizeof(SamplePairf) * (N + hops * R));
-		_synthBuf = (SamplePairf*)fftwf_malloc(sizeof(SamplePairf) * (N + hops * R));
+		_inBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N + hops * R));
+		_synthBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N + hops * R));
 		_synthPtr = _synthBuf;
-		_outBuf = (ComplexPairf*)fftwf_malloc(sizeof(ComplexPairf) * (N/2+1));
+		_outBuf = (ComplexPaird*)fftw_malloc(sizeof(ComplexPaird) * (N/2+1));
 		_forwardPlans = new FFTPlan*[hops + 1];
 		for (int i=0; i<hops+1; ++i)
 		{
 			_forwardPlans[i] = new Time2FrequencyPlan(N, _inBuf + i*R, _outBuf);
 		}
 		_p = 0;
-		_inversePlan = new Frequency2TimePlan(N, _outBuf, (SamplePairf*)_outBuf);
+		_inversePlan = new Frequency2TimePlan(N, _outBuf, (SamplePaird*)_outBuf);
 
 		fill_input();
 	}
@@ -213,28 +234,39 @@ public:
 		_readPtr = _synthBuf + _N;
 		for (int i=0; i<_N; ++i)
 		{
-			(*_inPtr)[0] = 0.0f;
-			(*_inPtr++)[1] = 0.0f;
+			(*_inPtr)[0] = 0.0;
+			(*_inPtr++)[1] = 0.0;
 		}
+		_sourceChk = _src->next();
+		_sourceBuf = _sourceChk->_data;
+		_sourcePtr = _sourceBuf;
 	//	for (; input < _inBuf + (_N + _hops * _R); ++input)
 	//	{
 	//		(*input)[0] = 1.0f;
 	//		(*input)[1] = 1.0f;
 	//	}
+		for (int i=0; i < _N + _hops * _R; ++i)
+		{
+			_synthBuf[i][0] = 0.0;
+			_synthBuf[i][1] = 0.0;
+		}
 	}
 	void ensure_input()
 	{
 		while (_inPtr < _inBuf + _p*_R + _N)
 		{
-			if (_sourcePtr >= _sourceBuf + inp_size)
+			if (_sourcePtr >= _sourceBuf + chunk_t::chunk_size)
 			{
-				_sourceBuf = next_input();
-				_sourcePtr = inp;
+				T_allocator<chunk_t>::free(_sourceChk);
+
+				_sourceChk = _src->next();
+				_sourceBuf = _sourceChk->_data;
+				_sourcePtr = _sourceBuf;
 			}
-			while (_inPtr < _inBuf + _p*_R + _N && _sourcePtr < _sourceBuf + inp_size)
+			while (_inPtr < _inBuf + _p*_R + _N && _sourcePtr < _sourceBuf + chunk_t::chunk_size)
 			{
-				(*_inPtr)[0] = (*_p)[0];
-				(*_inPtr++)[1] = (*_p++)[1];
+				(*_inPtr)[0] = (*_sourcePtr)[0];
+				(*_inPtr++)[1] = (*_sourcePtr++)[1];
 			}
 		}
 	}
@@ -242,26 +274,28 @@ public:
 	{
 		if (_p >= _hops + 1)
 		{
-			memcpy(_inBuf, _inBuf + (_p-1)*_R, _N*sizeof(SamplePairf));
+			memcpy(_inBuf, _inBuf + (_p-1)*_R, _N*sizeof(SamplePaird));
 			_inPtr = _inBuf + _N;
 
 			// synthptr, readptr ???
 		//	memcpy(_synthBuf, _synthPtr - _R, _N*sizeof(SamplePairf));
 		//	_synthPtr = _synthBuf + _R;
-			memcpy(_synthBuf, _readPtr,
-			_synthPtr = _synthBuf + (
+			SamplePaird *synthEnd = _synthBuf + _N + _hops * _R;
+			int copy = synthEnd - _readPtr;
+			int synthOfs = synthEnd - _synthPtr;
+			memcpy(_synthBuf, _readPtr, copy*sizeof(SamplePaird));
+			_synthPtr = _synthBuf + synthOfs;
 			_readPtr = _synthBuf;
+			_p = 0;
 		}
-
-		_p = 0;
 	}
-	void synth_step(const FFTWindowFilter &filt)
+	void synth_step()
 	{
 		ensure_hop();
 
 		ensure_input();
 		
-		fftw_complex *coeffs = filt.get_fft_coeffs();
+		fftw_complex *coeffs = _filt.get_fft_coeffs();
 		_forwardPlans[_p]->execute();
 		for (int n=0; n < _N/2+1; ++n)
 		{
@@ -270,36 +304,37 @@ public:
 			double x = _outBuf[n][0][0] * coeffs[n][0] - _outBuf[n][0][1] * coeffs[n][1];
 			// imag = ad + bc
 			double y = _outBuf[n][0][0] * coeffs[n][1] + _outBuf[n][0][1] * coeffs[n][0];
-			_outBuf[n][0][0] = coeffs[n][0];//x;
-			_outBuf[n][0][1] = coeffs[n][1];//y;
+			_outBuf[n][0][0] = x;
+			_outBuf[n][0][1] = y;
 
 			x = _outBuf[n][1][0] * coeffs[n][0] - _outBuf[n][1][1] * coeffs[n][1];
 			y = _outBuf[n][1][0] * coeffs[n][1] + _outBuf[n][1][1] * coeffs[n][0];
-			_outBuf[n][1][0] = coeffs[n][0];//x;
-			_outBuf[n][1][1] = coeffs[n][1];//y;
+			_outBuf[n][1][0] = x;
+			_outBuf[n][1][1] = y;
 		}
 		_inversePlan->execute();
-		SamplePairf *smp = (SamplePairf*)_outBuf;
+		SamplePaird *smp = (SamplePaird*)_outBuf;
 		for (int n=0; n < _N; ++n)
 		{
 		//	printf("%f %f\n", smp[n][0], smp[n][1]);
-			_synthPtr[n][0] += smp[n][0] / 256.;
-			_synthPtr[n][1] += smp[n][1] / 256.;
+			_synthPtr[n][0] += smp[n][0] / (_N*_N);
+			_synthPtr[n][1] += smp[n][1] / (_N*_N);
+		//	printf("%f %f\n", _synthPtr[n][0], _synthPtr[n][1]);
 		}
 		_synthPtr += _R;
 		++_p;
 	}
-	void transform(const FFTWindowFilter &filt)
+	void transform()
 	{
 		for (int i=0; i < _N + _hops * _R; ++i)
 		{
-			_synthBuf[i][0] = 0.0f;
-			_synthBuf[i][1] = 0.0f;
+			_synthBuf[i][0] = 0.0;
+			_synthBuf[i][1] = 0.0;
 		}
 
 		while (_p < _hops + 1)	
 		{
-			synth_step(filt);
+			synth_step();
 		}
 
 		for (int i=0; i < _N + _hops * _R; ++i)
@@ -307,47 +342,53 @@ public:
 			printf("SynthBuf (%f, %f)\n", _synthBuf[i][0], _synthBuf[i][1]);
 		}
 	}
-	const double _windowConstant = 18.5918625;
-	SamplePairf *next(const FFTWindowFilter &filt, int n)
+	static const double _windowConstant;
+	chunk_t *next()
 	{
-		SamplePairf *buf = new SamplePairf[n];
+		chunk_t *chk = T_allocator<chunk_t>::alloc();
+		SamplePairf *buf = chk->_data;
 		SamplePairf *ptr = buf;
 
-		while (_readPtr + n > _synthPtr)
+//		while (_readPtr + n > _synthPtr)
+//		{
+//			synth_step();
+//		}
+
+		while (ptr < buf + chunk_t::chunk_size)
 		{
-			synth_step(filt);
+			while (_readPtr >= _synthPtr)
+				synth_step();
+			(*ptr)[0] = float((*_readPtr)[0] / _windowConstant);
+			(*ptr++)[1] = float((*_readPtr++)[1] / _windowConstant);
 		}
 
-		while (ptr < buf + n)
-		{
-			(*ptr)[0] = (*_readPtr)[0] / _windowConstant;
-			(*ptr++)[1] = (*_readPtr++)[1] / _windowConstant;
-		}
-
-		return buf;
+		return chk;
 	}
 	~STFTBuffer()
 	{
 		delete [] _forwardPlans;
 		delete _inversePlan;
-		fftwf_free(_outBuf);
-		fftwf_free(_synthBuf);
-		fftwf_free(_inBuf);
+		fftw_free(_outBuf);
+		fftw_free(_synthBuf);
+		fftw_free(_inBuf);
 	}
 private:
 	int _N, _R, _hops;
-	SamplePairf *_inBuf;
-	SamplePairf *_inPtr;
-	ComplexPairf *_outBuf;
-	SamplePairf *_synthBuf;
-	SamplePairf *_synthPtr;
-	SamplePairf *_readPtr;
+	SamplePaird *_inBuf;
+	SamplePaird *_inPtr;
+	ComplexPaird *_outBuf;
+	SamplePaird *_synthBuf;
+	SamplePaird *_synthPtr;
+	SamplePaird *_readPtr;
 	FFTPlan **_forwardPlans;
 	int _p;
 	FFTPlan *_inversePlan;
 
+	chunk_t *_sourceChk;
 	SamplePairf *_sourceBuf;
 	SamplePairf *_sourcePtr;
 };
+
+const double STFTBuffer::_windowConstant = 1.0;//18.5918625;
 
 #endif
