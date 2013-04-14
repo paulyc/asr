@@ -307,14 +307,14 @@ public:
 	{
 		if (_p >= _hops + 1)
 		{
-			memcpy(_inBuf, _inBuf + (_p-1)*_R, _N/2*sizeof(SamplePaird));
+			memmove(_inBuf, _inBuf + (_p-1)*_R, _N/2*sizeof(SamplePaird));
 			_inPtr = _inBuf + _N/2;
 
 			assert(_readPtr >= _synthPtr);
 			SamplePaird *synthEnd = _synthBuf + _N + _hops * _R;
 			int copy = synthEnd - _synthPtr;
 			int readOfs = _readPtr - _synthPtr;
-			memcpy(_synthBuf, _synthPtr, copy*sizeof(SamplePaird));
+			memmove(_synthBuf, _synthPtr, copy*sizeof(SamplePaird));
 			_synthPtr = _synthBuf;
 			_readPtr = _synthPtr + readOfs;
 			for (int i=copy; i <  _N + _hops * _R; ++i)

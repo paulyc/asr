@@ -274,7 +274,10 @@ public:
 			}
 		}
 		if (smp_out == smp_end)
+		{
+			if (_lock) pthread_mutex_unlock(_lock);
 			return chk;
+		}
 
 		do
 		{
@@ -361,6 +364,11 @@ public:
 	virtual double sample_rate()
 	{
 		return _sample_rate;
+	}
+	virtual void seek_chk(int chk_ofs)
+	{
+		smp_ofs_t smp_ofs = chk_ofs * Chunk_T::chunk_size;
+	//	seek(smp_ofs);
 	}
 private:
 	const static int INPUT_BUFFER_SIZE = 5*8192;
