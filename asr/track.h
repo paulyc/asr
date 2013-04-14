@@ -9,6 +9,7 @@
 #include "ui.h"
 #include "future.h"
 #include "dsp/beats.h"
+#include "dsp/fft.h"
 
 typedef resampling_filter_td<chunk_t, double> filter_t;
 

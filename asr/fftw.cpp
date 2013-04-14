@@ -460,6 +460,8 @@ void do_fftw()
 	aud_processor_destroy(&proc);
 }
 
+#undef N
+
 /*
 int main()
 {

@@ -7,41 +7,15 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-static double sinc(double x)
-{
-	if (x == 0.0)
-		return 1.0;
-	else
-		return sin(M_PI*x)/(M_PI*x);
-}
+double sinc(double x);
 
-double I_0(double z)
-{
-	double sum = 0.0;
-	double k = 0.0;
-	double kfact = 1.0;
-	double quarterzsquared = 0.25*z*z;
-	do
-	{
-		sum += pow(quarterzsquared, k) / (kfact*kfact);
-		k += 1.0;
-		kfact *= k;
-	} while (k < 30.0);
-	return sum;
-}
+double I_0(double z);
 
 // -1.0 <= t <= 1.0
-
-double kaiser(double t, double beta=8.0)
-{
-	return I_0(beta*sqrt(1.0 - t*t)) / I_0(beta);
-}
+double kaiser(double t, double beta);
 
 // 0 <= n < N
-double mlt(int n, int N)
-{
-	return sin((n + 0.5)*M_PI/(N));
-}
+double mlt(int n, int N);
 
 class FFTPlan
 {
@@ -171,8 +145,6 @@ private:
 	double *_coeffs;
 	fftw_complex *_fftCoeffs;
 };
-
-const double FFTWindowFilter::_windowConstant = 18.5918625;
 
 class KaiserWindowFilter : public FFTWindowFilter
 {
@@ -467,7 +439,5 @@ private:
 
 	int _padding;
 };
-
-const double STFTBuffer::_windowConstant = 1.0;//18.5918625;
 
 #endif
