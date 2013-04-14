@@ -246,14 +246,14 @@ public:
 	// R = hop size
 	// hops = number of hops >= 0
 	// buffer size = N + hops * R
-	STFTBuffer(T_source<chunk_t> *src, const FFTWindowFilter &filt, int N, int R, int hops) : 
-		T_sink_source(src), _filt(filt), _N(N), _R(R), _hops(hops)
+	STFTBuffer(T_source<chunk_t> *src, const FFTWindowFilter &filt, int N, int R, int hops, int padding=0) : 
+		T_sink_source(src), _filt(filt), _N(N), _R(R), _hops(hops), _padding(padding)
 	{
 		_inBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N + hops * R));
-		_windowBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * N);
+		_windowBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N+padding));
 		_synthBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N + hops * R));
 		_synthPtr = _synthBuf;
-		_outBuf = (ComplexPaird*)fftw_malloc(sizeof(ComplexPaird) * (N/2+1));
+		_outBuf = (ComplexPaird*)fftw_malloc(sizeof(ComplexPaird) * ((N+padding)/2+1));
 		_forwardPlans = new FFTPlan*[hops + 1];
 		for (int i=0; i<hops+1; ++i)
 		{
@@ -289,6 +289,11 @@ public:
 			_synthBuf[i][0] = 0.0;
 			_synthBuf[i][1] = 0.0;
 		}
+		for (int i=0; i < 2048; ++i)
+		{
+			_windowBuf[i][0] = 0.0;
+			_windowBuf[i][1] = 0.0;
+		}
 	}
 	void ensure_input()
 	{
@@ -302,6 +307,7 @@ public:
 				_sourceBuf = _sourceChk->_data;
 				_sourcePtr = _sourceBuf;
 			}
+			
 			while (_inPtr < _inBuf + _p*_R + _N && _sourcePtr < _sourceBuf + chunk_t::chunk_size)
 			{
 				(*_inPtr)[0] = (*_sourcePtr)[0];
@@ -458,6 +464,8 @@ private:
 	chunk_t *_sourceChk;
 	SamplePairf *_sourceBuf;
 	SamplePairf *_sourcePtr;
+
+	int _padding;
 };
 
 const double STFTBuffer::_windowConstant = 1.0;//18.5918625;

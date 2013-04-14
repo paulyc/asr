@@ -15,7 +15,6 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::switchBuffers(int dbIndex)
 	memcpy(_buffers[1][dbIndex], _bufR, _buf_size*sizeof(Output_Sample_T));
 }
 
-
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
 void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process()
 {
@@ -67,7 +66,8 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process()
 }
 
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
-asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::asio_source(size_t buf_sz, Input_Sample_T **bufsL, Input_Sample_T **bufsR) :
+asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::asio_source(T_sink<chunk_t> *sink, size_t buf_sz, Input_Sample_T **bufsL, Input_Sample_T **bufsR) :
+	_sink(sink),
 	_buf_sz(buf_sz),
 	_bufsL(bufsL),
 	_bufsR(bufsR)
@@ -82,6 +82,7 @@ asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::~asio_source()
 {
 	sem_destroy(&_next_sem);
 	T_allocator<Chunk_T>::free(_chk_working);
+	delete _sink;
 }
 
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
@@ -136,6 +137,16 @@ Chunk_T* asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::next()
 	_chks_next.pop();
 	sem_post(&_next_sem);
 	return n;
+}
+
+template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
+void asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::process(int doubleBufferIndex)
+{
+	copy_data(doubleBufferIndex);
+	while (_sink && chunk_ready())
+	{
+		_sink->process();
+	}
 }
 
 /*

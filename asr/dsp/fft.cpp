@@ -1,4 +1,4 @@
-#if 1
+#if 0
 #include "fft.h"
 
 int main()

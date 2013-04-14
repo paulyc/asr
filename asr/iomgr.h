@@ -91,6 +91,8 @@ template <typename Chunk_T>
 class ASIOManager : public IOManager<Chunk_T>
 {
 public:
+	typedef int32_t sample_t;
+
 	ASIOManager(IASIO *drv);
 	~ASIOManager();
 
@@ -100,10 +102,17 @@ public:
 
 	void setOutputSource(int id);
 	void processOutputs();
-	void processInputs(long doubleBufferIndex, T_sink<Chunk_T> *sink1, T_sink<Chunk_T> *sink2);
+	void processInputs(long doubleBufferIndex);
 	void switchBuffers(long doubleBufferIndex);
 
-//protected:
+	void addInput(IOInput *input);
+	void addOutput(IOOutput *output);
+
+	sample_t** getBuffers (int index) const;
+
+	int getBufferSize() const { return _bufSize; }
+
+protected:
 	IASIO *_drv;
 
 	ASIODriverInfo _drv_info;
@@ -117,31 +126,8 @@ public:
 	long _bufSize;
 	long _preferredSize;
 
-	struct channel
-	{
-	};
-	
-	struct input : public channel
-	{
-	};
-
-	struct output : public channel
-	{
-	};
-
-	std::vector<T_source<Chunk_T>*> _inputs;
-	std::vector<T_sink<Chunk_T>*> _outputs;
-
-	//asio_sink<chunk_t, chunk_buffer, int16_t> *_main_out;
-	//asio_sink<chunk_t, chunk_buffer, int16_t> *_out_2;
-	IASIOSink *_main_out;
-	IASIOSink *_out_2;
-
-	// these definitions should be changed as above
-	//asio_source<int32_t, SamplePairf, chunk_t> *_my_source;
-	//asio_source<int32_t, SamplePairf, chunk_t> *_my_source2;
-	ASIOChunkSource<chunk_t> *_my_source;
-	ASIOChunkSource<chunk_t> *_my_source2;
+	std::list<IOOutput*> _outputs;
+	std::list<IOInput*> _inputs;
 };
 
 #endif // !defined(IOMGR_H)

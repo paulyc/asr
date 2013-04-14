@@ -14,16 +14,26 @@ public:
 	static long asioMessage(long selector, long value, void *message, double *opt);
 };
 
-class IASIOSink
+class IOInput
 {
 public:
-	virtual ~IASIOSink() {}
+	virtual void process(int doubleBufferIndex) = 0;
+};
+
+class IOOutput
+{
+public:
+	virtual ~IOOutput() {}
 
 	virtual void process() = 0;
 	virtual void switchBuffers(int dbIndex) = 0;
 };
 
-class IASIOSource
+class IASIOSink : public IOOutput
+{
+};
+
+class IASIOSource : public IOInput
 {
 public:
 	virtual ~IASIOSource() {}
@@ -80,13 +90,16 @@ class asio_source : public ASIOChunkSource<Chunk_T>
 {
 public:
 	typedef typename Chunk_T chunk_t;
-	asio_source(size_t buf_sz, Input_Sample_T **bufsL, Input_Sample_T **bufsR);
+	asio_source(T_sink<chunk_t> *sink, size_t buf_sz, Input_Sample_T **bufsL, Input_Sample_T **bufsR);
 	~asio_source();
 	
 	void copy_data(long doubleBufferIndex);
 	bool chunk_ready() { return _chks_next.size() > 0; }
 	Chunk_T* next();
+
+	void process(int doubleBufferIndex);
 protected:
+	T_sink<chunk_t> *_sink;
 	size_t _buf_sz;
 	Input_Sample_T **_bufsL, **_bufsR;
 

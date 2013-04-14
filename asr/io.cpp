@@ -16,7 +16,7 @@ ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
 	//_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
-	_default_src(L"Z:\\clip.wav"),
+	_default_src(L"..\\asr\\clip.wav"),
 	//_default_src(L"H:\\Music\\Heatbeat - Hadoken (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Sean Tyas - Melbourne (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Super8 & Tab, Anton Sonin - Black Is The New Yellow (Activa Remix).wav"),
@@ -30,8 +30,6 @@ ASIOProcessor::ASIOProcessor() :
 	_finishing(false),
 	_iomgr(0),
 	_sync_cue(false),
-	_dummy_sink(0),
-	_dummy_sink2(0),
 	_midi_controller(0)
 {
 	Init();
@@ -62,13 +60,43 @@ void ASIOProcessor::CreateTracks()
 	_master_xfader->set_gain(2, gain);
 	//_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
 
-	_iomgr->createIOs(&_main_mgr, &_2_mgr);
-	_aux = new ChunkConverter<chunk_t, chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> >(_iomgr->_my_source2);
+	asio_sink<chunk_t, chunk_buffer, int32_t> *main_out = new asio_sink<chunk_t, chunk_buffer, int32_t>(
+		&_main_mgr,
+		_iomgr->getBuffers(2), 
+		_iomgr->getBuffers(3),
+		_iomgr->getBufferSize());
+	_iomgr->addOutput(main_out);
+
+	asio_sink<chunk_t, chunk_buffer, int32_t> *out_2 = new asio_sink<chunk_t, chunk_buffer, int32_t>(
+		&_2_mgr,
+		_iomgr->getBuffers(4), 
+		_iomgr->getBuffers(5),
+		_iomgr->getBufferSize());
+	_iomgr->addOutput(out_2);
+	
+	T_sink<chunk_t> *dummy_sink = new T_sink<chunk_t>(0);
+	asio_source<int32_t, SamplePairf, chunk_t> *input1 = new asio_source<int32_t, SamplePairf, chunk_t>(
+		dummy_sink,
+		_iomgr->getBufferSize(),
+		_iomgr->getBuffers(0),
+		_iomgr->getBuffers(1));
+	_iomgr->addInput(input1);
+
+	T_sink<chunk_t> *dummy_sink2 = new T_sink<chunk_t>(input1);
+	asio_source<int32_t, SamplePairf, chunk_t> *input2 = new asio_source<int32_t, SamplePairf, chunk_t>(
+		dummy_sink2,
+		_iomgr->getBufferSize(),
+		_iomgr->getBuffers(6),
+		_iomgr->getBuffers(7));
+	_iomgr->addInput(input2);
+
+	_aux = new ChunkConverter<chunk_t, chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> >(input2);
 
 	try {
 	//	_my_gain = new gain<asio_source<short, SamplePairf, chunk_t> >(_my_source);
 	//	_my_gain->set_gain_db(36.0);
-		_my_pk_det = new peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>(_iomgr->_my_source);
+		_my_pk_det = new peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>(input1);
+		dummy_sink->set_src(_my_pk_det);
 
 	//	_my_raw_output = new file_raw_output<chunk_t>(_my_pk_det);
 	} catch (std::exception e) {
@@ -77,9 +105,6 @@ void ASIOProcessor::CreateTracks()
 
 	_main_src = _master_xfader;
 	_file_src = 0;
-
-	_dummy_sink = new T_sink<chunk_t>(_my_pk_det);
-	_dummy_sink2 = new T_sink<chunk_t>(_iomgr->_my_source2);
 
 #if GENERATE_LOOP
 	Worker::do_job(new Worker::callback_th_job<ASIOProcessor>(
@@ -150,8 +175,6 @@ void ASIOProcessor::Destroy()
 	delete _iomgr;
 	CoUninitialize();
 
-	delete _dummy_sink;
-	delete _dummy_sink2;
 	delete _my_pk_det;
 //	delete _my_gain;
 	
@@ -195,8 +218,9 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	_waiting = false;
 	_doubleBufferIndex = doubleBufferIndex;
 
-#if CARE_ABOUT_INPUT
-	_iomgr->processInputs(_doubleBufferIndex, _dummy_sink, _dummy_sink2);
+#define BROKEN 1
+#if CARE_ABOUT_INPUT && !BROKEN
+	_iomgr->processInputs(_doubleBufferIndex);
 	while (_file_out && _iomgr->_my_source2->chunk_ready())
 	{
 		_file_out->process();

@@ -263,9 +263,6 @@ public: // was protected
 	bool _sync_cue;
 
 	bool _waiting;
-
-	T_sink<chunk_t> *_dummy_sink;
-	T_sink<chunk_t> *_dummy_sink2;
 	
 	IMIDIController *_midi_controller;
 public:

@@ -79,11 +79,7 @@ ASIOManager<Chunk_T>::ASIOManager(IASIO *drv) :
 	_drv(drv), 
 	_buffer_infos(0),
 	_input_channel_infos(0),
-	_output_channel_infos(0),
-	_main_out(0),
-	_out_2(0),
-	_my_source(0),
-	_my_source2(0)
+	_output_channel_infos(0)
 {
 	ASIOError e;
 
@@ -103,10 +99,19 @@ ASIOManager<Chunk_T>::~ASIOManager()
 	free(_output_channel_infos);
 	free(_input_channel_infos);
 
-	delete _my_source2;
-	delete _my_source;
-	delete _main_out;
-	delete _out_2;
+
+	for (std::list<IOInput*>::iterator i = _inputs.begin();
+		i != _inputs.end();
+		i++)
+	{
+		delete *i;
+	}
+	for (std::list<IOOutput*>::iterator i = _outputs.begin();
+		i != _outputs.end();
+		i++)
+	{
+		delete *i;
+	}
 }
 
 template <typename Chunk_T>
@@ -237,54 +242,52 @@ void ASIOManager<Chunk_T>::createBuffers()
 }
 
 template <typename Chunk_T>
-void ASIOManager<Chunk_T>::createIOs(chunk_buffer *src, chunk_buffer *src2)
+typename ASIOManager<Chunk_T>::sample_t** ASIOManager<Chunk_T>::getBuffers(int index) const
 {
-	_main_out = new asio_sink<chunk_t, chunk_buffer, int32_t>(src,
-		(int32_t**)_buffer_infos[2].buffers, 
-		(int32_t**)_buffer_infos[3].buffers,
-		_bufSize);
-
-	_out_2 = new asio_sink<chunk_t, chunk_buffer, int32_t>(src2,
-		(int32_t**)_buffer_infos[4].buffers, 
-		(int32_t**)_buffer_infos[5].buffers,
-		_bufSize);
-
-	_my_source = new asio_source<int32_t, SamplePairf, chunk_t>(_bufSize,
-		(int32_t**)_buffer_infos[0].buffers,
-		(int32_t**)_buffer_infos[1].buffers);
-
-	_my_source2 = new asio_source<int32_t, SamplePairf, chunk_t>(_bufSize,
-		(int32_t**)_buffer_infos[6].buffers,
-		(int32_t**)_buffer_infos[7].buffers);
+	return (sample_t**)_buffer_infos[index].buffers;
 }
 
 template <typename Chunk_T>
 void ASIOManager<Chunk_T>::processOutputs()
 {
-	_main_out->process();
-	_out_2->process();
+	for (std::list<IOOutput*>::iterator i = _outputs.begin();
+		i != _outputs.end();
+		i++)
+	{
+		(*i)->process();
+	}
 }
 
 template <typename Chunk_T>
-void ASIOManager<Chunk_T>::processInputs(long doubleBufferIndex, T_sink<Chunk_T> *sink1, T_sink<Chunk_T> *sink2)
+void ASIOManager<Chunk_T>::processInputs(long doubleBufferIndex)
 {
-	_my_source->copy_data(doubleBufferIndex);
-	_my_source2->copy_data(doubleBufferIndex);
-
-	while (sink1 && _my_source->chunk_ready())
+	for (std::list<IOInput*>::iterator i = _inputs.begin();
+		i != _inputs.end();
+		i++)
 	{
-		sink1->process();
-	}
-
-	while (sink2 && _my_source2->chunk_ready())
-	{
-		sink2->process();
+		(*i)->process(doubleBufferIndex);
 	}
 }
 
 template <typename Chunk_T>
 void ASIOManager<Chunk_T>::switchBuffers(long doubleBufferIndex)
 {
-	_main_out->switchBuffers(doubleBufferIndex);
-	_out_2->switchBuffers(doubleBufferIndex);
+	for (std::list<IOOutput*>::iterator i = _outputs.begin();
+		i != _outputs.end();
+		i++)
+	{
+		(*i)->switchBuffers(doubleBufferIndex);
+	}
+}
+
+template <typename Chunk_T>
+void ASIOManager<Chunk_T>::addInput(IOInput *input)
+{
+	_inputs.push_back(input);
+}
+
+template <typename Chunk_T>
+void ASIOManager<Chunk_T>::addOutput(IOOutput *output)
+{
+	_outputs.push_back(output);
 }
