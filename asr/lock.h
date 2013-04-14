@@ -123,8 +123,8 @@ public:
 	~PthreadCondition() {
 		pthread_cond_destroy(&_cond);
 	}
-	void wait(PthreadLock *lock) {
-		pthread_cond_wait(&_cond, &lock->_lock);
+	void wait(PthreadLock &lock) {
+		pthread_cond_wait(&_cond, &lock._lock);
 	}
 	void signal() {
 		pthread_cond_signal(&_cond);
@@ -647,6 +647,6 @@ public:
 #endif
 
 typedef PthreadLock Lock_T;
-
+typedef PthreadCondition Condition_T;
 
 #endif // !defined(_LOCK_H)

@@ -116,10 +116,6 @@ void ASIOProcessor::CreateTracks()
 
 void ASIOProcessor::Init()
 {
-	pthread_mutex_init(&_io_lock, 0);
-	pthread_cond_init(&_gen_done, 0);
-	pthread_cond_init(&_do_gen, 0);
-
 	CoInitialize(0);
 	ASIODriver drv(L"CreativeASIO");
 	_iomgr = dynamic_cast<ASIOManager<chunk_t>*>(drv.loadDriver());
@@ -156,14 +152,14 @@ void ASIOProcessor::Finish()
 		Stop();
 
 #if GENERATE_LOOP
-	pthread_cond_signal(&_do_gen);
+	_do_gen.signal();
 	pthread_join(_gen_th, 0);
 #endif
 
 	// something weird with this? go before the last lines?
-	pthread_mutex_lock(&_io_lock);
-	pthread_cond_signal(&_gen_done);
-	pthread_mutex_unlock(&_io_lock);
+	_io_lock.acquire();
+	_gen_done.signal();
+	_io_lock.release();
 
 	delete _tracks[0];
 	delete _tracks[1];
@@ -182,10 +178,6 @@ void ASIOProcessor::Destroy()
 	delete _cue;
 	delete _master_xfader;
 	delete _aux;
-
-	pthread_cond_destroy(&_do_gen);
-	pthread_cond_destroy(&_gen_done);
-	pthread_mutex_destroy(&_io_lock);
 
 	T_allocator<chunk_t>::gc();
 	T_allocator<chunk_t>::dump_leaks();
@@ -214,7 +206,7 @@ ASIOError ASIOProcessor::Stop()
 void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
 	_waiting = true;
-	pthread_mutex_lock(&_io_lock);
+	_io_lock.acquire();
 	_waiting = false;
 	_doubleBufferIndex = doubleBufferIndex;
 
@@ -231,12 +223,12 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	
     while (_need_buffers)
     {
-        pthread_cond_wait(&_gen_done, &_io_lock);
+		_gen_done.wait(_io_lock);
     }
 	_iomgr->switchBuffers(doubleBufferIndex);
     _need_buffers = true;
 
-	pthread_cond_signal(&_do_gen);
+	_do_gen.signal();
 #endif
 
 #if ECHO_INPUT
@@ -245,7 +237,7 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 	memcpy(_buffer_infos[3].buffers[doubleBufferIndex], _buffer_infos[1].buffers[doubleBufferIndex], BUFFERSIZE*sizeof(short));
 #endif
 
-	pthread_mutex_unlock(&_io_lock);
+	_io_lock.release();
 }
 
 void ASIOProcessor::GenerateOutput()
@@ -288,7 +280,7 @@ void ASIOProcessor::GenerateOutput()
 
     _iomgr->processOutputs();
     _need_buffers = false;
-	pthread_cond_signal(&_gen_done);
+	_gen_done.signal();
     
     if (_file_out && _file_src && _file_mgr._c)
 	{
@@ -301,17 +293,17 @@ void ASIOProcessor::GenerateLoop(pthread_t th)
 #ifdef WIN32
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 #endif
-	pthread_mutex_lock(&_io_lock);
+	_io_lock.acquire();
 	_gen_th = th;
 	while (!_finishing)
 	{
 		while (_need_buffers)
 		{
 			GenerateOutput();
-			pthread_cond_signal(&_gen_done);
+			_gen_done.signal();
 		}
-		pthread_cond_wait(&_do_gen, &_io_lock);
+		_do_gen.wait(_io_lock);
 	}
-	pthread_mutex_unlock(&_io_lock);
+	_io_lock.release();
 	pthread_exit(0);
 }
