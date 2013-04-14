@@ -368,10 +368,10 @@ public:
 
 		_src = src;
 
-	//	_detector = new BeatDetector<Chunk_T>(_src);
-		_filter_stream = new STFTStream(_src, _filter, 2048, 1024, 100);
+		_detector = new BeatDetector<Chunk_T>(_src);
+	//	_filter_stream = new STFTStream(_src, _filter, 2048, 1024, 100);
 		
-		_src_buf = new BufferedStream<Chunk_T>(io, _filter_stream);
+		_src_buf = new BufferedStream<Chunk_T>(io, _detector);
 	//	_src_buf->load_complete();
 
 		_filename = filename;

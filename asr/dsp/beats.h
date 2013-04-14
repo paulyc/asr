@@ -3,6 +3,8 @@
 
 #include <assert.h>
 
+#include "fft.h"
+
 class FilterSourceImpl : public FilterSource<chunk_t>
 {
 public:
@@ -103,15 +105,19 @@ template <typename Chunk_T>
 class BeatDetector : public T_sink_source<Chunk_T>
 {
 public:
-	BeatDetector(T_source<Chunk_T> *src) : T_sink_source(src) 
+	BeatDetector(T_source<Chunk_T> *src) : T_sink_source(src) , _lp1(2048, 44100.0, 100.0), _lp2(2048, 44100.0, 20.0)
 	{
 		_my_src = new QueueingSource<Chunk_T>(src);
-		_filterSource2 = new FilterSourceImpl(_my_src);
-		_lpf1 = new lowpass_filter(_filterSource2, 100.0, 44100.0);
-		_rectifier = new full_wave_rectifier<SamplePairf, Chunk_T>(_lpf1); 
-		_filterSource = new FilterSourceImpl(_rectifier);
-		_lpf2 = new lowpass_filter(_filterSource, 20.0, 44100.0);
-		_passthrough_sink = new T_sink_source<Chunk_T>(_lpf2);
+	//	_filterSource2 = new FilterSourceImpl(_my_src);
+	//	_lpf1 = new lowpass_filter(_filterSource2, 100.0, 44100.0);
+		_lp1.init();
+		_s1 = new STFTStream(_my_src, _lp1, 2048, 1024, 20);
+		_rectifier = new full_wave_rectifier<SamplePairf, Chunk_T>(_s1); 
+	//	_filterSource = new FilterSourceImpl(_rectifier);
+	//	_lpf2 = new lowpass_filter(_filterSource, 20.0, 44100.0);
+		_lp2.init();
+		_s2 = new STFTStream(_rectifier, _lp2, 2048, 1024, 20);
+		_passthrough_sink = new T_sink_source<Chunk_T>(_s2);
 		_d_dt_max[0] = 0.0f;
 		_d_dt_max[1] = 0.0f;
 		_t_max[0] = 0.0;
@@ -131,10 +137,12 @@ public:
 
 	~BeatDetector()
 	{
-		delete _lpf2;
-		delete _lpf1;
-		delete _filterSource;
-		delete _filterSource2;
+	//	delete _lpf2;
+	//	delete _lpf1;
+	//	delete _filterSource;
+	//	delete _filterSource2;
+		delete _s2;
+		delete _s1;
 		delete _rectifier;
 		delete _my_src;
 	}
@@ -421,9 +429,11 @@ public:
 	//	avg[0] /= Chunk_T::chunk_size;
 	//	avg[1] /= Chunk_T::chunk_size;
 	//	printf("avg values of envelope %f %f\n", avg[0], avg[1]);
-		T_allocator<Chunk_T>::free(passthru_chk);
-
-		return process_chk;
+	
+	//	T_allocator<Chunk_T>::free(passthru_chk);
+	//	return process_chk;
+		T_allocator<Chunk_T>::free(process_chk);
+		return passthru_chk;
 	}
 
 	void set_source(T_source<Chunk_T> *src)
@@ -440,8 +450,8 @@ private:
 	QueueingSource<Chunk_T> *_my_src;
 	T_sink_source<Chunk_T> *_passthrough_sink;
 	full_wave_rectifier<SamplePairf, Chunk_T> *_rectifier;
-	FilterSourceImpl *_filterSource, *_filterSource2;
-	lowpass_filter *_lpf1,*_lpf2;
+//	FilterSourceImpl *_filterSource, *_filterSource2;
+//	lowpass_filter *_lpf1,*_lpf2;
 	bool _start, _pos;
 	int _t_points;
 	Differentiator _diff, _diff2;
@@ -452,6 +462,9 @@ private:
 	point _max;
 	std::list<point> _maxs;
 	point _last_beat;
+
+	LPFilter _lp1, _lp2;
+	STFTStream *_s1, *_s2;
 };
 
 #endif
