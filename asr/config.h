@@ -16,6 +16,8 @@
 #define NATIVE_INT64 0
 #define IEEE754_64FLOAT 1
 
+#define ONE_CPU 0
+
 #define OLD_PATH 1
 #define TEST 0
 #define TEST0 0

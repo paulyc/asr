@@ -5,7 +5,13 @@
 #include <semaphore.h>
 #include <sched.h>
 
-#define YIELD_IF_1CPU sched_yield
+#include "config.h"
+
+#if ONE_CPU
+#define YIELD_IF_1CPU sched_yield();
+#else
+#define YIELD_IF_1CPU
+#endif
 
 #define RELEASE_USERLOCK(var) __asm { \
 __asm lea edx, dword ptr[ecx+var] \
@@ -19,7 +25,7 @@ spin__LINE__: \
 __asm 	push ecx \
 } \
  \
-		YIELD_IF_1CPU(); \
+		YIELD_IF_1CPU \
  \
 __asm { \
 __asm 			pop ecx \
@@ -169,7 +175,7 @@ spin:
 			push ecx
 		}
 
-		YIELD_IF_1CPU();
+		YIELD_IF_1CPU
 
 		__asm {
 			pop ecx
@@ -214,7 +220,7 @@ public:
 spin2:
 			push ecx
 		}
-		YIELD_IF_1CPU();
+		YIELD_IF_1CPU
 		__asm {
 			pop ecx
 
@@ -256,7 +262,7 @@ do_wait:
 spin3:
 			push ecx
 		}
-		YIELD_IF_1CPU();
+		YIELD_IF_1CPU
 		__asm {
 			pop ecx
 
@@ -282,7 +288,7 @@ get_checker_flag_again:
 ;spin4:
 			push ecx
 		}
-		YIELD_IF_1CPU();
+		YIELD_IF_1CPU
 		__asm {
 			pop ecx
 
@@ -307,7 +313,7 @@ do_acquire:
 spin5:
 			push ecx
 		}
-		YIELD_IF_1CPU();
+		YIELD_IF_1CPU
 		__asm {
 			pop ecx
 
@@ -404,7 +410,7 @@ spin_acquire_preemptable:
 			push ecx
 		}
 
-		YIELD_IF_1CPU();
+		YIELD_IF_1CPU
 
 		__asm {
 			pop ecx
@@ -467,7 +473,7 @@ spin_acquire_preempt:
 			push ecx
 		}
 
-		YIELD_IF_1CPU();
+		YIELD_IF_1CPU
 
 		__asm {
 			pop ecx
@@ -537,7 +543,7 @@ spin_preemptable_release:
 			push ecx
 		}
 
-		YIELD_IF_1CPU();
+		YIELD_IF_1CPU
 
 		__asm {
 			pop ecx

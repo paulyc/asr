@@ -267,20 +267,6 @@ public: // was protected
 	IMIDIController *_midi_controller;
 public:
 	track_t::controller_t *_filter_controller;
-
-//	bandpass_filter_td<chunk_t> *_bp_filter;
-};
-
-class fAStIOProcessor : public ASIOProcessor
-{
-public:
-	void MainLoop();
-	void GenerateOutput();
-	void BufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
-protected:
-	ts_queue<char*> _buf_q;
-	chunk_t *_main_out_chunk;
-	sem_t _sem;
 };
 
 #endif // !defined(_IO_H)
