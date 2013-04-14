@@ -1,7 +1,7 @@
 #include "fft.h"
 
 const double FFTWindowFilter::_windowConstant = 18.5918625;
-const double STFTBuffer::_windowConstant = 1.0;//18.5918625;
+const double STFTStream::_windowConstant = 1.0;//18.5918625;
 
 double sinc(double x)
 {
@@ -51,7 +51,7 @@ int main()
 	//ap.init();
 	LPFilter lp(1024, 44100.0, 100.0);
 	lp.init();
-	STFTBuffer buffer(&src, lp, 1024, 512, 40);
+	STFTStream buffer(&src, lp, 1024, 512, 40);
 	//buffer.transform();
 	chunk_t *chk = buffer.next();
 	for (SamplePairf *p = chk->_data; p < chk->_data + chunk_t::chunk_size; ++p)

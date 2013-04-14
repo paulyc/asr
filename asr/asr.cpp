@@ -40,13 +40,14 @@ ASR *ASR::instance = 0;
 
 ASR::ASR()
 {
+	sem_init(&_sem, 0, 1);
+	sem_wait(&_sem);
 	asio = new ASIOProcessor;
 #if WINDOWS
 	ui = new Win32UI(asio);
 #else
 #error no ui defined
 #endif
-	asio->set_ui(ui);
 }
 
 ASR::~ASR()
@@ -59,6 +60,8 @@ ASR::~ASR()
 void ASR::execute()
 {
 	instance = new ASR;
+	sem_post(&instance->_sem);
+	instance->asio->set_ui(instance->ui);
 	instance->ui->create();
 	instance->ui->main_loop();
 	instance->ui->destroy();

@@ -17,6 +17,7 @@ public:
 class IOInput
 {
 public:
+	virtual ~IOInput() {}
 	virtual void process(int doubleBufferIndex) = 0;
 };
 

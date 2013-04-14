@@ -47,7 +47,7 @@ SamplePairf& operator*=(SamplePairf &lhs, float rhs)
 	return lhs;
 }
 */
-
+#include <semaphore.h>
 #include "chunk.h"
 #include "malloc.h"
 #include "stream.h"
@@ -68,17 +68,24 @@ public:
 
 	static ASIOProcessor* get_io_instance()
 	{
-		return instance->asio;
+		sem_wait(&instance->_sem);
+		ASIOProcessor *asio = instance->asio;
+		sem_post(&instance->_sem);
+		return asio;
 	}
 
 	static GenericUI* get_ui_instance()
 	{
-		return instance->ui;
+		sem_wait(&instance->_sem);
+		GenericUI *ui = instance->ui;
+		sem_post(&instance->_sem);
+		return ui;
 	}
 
 protected:
 	ASIOProcessor * asio;
 	GenericUI *ui;
+	sem_t _sem;
 };
 
 #endif // !defined(_ASR_H)

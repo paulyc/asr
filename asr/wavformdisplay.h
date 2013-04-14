@@ -65,9 +65,8 @@ public:
   void do_mid_zoom() {}
   
   // fix file not expected length!!
-  virtual void set_wav_heights(pthread_mutex_t *lock=0)
+  virtual void set_wav_heights(ASIOProcessor *io, pthread_mutex_t *lock=0)
   {
-	  ASIOProcessor *io = ASR::get_io_instance();
 	//  printf("display::set_wav_heights\n");
 	  if (lock)
 	  {

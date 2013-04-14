@@ -113,7 +113,7 @@ public:
 		{
 			_coeffs[i] = h_n(i-_N/2) * kaiser(t, _beta);
 		//	_coeffs[i] = i == 0?1.0:0.0;
-			printf("coeff[%d] = %f\n", i, _coeffs[i]);
+		//	printf("coeff[%d] = %f\n", i, _coeffs[i]);
 			t += dt;
 		}
 	}
@@ -129,7 +129,7 @@ public:
 		{
 			double mag = sqrt(_fftCoeffs[i][0] * _fftCoeffs[i][0] + _fftCoeffs[i][1] * _fftCoeffs[i][1]);
 			double normalize = 1.0/mag;
-			printf("fftCoeff[%d] = %f + j%f (%f)\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1], mag);
+		//	printf("fftCoeff[%d] = %f + j%f (%f)\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1], mag);
 		//	_fftCoeffs[i][0] *= normalize;
 		//	_fftCoeffs[i][1] *= normalize;
 		}
@@ -210,7 +210,7 @@ private:
 	double _t;
 };
 
-class STFTBuffer : public T_sink_source<chunk_t>
+class STFTStream : public T_sink_source<chunk_t>
 {
 public:
 	const FFTWindowFilter &_filt;
@@ -218,7 +218,7 @@ public:
 	// R = hop size
 	// hops = number of hops >= 0
 	// buffer size = N + hops * R
-	STFTBuffer(T_source<chunk_t> *src, const FFTWindowFilter &filt, int N, int R, int hops, int padding=0) : 
+	STFTStream(T_source<chunk_t> *src, const FFTWindowFilter &filt, int N, int R, int hops, int padding=0) : 
 		T_sink_source(src), _filt(filt), _N(N), _R(R), _hops(hops), _padding(padding)
 	{
 		_inBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N + hops * R));
@@ -236,6 +236,22 @@ public:
 		_inversePlan = new Frequency2TimePlan(N, _outBuf, (SamplePaird*)_outBuf);
 
 		fill_input();
+	}
+
+	~STFTStream()
+	{
+		delete [] _forwardPlans;
+		delete _inversePlan;
+		fftw_free(_outBuf);
+		fftw_free(_synthBuf);
+		fftw_free(_windowBuf);
+		fftw_free(_inBuf);
+		T_allocator<chunk_t>::free(_sourceChk);
+	}
+
+	void seek_smp(smp_ofs_t smp_ofs)
+	{
+	//	_src->seek_smp(smp_ofs);
 	}
 	void fill_input()
 	{
@@ -410,15 +426,7 @@ public:
 
 		return chk;
 	}
-	~STFTBuffer()
-	{
-		delete [] _forwardPlans;
-		delete _inversePlan;
-		fftw_free(_outBuf);
-		fftw_free(_synthBuf);
-		fftw_free(_windowBuf);
-		fftw_free(_inBuf);
-	}
+	
 private:
 	int _N, _R, _hops;
 	SamplePaird *_inBuf;

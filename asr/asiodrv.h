@@ -1,6 +1,8 @@
 #ifndef _ASIODRV_H
 #define _ASIODRV_H
 
+#include "config.h"
+
 #include <asio.h>
 #include <windows.h>
 
@@ -51,7 +53,7 @@ public:
 	virtual ASIOError getBufferSize(long *minSize, long *maxSize,
 		long *preferredSize, long *granularity) { return ASE_OK; }
 	virtual ASIOError canSampleRate(ASIOSampleRate sampleRate) { return ASE_OK; }
-	virtual ASIOError getSampleRate(ASIOSampleRate *sampleRate) { return ASE_OK; }
+	virtual ASIOError getSampleRate(ASIOSampleRate *sampleRate) { double d = 48000.0; memcpy(sampleRate, &d, 8); return ASE_OK; }
 	virtual ASIOError setSampleRate(ASIOSampleRate sampleRate) { return ASE_OK; }
 	virtual ASIOError getClockSources(ASIOClockSource *clocks, long *numSources) { return ASE_OK; }
 	virtual ASIOError setClockSource(long reference) { return ASE_OK; }

@@ -310,7 +310,7 @@ public:
 		if (lock)
 			this->lock();
 		//_display->set_wav_heights(&asio->_io_lock);
-		_display->set_wav_heights();
+		_display->set_wav_heights(ASR::get_io_instance());
 		if (lock)
 			this->unlock();
 		if (unlock)
@@ -332,8 +332,15 @@ template <typename Chunk_T>
 class BufferedSource : public T_source<Chunk_T>
 {
 public:
-	BufferedSource() : _src(0), _src_buf(0), _filename(0), _detector(0)
+	BufferedSource() : 
+		_src(0), 
+		_src_buf(0), 
+		_filename(0), 
+		_detector(0), 
+		_filter(2048, 44100.0, 200.0),
+		_filter_stream(0)
 	{
+		_filter.init();
 	}
 
 	void create(ASIOProcessor *io, const wchar_t *filename, pthread_mutex_t *lock)
@@ -361,9 +368,10 @@ public:
 
 		_src = src;
 
-		_detector = new BeatDetector<Chunk_T>(_src);
+	//	_detector = new BeatDetector<Chunk_T>(_src);
+		_filter_stream = new STFTStream(_src, _filter, 2048, 1024, 100);
 		
-		_src_buf = new BufferedStream<Chunk_T>(io, _detector);
+		_src_buf = new BufferedStream<Chunk_T>(io, _src);
 	//	_src_buf->load_complete();
 
 		_filename = filename;
@@ -378,6 +386,8 @@ public:
 
 	void destroy()
 	{
+		delete _filter_stream;
+		_filter_stream = 0;
 		delete _src_buf;
 		_src_buf = 0;
 		delete _detector;
@@ -407,6 +417,9 @@ protected:
 	lowpass_filter *_lpf;
 	full_wave_rectifier<SamplePairf, Chunk_T> *_rectifier;
 	BeatDetector<Chunk_T> *_detector;
+
+	LPFilter _filter;
+	STFTStream *_filter_stream;
 };
 
 template <typename Chunk_T>
@@ -589,7 +602,7 @@ public:
 		_display->set_zoom(100.0);
 		_display->set_left(0.0);
 		//pthread_mutex_lock(lock);
-		_display->set_wav_heights(lock);
+		_display->set_wav_heights(_io, lock);
 	//	if (!_display->set_next_height())
 	//	{
 		//	GenericUI *ui;
