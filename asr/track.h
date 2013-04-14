@@ -403,7 +403,7 @@ public:
 		return _src_buf->len();
 	}
 
-	const std::list<typename BeatDetector<Chunk_T>::point>& beats()
+	const std::vector<double>& beats()
 	{
 		return _detector->beats();
 	}

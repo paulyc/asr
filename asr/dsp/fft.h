@@ -367,7 +367,7 @@ public:
 		SamplePaird *smp = (SamplePaird*)_outBuf;
 		for (int n=0; n < _N; ++n)
 		{
-			const double wc = mlt(n,_N)/_N;
+			const double wc = .1*mlt(n,_N)/_N;
 			_synthPtr[n][0] += smp[n][0] * wc;
 			_synthPtr[n][1] += smp[n][1] * wc;
 		//	printf("%f %f\n", _synthPtr[n][0], _synthPtr[n][1]);

@@ -852,11 +852,10 @@ void Win32UI::render_impl(int t_id)
 
 #define SHOW_BEATS 1
 #if SHOW_BEATS
-	const std::list<typename BeatDetector<chunk_t>::point>& beats = track->beats();
-	for (std::list<typename BeatDetector<chunk_t>::point>::const_iterator i = beats.begin(); i != beats.end(); i++)
+	const std::vector<double>& beats = track->beats();
+	for (int i = 0; i < beats.size(); ++i)
 	{
-		double t = i->t;
-		double pos = track->get_display_pos(t);
+		double pos = track->get_display_pos(beats[i]);
 		if (pos >= 0.0 && pos <= 1.0)
 		{
 			int px = pos * width;
