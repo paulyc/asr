@@ -183,6 +183,7 @@ public:
 				if (dt > 1.5*_dt_avg)
 				{
 					last_t += _dt_avg;
+					printf("bpm = %f\n", 60.0/_dt_avg);
 					_beat_avg_list.push_back(last_t);
 					continue;
 				}
@@ -194,14 +195,16 @@ public:
 				else
 				{
 					last_t += _dt_avg;
-					double diff = 0.25 * (i->t - last_t);
+					double diff = 0.1 * (i->t - last_t);
 					last_t += diff;
+					printf("bpm = %f\n", 60.0/(_dt_avg+diff));
 					_beat_avg_list.push_back(last_t);
 					i++;
 				}
 			}
 			for (int j=0; j<10; ++j)
 			{
+				printf("bpm = %f\n", 60.0/_dt_avg);
 				last_t += _dt_avg;
 				_beat_avg_list.push_back(last_t);
 			}
