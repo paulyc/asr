@@ -358,7 +358,7 @@ public:
 		}
 		else
 		{
-			throw std::exception("Don't know how to handle this file extension");
+			src = new rifffile_chunker_base<Chunk_T>(filename);
 		}
 
 		destroy();

@@ -333,7 +333,7 @@ void Win32UI::load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam)
 		sizeof(ofn), // DWORD        lStructSize;
 		hwndDlg, //   HWND         hwndOwner;
 		NULL, //   HINSTANCE    hInstance;
-		TEXT("Sound Files\0*.WAV;*.MP3;*.FLAC;*.AAC;*.MP4;*.AC3\0"
+		TEXT("Sound Files\0*.WAV;*.WAVE;*.MP3;*.FLAC;*.AAC;*.MP4;*.AC3;*.AIFF;*.AIF\0"
 		TEXT("All Files\0*.*")), //   LPCWSTR      lpstrFilter;
 		NULL, //LPWSTR       lpstrCustomFilter;
 		0, //   DWORD        nMaxCustFilter;

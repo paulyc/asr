@@ -14,15 +14,21 @@
 
 struct RIFFHeader
 {
-	long riff;
-	unsigned long filelen;
-	long fileid;
+	int32_t riff;
+	uint32_t filelen;
+	int32_t fileid;
 };
 
 struct RIFFChunkHeader
 {
-	long id;
-	unsigned long len;
+	int32_t id;
+	uint32_t len;
+};
+
+struct RIFFChunk
+{
+	RIFFChunkHeader ch;
+	uint32_t ofs; // data offset of chunk (not including header)
 };
 
 struct WAVFormatChunk
@@ -34,6 +40,20 @@ struct WAVFormatChunk
 	short blockAlign;
 	short bitsPerSample;
 	short padding; // hack for files that do not conform to wav standard
+};
+
+struct float80
+{
+	uint16_t exp;
+	uint16_t man[4];
+};
+
+struct AIFFCommChunk
+{
+	uint16_t channels;
+	uint32_t frames;
+	uint16_t bitsPerSample;
+	float80 sampleRate; // 80-bit floating point
 };
 
 inline const char * cwcs_to_ccs(const wchar_t *str)
@@ -60,6 +80,129 @@ public:
 	}
 protected:
 	DiskFile * _file;
+};
+
+#define ntohl(x) ((((x) & 0xFF000000) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) & 0x000000FF) << 24)
+#define ntohs(x) ((((x) & 0xFF00) >> 8) | (((x) & 0x00FF) << 8))
+
+template <typename Chunk_T>
+class rifffile_chunker_base : public T_source<Chunk_T>, public file_chunker
+{
+public:
+	enum FileType
+	{
+		Unknown,
+		WAV,
+		AIFF
+	};
+
+	rifffile_chunker_base(const wchar_t * filename) :
+		file_chunker(filename),
+		_type(Unknown)
+	{
+		load_header(filename);
+	}
+	rifffile_chunker_base(GenericFile *file) :
+		file_chunker(file),
+		_type(Unknown)
+	{
+		load_header(L"GenericFile");
+	}
+	virtual ~rifffile_chunker_base() {}
+
+	void load_header(const wchar_t * filename)
+	{
+		_file->read(&_riffHdr, sizeof(_riffHdr), 1);
+		if (_riffHdr.riff == 'FFIR' && _riffHdr.fileid == 'EVAW')
+		{
+			_type = WAV;
+		}
+		else if (_riffHdr.riff == 'MROF' && (_riffHdr.fileid == 'FFIA' || _riffHdr.fileid == 'CFIA'))
+		{
+			_type = AIFF;
+			_riffHdr.filelen = ntohl(_riffHdr.filelen);
+		}
+
+		while (true)
+		{
+			RIFFChunk chk;
+			_file->read(&chk.ch, sizeof(chk.ch), 1);
+			if (_file->eof())
+				break;
+			chk.ofs = _file->tell();
+			if (_type == AIFF)
+				chk.ch.len = ntohl(chk.ch.len);
+			_riffChunks[chk.ch.id] = chk;
+			_file->seek(_file->tell() + chk.ch.len);
+		}
+
+		parse_chunks();
+	}
+
+	void parse_chunks()
+	{
+		if (_type == AIFF)
+			parse_aiff();
+		else if (_type == WAV)
+			parse_wav();
+		else
+			throw std::exception("Unknown IFF file type");
+	}
+
+	void parse_aiff()
+	{
+		AIFFCommChunk comChk;
+		double sampleRate;
+
+		int len = _riffChunks['MMOC'].ch.len;
+		// check bad sizes because of padding
+		if (len != sizeof(AIFFCommChunk))
+			printf("chunk len is %d expected %d\n", len, sizeof(AIFFCommChunk));
+		int ofs = _riffChunks['MMOC'].ofs;
+		_file->seek(_riffChunks['MMOC'].ofs);
+		_file->read(&comChk, sizeof(comChk), 1);
+		comChk.bitsPerSample = ntohs(comChk.bitsPerSample);
+		comChk.channels = ntohs(comChk.channels);
+		comChk.frames = ntohl(comChk.frames);
+
+		//
+		void *inAddr = &comChk.sampleRate;
+		void *outAddr = &sampleRate;
+
+		__asm
+		{
+			mov eax, inAddr
+			fld tbyte ptr[eax]
+			mov eax, outAddr
+			fst qword ptr[eax]
+		}
+
+		printf("sampleRate = %f\n", sampleRate);
+	}
+
+	void parse_wav()
+	{
+	}
+
+	void print_chunks()
+	{
+		for (std::map<int32_t, RIFFChunk>::iterator i = _riffChunks.begin();
+			i != _riffChunks.end();
+			i++)
+		{
+			printf("Chunk id %c%c%c%c len %d\n", 
+				i->first & 0xFF, 
+				(i->first & 0xFF00) >> 8,
+				(i->first & 0xFF0000) >> 16,
+				(i->first & 0xFF000000) >> 24,
+				i->second.ch.len);
+		}
+	}
+
+private:
+	RIFFHeader _riffHdr;
+	std::map<int32_t, RIFFChunk> _riffChunks;
+	FileType _type;
 };
 
 template <typename Chunk_T>
@@ -179,7 +322,6 @@ public:
 	}
 
 protected:
-	
 	RIFFHeader _riffHdr;
 	WAVFormatChunk _fmtChk;
 	short _bytesPerSample;
