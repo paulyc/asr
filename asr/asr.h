@@ -58,34 +58,15 @@ class GenericUI;
 
 class ASR
 {
+public:
 	ASR();
 	~ASR();
 
-	static ASR *instance;
+	void execute();
 
-public:
-	static void execute();
-
-	static ASIOProcessor* get_io_instance()
-	{
-		sem_wait(&instance->_sem);
-		ASIOProcessor *asio = instance->asio;
-		sem_post(&instance->_sem);
-		return asio;
-	}
-
-	static GenericUI* get_ui_instance()
-	{
-		sem_wait(&instance->_sem);
-		GenericUI *ui = instance->ui;
-		sem_post(&instance->_sem);
-		return ui;
-	}
-
-protected:
-	ASIOProcessor * asio;
-	GenericUI *ui;
-	sem_t _sem;
+private:
+	ASIOProcessor *_asio;
+	GenericUI *_ui;
 };
 
 #endif // !defined(_ASR_H)

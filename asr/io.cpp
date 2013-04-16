@@ -124,7 +124,7 @@ void ASIOProcessor::Init()
 	ASIODriver drv(L"CreativeASIO");
 	_iomgr = dynamic_cast<ASIOManager<chunk_t>*>(drv.loadDriver());
 	
-	_iomgr->createBuffers();
+	_iomgr->createBuffers(this);
 
     _need_buffers = true;
 

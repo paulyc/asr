@@ -74,8 +74,8 @@ public:
 		  pthread_mutex_unlock(lock);
 	  }
 	  int chunks_total = _src->len().chunks;
-	  int left_chunk = _left * chunks_total;
-	  int right_chunk = _right * chunks_total;
+	  int left_chunk = (int)(_left * chunks_total);
+	  int right_chunk = (int)(_right * chunks_total);
 	  int chunks = right_chunk-left_chunk;
 	  //chunk_t *chk = _src->get_chunk(0);
 	 // int chunks_per_pixel = (right_chunk-left_chunk) / _width;

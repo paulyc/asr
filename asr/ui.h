@@ -83,7 +83,6 @@ public:
 	virtual void main_loop() = 0;
 	virtual bool running() = 0;
 	virtual void do_quit() = 0;
-    virtual void process_messages() {}
 	virtual void render(int) = 0;
     virtual void render_dirty();
 	virtual void set_track_filename(int t) = 0;
@@ -156,11 +155,6 @@ public:
 	UITrack _track2;
 	MagicController _magic;
 	FutureExecutor _future;
-
-private:
-#if USE_QUEUES
-	std::queue<deferred*> _task_q;
-#endif
 };
 
 #if WINDOWS
@@ -171,7 +165,6 @@ public:
 	virtual void create();
 	virtual void destroy();
 	virtual void main_loop();
-	virtual void process_messages();
 	virtual void render(int);
 	virtual void set_track_filename(int t){}
 	virtual void set_position(void *t, double tm, bool invalidate);
@@ -182,6 +175,8 @@ public:
 	virtual bool running(){return !_want_quit;}
 	virtual void load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam);
 
+	static INT_PTR CALLBACK MyDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 	static LONG WINAPI top_level_exception_filter(struct _EXCEPTION_POINTERS *ExceptionInfo);
 
 	bool _want_render;
@@ -189,6 +184,7 @@ public:
 	HACCEL  _accelTable;
 
 private:
+	static ASIOProcessor *_io;
 	void set_text_field_impl(int id, const wchar_t *txt, bool del);
 	void set_clip_impl(int t_id);
 	void render_impl(int t_id);
@@ -201,7 +197,6 @@ struct Win32UISlider : public UISlider
 
 #include <commctrl.h>
 #include "resource.h"
-#define SLEEP 0
 
 extern HWND g_dlg;
 

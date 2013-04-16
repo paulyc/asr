@@ -112,7 +112,7 @@ public:
 		{
 			if (Ts > _peekBufferSize)
 			{
-				delete _peekBuffer;
+				delete [] _peekBuffer;
 				_peekBuffer = new T[Ts];
 				_peekBufferSize = Ts;
 			}

@@ -248,7 +248,6 @@ public:
 	}
 	Chunk_T* next()
 	{
-		ASIOProcessor *io = ASR::get_io_instance();
 		if (_lock) pthread_mutex_lock(_lock);
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		unsigned n = 0;
@@ -294,7 +293,7 @@ public:
 					_inputBufferFilled = 0;
 				}
 				if (_lock) pthread_mutex_unlock(_lock);
-				if (io->is_waiting()) sched_yield();
+				sched_yield();
 				rd = _file->read((char*)_inputBuffer+_inputBufferFilled, 1, INPUT_BUFFER_SIZE-_inputBufferFilled);
 				if (_file->eof())
 				{
@@ -515,7 +514,6 @@ public:
 
 	Chunk_T* next()
 	{
-		ASIOProcessor *io = ASR::get_io_instance();
 		if (_lock) pthread_mutex_lock(_lock);
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		typename Chunk_T::sample_t *smp = chk->_data, *end = smp + Chunk_T::chunk_size;
@@ -539,7 +537,7 @@ public:
 			if (_ofs == _blocksize)
 			{
 				if (_lock) pthread_mutex_unlock(_lock);
-				if (io->is_waiting()) sched_yield();
+				sched_yield();
 				load_frame();
 				if (_lock) pthread_mutex_lock(_lock);
 			}

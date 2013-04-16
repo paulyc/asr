@@ -521,7 +521,7 @@ public:
 			copy_from += to_write;
 			for (int i=0; i<fft_size; ++i)
 			{
-				const double wconst = _window.get_i(i);
+				const float wconst = (float)_window.get_i(i);
 				_inBuf[i*2] *= wconst;
 				_inBuf[i*2+1] *= wconst;
 			}

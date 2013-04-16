@@ -200,8 +200,8 @@ public:
 		for (SamplePairf *p = chk->_data; p < chk->_data + chunk_t::chunk_size; ++p)
 		{
 			const double val = sin(2*M_PI*1000.0*_t);
-			(*p)[0] = val;
-			(*p)[1] = val;
+			(*p)[0] = (float32_t)val;
+			(*p)[1] = (float32_t)val;
 			_t += dt;
 		}
 		return chk;
@@ -218,35 +218,35 @@ public:
 	// R = hop size
 	// hops = number of hops >= 0
 	// buffer size = N + hops * R
-	STFTStream(T_source<chunk_t> *src, const FFTWindowFilter &filt, int N, int R, int hops, int padding=0) : 
-		T_sink_source(src), _filt(filt), _N(N), _R(R), _hops(hops), _padding(padding)
+	STFTStream(const FFTWindowFilter &filt, int N, int R, int hops, int padding=0) : 
+		T_sink_source(0), _filt(filt), _N(N), _R(R), _hops(hops), _sourceChk(0), _padding(padding)
 	{
 		_inBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N + hops * R));
 		_windowBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N+padding));
 		_synthBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N + hops * R));
-		_synthPtr = _synthBuf;
 		_outBuf = (ComplexPaird*)fftw_malloc(sizeof(ComplexPaird) * ((N+padding)/2+1));
-	//	_forwardPlans = new FFTPlan*[hops + 1];
-	//	for (int i=0; i<hops+1; ++i)
-	//	{
-	//		_forwardPlans[i] = new Time2FrequencyPlan(N, _inBuf + i*R, _outBuf);
-	//	}
-		_p = 0;
 		_fwPlan = new Time2FrequencyPlan(N, _windowBuf, _outBuf);
 		_inversePlan = new Frequency2TimePlan(N, _outBuf, (SamplePaird*)_outBuf);
-
-		fill_input();
 	}
 
 	~STFTStream()
 	{
-	//	delete [] _forwardPlans;
 		delete _inversePlan;
+		delete _fwPlan;
 		fftw_free(_outBuf);
 		fftw_free(_synthBuf);
 		fftw_free(_windowBuf);
 		fftw_free(_inBuf);
 		T_allocator<chunk_t>::free(_sourceChk);
+	}
+
+	void reset_source(T_source<chunk_t> *src)
+	{
+		T_allocator<chunk_t>::free(_sourceChk);
+		_synthPtr = _synthBuf;
+		_p = 0;
+		_src = src;
+		fill_input();
 	}
 
 	void seek_smp(smp_ofs_t smp_ofs)
@@ -367,7 +367,7 @@ public:
 		SamplePaird *smp = (SamplePaird*)_outBuf;
 		for (int n=0; n < _N; ++n)
 		{
-			const double wc = .1*mlt(n,_N)/_N;
+			const double wc = mlt(n,_N)/_N;
 			_synthPtr[n][0] += smp[n][0] * wc;
 			_synthPtr[n][1] += smp[n][1] * wc;
 		//	printf("%f %f\n", _synthPtr[n][0], _synthPtr[n][1]);

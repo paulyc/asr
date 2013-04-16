@@ -105,18 +105,26 @@ template <typename Chunk_T>
 class BeatDetector : public T_sink_source<Chunk_T>
 {
 public:
-	BeatDetector(T_source<Chunk_T> *src) : 
-		T_sink_source(src) , 
+	BeatDetector() : 
+		T_sink_source(0),
+		_my_src(0),
+		_rectifier(&_s1),
+		_passthrough_sink(&_s2),
 		_lpf(2048, 44100.0, 100.0),
-		_k(1024)
+		_k(1024),
+		_s1(_lpf, 2048, 1024, 20),
+		_s2(_k, 1024, 512, 20)
 	{
-		_my_src = new QueueingSource<Chunk_T>(src);
 		_lpf.init();
-		_s1 = new STFTStream(_my_src, _lpf, 2048, 1024, 20);
-		_rectifier = new full_wave_rectifier<SamplePairf, Chunk_T>(_s1);
 		_k.init();
-		_s2 = new STFTStream(_rectifier, _k, 1024, 512, 20);
-		_passthrough_sink = new T_sink_source<Chunk_T>(_s2);
+	}
+
+	void reset_source(T_source<Chunk_T> *src)
+	{
+		_src = src;
+		_my_src.reset_source(_src);
+		_s1.reset_source(&_my_src);
+		_s2.reset_source(&_rectifier);
 
 		_t = 0.0;
 		_pos = true;
@@ -127,15 +135,15 @@ public:
 		_dt_sum = 0.0;
 		_dt_points = 0;
 		_dt_avg = 0.0;
-	}
 
-	~BeatDetector()
-	{
-		delete _passthrough_sink;
-		delete _s2;
-		delete _s1;
-		delete _rectifier;
-		delete _my_src;
+		_peak_list.clear();
+		_beat_list.clear();
+		_beat_avg_list.clear();
+
+		_max_peak = point();
+		_max = point();
+		_maxs.clear();
+		_last_beat = point();
 	}
 
 	struct point
@@ -164,10 +172,6 @@ public:
 			printf("hello\n");
 		}
 	}
-
-	std::list<point> _peak_list;
-	std::list<point> _beat_list;
-	std::vector<double> _beat_avg_list;
 
 	const std::vector<double>& beats()
 	{
@@ -214,8 +218,8 @@ public:
 
 	Chunk_T *next()
 	{
-		Chunk_T *process_chk = _passthrough_sink->next();
-		Chunk_T *passthru_chk = _my_src->get_next();
+		Chunk_T *process_chk = _passthrough_sink.next();
+		Chunk_T *passthru_chk = _my_src.get_next();
 		
 		SamplePairf last = {0.0f, 0.0f};
 		for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
@@ -309,23 +313,21 @@ public:
 	//	avg[1] /= Chunk_T::chunk_size;
 	//	printf("avg values of envelope %f %f\n", avg[0], avg[1]);
 	
-		T_allocator<Chunk_T>::free(passthru_chk);
-		return process_chk;
-	//	T_allocator<Chunk_T>::free(process_chk);
-	//	return passthru_chk;
+	//	T_allocator<Chunk_T>::free(passthru_chk);
+	//	return process_chk;
+		T_allocator<Chunk_T>::free(process_chk);
+		return passthru_chk;
 	}
 
-	void set_source(T_source<Chunk_T> *src)
-	{
-		_src = src;
-	}
 private:
+	std::list<point> _peak_list;
+	std::list<point> _beat_list;
+	std::vector<double> _beat_avg_list;
+
 	double _t;
-	QueueingSource<Chunk_T> *_my_src;
-	T_sink_source<Chunk_T> *_passthrough_sink;
-	full_wave_rectifier<SamplePairf, Chunk_T> *_rectifier;
-//	FilterSourceImpl *_filterSource, *_filterSource2;
-//	lowpass_filter *_lpf1,*_lpf2;
+	QueueingSource<Chunk_T> _my_src;
+	full_wave_rectifier<SamplePairf, Chunk_T> _rectifier;
+	T_sink_source<Chunk_T> _passthrough_sink;
 	bool _start, _pos;
 	Differentiator _diff, _diff2;
 	double _x_max;
@@ -336,7 +338,7 @@ private:
 
 	LPFilter _lpf;
 	KaiserWindowFilter _k;
-	STFTStream *_s1, *_s2;
+	STFTStream _s1, _s2;
 	double _dt_sum;
 	int _dt_points;
 	double _dt_avg;

@@ -12,7 +12,6 @@ typedef ASIOP::track_t track_t;
 #include <wingdi.h>
 #include <dbghelp.h>
 #include "resource.h"
-#define SLEEP 0
 
 HWND g_dlg = NULL;
 HWND g_newwnd = NULL;
@@ -24,13 +23,13 @@ HPEN pen_yel;
 HPEN pen_oran;
 double last_time;
 
-INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
+INT_PTR CALLBACK Win32UI::MyDialogProc(HWND hwndDlg,
     UINT uMsg,
     WPARAM wParam,
     LPARAM lParam
 )
 {
-	ASIOProcessor *asio = ASR::get_io_instance();
+	ASIOProcessor *asio = _io;
 	Win32UI *ui = dynamic_cast<Win32UI*>(asio->get_ui());
 
 	switch (uMsg)
@@ -407,13 +406,17 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
+ASIOProcessor *Win32UI::_io = 0;
+
 Win32UI::Win32UI(ASIOProcessor *io) :
 	GenericUI(io, 
 		UITrack(this, 1, IDC_EDIT1, IDC_EDIT3, IDC_EDIT5), 
 		UITrack(this, 2, IDC_EDIT2, IDC_EDIT4, IDC_EDIT6)),
 	_want_render(false),
 	_want_quit(false)
-{}
+{
+	_io = io;
+}
 
 void Win32UI::create()
 {
@@ -468,7 +471,7 @@ void Win32UI::create()
 		0);
 //	ShowWindow(button, SW_SHOW);
 	
-	g_dlg = CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG1), NULL, MyDialogProc);
+	g_dlg = CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG1), NULL, Win32UI::MyDialogProc);
 	if (!g_dlg) {
 		//TCHAR foo[256];
 		//FormatMessage(dwFlags, lpSource, dwMessageId, dwLanguageId, foo, sizeof(foo), Arguments);
@@ -588,7 +591,7 @@ void Win32UI::destroy()
 LONG WINAPI Win32UI::top_level_exception_filter(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
 	// return address = esp + 4
-	ASR::get_io_instance()->Stop();
+	_io->Stop();
 
 	printf("top level exception filter caught ");
 
@@ -626,33 +629,9 @@ LONG WINAPI Win32UI::top_level_exception_filter(struct _EXCEPTION_POINTERS *Exce
 
 void Win32UI::main_loop()
 {
-#if SLEEP
-	Sleep(10000);
-#else
 	BOOL bRet;
 	MSG msg;
-#if USE_QUEUES
-	while (true)
-	{
-		while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0) 
-		{
-			if (msg.message == WM_QUIT)
-			{
-				return;
-			}
-			if (!IsWindow(g_dlg) || !IsDialogMessage(g_dlg, &msg)) 
-			{ 
-				TranslateMessage(&msg); 
-				DispatchMessage(&msg); 
-			} 
-			else
-			{
-				TranslateAccelerator(g_dlg, _accelTable, &msg);
-			}
-		} 
-		_future->process_calls();
-	}
-#else
+
 	while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0) 
 	{ 
 		if (bRet == -1)
@@ -670,29 +649,7 @@ void Win32UI::main_loop()
 		{
 			TranslateAccelerator(g_dlg, _accelTable, &msg);
 		}
-	} 
-#endif
-
-#endif // !SLEEP
-}
-
-void Win32UI::process_messages()
-{
-	BOOL bRet;
-	MSG msg;
-
-	while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0) 
-	{
-		if (msg.message == WM_QUIT)
-		{
-
-		}
-		if (!IsWindow(g_dlg) || !IsDialogMessage(g_dlg, &msg)) 
-		{ 
-			TranslateMessage(&msg); 
-			DispatchMessage(&msg); 
-		} 
-	} 
+	}
 }
 
 void Win32UI::set_position(void *t, double p, bool invalidate)

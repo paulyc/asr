@@ -156,7 +156,7 @@ void ASIOManager<Chunk_T>::enumerateIOs()
 }
 
 template <typename Chunk_T>
-void ASIOManager<Chunk_T>::createBuffers()
+void ASIOManager<Chunk_T>::createBuffers(ASIOProcessor *io)
 {
 	ASIOError e;
 
@@ -204,6 +204,7 @@ void ASIOManager<Chunk_T>::createBuffers()
 	_buffer_infos[7].isInput = ASIOTrue;
 	_buffer_infos[7].channelNum = ch_input2_r;
 
+	MyASIOCallbacks::io = io;
 	_cb.bufferSwitch = MyASIOCallbacks::bufferSwitch;
 	_cb.bufferSwitchTimeInfo = MyASIOCallbacks::bufferSwitchTimeInfo;
 	_cb.sampleRateDidChange = MyASIOCallbacks::sampleRateDidChange;
