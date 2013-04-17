@@ -187,7 +187,7 @@ public:
 	Chunk_T *get_chunk(unsigned int chk_ofs)
 	{
 		// dont think this needs locked??
-		if (_src->len().chunks != -1 && chk_ofs >= _src->len().chunks)
+		if (_src->len().chunks != -1 && chk_ofs >= uchk_ofs_t(_src->len().chunks))
 		{
 			return zero_source<Chunk_T>::get()->next();
 		}
@@ -224,18 +224,23 @@ public:
 	{
 		Chunk_T *c;
 		pthread_mutex_lock(&_buffer_lock);
-		if (chk_ofs >= _chks.size())
-			_chks.resize(chk_ofs*2, 0);
-		if (!_chks[chk_ofs])
+		if (chk_ofs < 0)
+		{
+			return zero_source<Chunk_T>::get()->next();
+		}
+		uint32_t uchk_ofs = (uint32_t)chk_ofs;
+		if (uchk_ofs >= _chks.size())
+			_chks.resize(uchk_ofs*2, 0);
+		if (!_chks[uchk_ofs])
 		{
 			pthread_mutex_unlock(&_buffer_lock);
 			pthread_mutex_lock(&_src_lock);
 			c = _src->next();
 			pthread_mutex_unlock(&_src_lock);
 			pthread_mutex_lock(&_buffer_lock);
-			_chks[chk_ofs] = c;
+			_chks[uchk_ofs] = c;
 		}
-		c = _chks[chk_ofs];
+		c = _chks[uchk_ofs];
 		pthread_mutex_unlock(&_buffer_lock);
 		return c;
 	}
@@ -299,8 +304,8 @@ public:
 			--num;
 			++buf;
 		}
-		smp_ofs_t chk_ofs = ofs / Chunk_T::chunk_size,
-			smp_ofs = ofs % Chunk_T::chunk_size;
+		usmp_ofs_t chk_ofs = (usmp_ofs_t)ofs / Chunk_T::chunk_size,
+			smp_ofs = (usmp_ofs_t)ofs % Chunk_T::chunk_size;
 		int chk_left, to_cpy, written=0;
 		do
 		{
@@ -314,7 +319,7 @@ public:
 				pthread_mutex_unlock(&_buffer_lock);
 				pthread_mutex_lock(&_src_lock);
 				Chunk_T *c = 0;
-				if (_src->len().chunks != -1 && _src->len().chunks <= chk_ofs)
+				if (_src->len().chunks != -1 && usmp_ofs_t(_src->len().chunks) <= chk_ofs)
 					c = zero_source<Chunk_T>::get()->next();
 				else
 				{

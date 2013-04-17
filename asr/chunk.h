@@ -5,6 +5,9 @@
 #include <list>
 #include <cassert>
 
+#define ntohl(x) ((((x) & 0xFF000000) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) & 0x000000FF) << 24)
+#define ntohs(x) ((((x) & 0xFF00) >> 8) | (((x) & 0x00FF) << 8))
+
 struct countable
 {
 	countable() : _refs(1) {}
@@ -317,7 +320,7 @@ public:
 				buf += 4;
 				break;
 			}
-			_data[r][0] = val * multiplier;
+			_data[r][0] = float32_t(val * multiplier);
 			switch (bytes_per_sample)
 			{
 			case 1:
@@ -338,7 +341,24 @@ public:
 				buf += 4;
 				break;
 			}
-			_data[r][1] = val * multiplier;
+			_data[r][1] = float32_t(val * multiplier);
+		}
+	}
+
+	void load_from_bytes_x(uint8_t *buf)
+	{
+		double multiplier = 1.0 / (0x7FFFFFFF >> (8*(4-2)));
+		for (int r=0; r < chunk_size; ++r)
+		{
+			uint16_t val;
+			val = *(uint16_t*)buf;
+			val = ntohs(val);
+			buf += 2;
+			_data[r][0] = (float)(((int16_t)val) * multiplier);
+			val = *(uint16_t*)buf;
+			val = ntohs(val);
+			buf += 2;
+			_data[r][1] =  (float)(((int16_t)val) * multiplier);
 		}
 	}
 

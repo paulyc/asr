@@ -225,14 +225,14 @@ void GenericUI::drop_file(const wchar_t *filename, bool track1)
 	}
 }
 
-UITrack::UITrack(GenericUI *ui, int tid, int filename_id, int pitch_id, int gain_id) :
-	_ui(ui),
+UITrack::UITrack(ASIOProcessor *io, int tid, int filename_id, int pitch_id, int gain_id) :
+	_io(io),
 	id(tid),
 	coarse_val(48000.0),
 	fine_val(0.0),
-	filename(ui, filename_id),
-	pitch(ui, pitch_id),
-	gain(ui, gain_id),
+	filename(io->_ui, filename_id),
+	pitch(io->_ui, pitch_id),
+	gain(io->_ui, gain_id),
 	clip(false),
     dirty(false),
 	vinyl_control(false),
@@ -253,7 +253,7 @@ void UITrack::set_coarse(double v)
 	coarse_val = 48000.0 / (1.0 + .4 * v -0.2);
 //	printf("coarse_val %f\n", _track2.coarse_val);
 	update_frequency(coarse_val+fine_val);
-	_ui->_io->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
+	_io->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
 }
 
 void UITrack::set_fine(double v)
@@ -261,7 +261,7 @@ void UITrack::set_fine(double v)
 	fine_val = 800.0 -  1600.*v;
 //	printf("fine_val %f\n", fine_val);
 	update_frequency(coarse_val+fine_val);
-	_ui->_io->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
+	_io->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
 }
 
 double UITrack::get_pitch()
@@ -281,13 +281,13 @@ void UIText::set_text(const wchar_t *txt, bool del=true)
 void UIText::set_text_pct(double pct)
 {
 	wchar_t *buf = new wchar_t[32];
-	swprintf(buf, L"%.02f%%", pct);
+	swprintf(buf, 32, L"%.02f%%", pct);
 	set_text(buf);
 }
 
 void UIText::set_text_db(double db)
 {
 	wchar_t *buf = new wchar_t[64];
-	swprintf(buf, L"%.02f dB", db);
+	swprintf(buf, 64, L"%.02f dB", db);
 	set_text(buf);
 }

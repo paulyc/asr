@@ -9,7 +9,7 @@
 
 #define INPUT_FILE_SAMPLING_FREQUENCY 44100.0
 
-#define min(x,y) ((x) < (y) ? (x) : (y))
+//#define min(x,y) ((x) < (y) ? (x) : (y))
 
 // kaiser windowing constants
 double kaiserTable[10000];
@@ -166,7 +166,6 @@ void EvalSignalN<1>(double t_out, float * outputSamples, double t_in, float * in
 		__asm{int 3} \
 	}\
 }*/
-#define assert(x) myassert(x)
 	assert(sampleIndex < nInputSamples);
 	assert(endTime < nInputSamples * inputSamplingPeriod);
 	double sampleScale, relativeTime;
@@ -220,7 +219,7 @@ void EvalSignalN<4>(double t_out, float * outputSamples, double t_in, float * in
 		__asm{int 3} \
 	}\
 }*/
-#define assert(x) myassert(x)
+//#define assert(x) myassert(x)
 	assert(sampleIndex < nInputSamples);
 	assert(endTime < nInputSamples * inputSamplingPeriod);
 	double sampleScale, relativeTime;
@@ -286,12 +285,12 @@ void aud_processor_init(struct aud_processor * proc)
 	aud_smp * in_ptr;
 
 	proc->sampleCount = 0;
-	proc->ctrl_in = fopen("G:\\My Music\\projects\\serato2.raw", "rb");
-	proc->ctrl_out = fopen("output.txt", "w");
+	fopen_s(&proc->ctrl_in, "G:\\My Music\\projects\\serato2.raw", "rb");
+	fopen_s(&proc->ctrl_out, "output.txt", "w");
 	proc->in = (float*) fftwf_malloc(sizeof(float) * N*4);
 	proc->out = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * (N*4));
-	proc->aud_in = fopen("source.raw", "rb");
-	proc->aud_out = fopen("sourceout.raw", "wb");
+	fopen_s(&proc->aud_in, "source.raw", "rb");
+	fopen_s(&proc->aud_out, "sourceout.raw", "wb");
 	proc->in_buf = (aud_smp*) fftwf_malloc(sizeof(aud_smp) * N*2);
 	proc->out_buf = (aud_smp*) fftwf_malloc(sizeof(aud_smp) * N);
 	proc->t_out = 0.0;

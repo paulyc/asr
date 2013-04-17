@@ -10,7 +10,7 @@ ASIOError ASIOInit(ASIODriverInfo *info)
 		asiodrv = 0;
 		return ASE_NotPresent;
 	}
-	strcpy(info->errorMessage, "No Error");
+	strcpy_s(info->errorMessage, sizeof(info->errorMessage), "No Error");
 	asiodrv->getDriverName(info->name);
 	info->driverVersion = asiodrv->getDriverVersion();
 	return ASE_OK;

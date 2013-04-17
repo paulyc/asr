@@ -62,7 +62,7 @@ protected:
 	Precision_T get_coeff(Precision_T tm) 
 	{
 		const Precision_T t_diff = Precision_T(Sample_Precision+1) * _input_sampling_period;
-		int indx = (tm+t_diff)/(2.0*t_diff / (_default_tbl_size));		
+		int indx = (int)((tm+t_diff)/(2.0*t_diff / (_default_tbl_size)));		
 		assert(indx >= 0 && indx < _default_tbl_size);
 		return _coeff_tbl[indx];
 	}

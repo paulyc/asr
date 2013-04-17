@@ -37,6 +37,11 @@ typedef double float64_t;
 
 typedef int32_t smp_ofs_t;
 typedef int32_t ssmp_ofs_t;
+typedef uint32_t usmp_ofs_t;
+
+typedef int32_t chk_ofs_t;
+typedef int32_t schk_ofs_t;
+typedef uint32_t uchk_ofs_t;
 
 #include "chunk.h"
 typedef chunk_time_domain_1d<SamplePairf, 1024> chunk_t;

@@ -67,7 +67,6 @@ INT_PTR CALLBACK Win32UI::MyDialogProc(HWND hwndDlg,
 		case WM_HSCROLL:
 			switch (LOWORD(wParam))
 			{
-				wchar_t buf[64];
 				case TB_THUMBPOSITION:
 				case TB_THUMBTRACK:
 				case TB_ENDTRACK:
@@ -215,7 +214,7 @@ INT_PTR CALLBACK Win32UI::MyDialogProc(HWND hwndDlg,
 				{
 					TCHAR buf[64];
 					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->goto_pitchpoint();
-					swprintf(buf, L"%.02f%%", (48000.0 / asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->get_pitchpoint() - 1.0)*100.0);
+					swprintf(buf, 64, L"%.02f%%", (48000.0 / asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->get_pitchpoint() - 1.0)*100.0);
 					SetDlgItemText(g_dlg, LOWORD(wParam)==IDC_BUTTON10 ? IDC_EDIT3 : IDC_EDIT4, 
 						buf);
 					break;
@@ -239,7 +238,7 @@ INT_PTR CALLBACK Win32UI::MyDialogProc(HWND hwndDlg,
 					int t_id = LOWORD(wParam)==IDC_BUTTON17||LOWORD(wParam)==IDC_BUTTON18 ? 1 : 2;
 					double dp = LOWORD(wParam)==IDC_BUTTON17 || LOWORD(wParam)==IDC_BUTTON19 ? -0.0001 : 0.0001;
 					asio->GetTrack(t_id)->nudge_pitch(dp);
-					swprintf(buf, L"%.02f%%",  (asio->GetTrack(t_id)->get_pitch() - 1.)*100.);
+					swprintf(buf, 64, L"%.02f%%",  (asio->GetTrack(t_id)->get_pitch() - 1.)*100.);
 					SetDlgItemTextW(hwndDlg, t_id==1?IDC_EDIT3:IDC_EDIT4, buf);
 					break;
 				}
@@ -410,8 +409,8 @@ ASIOProcessor *Win32UI::_io = 0;
 
 Win32UI::Win32UI(ASIOProcessor *io) :
 	GenericUI(io, 
-		UITrack(this, 1, IDC_EDIT1, IDC_EDIT3, IDC_EDIT5), 
-		UITrack(this, 2, IDC_EDIT2, IDC_EDIT4, IDC_EDIT6)),
+		UITrack(io, 1, IDC_EDIT1, IDC_EDIT3, IDC_EDIT5), 
+		UITrack(io, 2, IDC_EDIT2, IDC_EDIT4, IDC_EDIT6)),
 	_want_render(false),
 	_want_quit(false)
 {
@@ -595,8 +594,10 @@ LONG WINAPI Win32UI::top_level_exception_filter(struct _EXCEPTION_POINTERS *Exce
 
 	printf("top level exception filter caught ");
 
-	FILE *ftxt = fopen("error.txt", "w");
-	FILE *fbin = fopen("exception_info.bin", "wb");
+	FILE *ftxt;
+	fopen_s(&ftxt, "error.txt", "w");
+	FILE *fbin;
+	fopen_s(&fbin, "exception_info.bin", "wb");
 	fwrite((const void*)ExceptionInfo->ExceptionRecord, sizeof(EXCEPTION_RECORD), 1, fbin);
 	fwrite((const void*)ExceptionInfo->ContextRecord, sizeof(CONTEXT), 1, fbin);
 	switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
@@ -662,7 +663,7 @@ void Win32UI::set_position(void *t, double p, bool invalidate)
 			uit->wave.playback_pos = p;
 		//}
 		//double len =  asio->_track1->len().time;
-		int new_px = p*uit->wave.width();
+		int new_px = int(p*uit->wave.width());
 		//if (asio)repaint();
 		if ((new_px != uit->wave.px && new_px >=0 && new_px < uit->wave.width()) || invalidate)
 		{
@@ -758,9 +759,9 @@ void Win32UI::render_impl(int t_id)
 		}
 		const track_t::display_t::wav_height &h =
 			track->get_wav_height(p);
-		int px_pk = (1.0-h.peak_top) * height / 2;
-		int px_avg = (1.0-h.avg_top) * height / 2;
-		int px_mn = (1.0+h.peak_bot) * height / 2;
+		int px_pk = (int)((1.0-h.peak_top) * height / 2);
+		int px_avg = (int)((1.0-h.avg_top) * height / 2);
+		int px_mn = (int)((1.0+h.peak_bot) * height / 2);
 		int line_height = px_avg-px_pk;
 		
 		if (h.peak_top != 0.0)
@@ -796,7 +797,7 @@ void Win32UI::render_impl(int t_id)
 	//px = int(playback_pos / len * double(width));
 	if (uit->wave.playback_pos >= 0.0 && uit->wave.playback_pos <= 1.0)
 	{
-		uit->wave.px = uit->wave.playback_pos * width;
+		uit->wave.px = int(uit->wave.playback_pos * width);
 		MoveToEx(hdc, r.left+uit->wave.px, r.top, NULL);
 		SelectObject(hdc, pen_yel);
 		LineTo(hdc, r.left+uit->wave.px, r.top+height);
@@ -807,7 +808,7 @@ void Win32UI::render_impl(int t_id)
 	SelectObject(hdc, pen_oran);
 	LineTo(hdc, r.left+uit->wave.cpx, r.top+height);
 
-#define SHOW_BEATS 1
+#define SHOW_BEATS 0
 #if SHOW_BEATS
 	const std::vector<double>& beats = track->beats();
 	for (int i = 0; i < beats.size(); ++i)

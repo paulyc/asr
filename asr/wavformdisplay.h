@@ -88,10 +88,10 @@ public:
 		  for (int p = 0; p < _width; ++p)
 		  {
 			  CRITICAL_SECTION_GUARD(lock, io->is_waiting());
-			  int chk = double(left_chunk) + p*chunks_per_pixel_d;
+			  int chk = int(double(left_chunk) + p*chunks_per_pixel_d);
 			    const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				  double ofs_d = p*chunks_per_pixel_d - floor(p*chunks_per_pixel_d);
-				  int sub = ofs_d*10;
+				  int sub = int(ofs_d*10);
 				  _wav_heights[p].peak_top = max(meta.subband[sub].peak[0], meta.subband[sub].peak[1]);
 				  _wav_heights[p].avg_top = max(meta.subband[sub].avg[0], meta.subband[sub].avg[1]);
 				  _wav_heights[p].peak_bot = min(meta.subband[sub].peak_lo[0], meta.subband[sub].peak_lo[1]);
@@ -102,7 +102,7 @@ public:
 	  {
 			for (int p = 0; p < _width; ++p)
 		  {
-			  int chk = double(left_chunk) + p*chunks_per_pixel_d;
+			  int chk = int(double(left_chunk) + p*chunks_per_pixel_d);
 			  _wav_heights[p].peak_top = 0.0;
 			  _wav_heights[p].avg_top = 0.0;
 			  _wav_heights[p].peak_bot = 0.0;
@@ -129,8 +129,8 @@ public:
 	  {
 		  // slow for higher values of chunks per pixel
 		  chunks = _src->len().chunks;
-		  int left_sample = _left * chunks * Source_T::chunk_t::chunk_size;
-		  int rt_sample = _right * chunks * Source_T::chunk_t::chunk_size;
+		  int left_sample = (int)(_left * chunks * Source_T::chunk_t::chunk_size);
+		  int rt_sample = (int)(_right * chunks * Source_T::chunk_t::chunk_size);
 		  int samples_per_pixel = (rt_sample - left_sample) / _width;
 		  double samples_per_pixel_d = double(rt_sample - left_sample) / _width;
 		  double pixels_per_sample_d = 1.0/samples_per_pixel_d;
@@ -258,7 +258,7 @@ public:
 		_left = _center - 0.5/_zoom;
 		_right = _center + 0.5/_zoom;
 	//  printf("z %f\n",_zoom);
-	  _level = min(log(_zoom) / log(2.0), 8);
+	  _level = (int)(min(log(_zoom) / log(2.0), 8));
   }
 
   void set_left(double l)

@@ -351,6 +351,7 @@ public:
 		else if (wcsstr(filename, L".wav") == filename + wcslen(filename) - 4)
 		{
 			src = new wavfile_chunker<Chunk_T>(filename);
+			//src = new ifffile_chunker<Chunk_T>(filename);
 		}
 		else if (wcsstr(filename, L".flac") == filename + wcslen(filename) - 5)
 		{
@@ -358,15 +359,15 @@ public:
 		}
 		else
 		{
-			src = new rifffile_chunker_base<Chunk_T>(filename);
+			src = new ifffile_chunker<Chunk_T>(filename);
 		}
 
 		destroy();
 
 		_src = src;
 
-		_detector.reset_source(_src);
-		_src_buf = new BufferedStream<Chunk_T>(io, &_detector);
+	//	_detector.reset_source(_src);
+		_src_buf = new BufferedStream<Chunk_T>(io, _src);
 	//	_src_buf->load_complete();
 
 		_filename = filename;

@@ -448,7 +448,7 @@ public:
 				} else {
 					bits_t mask;
 					mask = ((1 << 23) - 1);
-					_timecode = rev(-_timecode);
+					_timecode = rev(_timecode);
 					_bitstream = ((_bitstream << 1) & mask) + (bits_t)b.bit;
 				}
 			//	pk_out << "timecode " << timecode << " bitstream " << bitstream << std::endl;
