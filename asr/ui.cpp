@@ -225,14 +225,14 @@ void GenericUI::drop_file(const wchar_t *filename, bool track1)
 	}
 }
 
-UITrack::UITrack(ASIOProcessor *io, int tid, int filename_id, int pitch_id, int gain_id) :
+UITrack::UITrack(ASIOProcessor *io, GenericUI *ui, int tid, int filename_id, int pitch_id, int gain_id) :
 	_io(io),
 	id(tid),
 	coarse_val(48000.0),
 	fine_val(0.0),
-	filename(io->_ui, filename_id),
-	pitch(io->_ui, pitch_id),
-	gain(io->_ui, gain_id),
+	filename(ui, filename_id),
+	pitch(ui, pitch_id),
+	gain(ui, gain_id),
 	clip(false),
     dirty(false),
 	vinyl_control(false),
