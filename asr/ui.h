@@ -47,7 +47,7 @@ struct UIText
 
 struct UITrack
 {
-	UITrack(ASIOProcessor *io, int tid, int filename_id, int pitch_id, int gain_id);
+	UITrack(ASIOProcessor *io, GenericUI *ui, int tid, int filename_id, int pitch_id, int gain_id);
 	UIWavform wave;
 	void set_coarse(double v);
 	void set_fine(double v);
