@@ -103,6 +103,7 @@ ASIOManager<Chunk_T>::ASIOManager(IASIO *drv) :
 template <typename Chunk_T>
 ASIOManager<Chunk_T>::~ASIOManager()
 {
+	ASIOStop();
 	ASIOError e = ASIODisposeBuffers();
 	e = ASIOExit();
 	free(_buffer_infos);
@@ -245,8 +246,8 @@ void ASIOManager<Chunk_T>::createBuffers(ASIOProcessor *io)
 	_cb.bufferSwitchTimeInfo = MyASIOCallbacks::bufferSwitchTimeInfo;
 	_cb.sampleRateDidChange = MyASIOCallbacks::sampleRateDidChange;
 	_cb.asioMessage = MyASIOCallbacks::asioMessage;
-//	_bufSize = _preferredSize;
-	_bufSize = 1024;
+	_bufSize = CHUNK_SIZE;
+//	_bufSize = 1024;
 	ASIO_ASSERT_NO_ERROR(ASIOCreateBuffers(_buffer_infos, _buffer_infos_len, _bufSize, &_cb));
 
 	ASIOSampleRate r;

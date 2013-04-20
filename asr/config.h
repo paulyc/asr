@@ -65,4 +65,6 @@
 #define DUMMY_ASIO 0
 #define PARALLELS_ASIO 1
 
+#define CHUNK_SIZE 4096
+
 #endif // !defined(_CONFIG_H)

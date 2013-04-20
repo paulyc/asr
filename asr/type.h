@@ -44,8 +44,8 @@ typedef int32_t schk_ofs_t;
 typedef uint32_t uchk_ofs_t;
 
 #include "chunk.h"
-typedef chunk_time_domain_1d<SamplePairf, 1024> chunk_t;
-typedef chunk_freq_domain_1d<fftwf_complex, 1024> cchunk_t;
+typedef chunk_time_domain_1d<SamplePairf, CHUNK_SIZE> chunk_t;
+typedef chunk_freq_domain_1d<fftwf_complex, CHUNK_SIZE> cchunk_t;
 
 //typedef fftwf_complex default_internal_sample_type;
 //typedef chunk_time_domain_2d<fftwf_complex, 2, BUFFERSIZE> default_internal_chunk_type;
