@@ -18,7 +18,7 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::switchBuffers(int dbIndex)
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
 void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process()
 {
-	size_t to_write = _buf_size, loop_write, written=0;
+	int to_write = _buf_size, loop_write, written=0;
 	int stride = 2;
 	Output_Sample_T *write, *end_write;
 	typename Chunk_T::sample_t *read;

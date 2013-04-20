@@ -627,8 +627,8 @@ protected:
 };
 
 #define CRITICAL_SECTION_GUARD(lock, yield_condition) if (lock) { \
-pthread_mutex_lock(lock); \
-pthread_mutex_unlock(lock); \
+lock->acquire(); \
+lock->release(); \
 if (yield_condition) sched_yield(); }
 
 #endif

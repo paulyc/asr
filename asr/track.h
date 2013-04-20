@@ -437,7 +437,7 @@ public:
 	//	printf("sz = 0x%x\n", sz);
 
 		if (filename)
-			set_source_file_impl(std::wstring(filename), _io->get_lock());
+			set_source_file_impl(std::wstring(filename), &_io->get_lock());
 	}
 
 	virtual ~SeekablePitchableFileSource()
@@ -455,14 +455,14 @@ public:
 		BufferedSource<Chunk_T>::destroy();
 	}
 
-	void set_source_file(std::wstring filename, Lock_T *lock)
+	void set_source_file(std::wstring filename, Lock_T &lock)
 	{
 		_future->submit(
 			new deferred2<SeekablePitchableFileSource<Chunk_T>, std::wstring, Lock_T*>(
 				this, 
 				&SeekablePitchableFileSource<Chunk_T>::set_source_file_impl, 
 				filename, 
-				lock));
+				&lock));
 	}
 
 private:
@@ -568,7 +568,7 @@ public:
             load_step();
 	}
 
-	bool load_step(pthread_mutex_t *lock=0)
+	bool load_step(Lock_T *lock=0)
 	{
 		while (_src_buf->len().chunks == -1)
 		{

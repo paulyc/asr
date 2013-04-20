@@ -65,13 +65,13 @@ public:
   void do_mid_zoom() {}
   
   // fix file not expected length!!
-  virtual void set_wav_heights(ASIOProcessor *io, pthread_mutex_t *lock=0)
+  virtual void set_wav_heights(ASIOProcessor *io, Lock_T *lock=0)
   {
 	//  printf("display::set_wav_heights\n");
 	  if (lock)
 	  {
-		  pthread_mutex_lock(lock);
-		  pthread_mutex_unlock(lock);
+		  lock->acquire();
+		  lock->release();
 	  }
 	  int chunks_total = _src->len().chunks;
 	  int left_chunk = (int)(_left * chunks_total);
@@ -87,7 +87,7 @@ public:
 	  {
 		  for (int p = 0; p < _width; ++p)
 		  {
-			  CRITICAL_SECTION_GUARD(lock, io->is_waiting());
+			  CRITICAL_SECTION_GUARD(lock, true);
 			  int chk = int(double(left_chunk) + p*chunks_per_pixel_d);
 			    const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				  double ofs_d = p*chunks_per_pixel_d - floor(p*chunks_per_pixel_d);
@@ -118,9 +118,9 @@ public:
 				  Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
 			  if (lock)
 			  {
-				  pthread_mutex_unlock(lock);
-				  if (io->is_waiting()) sched_yield();
-				  pthread_mutex_lock(lock);
+				  lock->release();
+				  sched_yield();
+				  lock->acquire();
 			   }
 		  }
 		  
@@ -150,10 +150,13 @@ public:
 			  int smp = 0;
 			  while (smp < num_smp)
 			  {
-				  if (lock) pthread_mutex_unlock(lock);
-				  if (io->is_waiting()) sched_yield();
+				  if (lock) 
+					{
+						lock->release();
+						sched_yield();
+				  }
 				  Source_T::chunk_t *the_chk = _src->getSrc()->get_chunk(chk);
-				  if (lock) pthread_mutex_lock(lock);
+				  if (lock) lock->acquire();
 				  for (; ofs < Source_T::chunk_t::chunk_size && smp < num_smp; ++ofs, ++smp)
 				  {
 					  _wav_heights[p].avg_top += fabs(the_chk->_data[ofs][0]);
@@ -192,13 +195,13 @@ public:
 			//	  --chk;
 			  if (lock)
 			  {
-				  pthread_mutex_unlock(lock);
-				  if (io->is_waiting()) sched_yield();
-				  pthread_mutex_lock(lock);
+				  lock->release();
+				 sched_yield();
+				 lock->acquire();
 			  }
 		  }
 	  }
-	  if (lock) pthread_mutex_unlock(lock);
+	  if (lock) lock->release();
   }
 
   virtual const wav_height& get_wav_height(int pixel)
