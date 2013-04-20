@@ -82,6 +82,7 @@ void ASIOProcessor::CreateTracks()
 		_iomgr->getBuffers(1));
 	_iomgr->addInput(input1);
 
+#if !PARALLELS_ASIO
 	T_sink<chunk_t> *dummy_sink2 = new T_sink<chunk_t>(input1);
 	asio_source<int32_t, SamplePairf, chunk_t> *input2 = new asio_source<int32_t, SamplePairf, chunk_t>(
 		dummy_sink2,
@@ -91,6 +92,7 @@ void ASIOProcessor::CreateTracks()
 	_iomgr->addInput(input2);
 
 	_aux = new ChunkConverter<chunk_t, chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> >(input2);
+#endif
 
 	try {
 	//	_my_gain = new gain<asio_source<short, SamplePairf, chunk_t> >(_my_source);

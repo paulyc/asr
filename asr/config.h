@@ -62,4 +62,7 @@
 
 #define VINYL_CONTROL 0
 
+#define DUMMY_ASIO 0
+#define PARALLELS_ASIO 1
+
 #endif // !defined(_CONFIG_H)

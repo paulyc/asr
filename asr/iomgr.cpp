@@ -58,11 +58,21 @@ IOManager<chunk_t>* ASIODriver::loadDriver()
 	// SB Audigy 2 ZS ASIO {4C46559D-03A7-467A-8C58-2ABC5B749A1E}
 	// SB Audigy 2 ZS ASIO 24/96 {98B6A52A-4FF7-4147-B224-CC256C3C4C64}
 	//const char * drvdll = "d:\\program files\\presonus\\1394audiodriver_firebox\\ps_asio.dll";
+#if !DUMMY_ASIO
+#if !PARALLELS_ASIO
 	CLSIDFromString(OLESTR("{23638883-0B8C-4324-BBD5-35C3CF1B73BF}"), &clsid);
+#else
+	CLSIDFromString(OLESTR("{232685C6-6548-49D8-846D-4141A3EF7560}"), &clsid);
+#endif // !PARALLELS_ASIO
+#endif // !DUMMY_ASIO
 #endif
+
+#if DUMMY_ASIO
 	asiodrv = new DummyASIO;
 	HRESULT rc = S_OK;
-	//HRESULT rc = CoCreateInstance(clsid, 0, CLSCTX_INPROC_SERVER, clsid, (LPVOID *)&asiodrv);
+#else
+	HRESULT rc = CoCreateInstance(clsid, 0, CLSCTX_INPROC_SERVER, clsid, (LPVOID *)&asiodrv);
+#endif
 
 	if (rc == S_OK) { // programmers making design decisions = $$$?
 		printf("i got this %p\n", asiodrv);
@@ -166,6 +176,7 @@ void ASIOManager<Chunk_T>::createBuffers(ASIOProcessor *io)
 	std::cin >> ch_input_l;
 	std::cin >> ch_input_r >> ch_output_l >> ch_output_r;
 #else
+#if !PARALLELS_ASIO
 	// mic/line in 2
 	ch_input_l = 2;
 	ch_input_r = 3;
@@ -181,8 +192,6 @@ void ASIOManager<Chunk_T>::createBuffers(ASIOProcessor *io)
 	ch_output1_r = 3;
 	ch_output2_l = 4;
 	ch_output2_r = 5;
-#endif
-
 	_buffer_infos_len = 8;
 	_buffer_infos = (ASIOBufferInfo*)malloc(_buffer_infos_len*sizeof(ASIOBufferInfo));
 	_buffer_infos[0].isInput = ASIOTrue;
@@ -203,6 +212,33 @@ void ASIOManager<Chunk_T>::createBuffers(ASIOProcessor *io)
 	_buffer_infos[6].channelNum = ch_input2_l;
 	_buffer_infos[7].isInput = ASIOTrue;
 	_buffer_infos[7].channelNum = ch_input2_r;
+#else
+	ch_input_l = 0;
+	ch_input_r = 0;
+	ch_output1_l = 0;
+	ch_output1_r = 1;
+	ch_output2_l = 2;
+	ch_output2_r = 3;
+	_buffer_infos_len = 6;
+	_buffer_infos = (ASIOBufferInfo*)malloc(_buffer_infos_len*sizeof(ASIOBufferInfo));
+	_buffer_infos[0].isInput = ASIOTrue;
+	//_buffer_infos[0].channelNum = 2;
+	_buffer_infos[0].channelNum = ch_input_l;
+	_buffer_infos[1].isInput = ASIOTrue;
+	//_buffer_infos[1].channelNum = 3;
+	_buffer_infos[1].channelNum = ch_input_r;
+	_buffer_infos[2].isInput = ASIOFalse;
+	_buffer_infos[2].channelNum = ch_output1_l;
+	_buffer_infos[3].isInput = ASIOFalse;
+	_buffer_infos[3].channelNum = ch_output1_r;
+	_buffer_infos[4].isInput = ASIOFalse;
+	_buffer_infos[4].channelNum = ch_output2_l;
+	_buffer_infos[5].isInput = ASIOFalse;
+	_buffer_infos[5].channelNum = ch_output2_r;
+
+	ASIOSetSampleRate(48000.0);
+#endif
+#endif
 
 	MyASIOCallbacks::io = io;
 	_cb.bufferSwitch = MyASIOCallbacks::bufferSwitch;
