@@ -9,6 +9,8 @@
 #define LINUX 0
 #define BEOS 0
 
+#define OPENGL_ENABLED 0
+
 #if WINDOWS
 #include <windows.h>
 #endif

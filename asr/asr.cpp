@@ -36,13 +36,13 @@ using std::exception;
 typable(float)
 typable(double)
 
-ASR::ASR()
+ASR::ASR(int argc, char **argv)
 {
 	_asio = new ASIOProcessor;
 #if WINDOWS
 	_ui = new Win32UI(_asio);
 #else
-#error no ui defined
+	_ui = new OpenGLUI(_asio, argc, argv);
 #endif
 }
 
@@ -62,7 +62,7 @@ void ASR::execute()
 }
 
 #if 1
-int main()
+int main(int argc, char **argv)
 {
 #if 0
 	//ThreadTester<FastUserSyscallLock> *tester = new ThreadTester<FastUserSyscallLock>;
@@ -102,7 +102,7 @@ int main()
 
 	//freopen("stdout.txt", "w", stdout);
 
-	ASR *app = new ASR;
+	ASR *app = new ASR(argc, argv);
 	app->execute();
 	delete app;
 

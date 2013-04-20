@@ -208,4 +208,42 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 
 #endif // WINDOWS
 
+#if OPENGL_ENABLED
+#include <gl/GL.h>
+#include <gl/GLU.h>
+#include <gl/GLUT.h>
+
+class OpenGLUI : public GenericUI
+{
+public:
+	OpenGLUI(ASIOProcessor *io);
+	virtual void create();
+	virtual void destroy();
+	virtual void main_loop();
+	virtual void render(int);
+	virtual void set_track_filename(int t){}
+	virtual void set_position(void *t, double tm, bool invalidate);
+	virtual void set_clip(int);
+	virtual bool want_render(){ bool r = _want_render; _want_render = false; return r; }
+	virtual void set_text_field(int id, const wchar_t *txt, bool del);
+	virtual void do_quit(){_want_quit=true;}
+	virtual bool running(){return !_want_quit;}
+	//virtual void load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam);
+
+	//static INT_PTR CALLBACK MyDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	//static LONG WINAPI top_level_exception_filter(struct _EXCEPTION_POINTERS *ExceptionInfo);
+
+	bool _want_render;
+	bool _want_quit;
+//	HACCEL  _accelTable;
+
+private:
+	static ASIOProcessor *_io;
+	void set_text_field_impl(int id, const wchar_t *txt, bool del);
+	void set_clip_impl(int t_id);
+	void render_impl(int t_id);
+};
+#endif
+
 #endif // !defined(UI_H)

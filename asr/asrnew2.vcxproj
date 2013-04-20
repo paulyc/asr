@@ -147,6 +147,7 @@
     </ClCompile>
     <ClCompile Include="tracer.cpp" />
     <ClCompile Include="ui.cpp" />
+    <ClCompile Include="ui_gl.cpp" />
     <ClCompile Include="ui_win32.cpp" />
     <ClCompile Include="util.cpp" />
     <ClCompile Include="worker.cpp" />

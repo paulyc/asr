@@ -59,7 +59,7 @@ class GenericUI;
 class ASR
 {
 public:
-	ASR();
+	ASR(int argc, char **argv);
 	~ASR();
 
 	void execute();
