@@ -36,15 +36,11 @@ using std::exception;
 typable(float)
 typable(double)
 
-ASR *ASR::instance = 0;
-
 ASR::ASR()
 {
-	sem_init(&_sem, 0, 1);
-	sem_wait(&_sem);
-	asio = new ASIOProcessor;
+	_asio = new ASIOProcessor;
 #if WINDOWS
-	ui = new Win32UI(asio);
+	_ui = new Win32UI(_asio);
 #else
 #error no ui defined
 #endif
@@ -52,22 +48,19 @@ ASR::ASR()
 
 ASR::~ASR()
 {
-	asio->Finish();
-	delete ui;
-	delete asio;
+	_asio->Finish();
+	delete _ui;
+	delete _asio;
 }
 
 void ASR::execute()
 {
-	instance = new ASR;
-	sem_post(&instance->_sem);
-	instance->asio->set_ui(instance->ui);
-	instance->ui->create();
-	instance->ui->main_loop();
-	instance->ui->destroy();
-	delete instance;
-	instance = 0;
+	_asio->set_ui(_ui);
+	_ui->create();
+	_ui->main_loop();
+	_ui->destroy();
 }
+
 #if 1
 int main()
 {
@@ -109,7 +102,10 @@ int main()
 
 	//freopen("stdout.txt", "w", stdout);
 
-	ASR::execute();
+	ASR *app = new ASR;
+	app->execute();
+	delete app;
+
 	T_allocator<chunk_t>::dump_leaks();
 #if DEBUG_MALLOC
 	dump_malloc();

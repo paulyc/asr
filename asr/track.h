@@ -230,6 +230,7 @@ public:
 
 	virtual void lock() = 0;
 	virtual void unlock() = 0;
+	virtual ASIOProcessor *get_io() const = 0;
 
 	void create(BufferedStream<Chunk_T> *src)
 	{
@@ -310,7 +311,7 @@ public:
 		if (lock)
 			this->lock();
 		//_display->set_wav_heights(&asio->_io_lock);
-		_display->set_wav_heights(ASR::get_io_instance());
+		_display->set_wav_heights(this->get_io());
 		if (lock)
 			this->unlock();
 		if (unlock)
@@ -335,12 +336,8 @@ public:
 	BufferedSource() : 
 		_src(0), 
 		_src_buf(0), 
-		_filename(0), 
-		_detector(0), 
-		_filter(2048, 44100.0, 200.0),
-		_filter_stream(0)
+		_filename(0)
 	{
-		_filter.init();
 	}
 
 	void create(ASIOProcessor *io, const wchar_t *filename, Lock_T *lock)
@@ -354,6 +351,7 @@ public:
 		else if (wcsstr(filename, L".wav") == filename + wcslen(filename) - 4)
 		{
 			src = new wavfile_chunker<Chunk_T>(filename);
+			//src = new ifffile_chunker<Chunk_T>(filename);
 		}
 		else if (wcsstr(filename, L".flac") == filename + wcslen(filename) - 5)
 		{
@@ -361,17 +359,15 @@ public:
 		}
 		else
 		{
-			throw std::exception("Don't know how to handle this file extension");
+			src = new ifffile_chunker<Chunk_T>(filename);
 		}
 
 		destroy();
 
 		_src = src;
 
-	//	_detector = new BeatDetector<Chunk_T>(_src);
-		_filter_stream = new STFTStream(_src, _filter, 2048, 1024, 100);
-		
-		_src_buf = new BufferedStream<Chunk_T>(io, _filter_stream);
+	//	_detector.reset_source(_src);
+		_src_buf = new BufferedStream<Chunk_T>(io, _src);
 	//	_src_buf->load_complete();
 
 		_filename = filename;
@@ -386,12 +382,8 @@ public:
 
 	void destroy()
 	{
-		delete _filter_stream;
-		_filter_stream = 0;
 		delete _src_buf;
 		_src_buf = 0;
-		delete _detector;
-		_detector = 0;
 		delete _src;
 		_src = 0;
 
@@ -403,9 +395,9 @@ public:
 		return _src_buf->len();
 	}
 
-	const std::list<typename BeatDetector<Chunk_T>::point>& beats()
+	const std::vector<double>& beats()
 	{
-		return _detector->beats();
+		return _detector.beats();
 	}
 
 protected:
@@ -413,13 +405,7 @@ protected:
 	BufferedStream<Chunk_T> *_src_buf;
 	const wchar_t *_filename;
 
-	FilterSourceImpl *_filterSource;
-	lowpass_filter *_lpf;
-	full_wave_rectifier<SamplePairf, Chunk_T> *_rectifier;
-	BeatDetector<Chunk_T> *_detector;
-
-	LPFilter _filter;
-	STFTStream *_filter_stream;
+	BeatDetector<Chunk_T> _detector;
 };
 
 template <typename Chunk_T>
@@ -738,6 +724,10 @@ public:
 	}
 
 protected:
+	ASIOProcessor *get_io() const
+	{
+		return _io;
+	}
 	ASIOProcessor *_io;
 	bool _in_config;
 	bool _paused;

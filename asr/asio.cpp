@@ -149,6 +149,8 @@ void asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::process(int doubleBu
 	}
 }
 
+ASIOProcessor *MyASIOCallbacks::io = 0;
+
 /*
 Purpose:
 bufferSwitchTimeInfo indicates that both input and output are to be processed. It also passes
@@ -157,7 +159,7 @@ back to the driver.
 */
 void MyASIOCallbacks::bufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
 {
-	ASR::get_io_instance()->BufferSwitch(doubleBufferIndex, directProcess);
+	io->BufferSwitch(doubleBufferIndex, directProcess);
 }
 
 ASIOTime* MyASIOCallbacks::bufferSwitchTimeInfo(ASIOTime *params, long doubleBufferIndex, ASIOBool directProcess)

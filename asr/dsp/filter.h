@@ -62,7 +62,7 @@ protected:
 	Precision_T get_coeff(Precision_T tm) 
 	{
 		const Precision_T t_diff = Precision_T(Sample_Precision+1) * _input_sampling_period;
-		int indx = (tm+t_diff)/(2.0*t_diff / (_default_tbl_size));		
+		int indx = (int)((tm+t_diff)/(2.0*t_diff / (_default_tbl_size)));		
 		assert(indx >= 0 && indx < _default_tbl_size);
 		return _coeff_tbl[indx];
 	}
@@ -274,7 +274,7 @@ public:
 		for (SamplePairf *smp = chk->_data; smp < chk->_data + chunk_t::chunk_size; ++smp)
 		{
 			double tInputSample = _tOutputSample - _nCoeffs / _fSampleRate;
-			smp_ofs_t sampleOffset = tInputSample * _fSampleRate;
+			smp_ofs_t sampleOffset = (smp_ofs_t)(tInputSample * _fSampleRate);
 			SamplePairf * inputSample = _src->get_at_ofs(sampleOffset, 3*_nCoeffs);
 			tInputSample = sampleOffset / _fSampleRate;
 		//	double t = -130. / _fSampleRate; // .000294784
@@ -289,8 +289,8 @@ public:
 				++inputSample;
 			}
 
-			(*smp)[0] = acc[0];
-			(*smp)[1] = acc[1];
+			(*smp)[0] = (float32_t)acc[0];
+			(*smp)[1] = (float32_t)acc[1];
 
 			_tOutputSample += 1.0 / _fSampleRate;
 		}

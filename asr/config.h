@@ -60,8 +60,6 @@
 
 #define HANDLE_TOPLEVEL_EXCEPTIONS 0
 
-#define USE_QUEUES 0
-
 #define VINYL_CONTROL 0
 
 #endif // !defined(_CONFIG_H)

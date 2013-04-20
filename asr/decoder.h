@@ -448,7 +448,7 @@ public:
 				} else {
 					bits_t mask;
 					mask = ((1 << 23) - 1);
-					_timecode = rev(-_timecode);
+					_timecode = rev(_timecode);
 					_bitstream = ((_bitstream << 1) & mask) + (bits_t)b.bit;
 				}
 			//	pk_out << "timecode " << timecode << " bitstream " << bitstream << std::endl;
@@ -521,7 +521,7 @@ public:
 			copy_from += to_write;
 			for (int i=0; i<fft_size; ++i)
 			{
-				const double wconst = _window.get_i(i);
+				const float wconst = (float)_window.get_i(i);
 				_inBuf[i*2] *= wconst;
 				_inBuf[i*2+1] *= wconst;
 			}

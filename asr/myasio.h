@@ -12,6 +12,7 @@ public:
 	static ASIOTime* bufferSwitchTimeInfo(ASIOTime *params, long doubleBufferIndex, ASIOBool directProcess);
 	static void sampleRateDidChange(ASIOSampleRate sRate);
 	static long asioMessage(long selector, long value, void *message, double *opt);
+	static ASIOProcessor *io;
 };
 
 class IOInput

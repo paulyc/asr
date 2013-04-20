@@ -12,7 +12,6 @@ typedef ASIOP::track_t track_t;
 #include <wingdi.h>
 #include <dbghelp.h>
 #include "resource.h"
-#define SLEEP 0
 
 HWND g_dlg = NULL;
 HWND g_newwnd = NULL;
@@ -24,13 +23,13 @@ HPEN pen_yel;
 HPEN pen_oran;
 double last_time;
 
-INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
+INT_PTR CALLBACK Win32UI::MyDialogProc(HWND hwndDlg,
     UINT uMsg,
     WPARAM wParam,
     LPARAM lParam
 )
 {
-	ASIOProcessor *asio = ASR::get_io_instance();
+	ASIOProcessor *asio = _io;
 	Win32UI *ui = dynamic_cast<Win32UI*>(asio->get_ui());
 
 	switch (uMsg)
@@ -68,7 +67,6 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 		case WM_HSCROLL:
 			switch (LOWORD(wParam))
 			{
-				wchar_t buf[64];
 				case TB_THUMBPOSITION:
 				case TB_THUMBTRACK:
 				case TB_ENDTRACK:
@@ -216,7 +214,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 				{
 					TCHAR buf[64];
 					asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->goto_pitchpoint();
-					swprintf(buf, L"%.02f%%", (48000.0 / asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->get_pitchpoint() - 1.0)*100.0);
+					swprintf(buf, 64, L"%.02f%%", (48000.0 / asio->GetTrack(LOWORD(wParam)==IDC_BUTTON10 ? 1 : 2)->get_pitchpoint() - 1.0)*100.0);
 					SetDlgItemText(g_dlg, LOWORD(wParam)==IDC_BUTTON10 ? IDC_EDIT3 : IDC_EDIT4, 
 						buf);
 					break;
@@ -240,7 +238,7 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 					int t_id = LOWORD(wParam)==IDC_BUTTON17||LOWORD(wParam)==IDC_BUTTON18 ? 1 : 2;
 					double dp = LOWORD(wParam)==IDC_BUTTON17 || LOWORD(wParam)==IDC_BUTTON19 ? -0.0001 : 0.0001;
 					asio->GetTrack(t_id)->nudge_pitch(dp);
-					swprintf(buf, L"%.02f%%",  (asio->GetTrack(t_id)->get_pitch() - 1.)*100.);
+					swprintf(buf, 64, L"%.02f%%",  (asio->GetTrack(t_id)->get_pitch() - 1.)*100.);
 					SetDlgItemTextW(hwndDlg, t_id==1?IDC_EDIT3:IDC_EDIT4, buf);
 					break;
 				}
@@ -334,7 +332,7 @@ void Win32UI::load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam)
 		sizeof(ofn), // DWORD        lStructSize;
 		hwndDlg, //   HWND         hwndOwner;
 		NULL, //   HINSTANCE    hInstance;
-		TEXT("Sound Files\0*.WAV;*.MP3;*.FLAC;*.AAC;*.MP4;*.AC3\0"
+		TEXT("Sound Files\0*.WAV;*.WAVE;*.MP3;*.FLAC;*.AAC;*.MP4;*.AC3;*.AIFF;*.AIF\0"
 		TEXT("All Files\0*.*")), //   LPCWSTR      lpstrFilter;
 		NULL, //LPWSTR       lpstrCustomFilter;
 		0, //   DWORD        nMaxCustFilter;
@@ -407,13 +405,17 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
+ASIOProcessor *Win32UI::_io = 0;
+
 Win32UI::Win32UI(ASIOProcessor *io) :
 	GenericUI(io, 
-		UITrack(this, 1, IDC_EDIT1, IDC_EDIT3, IDC_EDIT5), 
-		UITrack(this, 2, IDC_EDIT2, IDC_EDIT4, IDC_EDIT6)),
+		UITrack(io, 1, IDC_EDIT1, IDC_EDIT3, IDC_EDIT5), 
+		UITrack(io, 2, IDC_EDIT2, IDC_EDIT4, IDC_EDIT6)),
 	_want_render(false),
 	_want_quit(false)
-{}
+{
+	_io = io;
+}
 
 void Win32UI::create()
 {
@@ -468,7 +470,7 @@ void Win32UI::create()
 		0);
 //	ShowWindow(button, SW_SHOW);
 	
-	g_dlg = CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG1), NULL, MyDialogProc);
+	g_dlg = CreateDialog(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_DIALOG1), NULL, Win32UI::MyDialogProc);
 	if (!g_dlg) {
 		//TCHAR foo[256];
 		//FormatMessage(dwFlags, lpSource, dwMessageId, dwLanguageId, foo, sizeof(foo), Arguments);
@@ -588,12 +590,14 @@ void Win32UI::destroy()
 LONG WINAPI Win32UI::top_level_exception_filter(struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
 	// return address = esp + 4
-	ASR::get_io_instance()->Stop();
+	_io->Stop();
 
 	printf("top level exception filter caught ");
 
-	FILE *ftxt = fopen("error.txt", "w");
-	FILE *fbin = fopen("exception_info.bin", "wb");
+	FILE *ftxt;
+	fopen_s(&ftxt, "error.txt", "w");
+	FILE *fbin;
+	fopen_s(&fbin, "exception_info.bin", "wb");
 	fwrite((const void*)ExceptionInfo->ExceptionRecord, sizeof(EXCEPTION_RECORD), 1, fbin);
 	fwrite((const void*)ExceptionInfo->ContextRecord, sizeof(CONTEXT), 1, fbin);
 	switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
@@ -626,33 +630,9 @@ LONG WINAPI Win32UI::top_level_exception_filter(struct _EXCEPTION_POINTERS *Exce
 
 void Win32UI::main_loop()
 {
-#if SLEEP
-	Sleep(10000);
-#else
 	BOOL bRet;
 	MSG msg;
-#if USE_QUEUES
-	while (true)
-	{
-		while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0) 
-		{
-			if (msg.message == WM_QUIT)
-			{
-				return;
-			}
-			if (!IsWindow(g_dlg) || !IsDialogMessage(g_dlg, &msg)) 
-			{ 
-				TranslateMessage(&msg); 
-				DispatchMessage(&msg); 
-			} 
-			else
-			{
-				TranslateAccelerator(g_dlg, _accelTable, &msg);
-			}
-		} 
-		_future->process_calls();
-	}
-#else
+
 	while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0) 
 	{ 
 		if (bRet == -1)
@@ -670,29 +650,7 @@ void Win32UI::main_loop()
 		{
 			TranslateAccelerator(g_dlg, _accelTable, &msg);
 		}
-	} 
-#endif
-
-#endif // !SLEEP
-}
-
-void Win32UI::process_messages()
-{
-	BOOL bRet;
-	MSG msg;
-
-	while ((bRet = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0) 
-	{
-		if (msg.message == WM_QUIT)
-		{
-
-		}
-		if (!IsWindow(g_dlg) || !IsDialogMessage(g_dlg, &msg)) 
-		{ 
-			TranslateMessage(&msg); 
-			DispatchMessage(&msg); 
-		} 
-	} 
+	}
 }
 
 void Win32UI::set_position(void *t, double p, bool invalidate)
@@ -705,7 +663,7 @@ void Win32UI::set_position(void *t, double p, bool invalidate)
 			uit->wave.playback_pos = p;
 		//}
 		//double len =  asio->_track1->len().time;
-		int new_px = p*uit->wave.width();
+		int new_px = int(p*uit->wave.width());
 		//if (asio)repaint();
 		if ((new_px != uit->wave.px && new_px >=0 && new_px < uit->wave.width()) || invalidate)
 		{
@@ -801,9 +759,9 @@ void Win32UI::render_impl(int t_id)
 		}
 		const track_t::display_t::wav_height &h =
 			track->get_wav_height(p);
-		int px_pk = (1.0-h.peak_top) * height / 2;
-		int px_avg = (1.0-h.avg_top) * height / 2;
-		int px_mn = (1.0+h.peak_bot) * height / 2;
+		int px_pk = (int)((1.0-h.peak_top) * height / 2);
+		int px_avg = (int)((1.0-h.avg_top) * height / 2);
+		int px_mn = (int)((1.0+h.peak_bot) * height / 2);
 		int line_height = px_avg-px_pk;
 		
 		if (h.peak_top != 0.0)
@@ -839,7 +797,7 @@ void Win32UI::render_impl(int t_id)
 	//px = int(playback_pos / len * double(width));
 	if (uit->wave.playback_pos >= 0.0 && uit->wave.playback_pos <= 1.0)
 	{
-		uit->wave.px = uit->wave.playback_pos * width;
+		uit->wave.px = int(uit->wave.playback_pos * width);
 		MoveToEx(hdc, r.left+uit->wave.px, r.top, NULL);
 		SelectObject(hdc, pen_yel);
 		LineTo(hdc, r.left+uit->wave.px, r.top+height);
@@ -850,11 +808,12 @@ void Win32UI::render_impl(int t_id)
 	SelectObject(hdc, pen_oran);
 	LineTo(hdc, r.left+uit->wave.cpx, r.top+height);
 
-/*	const std::list<typename BeatDetector<chunk_t>::point>& beats = track->beats();
-	for (std::list<typename BeatDetector<chunk_t>::point>::const_iterator i = beats.begin(); i != beats.end(); i++)
+#define SHOW_BEATS 0
+#if SHOW_BEATS
+	const std::vector<double>& beats = track->beats();
+	for (int i = 0; i < beats.size(); ++i)
 	{
-		double t = i->t;
-		double pos = track->get_display_pos(t);
+		double pos = track->get_display_pos(beats[i]);
 		if (pos >= 0.0 && pos <= 1.0)
 		{
 			int px = pos * width;
@@ -863,7 +822,8 @@ void Win32UI::render_impl(int t_id)
 			LineTo(hdc, r.left+px, r.top+height);
 		}
 	}
-	*/
+#endif
+	
 	BitBlt(hdc_old, 0, 0, width, height, memDC, 0, 0, SRCCOPY);
 
 	SelectObject(memDC, hOldBmp);

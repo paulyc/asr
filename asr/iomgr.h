@@ -97,7 +97,7 @@ public:
 	~ASIOManager();
 
 	void enumerateIOs();
-	void createBuffers();
+	void createBuffers(ASIOProcessor *io);
 	void createIOs(chunk_buffer *src, chunk_buffer *src2);
 
 	void setOutputSource(int id);

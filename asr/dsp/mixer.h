@@ -29,8 +29,8 @@ public:
 		_clip = false;
 		for (; sout != send; ++s1, ++s2, ++sout)
 		{
-			(*sout)[0] = (*s1)[0]*_src1_mul + (*s2)[0]*_src2_mul;
-			(*sout)[1] = (*s1)[1]*_src1_mul + (*s2)[1]*_src2_mul;
+			(*sout)[0] = float32_t((*s1)[0]*_src1_mul + (*s2)[0]*_src2_mul);
+			(*sout)[1] = float32_t((*s1)[1]*_src1_mul + (*s2)[1]*_src2_mul);
 			if (fabs((*sout)[0]) > 1.0 || fabs((*sout)[1]) > 1.0)
 				_clip = true;
 		}

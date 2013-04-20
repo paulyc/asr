@@ -60,16 +60,22 @@ public:
 	const ChunkMetadata& get_metadata(smp_ofs_t chk_ofs, pthread_mutex_t *lock=0)
 	{
 		int i, indx;
-		if (_chk_data.size() <= chk_ofs)
+		if (chk_ofs < 0)
 		{
-			_chk_data.resize(chk_ofs*2);
+			throw std::exception("cant handle chunk ofs < 0");
 		}
-		ChunkMetadata &meta = _chk_data[chk_ofs];
+
+		usmp_ofs_t uchk_ofs = (usmp_ofs_t)chk_ofs;
+		if (_chk_data.size() <= uchk_ofs)
+		{
+			_chk_data.resize(uchk_ofs*2);
+		}
+		ChunkMetadata &meta = _chk_data[uchk_ofs];
 		Sample_T dabs;
 		if (!meta.valid)
 		{
 		//	if (lock) pthread_mutex_lock(lock);
-			Chunk_T *chk = _src->get_chunk(chk_ofs);
+			Chunk_T *chk = _src->get_chunk(uchk_ofs);
 		//	if (lock) pthread_mutex_unlock(lock);
 
 			if (lock) pthread_mutex_lock(lock);
@@ -113,7 +119,7 @@ public:
 				dBm<Sample_T>::calc(meta.subband[i].avg_db, meta.subband[i].avg);
 				dBm<Sample_T>::calc(meta.subband[i].peak_db, meta.subband[i].peak);
 			}
-			Quotient<Sample_T>::calc(meta.avg, meta.abs_sum, Chunk_T::chunk_size);
+			Quotient<Sample_T>::calc(meta.avg, meta.abs_sum, (float32_t)Chunk_T::chunk_size);
 			dBm<Sample_T>::calc(meta.avg_db, meta.avg);
 			dBm<Sample_T>::calc(meta.peak_db, meta.peak);
 			meta.valid = true;

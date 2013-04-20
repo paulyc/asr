@@ -143,6 +143,21 @@ class QueueingSource : public T_sink_source<T>
 public:
 	QueueingSource(T_source<T> *src) : T_sink_source(src) {}
 
+	~QueueingSource()
+	{
+		reset_source(0);
+	}
+
+	void reset_source(T_source<T> *src)
+	{
+		while (!_t_q.empty())
+		{
+			T_allocator<T>::free(_t_q.front());
+			_t_q.pop();
+		}
+		_src = src;
+	}
+
 	T* get_next()
 	{
 		T *n = _t_q.front();
