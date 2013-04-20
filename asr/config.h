@@ -58,13 +58,13 @@
 
 #define GENERATE_LOOP 1
 
-#define HANDLE_TOPLEVEL_EXCEPTIONS 0
+#define HANDLE_TOPLEVEL_EXCEPTIONS 1
 
 #define VINYL_CONTROL 0
 
 #define DUMMY_ASIO 0
-#define PARALLELS_ASIO 1
+#define PARALLELS_ASIO 0
 
-#define CHUNK_SIZE 4096
+#define CHUNK_SIZE 1024
 
 #endif // !defined(_CONFIG_H)
