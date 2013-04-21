@@ -8,6 +8,15 @@
 class ASIOProcessor;
 class GenericUI;
 
+#ifndef WIN32
+struct RECT {
+	int    left;
+    int    top;
+    int    right;
+    int    bottom;
+};
+#endif
+
 struct UIWavform
 {
 	UIWavform() :
@@ -209,9 +218,9 @@ INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
 #endif // WINDOWS
 
 #if OPENGL_ENABLED
-#include <gl/GL.h>
-#include <gl/GLU.h>
-#include <gl/GLUT.h>
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#include <GLUTglut.h>
 
 class OpenGLUI : public GenericUI
 {

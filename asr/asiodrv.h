@@ -3,8 +3,12 @@
 
 #include "config.h"
 
+
+
+#if WINDOWS
 #include <asio.h>
 #include <windows.h>
+
 
 interface IASIO : public IUnknown
 {
@@ -87,5 +91,7 @@ public:
 private:
 	ULONG _refCount;
 };
+
+#endif
 
 #endif

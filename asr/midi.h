@@ -3,7 +3,9 @@
 
 #include "type.h"
 
+#if WINDOWS
 #include <windows.h>
+#endif
 
 class IMIDIDevice
 {
@@ -18,6 +20,7 @@ public:
 	virtual void RegisterCallback(MIDICallback cb, void *param) = 0;
 };
 
+#if WINDOWS
 class Win32MIDIDevice : IMIDIDevice
 {
 public:
@@ -38,6 +41,7 @@ private:
 	MIDICallback _cb;
 	void *_cbParam;
 };
+#endif
 
 class IMIDIDeviceFactory
 {
@@ -48,12 +52,14 @@ public:
 	virtual IMIDIDevice* Instantiate(int id, bool input) = 0;
 };
 
+#if WINDOWS
 class Win32MIDIDeviceFactory : public IMIDIDeviceFactory
 {
 public:
 	void Enumerate();
 	IMIDIDevice* Instantiate(int id, bool input);
 };
+#endif
 
 // time is system time
 struct ControlMsg

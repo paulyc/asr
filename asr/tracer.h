@@ -1,10 +1,16 @@
 #ifndef _TRACER_H
 #define _TRACER_H
 
+#if MAC
+#include <ext/hash_map>
+#else
 #include <hash_map>
+#endif
 #include <stack>
 
+#if WINDOWS
 #include <windows.h>
+#endif
 #include <pthread.h>
 
 #include "config.h"

@@ -408,7 +408,7 @@ template <typename T>
 class deferred0 : public functor0<T>, public deferred
 {
 public:
-	deferred0(T *obj, void(T::*f)()) : functor0(obj, f) {}
+	deferred0(T *obj, void(T::*f)()) : functor0<T>(obj, f) {}
 };
 
 template <typename T, typename Ret>
@@ -437,7 +437,7 @@ template <typename T, typename Param1>
 class deferred1 : public functor1<T, Param1>, public deferred
 {
 public:
-	deferred1(T *obj, void(T::*f)(Param1), Param1 p1) : functor1(obj, f), _p1(p1) {}
+	deferred1(T *obj, void(T::*f)(Param1), Param1 p1) : functor1<T, Param1>(obj, f), _p1(p1) {}
 	void operator()()
 	{
 		functor1<T, Param1>::operator ()(_p1);
@@ -472,7 +472,7 @@ template <typename T, typename Param1, typename Param2>
 class deferred2 : public functor2<T, Param1, Param2>, public deferred
 {
 public:
-	deferred2(T *obj, void(T::*f)(Param1, Param2), Param1 p1, Param2 p2) : functor2(obj, f), _p1(p1), _p2(p2) {}
+	deferred2(T *obj, void(T::*f)(Param1, Param2), Param1 p1, Param2 p2) : functor2<T, Param1, Param2>(obj, f), _p1(p1), _p2(p2) {}
 	void operator()()
 	{
 		functor2<T, Param1, Param2>::operator ()(_p1, _p2);
@@ -498,7 +498,7 @@ class deferred3 : public functor3<T, Param1, Param2, Param3>, public deferred
 {
 public:
 	deferred3(T *obj, void(T::*f)(Param1,Param2,Param3), Param1 p1, Param2 p2, Param3 p3) : 
-	  functor3(obj, f), _p1(p1), _p2(p2), _p3(p3) {}
+	  functor3<T, Param1, Param2, Param3>(obj, f), _p1(p1), _p2(p2), _p3(p3) {}
 	void operator()()
 	{
 		functor3<T, Param1, Param2, Param3>::operator ()(_p1, _p2, _p3);
@@ -561,46 +561,49 @@ class ts_queue : public fast_queue<T>
 {
 public:
 	ts_queue():
-		fast_queue(),
-		_lock(PTHREAD_MUTEX_INITIALIZER),
-		(PTHREAD_COND_INITIALIZER){}
+		fast_queue(){}
 	void push (T item)
 	{
-		pthread_mutex_lock(&_lock);
+		_lock.acquire
 		fast_queue<T>::push(item);
-		pthread_cond_signal(&_wait);
-		pthread_mutex_unlock(&_lock);
+		_cond.signal();
+		_lock.release();
 	}
 	T pop()
 	{
-		pthread_mutex_lock(&_lock);
+		_lock.acquire();
 		T it = fast_queue<T>::pop();
-		pthread_mutex_unlock(&_lock);
+		_lock.release();
 		return it;
 	}
 	T pop_wait()
 	{
-		pthread_mutex_lock(&_lock);
+		_lock.acquire();
 		while (!count1())
-			pthread_cond_wait(&_cond, &_lock);
+			_cond.signal(_lock);
 		T it = fast_queue<T>::pop();
-		pthread_mutex_unlock(&_lock);
+		_lock.release();
 		return it;
 	}
 	unsigned count()
 	{
-		pthread_mutex_lock(&_lock);
+		_lock.acquire();
 		unsigned c = count1();
-		pthread_mutex_unlock(&_lock);
+		_lock.release();
 		return c;
 	}
 private:
-	pthread_mutex_t _lock;
-	pthread_cond_t _cond;
+	Lock_T _lock;
+	Condition_T _cond;
 };
 
-#define LOCK_IF_SMP(lock) pthread_mutex_lock(lock);
-#define UNLOCK_IF_SMP(lock) pthread_mutex_unlock(lock);
+#if ONE_CPU
+#define LOCK_IF_SMP(lock) lock->acquire();
+#define UNLOCK_IF_SMP(lock) lock->release();
+#else
+#define LOCK_IF_SMP(lock)
+#define UNLOCK_IF_SMP(lock)
+#endif
 
 template <int N, typename T=double>
 class moving_average
@@ -627,8 +630,8 @@ protected:
 };
 
 #define CRITICAL_SECTION_GUARD(lock, yield_condition) if (lock) { \
-pthread_mutex_lock(lock); \
-pthread_mutex_unlock(lock); \
+lock->acquire(); \
+lock->release(); \
 if (yield_condition) sched_yield(); }
 
 #endif

@@ -6,11 +6,14 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
-#include <objbase.h>
 #include <fstream>
 #include <queue>
 #include <exception>
 #include <semaphore.h>
+
+#ifdef WIN32
+#include <objbase.h>
+#endif
 
 #include "asr.h"
 #include "type.h"

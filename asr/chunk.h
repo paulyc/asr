@@ -4,9 +4,12 @@
 #include <fftw3.h>
 #include <list>
 #include <cassert>
+#include "util.h"
 
+#if WINDOWS
 #define ntohl(x) ((((x) & 0xFF000000) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) & 0x000000FF) << 24)
 #define ntohs(x) ((((x) & 0xFF00) >> 8) | (((x) & 0x00FF) << 8))
+#endif
 
 struct countable
 {
@@ -45,17 +48,31 @@ class chunk_base : public countable
 public:
 	chunk_base(Sample_T *input=0) :
 	    countable(),
-		_input_data(input)
+		_data(input)
 	{
+	}
+
+	virtual ~chunk_base()
+	{
+		fftwf_free(_data);
 	}
 
 	typedef Sample_T sample_t;
 
 //protected:
+	
 	Sample_T *_data;
-	Sample_T *_input_data;
 //	fftwf_plan _default_plan;
 //	static bool _initd;
+};
+
+template <typename Sample_T>
+class chunk_base_dim : virtual public chunk_base<Sample_T>
+{
+public:
+	virtual int dim() = 0;
+	virtual const int* sizes_as_array() = 0;
+	virtual size_t size_as_bytes() = 0;
 };
 
 //template <typename Sample_T>
@@ -66,23 +83,22 @@ class chunk_base_domain : virtual public chunk_base<Sample_T>
 {
 public:
 	chunk_base_domain() :
-		chunk_base()
+		chunk_base<Sample_T>(0)
 	{
-		assert(_data);
 	}
 
 	chunk_base_domain(chunk_freq_domain<Sample_T> *chk) :
-		chunk_base(chk->_data)
+		chunk_base<Sample_T>(chk->_data)
 	{
-		assert(_data);
 		init_from_chunk(chk);
+		assert(chk->_data);
 	}
 
 	chunk_base_domain(chunk_time_domain<Sample_T> *chk) :
-		chunk_base(chk->_data)
+		chunk_base<Sample_T>(chk->_data)
 	{
-		assert(_data);
 		init_from_chunk(chk);
+		assert(chk->_data);
 	}
 	
 	virtual void init_from_chunk(chunk_freq_domain<Sample_T> *chk) = 0;
@@ -131,19 +147,6 @@ public:
 	{
 		copy_from_chunk_transform(chk, FFTW_FORWARD);
 	}
-};
-
-template <typename Sample_T>
-class chunk_base_dim : virtual public chunk_base<Sample_T>
-{
-public:
-	virtual ~chunk_base_dim()
-	{
-		fftwf_free(_data);
-	}
-	virtual int dim() = 0;
-	virtual const int* sizes_as_array() = 0;
-	virtual size_t size_as_bytes() = 0;
 };
 
 template <typename Sample_T, int n0>

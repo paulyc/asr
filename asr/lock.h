@@ -647,6 +647,6 @@ public:
 #endif
 
 typedef PthreadLock Lock_T;
-
+typedef PthreadCondition Condition_T;
 
 #endif // !defined(_LOCK_H)

@@ -1,8 +1,13 @@
 #ifndef _MALLOC_H
 #define _MALLOC_H
 
+#include <exception>
 #include <queue>
+#if MAC
+#include <tr1/unordered_map>
+#else
 #include <hash_map>
+#endif
 
 #ifdef WIN32
 #include <windows.h>
@@ -37,6 +42,19 @@ struct PageListNode {
 	PageListNode<PageSize> *prev, *next;
 };
 
+#if WINDOWS
+typedef std::exception string_exception;
+#else
+class string_exception : public std::exception
+{
+public:
+	string_exception(const char *p) : std::exception(), _p(p) {}
+	const char *what() { return _p; }
+private:
+	const char *_p;
+};
+#endif
+
 class StackAllocator
 {
 public:
@@ -49,7 +67,7 @@ public:
 	}
 	void* alloc(int n) {
 		if (n > Page<>::size - sizeof(PageListNode<>))
-			throw std::exception("StackAllocator size too large " + n);
+			throw string_exception("StackAllocator size too large " + n);
 		if (_top + n >= (char*)_last->page.p + Page<>::size)
 		{
 			Page<> new_page = PageAllocator<>::alloc();
@@ -110,7 +128,7 @@ public:
 	  _first(PageAllocator<>::alloc())
 	{
 		_last = &_first;
-		_top_ptr = _first.p;
+		_top_ptr = _first.page.p;
 	}
 	void* alloc()
 	{
@@ -160,10 +178,6 @@ class T_allocator
 {
 protected:
 	T_allocator(){}
-	static void init()
-	{
-		pthread_mutex_init(&_lock, 0);
-	}
 	static std::queue<T*> _T_queue;
 	static PthreadLock _lock;
 #if DEBUG_ALLOCATOR
@@ -172,7 +186,12 @@ protected:
 		const char *file;
 		int line;
 	};
-	static stdext::hash_map<T*, t_info> _info_map;
+#if WINDOWS
+	typedef stdext::hash_map<T*, t_info> info_map_t;
+#else
+	typedef typename std::tr1::unordered_map<typename T*, t_info> info_map_t;
+#endif
+	static info_map_t _info_map;
 #endif
 public:
 	~T_allocator<T>() // no virtual destruct?
@@ -237,8 +256,7 @@ public:
 #if DEBUG_ALLOCATOR
 	static void dump_leaks()
 	{
-		for (stdext::hash_map<T*, t_info>::iterator i = _info_map.begin();
-			i != _info_map.end(); ++i)
+		for (info_map_t::iterator i = _info_map.begin(); i != _info_map.end(); i++)
 		{
 			if (i->first->_refs > 0)
 			{
@@ -248,6 +266,7 @@ public:
 					i->first->_refs);
 			}
 		}
+		_info_map.clear();
 	}
 #else
 	static void dump_leaks()
@@ -257,7 +276,7 @@ public:
 };
 #if DEBUG_ALLOCATOR
 template <typename T>
-stdext::hash_map<T*, typename T_allocator<T>::t_info> T_allocator<T>::_info_map;
+typename T_allocator<T>::info_map_t T_allocator<T>::_info_map;
 
 #define alloc() alloc_from(__FILE__, __LINE__)
 #endif

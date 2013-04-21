@@ -1,15 +1,19 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-#undef MAC 
+#define MAC 1
 #define PPC 0
-#define WINDOWS 1
+#define WINDOWS 0
 #define SGI 0
 #define SUN 0
 #define LINUX 0
 #define BEOS 0
 
+#if MAC
+#define OPENGL_ENABLED 1
+#else
 #define OPENGL_ENABLED 0
+#endif
 
 #if WINDOWS
 #include <windows.h>

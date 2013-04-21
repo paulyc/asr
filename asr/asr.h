@@ -2,7 +2,11 @@
 #define _ASR_H
 
 #include <map>
+#if MAC
+#include <ext/hash_map>
+#else
 #include <hash_map>
+#endif
 #include <queue>
 #include <cassert>
 #include <exception>
@@ -24,29 +28,6 @@
 
 #include "type.h"
 
-/*
-SamplePairf& operator=(SamplePairf &lhs, float rhs)
-{
-	lhs[0] = rhs;
-	lhs[1] = rhs;
-	return lhs;
-}
-
-SamplePairf operator*(SamplePairf &lhs, float rhs)
-{
-	SamplePairf val;
-	val[0] = lhs[0] * rhs;
-	val[1] = lhs[1] * rhs;
-	return val;
-}
-
-SamplePairf& operator*=(SamplePairf &lhs, float rhs)
-{
-	lhs[0] *= rhs;
-	lhs[1] *= rhs;
-	return lhs;
-}
-*/
 #include <semaphore.h>
 #include "chunk.h"
 #include "malloc.h"
