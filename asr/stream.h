@@ -97,7 +97,7 @@ class T_sink_sourceable : public T_sink<T>
 {
 public:
 	T_sink_sourceable(T_source<T> *src) :
-	  T_sink(src)
+	  T_sink<T>(src)
 	{
 		pthread_mutex_init(&_src_lock, 0);
 	}
@@ -108,7 +108,7 @@ public:
 	void set_source(T_source<T> *src)
 	{
 		pthread_mutex_lock(&_src_lock);
-		_src = src;
+		this->_src = src;
 		pthread_mutex_unlock(&_src_lock);
 	}
 protected:
@@ -120,20 +120,20 @@ class T_sink_source : public T_source<T>, public T_sink<T>
 {
 public:
 	T_sink_source(T_source<T> *src=0) :
-	  T_sink(src)
+	  T_sink<T>(src)
 	{
 	}
 	virtual T* next()
 	{
-		return _src->next();
+		return this->_src->next();
 	}
 	virtual bool eof()
 	{
-		return _src->eof();
+		return this->_src->eof();
 	}
-	virtual pos_info& len()
+	virtual typename T_source<T>::pos_info& len()
 	{
-		return _src->len();
+		return this->_src->len();
 	}
 };
 
@@ -141,7 +141,7 @@ template <typename T>
 class QueueingSource : public T_sink_source<T>
 {
 public:
-	QueueingSource(T_source<T> *src) : T_sink_source(src) {}
+	QueueingSource(T_source<T> *src) : T_sink_source<T>(src) {}
 
 	~QueueingSource()
 	{
@@ -155,7 +155,7 @@ public:
 			T_allocator<T>::free(_t_q.front());
 			_t_q.pop();
 		}
-		_src = src;
+		this->_src = src;
 	}
 
 	T* get_next()
@@ -167,7 +167,7 @@ public:
 
 	T *next() 
 	{ 
-		T *process_chk = _src->next();
+		T *process_chk = this->_src->next();
 		T *passthru_chk = T_allocator<T>::alloc();
 		memcpy(passthru_chk->_data, process_chk->_data, T::chunk_size*sizeof(SamplePairf));
 		_t_q.push(passthru_chk);
@@ -207,7 +207,7 @@ public:
 		}
 		return chk;
 	}
-	typedef typename T chunk_t;
+	typedef T chunk_t;
 };
 
 template <typename T>
@@ -222,10 +222,10 @@ class file_raw_output : public T_sink_sourceable<Chunk_T>
 protected:
 	FILE *_f;
 public:
-	file_raw_output(T_source<Chunk_T> *src, const wchar_t *filename=L"output.raw") :
-	  T_sink_sourceable(src)
+	file_raw_output(T_source<Chunk_T> *src, const char *filename="output.raw") :
+	  T_sink_sourceable<Chunk_T>(src)
 	{
-		_wfopen_s(&_f, filename, L"wb");
+		_f = fopen(filename, "wb");
 	}
 	  ~file_raw_output()
 	  {
@@ -237,7 +237,7 @@ public:
 	  }
 	virtual void process()
 	{
-		Chunk_T *t = _src->next();
+		Chunk_T *t = this->_src->next();
 		fwrite(t->_data, Chunk_T::sample_size, Chunk_T::chunk_size, _f);
 		T_allocator<Chunk_T>::free(t);
 	}

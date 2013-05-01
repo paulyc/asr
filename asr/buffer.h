@@ -139,7 +139,7 @@ class FilterSource : public T_sink_source<Chunk_T>
 {
 public:
 	FilterSource(T_source<Chunk_T> *src) :
-	  T_sink_source(src) {}
+	  T_sink_source<Chunk_T>(src) {}
 
 	virtual typename Chunk_T::sample_t* get_at_ofs(smp_ofs_t ofs, int n) = 0;
 };
@@ -153,7 +153,7 @@ public:
 	const static int BufSz = 0x3000;
 
 	BufferedStream(ASIOProcessor *io, T_source<Chunk_T> *src, double smp_rate=44100.0, bool preload=true) :
-	  FilterSource(src),
+	  FilterSource<Chunk_T>(src),
 	  _io(io),
 	  _chks(10000, 0),
 	  _chk_ofs(0),
@@ -177,7 +177,7 @@ public:
 		pthread_mutex_destroy(&_data_lock);
 		pthread_mutex_destroy(&_src_lock);
 		pthread_mutex_destroy(&_buffer_lock);
-		std::vector<Chunk_T *>::iterator i;
+		typename std::vector<Chunk_T*>::iterator i;
 		for (i = _chks.begin(); i != _chks.end(); ++i)
 		{
 			T_allocator<Chunk_T>::free(*i);
@@ -187,7 +187,7 @@ public:
 	Chunk_T *get_chunk(unsigned int chk_ofs)
 	{
 		// dont think this needs locked??
-		if (_src->len().chunks != -1 && chk_ofs >= uchk_ofs_t(_src->len().chunks))
+		if (this->_src->len().chunks != -1 && chk_ofs >= uchk_ofs_t(this->_src->len().chunks))
 		{
 			return zero_source<Chunk_T>::get()->next();
 		}
@@ -202,7 +202,7 @@ public:
 			try
 			{
 				pthread_mutex_lock(&_src_lock);
-				_src->seek_chk(chk_ofs);
+				this->_src->seek_chk(chk_ofs);
 			} 
 			catch (std::exception e)
 			{
@@ -210,7 +210,7 @@ public:
 				pthread_mutex_unlock(&_src_lock);
 				return zero_source<Chunk_T>::get()->next();
 			}
-			Chunk_T *c = _src->next();
+			Chunk_T *c = this->_src->next();
 			pthread_mutex_unlock(&_src_lock);
 			pthread_mutex_lock(&_buffer_lock);
 			_chks[chk_ofs] = c;
@@ -235,7 +235,7 @@ public:
 		{
 			pthread_mutex_unlock(&_buffer_lock);
 			pthread_mutex_lock(&_src_lock);
-			c = _src->next();
+			c = this->_src->next();
 			pthread_mutex_unlock(&_src_lock);
 			pthread_mutex_lock(&_buffer_lock);
 			_chks[uchk_ofs] = c;
@@ -250,7 +250,7 @@ public:
 		smp_ofs_t ofs_in_chk;
 		Chunk_T *chk = T_allocator<Chunk_T>::alloc(), *buf_chk = get_chunk(_chk_ofs);
 		smp_ofs_t to_fill = Chunk_T::chunk_size, loop_fill;
-		Chunk_T::sample_t *to_ptr = chk->_data;
+		typename Chunk_T::sample_t *to_ptr = chk->_data;
 		pthread_mutex_lock(&_data_lock);
 		while (to_fill > 0)
 		{
@@ -291,7 +291,7 @@ public:
 
 	int get_samples(double tm, typename Chunk_T::sample_t *buf, int num)
 	{
-		smp_ofs_t ofs = tm *_src->sample_rate();
+		smp_ofs_t ofs = tm * this->_src->sample_rate();
 		return get_samples(ofs, buf, num);
 	}
 	int get_samples(smp_ofs_t ofs, typename Chunk_T::sample_t *buf, int num)
@@ -319,12 +319,12 @@ public:
 				pthread_mutex_unlock(&_buffer_lock);
 				pthread_mutex_lock(&_src_lock);
 				Chunk_T *c = 0;
-				if (_src->len().chunks != -1 && usmp_ofs_t(_src->len().chunks) <= chk_ofs)
+				if (this->_src->len().chunks != -1 && usmp_ofs_t(this->_src->len().chunks) <= chk_ofs)
 					c = zero_source<Chunk_T>::get()->next();
 				else
 				{
-					_src->seek_chk(chk_ofs);
-					c = _src->next();
+					this->_src->seek_chk(chk_ofs);
+					c = this->_src->next();
 				}
 				pthread_mutex_unlock(&_src_lock);
 				pthread_mutex_lock(&_buffer_lock);
@@ -348,38 +348,38 @@ public:
 		return written;
 	}
 
-	pos_info& len()
+	typename T_source<Chunk_T>::pos_info& len()
 	{
-		return _src->len();
+		return this->_src->len();
 	}
 
 	int load_complete()
 	{
 		int chk = 0;
-		for (; !_src->eof(); ++chk)
+		for (; !this->_src->eof(); ++chk)
 		{
 			next_chunk(chk);
 		}
-		_len.chunks = chk-1;
+		this->_len.chunks = chk-1;
 		pthread_mutex_lock(&_src_lock);
-		_src->len().chunks = chk-1;
-		_src->len().samples = _src->len().chunks*Chunk_T::chunk_size;
-		_src->len().smp_ofs_in_chk = _src->len().samples % _src->len().chunks;
-		_src->len().time = _src->len().samples/_src->sample_rate();
+		this->_src->len().chunks = chk-1;
+		this->_src->len().samples = this->_src->len().chunks*Chunk_T::chunk_size;
+		this->_src->len().smp_ofs_in_chk = this->_src->len().samples % this->_src->len().chunks;
+		this->_src->len().time = this->_src->len().samples/this->_src->sample_rate();
 		pthread_mutex_unlock(&_src_lock);
-		return _len.chunks;
+		return this->_len.chunks;
 	}
 
 	bool load_next()
 	{
-		if (_src->eof())
+		if (this->_src->eof())
 		{
-			_len.chunks = _chk_ofs_loading-1;
+			this->_len.chunks = _chk_ofs_loading-1;
 			pthread_mutex_lock(&_src_lock);
-			_src->len().chunks = _chk_ofs_loading-1;
-			_src->len().samples = _src->len().chunks*Chunk_T::chunk_size;
-			_src->len().smp_ofs_in_chk = _src->len().samples % _src->len().chunks;
-			_src->len().time = _src->len().samples/_src->sample_rate();
+			this->_src->len().chunks = _chk_ofs_loading-1;
+			this->_src->len().samples = this->_src->len().chunks*Chunk_T::chunk_size;
+			this->_src->len().smp_ofs_in_chk = this->_src->len().samples % this->_src->len().chunks;
+			this->_src->len().time = this->_src->len().samples/this->_src->sample_rate();
 			pthread_mutex_unlock(&_src_lock);
 			return false;
 		}
@@ -393,7 +393,7 @@ public:
 
 	Sample_T* load(double tm)
 	{
-		_src->get_samples(tm, _buffer, BufSz);
+		this->_src->get_samples(tm, _buffer, BufSz);
 		_buffer_tm = tm;
 		_buffer_p = _buffer;
 		return _buffer_p;
@@ -410,7 +410,7 @@ public:
 			}
 			else
 			{
-				smp_ofs_t ofs = tm_diff * _src->sample_rate();
+				smp_ofs_t ofs = tm_diff * this->_src->sample_rate();
 				if (ofs+num_samples >= BufSz)
 				{
 					return load(tm);

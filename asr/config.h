@@ -10,7 +10,7 @@
 #define BEOS 0
 
 #if MAC
-#define OPENGL_ENABLED 1
+#define OPENGL_ENABLED 0
 #else
 #define OPENGL_ENABLED 0
 #endif

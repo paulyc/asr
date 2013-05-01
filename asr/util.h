@@ -561,10 +561,10 @@ class ts_queue : public fast_queue<T>
 {
 public:
 	ts_queue():
-		fast_queue(){}
+		fast_queue<T>(){}
 	void push (T item)
 	{
-		_lock.acquire
+		_lock.acquire();
 		fast_queue<T>::push(item);
 		_cond.signal();
 		_lock.release();
@@ -579,8 +579,8 @@ public:
 	T pop_wait()
 	{
 		_lock.acquire();
-		while (!count1())
-			_cond.signal(_lock);
+		while (!fast_queue<T>::count1())
+			_cond.signal();
 		T it = fast_queue<T>::pop();
 		_lock.release();
 		return it;
@@ -588,7 +588,7 @@ public:
 	unsigned count()
 	{
 		_lock.acquire();
-		unsigned c = count1();
+		unsigned c = fast_queue<T>::count1();
 		_lock.release();
 		return c;
 	}
@@ -633,5 +633,8 @@ protected:
 lock->acquire(); \
 lock->release(); \
 if (yield_condition) sched_yield(); }
+
+#define min(x,y) ((x) < (y) ? (x) : (y))
+#define max(x,y) ((x) > (y) ? (x) : (y))
 
 #endif

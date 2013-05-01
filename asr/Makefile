@@ -3,7 +3,10 @@ CFLAGS=-c -Wall -I../fftw-3.3.3 -I../libmad-0.15.1b -I../flac-1.2.1/include -I..
 
 all: asr
 
-asr: ui_gl.o
+asr: io.o
 
 ui_gl.o: ui_gl.cpp
 	$(CC) $(CFLAGS) ui_gl.cpp
+
+io.o: io.cpp
+	$(CC) $(CFLAGS) io.cpp

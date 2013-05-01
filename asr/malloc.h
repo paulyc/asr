@@ -189,7 +189,7 @@ protected:
 #if WINDOWS
 	typedef stdext::hash_map<T*, t_info> info_map_t;
 #else
-	typedef typename std::tr1::unordered_map<typename T*, t_info> info_map_t;
+	typedef typename std::tr1::unordered_map<T*, typename T_allocator<T>::t_info> info_map_t;
 #endif
 	static info_map_t _info_map;
 #endif
@@ -256,7 +256,7 @@ public:
 #if DEBUG_ALLOCATOR
 	static void dump_leaks()
 	{
-		for (info_map_t::iterator i = _info_map.begin(); i != _info_map.end(); i++)
+		for (typename info_map_t::iterator i = _info_map.begin(); i != _info_map.end(); i++)
 		{
 			if (i->first->_refs > 0)
 			{

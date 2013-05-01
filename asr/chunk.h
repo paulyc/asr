@@ -115,7 +115,7 @@ protected:
 	void copy_from_chunk_direct(chunk_base_domain<Sample_T> *chk)
 	{
 		chunk_base_dim<Sample_T> *chk_dim = dynamic_cast<chunk_base_dim<Sample_T>*>(chk);
-		memcpy(_data, chk->_data, chk_dim->size_as_bytes());
+		memcpy(this->_data, chk->_data, chk_dim->size_as_bytes());
 	}
 };
 
@@ -155,13 +155,13 @@ class chunk_1d : public chunk_base_dim<Sample_T>
 public:
 	chunk_1d()
 	{
-		_data = (Sample_T*)fftwf_malloc(size_as_bytes()+n0*sizeof(Sample_T)); // padding for inplace DFT
+		this->_data = (Sample_T*)fftwf_malloc(size_as_bytes()+n0*sizeof(Sample_T)); // padding for inplace DFT
 		if (!_plan)
 		{
 			_plan = fftwf_plan_dft_r2c_2d(n0, 2,
-				(float*)_data, (fftwf_complex*)_data, FFTW_MEASURE);
+				(float*)this->_data, (fftwf_complex*)this->_data, FFTW_MEASURE);
 			_iplan = fftwf_plan_dft_c2r_2d(n0, 2,
-				(fftwf_complex*)_data, (float*)_data, FFTW_MEASURE);
+				(fftwf_complex*)this->_data, (float*)this->_data, FFTW_MEASURE);
 		}
 		_domain = time;
 	}
@@ -180,20 +180,20 @@ public:
 	}
 	Sample_T& dereference(int m0)
 	{
-		return _data[m0];
+		return this->_data[m0];
 	}
 
 	enum { time, freq } _domain;
 
 	void inplace_dft()
 	{
-		fftwf_execute_dft_r2c(_plan, (float*)_data, (fftwf_complex*)_data);
+		fftwf_execute_dft_r2c(_plan, (float*)this->_data, (fftwf_complex*)this->_data);
 		_domain = freq;
 	}
 
 	void inplace_idft()
 	{
-		fftwf_execute_dft_c2r(_iplan, (fftwf_complex*)_data, (float*)_data);
+		fftwf_execute_dft_c2r(_iplan, (fftwf_complex*)this->_data, (float*)this->_data);
 		_domain = time;
 	}
 
@@ -215,7 +215,7 @@ class chunk_2d : public chunk_base_dim<Sample_T>
 public:
 	chunk_2d()
 	{
-		_data = (Sample_T*)fftwf_malloc(size_as_bytes());
+		this->_data = (Sample_T*)fftwf_malloc(size_as_bytes());
 	}
 	int dim()
 	{
@@ -232,7 +232,7 @@ public:
 	}
 	Sample_T& dereference(int m0, int m1)
 	{
-		return _data[m0*n1+m1];
+		return this->_data[m0*n1+m1];
 	}
 
 	static const int chunk_size = n0*n1;
@@ -244,7 +244,7 @@ class chunk_3d : public chunk_base_dim<Sample_T>
 public:
 	chunk_3d()
 	{
-		_data = (Sample_T*)fftwf_malloc(size_as_bytes());
+		this->_data = (Sample_T*)fftwf_malloc(size_as_bytes());
 	}
 	int dim()
 	{
@@ -261,7 +261,7 @@ public:
 	}
 	Sample_T& dereference(int m0, int m1, int m2)
 	{
-		return _data[m0*n0+m1*n1+m2];
+		return this->_data[m0*n0+m1*n1+m2];
 	}
 	static const int chunk_size = n0*n1*n2;
 };
@@ -289,9 +289,9 @@ public:
 	template <typename Src_T>
 	void load_from(Src_T *buf)
 	{
-		for (int r=0; r < chunk_size; ++r)
+		for (int r=0; r < this->chunk_size; ++r)
 		{
-			PairFromT<SamplePairf, Src_T>(_data[r], buf[r*2], buf[r*2+1]);
+			PairFromT<SamplePairf, Src_T>(this->_data[r], buf[r*2], buf[r*2+1]);
 		}
 	}
 
@@ -300,7 +300,7 @@ public:
 	void load_from_bytes(uint8_t *buf, int bytes_per_sample)
 	{
 		double multiplier = 1.0 / (0x7FFFFFFF >> (8*(4-bytes_per_sample)));
-		for (int r=0; r < chunk_size; ++r)
+		for (int r=0; r < this->chunk_size; ++r)
 		{
 			int32_t val;
 			switch (bytes_per_sample)
@@ -323,7 +323,7 @@ public:
 				buf += 4;
 				break;
 			}
-			_data[r][0] = float32_t(val * multiplier);
+			this->_data[r][0] = float32_t(val * multiplier);
 			switch (bytes_per_sample)
 			{
 			case 1:
@@ -344,24 +344,24 @@ public:
 				buf += 4;
 				break;
 			}
-			_data[r][1] = float32_t(val * multiplier);
+			this->_data[r][1] = float32_t(val * multiplier);
 		}
 	}
 
 	void load_from_bytes_x(uint8_t *buf)
 	{
 		double multiplier = 1.0 / (0x7FFFFFFF >> (8*(4-2)));
-		for (int r=0; r < chunk_size; ++r)
+		for (int r=0; r < this->chunk_size; ++r)
 		{
 			uint16_t val;
 			val = *(uint16_t*)buf;
 			val = ntohs(val);
 			buf += 2;
-			_data[r][0] = (float)(((int16_t)val) * multiplier);
+			this->_data[r][0] = (float)(((int16_t)val) * multiplier);
 			val = *(uint16_t*)buf;
 			val = ntohs(val);
 			buf += 2;
-			_data[r][1] =  (float)(((int16_t)val) * multiplier);
+			this->_data[r][1] =  (float)(((int16_t)val) * multiplier);
 		}
 	}
 
@@ -371,9 +371,9 @@ public:
 	{
 		char *b = buf;
 		const unsigned int mask = (unsigned int)0xFFFFFFFF >> (4 - bytes_per_sample)*8;
-		for (int r=0; r < chunk_size; ++r)
+		for (int r=0; r < this->chunk_size; ++r)
 		{
-			PairFromT<SamplePairf, int>(_data[r], *((int*)b) & mask, *((int*)(b+_bytes_per_sample)) & mask);
+			PairFromT<SamplePairf, int>(this->_data[r], *((int*)b) & mask, *((int*)(b+_bytes_per_sample)) & mask);
 			b += 2*bytes_per_sample;
 		}
 	}
