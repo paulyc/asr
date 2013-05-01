@@ -25,11 +25,6 @@ public:
 
 	static void init()
 	{
-		pthread_mutex_init(&_job_lock, 0);
-		pthread_cond_init(&_cr_job_rdy, 0);
-		pthread_cond_init(&_job_rdy, 0);
-		pthread_cond_init(&_job_done, 0);
-
 		(new Worker)->spin(true);
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
@@ -40,10 +35,6 @@ public:
 
 	static void destroy()
 	{
-		pthread_cond_destroy(&_job_done);
-		pthread_cond_destroy(&_job_rdy);
-		pthread_cond_destroy(&_cr_job_rdy);
-		pthread_mutex_destroy(&_job_lock);
 	}
 
 	pthread_t _tid;
@@ -64,9 +55,9 @@ public:
 	{
 		Source_T *src;
 		typename Source_T::chunk_t **result;
-		pthread_mutex_t *lock;
+		Lock_T *lock;
 		generate_chunk_job(Source_T *s, 
-			typename Source_T::chunk_t **r, pthread_mutex_t *l) :
+			typename Source_T::chunk_t **r, Lock_T *l) :
 			src(s), result(r), lock(l) {_name="generate chunk";}
 
 		void do_it()
@@ -123,10 +114,8 @@ public:
 	template <typename Track_T>
 	struct load_track_job : public job
 	{
-		load_track_job(Track_T *t, pthread_mutex_t *l):track(t),_lock(l){
+		load_track_job(Track_T *t, Lock_T *l):track(t),_lock(l){
 			_name="load track";
-			pthread_mutex_init(&_l, 0);
-			pthread_cond_init(&_next_step, 0);
 		}
 		Track_T *track;
 		
@@ -136,9 +125,9 @@ public:
 		//	track->set_source_file(file);
 		//	done = true;
 		//}
-		pthread_mutex_t _l;
-		pthread_mutex_t *_lock;
-		pthread_cond_t _next_step;
+		Lock_T _l;
+		Lock_T *_lock;
+		Condition_T _next_step;
 		void step()
 		{
 			if (!track->load_step(_lock))
@@ -153,10 +142,8 @@ public:
 	template <typename Track_T>
 	struct draw_waveform_job : public job
 	{
-		draw_waveform_job(Track_T *t, pthread_mutex_t *l):track(t),_lock(l){
+		draw_waveform_job(Track_T *t, Lock_T *l):track(t),_lock(l){
 			_name="draw wave";
-			pthread_mutex_init(&_l, 0);
-			pthread_cond_init(&_next_step, 0);
 		}
 		Track_T *track;
 		
@@ -166,9 +153,9 @@ public:
 		//	track->set_source_file(file);
 		//	done = true;
 		//}
-		pthread_mutex_t _l;
-		pthread_mutex_t *_lock;
-		pthread_cond_t _next_step;
+		Lock_T _l;
+		Lock_T *_lock;
+		Condition_T _next_step;
 		void step()
 		{
 			track->draw_if_loaded();
@@ -176,10 +163,10 @@ public:
 		}
 	};
 
-	static pthread_mutex_t _job_lock;
-	static pthread_cond_t _cr_job_rdy;
-	static pthread_cond_t _job_rdy;
-	static pthread_cond_t _job_done;
+	static Lock_T _job_lock;
+	static Condition_T _cr_job_rdy;
+	static Condition_T _job_rdy;
+	static Condition_T _job_done;
 
 	static std::queue<job*> _critical_jobs;
 	static std::queue<job*> _idle_jobs;
@@ -201,28 +188,28 @@ public:
 	{
 		pthread_once(&once_control, init);
 	//	printf("doing job %p (%s) sync %d critical %d\n", j, j->_name, sync, critical);
-		pthread_mutex_lock(&_job_lock);
+		_job_lock.acquire();
 		j->_deleteme = !sync;
 		if (critical)
 		{
 			_critical_jobs.push(j);
-			pthread_cond_signal(&_cr_job_rdy);
+			_cr_job_rdy.signal();
 		}
 		else
 			_idle_jobs.push(j);
 
-		pthread_cond_signal(&_job_rdy);
+		_job_rdy.signal();
 		if (sync)
 		{
 			while (!j->done)
 			{
 				printf("waiting on %p\n", j);
-				pthread_cond_wait(&_job_done, &_job_lock);
+				_job_done.wait(_job_lock);
 				printf("done %p\n", j);
 			}
 			delete j;
 		}
-		pthread_mutex_unlock(&_job_lock);
+		_job_lock.release();
 	}
 
 protected:
@@ -249,22 +236,22 @@ protected:
 		job *cr_j=0;
 		while (true)
 		{
-			pthread_mutex_lock(&_job_lock);
+			_job_lock.acquire();
 			while (_critical_jobs.empty())
 			{
-				pthread_cond_wait(&_cr_job_rdy, &_job_lock);
+				_cr_job_rdy.wait(_job_lock);
 			}
 
 			cr_j = _critical_jobs.front();
 			_critical_jobs.pop();
-			pthread_mutex_unlock(&_job_lock);
+			_job_lock.release();
 			cr_j->_thread = _tid;
 			cr_j->do_it();
 			cr_j->done = true;
 			if (cr_j->_deleteme)
 				delete cr_j;
 			cr_j = 0;
-			pthread_cond_signal(&_job_done);
+			_job_done.signal();
 		}
 		delete this;
 	}
@@ -283,20 +270,20 @@ protected:
 						delete id_j;
 				//	printf("signal %p\n", id_j);
 					id_j = 0;
-					pthread_cond_signal(&_job_done);
+					_job_done.signal();
 				}
 			}
 			else 
 			{
-				pthread_mutex_lock(&_job_lock);
+				_job_lock.acquire();
 				while (_idle_jobs.empty())
 				{
-					pthread_cond_wait(&_job_rdy, &_job_lock);
+					_job_rdy.wait(_job_lock);
 				}
 				id_j = _idle_jobs.front();
 				_idle_jobs.pop();
 				id_j->_thread = _tid;
-				pthread_mutex_unlock(&_job_lock);
+				_job_lock.release();
 			}
 		}
 		delete this;
@@ -307,14 +294,14 @@ protected:
 		job *id_j=0, *cr_j=0;
 		while (true)
 		{
-			pthread_mutex_lock(&_job_lock);
+			_job_lock.acquire();
 			while (!_critical_jobs.empty())
 			{
 				cr_j = _critical_jobs.front();
 				_critical_jobs.pop();
 			//	if (!_blockOnCritical)
 			//		pthread_mutex_unlock(&_job_lock);
-				pthread_mutex_unlock(&_job_lock);
+				_job_lock.release();
 				cr_j->_thread = _tid;
 				cr_j->do_it();
 				cr_j->done = true;
@@ -322,15 +309,15 @@ protected:
 					delete cr_j;
 			//	printf("signal %p\n", cr_j);
 				cr_j = 0;
-				pthread_cond_signal(&_job_done);
+				_job_done.signal();
 			//	if (!_blockOnCritical)
 			//		pthread_mutex_lock(&_job_lock);
-				pthread_mutex_lock(&_job_lock);
+				_job_lock.acquire();
 			}
 			
 			if (id_j)
 			{
-				pthread_mutex_unlock(&_job_lock);
+				_job_lock.release();
 				id_j->step();
 				if (id_j->done)
 				{
@@ -338,7 +325,7 @@ protected:
 						delete id_j;
 				//	printf("signal %p\n", id_j);
 					id_j = 0;
-					pthread_cond_signal(&_job_done);
+					_job_done.signal();
 				}
 			}
 			else 
@@ -347,14 +334,14 @@ protected:
 				{
 					id_j = _idle_jobs.front();
 					_idle_jobs.pop();
-					pthread_mutex_unlock(&_job_lock);
+					_job_lock.release();
 					id_j->_thread = _tid;
 				}
 				else
 				{
 					while (_critical_jobs.empty() && _idle_jobs.empty())
-						pthread_cond_wait(&_job_rdy, &_job_lock);
-					pthread_mutex_unlock(&_job_lock);
+						_job_rdy.wait(_job_lock);
+					_job_lock.release();
 				}
 			}
 		}

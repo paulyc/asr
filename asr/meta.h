@@ -48,7 +48,7 @@ public:
 		return _src->len();
 	}
 
-	void load_metadata(pthread_mutex_t *lock, ASIOProcessor *io)
+	void load_metadata(Lock_T *lock, ASIOProcessor *io)
 	{
 		for (int chk_ofs=0; chk_ofs < _src->len().chunks; ++chk_ofs)
 		{
@@ -57,7 +57,7 @@ public:
 		}
 	}
 
-	const ChunkMetadata& get_metadata(smp_ofs_t chk_ofs, pthread_mutex_t *lock=0)
+	const ChunkMetadata& get_metadata(smp_ofs_t chk_ofs, Lock_T *lock=0)
 	{
 		int i, indx;
 		if (chk_ofs < 0)
@@ -78,7 +78,7 @@ public:
 			Chunk_T *chk = _src->get_chunk(uchk_ofs);
 		//	if (lock) pthread_mutex_unlock(lock);
 
-			if (lock) pthread_mutex_lock(lock);
+			if (lock) lock->acquire();
 			for (i = 0; i < 10; ++i)
 			{
 				meta.subband[i].abs_sum[0] = 0.0f;
@@ -123,8 +123,11 @@ public:
 			dBm<Sample_T>::calc(meta.avg_db, meta.avg);
 			dBm<Sample_T>::calc(meta.peak_db, meta.peak);
 			meta.valid = true;
-			if (lock) pthread_mutex_unlock(lock);
-			if (_io->is_waiting()) sched_yield();
+			if (lock)
+			{
+				lock->release();
+				sched_yield();
+			}
 		}
 		return meta;
 	}

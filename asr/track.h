@@ -340,7 +340,7 @@ public:
 	{
 	}
 
-	void create(ASIOProcessor *io, const wchar_t *filename, pthread_mutex_t *lock)
+	void create(ASIOProcessor *io, const wchar_t *filename, Lock_T *lock)
 	{
 		T_source<Chunk_T> *src = 0;
 
@@ -431,29 +431,23 @@ public:
 		_last_time(0.0),
 		_pause_monitor(false)
 	{
-		pthread_mutex_init(&_loading_lock, 0);
-		pthread_cond_init(&_track_loaded, 0);
-
 		_future = new FutureExecutor;
 
 	//	int sz = (char*)&_display - (char*)this;
 	//	printf("sz = 0x%x\n", sz);
 
 		if (filename)
-			set_source_file_impl(std::wstring(filename), _io->get_lock());
+			set_source_file_impl(std::wstring(filename), &_io->get_lock());
 	}
 
 	virtual ~SeekablePitchableFileSource()
 	{
-		pthread_mutex_lock(&_loading_lock);
+		_loading_lock.acquire();
 		while (!_loaded) 
-			pthread_cond_wait(&_track_loaded, &_loading_lock);
+			_track_loaded.wait(_loading_lock);
 
 		delete _future;
 		_future = 0;
-
-		pthread_mutex_destroy(&_loading_lock);
-		pthread_cond_destroy(&_track_loaded);
 
 		ViewableMixin<Chunk_T>::destroy();
 		PitchableMixin<Chunk_T>::destroy();
@@ -461,23 +455,23 @@ public:
 		BufferedSource<Chunk_T>::destroy();
 	}
 
-	void set_source_file(std::wstring filename, pthread_mutex_t *lock)
+	void set_source_file(std::wstring filename, Lock_T &lock)
 	{
 		_future->submit(
-			new deferred2<SeekablePitchableFileSource<Chunk_T>, std::wstring, pthread_mutex_t*>(
+			new deferred2<SeekablePitchableFileSource<Chunk_T>, std::wstring, Lock_T*>(
 				this, 
 				&SeekablePitchableFileSource<Chunk_T>::set_source_file_impl, 
 				filename, 
-				lock));
+				&lock));
 	}
 
 private:
-	void set_source_file_impl(std::wstring filename, pthread_mutex_t *lock)
+	void set_source_file_impl(std::wstring filename, Lock_T *lock)
 	{
-		pthread_mutex_lock(&_loading_lock);
+		_loading_lock.acquire();
 		while (_in_config || !_loaded)
 		{
-			pthread_cond_wait(&_track_loaded, &_loading_lock);
+			_track_loaded.wait(_loading_lock);
 		}
 		
 		_in_config = true;
@@ -492,7 +486,7 @@ private:
 			_loaded = true;
 			_paused = true;
 		//	BufferedSource<Chunk_T>::createZero(_io);
-			pthread_mutex_unlock(&_loading_lock);
+			_loading_lock.release();
 			return;
 		}
 	//	pthread_mutex_unlock(&_loading_lock);
@@ -507,7 +501,7 @@ private:
 		_in_config = false;
 		_last_time = 0.0;
 		_filename = filename;
-		pthread_mutex_unlock(&_loading_lock);
+		_loading_lock.release();
 
 		if (!_loaded)
 			Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
@@ -518,10 +512,10 @@ public:
 	{
 		Chunk_T *chk;
 
-		pthread_mutex_lock(&_loading_lock);
+		_loading_lock.acquire();
 		if (!_loaded || (_paused && !_pause_monitor))
 		{
-			pthread_mutex_unlock(&_loading_lock);
+			_loading_lock.release();
 			chk = zero_source<Chunk_T>::get()->next();
 		}
 		else
@@ -538,7 +532,7 @@ public:
 				if (true && _resample_filter->get_time() >= len().time)
 					_resample_filter->seek_time(0.0);
 			}
-			pthread_mutex_unlock(&_loading_lock);
+			_loading_lock.release();
 			render();
 		}
 		
@@ -574,7 +568,7 @@ public:
             load_step();
 	}
 
-	bool load_step(pthread_mutex_t *lock=0)
+	bool load_step(Lock_T *lock=0)
 	{
 		while (_src_buf->len().chunks == -1)
 		{
@@ -596,7 +590,7 @@ public:
 			
 			_resample_filter->set_output_scale(1.0f / _src->maxval());
 			//_meta->load_metadata(lock);
-			pthread_mutex_lock(&_loading_lock);
+			_loading_lock.acquire();
 			_loaded = true;
 
 			if (_io && _io->get_ui())
@@ -604,8 +598,8 @@ public:
 				_io->get_ui()->render(_track_id);
             }
 
-            pthread_cond_signal(&_track_loaded);
-			pthread_mutex_unlock(&_loading_lock);
+			_track_loaded.signal();
+			_loading_lock.release();
 
 			_io->get_ui()->get_track(_track_id).filename.set_text(_filename.c_str(), false);
 			
@@ -619,9 +613,9 @@ public:
 		if (loaded())
 		{
 			set_wav_heights(false, true);
-			pthread_mutex_lock(&_loading_lock);
+			_loading_lock.acquire();
 			_io->get_ui()->render(_track_id);
-			pthread_mutex_unlock(&_loading_lock);
+			_loading_lock.release();
 		}
 	}
 
@@ -688,12 +682,12 @@ public:
 
 	void lock()
 	{
-		pthread_mutex_lock(&_loading_lock);
+		_loading_lock.acquire();
 	}
 
 	void unlock()
 	{
-		pthread_mutex_unlock(&_loading_lock);
+		_loading_lock.release();
 	}
 
 	void set_clip(int id)
@@ -740,8 +734,8 @@ protected:
 	bool _loaded;
 	int _track_id;
 	
-	pthread_mutex_t _loading_lock;
-	pthread_cond_t _track_loaded;
+	Lock_T _loading_lock;
+	Condition_T _track_loaded;
 	
 	FutureExecutor *_future;
 	double _last_time;

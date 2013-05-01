@@ -128,7 +128,7 @@ public:
 
 	void set_source(Output o, Source s)
 	{
-		pthread_mutex_lock(&_io_lock);
+		_io_lock.acquire();
 		if (o==Main)
 		{
 			switch (s)
@@ -164,7 +164,7 @@ public:
 					break;
 			}
 		}
-		pthread_mutex_unlock(&_io_lock);
+		_io_lock.release();
 	}
 
 	int get_track_id_for_filter(void *filt) const
@@ -186,9 +186,9 @@ public:
 	//	pthread_mutex_unlock(&_io_lock);
 	}
 
-	pthread_mutex_t *get_lock()
+	Lock_T& get_lock()
 	{
-		return &_io_lock;
+		return _io_lock;
 	}
 
 	void set_sync_cue(bool sync)
@@ -253,11 +253,11 @@ public: // was protected
 	//xfader<track_t> *_file_src;
 	T_source<chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> > *_file_src;
 
-	pthread_mutex_t _io_lock;
 	GenericUI *_ui;
 
-	pthread_cond_t _do_gen;
-	pthread_cond_t _gen_done;
+	Lock_T _io_lock;
+	Condition_T _do_gen;
+	Condition_T _gen_done;
 	bool _finishing;
 	pthread_t _gen_th;
     bool _need_buffers;

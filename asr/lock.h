@@ -123,8 +123,8 @@ public:
 	~PthreadCondition() {
 		pthread_cond_destroy(&_cond);
 	}
-	void wait(PthreadLock *lock) {
-		pthread_cond_wait(&_cond, &lock->_lock);
+	void wait(PthreadLock &lock) {
+		pthread_cond_wait(&_cond, &lock._lock);
 	}
 	void signal() {
 		pthread_cond_signal(&_cond);

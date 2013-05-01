@@ -3,6 +3,7 @@
 
 #include "file.h"
 #include "io.h"
+#include "lock.h"
 #include <string>
 #include <exception>
 
@@ -480,7 +481,7 @@ template <typename Chunk_T>
 class mp3file_chunker : public T_source<Chunk_T>, public file_chunker
 {
 public:
-	mp3file_chunker(const wchar_t * filename, pthread_mutex_t *lock=0) :
+	mp3file_chunker(const wchar_t * filename, Lock_T *lock=0) :
 		file_chunker(filename),
 		_smp_read(0),
 		_eof(false),
@@ -501,7 +502,7 @@ public:
 	}
 	Chunk_T* next()
 	{
-		if (_lock) pthread_mutex_lock(_lock);
+		if (_lock) _lock->acquire();
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		unsigned n = 0;
 		size_t rd;
@@ -527,7 +528,7 @@ public:
 		}
 		if (smp_out == smp_end)
 		{
-			if (_lock) pthread_mutex_unlock(_lock);
+			if (_lock) _lock->release();
 			return chk;
 		}
 
@@ -545,14 +546,17 @@ public:
 				{
 					_inputBufferFilled = 0;
 				}
-				if (_lock) pthread_mutex_unlock(_lock);
-				sched_yield();
+				if (_lock) 
+				{
+					_lock->release();
+					sched_yield();
+				}
 				rd = _file->read((char*)_inputBuffer+_inputBufferFilled, 1, INPUT_BUFFER_SIZE-_inputBufferFilled);
 				if (_file->eof())
 				{
 					_eof = true;
 				}
-				if (_lock) pthread_mutex_lock(_lock);
+				if (_lock) _lock->acquire();
 				_inputBufferFilled += rd;
 
 				if (_eof)
@@ -601,7 +605,7 @@ public:
 		} while (n == 0 || smp_out < smp_end);
 		for (; smp_out < smp_end; ++smp_out)
 			Zero<Chunk_T::sample_t>::set(*smp_out);
-		if (_lock) pthread_mutex_unlock(_lock);
+		if (_lock) _lock->release();
 		return chk;
 	}
 
@@ -637,7 +641,7 @@ private:
 
 	float _max;
 	double _sample_rate;
-	pthread_mutex_t *_lock;
+	Lock_T *_lock;
 };
 
 #include <FLAC/stream_decoder.h>
@@ -646,7 +650,7 @@ template <typename Chunk_T>
 class flacfile_chunker : public T_source<Chunk_T>
 {
 public:
-	flacfile_chunker(const wchar_t * filename, pthread_mutex_t *lock=0) :
+	flacfile_chunker(const wchar_t * filename, Lock_T *lock=0) :
 		_decoder(0),
 		_sample_rate(44100.0),
 		_eof(false),
@@ -767,7 +771,7 @@ public:
 
 	Chunk_T* next()
 	{
-		if (_lock) pthread_mutex_lock(_lock);
+		if (_lock) _lock->acquire();
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		typename Chunk_T::sample_t *smp = chk->_data, *end = smp + Chunk_T::chunk_size;
 		for (; smp != end; )
@@ -789,13 +793,16 @@ public:
 			}
 			if (_ofs == _blocksize)
 			{
-				if (_lock) pthread_mutex_unlock(_lock);
-				sched_yield();
+				if (_lock) 
+				{
+					_lock->release();
+					sched_yield();
+				}
 				load_frame();
-				if (_lock) pthread_mutex_lock(_lock);
+				if (_lock) _lock->acquire();
 			}
 		}
-		if (_lock) pthread_mutex_unlock(_lock);
+		if (_lock) _lock->release();
 		return chk;
 	}
 
@@ -823,7 +830,7 @@ protected:
 	float _smp_min_inv;
 	float _smp_max_inv;
 	bool _half_rate;
-	pthread_mutex_t *_lock;
+	Lock_T *_lock;
 };
 
 #endif
