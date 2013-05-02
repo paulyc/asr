@@ -213,15 +213,15 @@ void GenericUI::set_filters_frequency(void *filt, double freq)
 	}
 }
 
-void GenericUI::drop_file(const wchar_t *filename, bool track1)
+void GenericUI::drop_file(const char *filename, bool track1)
 {
 	if (track1)
 	{
-		_io->GetTrack(1)->set_source_file(std::wstring(filename), _io->get_lock());
+		_io->GetTrack(1)->set_source_file(std::string(filename), _io->get_lock());
 	}
 	else
 	{
-		_io->GetTrack(2)->set_source_file(std::wstring(filename), _io->get_lock());
+		_io->GetTrack(2)->set_source_file(std::string(filename), _io->get_lock());
 	}
 }
 

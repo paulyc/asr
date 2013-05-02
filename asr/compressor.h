@@ -6,7 +6,7 @@ class NormalizingCompressor : public T_source<Chunk_T>, public T_sink<Chunk_T>
 {
 public:
 	NormalizingCompressor(T_source<Chunk_T> *src) :
-		T_sink(src)
+		T_sink<Chunk_T>(src)
 	{
 	}
 
@@ -43,7 +43,7 @@ public:
 
 	Chunk_T *next()
 	{
-		Chunk_T *chk = _src->next();
+		Chunk_T *chk = this->_src->next();
 		process(chk);
 		return chk;
 	}

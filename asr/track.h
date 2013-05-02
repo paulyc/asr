@@ -340,20 +340,20 @@ public:
 	{
 	}
 
-	void create(ASIOProcessor *io, const wchar_t *filename, Lock_T *lock)
+	void create(ASIOProcessor *io, const char *filename, Lock_T *lock)
 	{
 		T_source<Chunk_T> *src = 0;
 
-		if (wcsstr(filename, L".mp3") == filename + wcslen(filename) - 4)
+		if (strstr(filename, ".mp3") == filename + strlen(filename) - 4)
 		{
 			src = new mp3file_chunker<Chunk_T>(filename, lock);
 		}
-		else if (wcsstr(filename, L".wav") == filename + wcslen(filename) - 4)
+		else if (strstr(filename, ".wav") == filename + strlen(filename) - 4)
 		{
 			src = new wavfile_chunker<Chunk_T>(filename);
 			//src = new ifffile_chunker<Chunk_T>(filename);
 		}
-		else if (wcsstr(filename, L".flac") == filename + wcslen(filename) - 5)
+		else if (strstr(filename, ".flac") == filename + strlen(filename) - 5)
 		{
 			src = new flacfile_chunker<Chunk_T>(filename, lock);
 		}
@@ -403,7 +403,7 @@ public:
 protected:
 	T_source<Chunk_T> *_src;
 	BufferedStream<Chunk_T> *_src_buf;
-	const wchar_t *_filename;
+	const char *_filename;
 
 	BeatDetector<Chunk_T> _detector;
 };
@@ -454,10 +454,10 @@ public:
 		BufferedSource<Chunk_T>::destroy();
 	}
 
-	void set_source_file(std::wstring filename, Lock_T &lock)
+	void set_source_file(std::string filename, Lock_T &lock)
 	{
 		_future->submit(
-			new deferred2<SeekablePitchableFileSource<Chunk_T>, std::wstring, Lock_T*>(
+			new deferred2<SeekablePitchableFileSource<Chunk_T>, std::string, Lock_T*>(
 				this, 
 				&SeekablePitchableFileSource<Chunk_T>::set_source_file_impl, 
 				filename, 
@@ -491,9 +491,9 @@ private:
 	//	pthread_mutex_unlock(&_loading_lock);
 
 	//	LOCK_IF_SMP(lock);
-		PitchableMixin<Chunk_T>::create(_src_buf, _src->sample_rate());
-		ViewableMixin<Chunk_T>::create(_src_buf);
-		_cuepoint = 0.0;
+		PitchableMixin<Chunk_T>::create(this->_src_buf, this->_src->sample_rate());
+		ViewableMixin<Chunk_T>::create(this->_src_buf);
+		this->_cuepoint = 0.0;
 	//	UNLOCK_IF_SMP(lock);
 
 	//	pthread_mutex_lock(&_loading_lock);
@@ -521,15 +521,15 @@ public:
 		{
 			if (_paused && _pause_monitor)
 			{
-				double t = _resample_filter->get_time();
-				chk = _resample_filter->next();
-				_resample_filter->seek_time(t);
+				double t = this->_resample_filter->get_time();
+				chk = this->_resample_filter->next();
+				this->_resample_filter->seek_time(t);
 			}
 			else
 			{
-				chk = _resample_filter->next();
-				if (true && _resample_filter->get_time() >= len().time)
-					_resample_filter->seek_time(0.0);
+				chk = this->_resample_filter->next();
+				if (true && this->_resample_filter->get_time() >= len().time)
+					this->_resample_filter->seek_time(0.0);
 			}
 			_loading_lock.release();
 			render();
@@ -569,25 +569,25 @@ public:
 
 	bool load_step(Lock_T *lock=0)
 	{
-		while (_src_buf->len().chunks == -1)
+		while (this->_src_buf->len().chunks == -1)
 		{
-			_src_buf->load_next();
+			this->_src_buf->load_next();
 		}
 
-		printf("len %d samples %d chunks\n", _src_buf->len().samples, _src_buf->len().chunks);
+		printf("len %d samples %d chunks\n", this->_src_buf->len().samples, this->_src_buf->len().chunks);
 
-		_meta->load_metadata(lock, _io);
+		this->_meta->load_metadata(lock, _io);
         
-		_display->set_zoom(100.0);
-		_display->set_left(0.0);
+		this->_display->set_zoom(100.0);
+		this->_display->set_left(0.0);
 		//pthread_mutex_lock(lock);
-		_display->set_wav_heights(_io, lock);
+		this->_display->set_wav_heights(_io, lock);
 	//	if (!_display->set_next_height())
 	//	{
 		//	GenericUI *ui;
 	//		pthread_mutex_unlock(lock);
 			
-			_resample_filter->set_output_scale(1.0f / _src->maxval());
+			this->_resample_filter->set_output_scale(1.0f / this->_src->maxval());
 			//_meta->load_metadata(lock);
 			_loading_lock.acquire();
 			_loaded = true;
@@ -611,7 +611,7 @@ public:
 	{
 		if (loaded())
 		{
-			set_wav_heights(false, true);
+			ViewableMixin<Chunk_T>::set_wav_heights(false, true);
 			_loading_lock.acquire();
 			_io->get_ui()->render(_track_id);
 			_loading_lock.release();
@@ -655,8 +655,8 @@ public:
     
     void update_position()
     {
-		const double tm = _resample_filter->get_time();
-		if (tm > _cuepoint && _last_time < _cuepoint)
+		const double tm = this->_resample_filter->get_time();
+		if (tm > this->_cuepoint && _last_time < this->_cuepoint)
 		{
 			_io->trigger_sync_cue(_track_id);
 		}
@@ -739,7 +739,7 @@ protected:
 	FutureExecutor *_future;
 	double _last_time;
 
-	std::wstring _filename;
+	std::string _filename;
 	bool _pause_monitor;
 };
 

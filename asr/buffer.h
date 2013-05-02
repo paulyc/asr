@@ -155,7 +155,6 @@ public:
 	BufferedStream(ASIOProcessor *io, T_source<Chunk_T> *src, double smp_rate=44100.0, bool preload=true) :
 	  FilterSource<Chunk_T>(src),
 	  _io(io),
-	  _chks(10000, 0),
 	  _chk_ofs(0),
 	  _smp_ofs(0),
 	  _chk_ofs_loading(0),
@@ -170,6 +169,8 @@ public:
 		pthread_mutex_init(&_data_lock, 0);
 
 		_sample_period = 1.0 / _sample_rate;
+        
+        _chks.resize(10000, 0);
 	}
 
 	~BufferedStream()
@@ -266,7 +267,7 @@ public:
 				break;
 			ofs_in_chk = _smp_ofs % Chunk_T::chunk_size;
 			loop_fill = min(to_fill, Chunk_T::chunk_size - ofs_in_chk);
-			memcpy(to_ptr, buf_chk->_data + ofs_in_chk, loop_fill*sizeof(Chunk_T::sample_t));
+			memcpy(to_ptr, buf_chk->_data + ofs_in_chk, loop_fill*sizeof(typename Chunk_T::sample_t));
 			to_fill -= loop_fill;
 			to_ptr += loop_fill;
 			if (ofs_in_chk + loop_fill >= Chunk_T::chunk_size)
@@ -332,7 +333,7 @@ public:
 			}
 
 			// copy bits
-			memcpy(buf, _chks[chk_ofs]->_data + smp_ofs, sizeof(Chunk_T::sample_t)*to_cpy);
+			memcpy(buf, _chks[chk_ofs]->_data + smp_ofs, sizeof(typename Chunk_T::sample_t)*to_cpy);
 			pthread_mutex_unlock(&_buffer_lock);
 
 			if (to_cpy == chk_left)
@@ -435,7 +436,7 @@ public:
 
 protected:
 	ASIOProcessor *_io;
-	std::vector<Chunk_T *> _chks;
+	std::vector<Chunk_T*> _chks;
 	smp_ofs_t _chk_ofs;
 	smp_ofs_t _smp_ofs;
 	smp_ofs_t _chk_ofs_loading;

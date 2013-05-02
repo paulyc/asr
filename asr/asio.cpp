@@ -29,9 +29,9 @@ void asio_sink<Chunk_T, Source_T, Output_Sample_T>::process()
 			T_allocator<chunk_t>::free(_chk);
 			_chk = 0;
 
-			pthread_mutex_lock(&_src_lock);
+			pthread_mutex_lock(&this->_src_lock);
 			_chk = _src_t->next();
-			pthread_mutex_unlock(&_src_lock);
+			pthread_mutex_unlock(&this->_src_lock);
 			_read = _chk->_data;
 		}
 		loop_write = min(to_write, chunk_t::chunk_size - (_read - _chk->_data));

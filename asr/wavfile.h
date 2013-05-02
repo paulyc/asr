@@ -111,7 +111,7 @@ public:
 		_type(Unknown),
 		_eof(false)
 	{
-		load_header(L"GenericFile");
+		load_header("GenericFile");
 		_buffer = new char[_bytesPerSample*_nChannels*Chunk_T::chunk_size+4];
 	}
 	virtual ~ifffile_chunker() 
@@ -133,7 +133,7 @@ public:
 		}
 		else if (_riffHdr.riff == 'MROF' && _riffHdr.fileid == 'CFIA')
 		{
-			throw std::exception("can't handle AIFF-C!");
+			throw string_exception("can't handle AIFF-C!");
 		}
 
 		while (true)

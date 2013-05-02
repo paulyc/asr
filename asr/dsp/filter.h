@@ -108,8 +108,8 @@ public:
 	resampling_filter_td(BufferedStream<Chunk_T> *src, Precision_T input_rate=44100.0, Precision_T output_rate=48000.0) :
 		T_sink<Chunk_T>(src),
 		_input_sampling_rate(input_rate),
+        _output_time(Precision_T(0.0)),
 		_output_scale(Precision_T(1.0)),
-		_output_time(Precision_T(0.0)),
 		_buffered_stream(src)
 	{
 		_kwt = KaiserWindowTable<Precision_T>::get();

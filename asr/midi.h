@@ -61,6 +61,13 @@ public:
 };
 #endif
 
+class DummyMIDIDeviceFactory : public IMIDIDeviceFactory
+{
+public:
+    void Enumerate() {}
+    IMIDIDevice* Instantiate(int id, bool input) { return 0; }
+};
+
 // time is system time
 struct ControlMsg
 {

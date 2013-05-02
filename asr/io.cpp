@@ -18,7 +18,7 @@ ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
 	//_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
-	_default_src(L"..\\asr\\clip.wav"),
+	_default_src("..\\asr\\clip.wav"),
 	//_default_src(L"H:\\Music\\Heatbeat - Hadoken (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Sean Tyas - Melbourne (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Super8 & Tab, Anton Sonin - Black Is The New Yellow (Activa Remix).wav"),
@@ -120,7 +120,9 @@ void ASIOProcessor::CreateTracks()
 
 void ASIOProcessor::Init()
 {
+#if WINDOWS
 	CoInitialize(0);
+#endif
 	ASIODriver drv(L"CreativeASIO");
 	_iomgr = dynamic_cast<ASIOManager<chunk_t>*>(drv.loadDriver());
 	
@@ -128,7 +130,11 @@ void ASIOProcessor::Init()
 
     _need_buffers = true;
 
+#if WINDOWS
 	Win32MIDIDeviceFactory fac;
+#else
+    DummyMIDIDeviceFactory fac;
+#endif
 	fac.Enumerate();
 	IMIDIDevice *dev = fac.Instantiate(1, true);
 	if (dev)
@@ -173,7 +179,9 @@ void ASIOProcessor::Finish()
 void ASIOProcessor::Destroy()
 {
 	delete _iomgr;
+#if WINDOWS
 	CoUninitialize();
+#endif
 
 	delete _my_pk_det;
 //	delete _my_gain;
@@ -186,7 +194,9 @@ void ASIOProcessor::Destroy()
 	T_allocator<chunk_t>::gc();
 	T_allocator<chunk_t>::dump_leaks();
 
+#if WINDOWS
 	Tracer::printTrace();
+#endif
 }
 
 ASIOError ASIOProcessor::Start()

@@ -23,11 +23,11 @@ public:
 	}
 	virtual void seek_smp(smp_ofs_t smp_ofs)
 	{
-		throw std::exception("not implemented");
+		throw string_exception("not implemented");
 	}
 	virtual bool eof()
 	{
-		throw std::exception("not implemented");
+		throw string_exception("not implemented");
 	}
 	virtual double sample_rate()
 	{
