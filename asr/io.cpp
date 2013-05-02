@@ -12,6 +12,8 @@
 
 #include "compressor.h"
 
+#include "track.h"
+
 ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
@@ -308,4 +310,19 @@ void ASIOProcessor::GenerateLoop(pthread_t th)
 	}
 	_io_lock.release();
 	pthread_exit(0);
+}
+
+int ASIOProcessor::get_track_id_for_filter(void *filt) const
+{
+    return _tracks[0]->get_source() == filt ? 1 : 2;
+}
+
+void ASIOProcessor::trigger_sync_cue(int caller_id)
+{
+    if (_sync_cue)
+    {
+        track_t *other_track = GetTrack(caller_id == 1 ? 2 : 1);
+        other_track->goto_cuepoint(false);
+        other_track->play();
+    }
 }

@@ -110,10 +110,10 @@ public:
 		return _resample_filter;
 	}
 
-	void use_decoder(peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *decoder)
+	/*void use_decoder(peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *decoder)
 	{
 		_resample_filter->pos_stream(this);
-	}
+	}*/
 
 protected:
 	filter_t *_resample_filter;
@@ -136,7 +136,7 @@ public:
 	virtual filter_t *get_root_source() = 0;
 	virtual void render() = 0;
 	virtual double get_display_pos(double) = 0;
-	virtual typename const T_source<Chunk_T>::pos_info& len() = 0;
+	virtual const typename T_source<Chunk_T>::pos_info& len() = 0;
 	virtual void deferred_call(deferred *d) = 0;
 	virtual bool is_paused() const = 0;
 	virtual void pause(bool) = 0;
@@ -318,7 +318,7 @@ public:
 			this->lock();
 	}
 
-	typename const display_t::wav_height& get_wav_height(int pixel)
+	const typename display_t::wav_height& get_wav_height(int pixel)
 	{
 		return _display->get_wav_height(pixel);
 	}
@@ -416,13 +416,12 @@ class SeekablePitchableFileSource :
 	public ViewableMixin<Chunk_T>
 {
 public:
-	typedef type chunk_t;
 	typedef SeekablePitchableFileSource<Chunk_T> track_t;
 
 	using SeekableMixin<Chunk_T>::goto_cuepoint;
 	using SeekableMixin<Chunk_T>::seek_time;
 
-	SeekablePitchableFileSource(ASIOProcessor *io, int track_id, const wchar_t *filename) :
+	SeekablePitchableFileSource(ASIOProcessor *io, int track_id, const char *filename) :
 		_io(io),
 		_in_config(false),
 		_paused(true),
@@ -437,7 +436,7 @@ public:
 	//	printf("sz = 0x%x\n", sz);
 
 		if (filename)
-			set_source_file_impl(std::wstring(filename), &_io->get_lock());
+			set_source_file_impl(std::string(filename), &_io->get_lock());
 	}
 
 	virtual ~SeekablePitchableFileSource()
@@ -466,7 +465,7 @@ public:
 	}
 
 private:
-	void set_source_file_impl(std::wstring filename, Lock_T *lock)
+	void set_source_file_impl(std::string filename, Lock_T *lock)
 	{
 		_loading_lock.acquire();
 		while (_in_config || !_loaded)
@@ -700,7 +699,7 @@ public:
 		return PitchableMixin<Chunk_T>::get_source();
 	}
 
-	void have_position(const typename ASIOProcessor::pos_info &pos)
+	/*void have_position(const typename ASIOProcessor::pos_info &pos)
 	{
 		if (!_loaded || _paused)
 		{
@@ -709,7 +708,7 @@ public:
 		filter_t *src = get_root_source();
 		if (src)
 			src->have_position(pos);
-	}
+	}*/
 
 	virtual bool is_paused() const { return _paused; }
 

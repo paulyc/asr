@@ -1,6 +1,8 @@
 #ifndef _TRACER_H
 #define _TRACER_H
 
+#if WINDOWS
+
 #if MAC
 #include <ext/hash_map>
 #else
@@ -190,4 +192,7 @@ __asm call Tracer::hook \
 __asm add esp, 8 \
 }
 */
+    
+#endif // WINDOWS
+    
 #endif // !defined(_TRACER_H)

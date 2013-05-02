@@ -7,7 +7,7 @@ template <typename Chunk_T>
 class StreamMetadata
 {
 public:
-	typedef typename Chunk_T chunk_t;
+	typedef Chunk_T chunk_t;
 	typedef typename Chunk_T::sample_t Sample_T;
 
 	BufferedStream<Chunk_T> *getSrc(){return _src;}
@@ -40,7 +40,6 @@ public:
 	  _chk_data(10000),
 	  _chk_ofs(0)
 	  {
-		  _io = _src->get_io();
 	  }
 
 	const typename T_source<Chunk_T>::pos_info& len()
@@ -53,7 +52,7 @@ public:
 		for (int chk_ofs=0; chk_ofs < _src->len().chunks; ++chk_ofs)
 		{
 			get_metadata(chk_ofs, lock);
-			if (_io->is_waiting()) sched_yield();
+			sched_yield();
 		}
 	}
 
@@ -136,7 +135,6 @@ protected:
 	std::vector<ChunkMetadata> _chk_data;
 	//std::vector<ChunkMetadata> _chk_data_micro;
 	int _chk_ofs;
-	ASIOProcessor *_io;
 };
 
 #endif // !defined(_META_H)

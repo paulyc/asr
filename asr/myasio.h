@@ -91,7 +91,7 @@ template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T>
 class asio_source : public ASIOChunkSource<Chunk_T>
 {
 public:
-	typedef typename Chunk_T chunk_t;
+	typedef Chunk_T chunk_t;
 	asio_source(T_sink<chunk_t> *sink, size_t buf_sz, Input_Sample_T **bufsL, Input_Sample_T **bufsR);
 	~asio_source();
 	

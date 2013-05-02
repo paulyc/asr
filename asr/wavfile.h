@@ -57,6 +57,7 @@ struct AIFFCommChunk
 	float80 sampleRate; // 80-bit floating point
 };
 
+#if WINDOWS
 inline const char * cwcs_to_ccs(const wchar_t *str)
 {
 	size_t nChar;
@@ -64,13 +65,14 @@ inline const char * cwcs_to_ccs(const wchar_t *str)
 	wcstombs_s(&nChar, buf, sizeof(buf), str, sizeof(buf));
 	return buf;
 }
+#endif
 
 class file_chunker
 {
 public:
-	file_chunker(const wchar_t * filename)
+	file_chunker(const char * filename)
 	{
-		_file = new DiskFile(filename, L"rb");
+		_file = new DiskFile(filename, "rb");
 	}
 	file_chunker(DiskFile *file) :
 		_file(file)
@@ -96,7 +98,7 @@ public:
 		AIFFC
 	};
 
-	ifffile_chunker(const wchar_t * filename) :
+	ifffile_chunker(const char * filename) :
 		file_chunker(filename),
 		_type(Unknown),
 		_eof(false)
@@ -117,7 +119,7 @@ public:
 		delete [] _buffer;
 	}
 
-	void load_header(const wchar_t * filename)
+	void load_header(const char * filename)
 	{
 		_file->read(&_riffHdr, sizeof(_riffHdr), 1);
 		if (_riffHdr.riff == 'FFIR' && _riffHdr.fileid == 'EVAW')
@@ -158,14 +160,14 @@ public:
 		else if (_type == WAV)
 			parse_wav();
 		else
-			throw std::exception("Unknown IFF file type");
+			throw string_exception("Unknown IFF file type");
 
 		_file->seek(_dataOfs);
 
-		_len.samples = _dataBytes / (_nChannels*_bytesPerSample);
-		_len.chunks = _len.samples / Chunk_T::chunk_size + 1;
-		_len.smp_ofs_in_chk = _len.samples % Chunk_T::chunk_size;
-		_len.time = _len.samples / sample_rate();
+		this->_len.samples = _dataBytes / (_nChannels*_bytesPerSample);
+		this->_len.chunks = this->_len.samples / Chunk_T::chunk_size + 1;
+		this->_len.smp_ofs_in_chk = _len.samples % Chunk_T::chunk_size;
+		this->_len.time = this->_len.samples / sample_rate();
 	}
 
 	void parse_aiff()
@@ -199,7 +201,7 @@ public:
 		_nChannels = comChk.channels;
 		_bytesPerSample = comChk.bitsPerSample / 8;
 		if (_riffChunks.find('DNSS') == _riffChunks.end())
-			throw std::exception("no data chunk found in AIFF");
+			throw string_exception("no data chunk found in AIFF");
 
 		_dataOfs = _riffChunks['DNSS'].ofs;
 		_dataBytes = _riffChunks['DNSS'].ch.len;
@@ -221,13 +223,13 @@ public:
 		}
 		else
 		{
-			throw std::exception("no format chunk in WAV");
+			throw string_exception("no format chunk in WAV");
 		}
 
 		if (fmtChk.bitsPerSample & 0x7)
 		{
 			_bytesPerSample = (fmtChk.bitsPerSample >> 3) + 1;
-			throw std::exception("Can't handle bits per sample not a multiple of 8");
+			throw string_exception("Can't handle bits per sample not a multiple of 8");
 		}
 		else
 		{
@@ -238,7 +240,7 @@ public:
 		_sampleRate = (double) fmtChk.sampleRate;
 
 		if (_riffChunks.find('atad') == _riffChunks.end())
-			throw std::exception("no data chunk found in WAV");
+			throw string_exception("no data chunk found in WAV");
 		_dataOfs = _riffChunks['atad'].ofs;
 		_dataBytes = _riffChunks['atad'].ch.len;
 	}
@@ -288,7 +290,7 @@ public:
 		seek_smp(smp_ofs);
 	}
 
-	pos_info& len()
+	typename T_source<Chunk_T>::pos_info& len()
 	{
 		return _len;
 	}
@@ -312,7 +314,7 @@ private:
 	int _bytesPerSample;
 	long _dataOfs;
 	unsigned long _dataBytes;
-	pos_info _len;
+	typename T_source<Chunk_T>::pos_info _len;
 	bool _eof;
 	char *_buffer;
 };
@@ -321,7 +323,7 @@ template <typename Chunk_T>
 class wavfile_chunker_base : public T_source<Chunk_T>, public file_chunker
 {
 public:
-	wavfile_chunker_base(const wchar_t * filename) :
+	wavfile_chunker_base(const char * filename) :
 		file_chunker(filename),
 		_eof(false)
 	{
@@ -331,21 +333,21 @@ public:
 		file_chunker(file),
 		_eof(false)
 	{
-		load_header(L"GenericFile");
+		load_header("GenericFile");
 	}
 
 	virtual ~wavfile_chunker_base()
 	{
 	}
 
-	void load_header(const wchar_t * filename)
+	void load_header(const char * filename)
 	{
 		_file->read(&_riffHdr, sizeof(_riffHdr), 1);
 		if (_riffHdr.riff != 'FFIR' || _riffHdr.fileid != 'EVAW')
 		{
 			delete _file;
 			_file = 0;
-			throw std::exception(cwcs_to_ccs((std::wstring(filename) + L" is not a valid WAVE file").c_str()));
+			throw string_exception((std::string(filename) + " is not a valid WAVE file").c_str());
 		}
 
 		RIFFChunkHeader ch;
@@ -354,14 +356,14 @@ public:
 		{
 			delete _file;
 			_file = 0;
-			throw std::exception(cwcs_to_ccs((std::wstring(filename) + L" is not a valid WAVE file: format chunk not found").c_str()));
+			throw string_exception((std::string(filename) + " is not a valid WAVE file: format chunk not found").c_str());
 		}
 
 		if (ch.len > sizeof(WAVFormatChunk))
 		{
 			delete _file;
 			_file = 0;
-			throw std::exception("Can't handle this type of WAVE file");
+			throw string_exception("Can't handle this type of WAVE file");
 		}
 
 		_file->read(&_fmtChk, ch.len, 1);
@@ -369,13 +371,13 @@ public:
 		{
 			delete _file;
 			_file = 0;
-			throw std::exception("Can't handle this type of WAVE file");
+			throw string_exception("Can't handle this type of WAVE file");
 		}
 
 		if (_fmtChk.bitsPerSample & 0x7)
 		{
 			_bytesPerSample = (_fmtChk.bitsPerSample >> 3) + 1;
-			throw std::exception("Can't handle bits per sample not a multiple of 8");
+			throw string_exception("Can't handle bits per sample not a multiple of 8");
 		}
 		else
 		{
@@ -394,15 +396,15 @@ public:
 		{
 			delete _file;
 			_file = 0;
-			throw std::exception(cwcs_to_ccs((std::wstring(filename) + L" is not a valid WAVE file: data chunk not found").c_str()));
+			throw string_exception((std::string(filename) + " is not a valid WAVE file: data chunk not found").c_str());
 		}
 		_dataOfs = _file->tell();
 		_dataBytes = ch.len;
 
-		_len.samples = _dataBytes / (_fmtChk.nChannels*_bytesPerSample);
-		_len.chunks = _len.samples / Chunk_T::chunk_size + 1;
-		_len.smp_ofs_in_chk = _len.samples % Chunk_T::chunk_size;
-		_len.time = _len.samples / double(_fmtChk.sampleRate);
+		this->_len.samples = _dataBytes / (_fmtChk.nChannels*_bytesPerSample);
+		this->_len.chunks = this->_len.samples / Chunk_T::chunk_size + 1;
+		this->_len.smp_ofs_in_chk = this->_len.samples % Chunk_T::chunk_size;
+		this->_len.time = this->_len.samples / double(_fmtChk.sampleRate);
 	}
 
 	virtual Chunk_T* next() = 0;
@@ -418,9 +420,9 @@ public:
 		seek_smp(smp_ofs);
 	}
 
-	pos_info& len()
+    typename T_source<Chunk_T>::pos_info& len()
 	{
-		return _len;
+		return this->_len;
 	}
 
 	virtual double sample_rate()
@@ -446,11 +448,11 @@ template <typename Chunk_T>
 class wavfile_chunker : public wavfile_chunker_base<Chunk_T>
 {
 public:
-	wavfile_chunker(const wchar_t *filename) : 
+	wavfile_chunker(const char *filename) :
 		wavfile_chunker_base<Chunk_T>(filename)
 	{
 		// one chunk of data+padding
-		_buffer = new char[_bytesPerSample*_fmtChk.nChannels*Chunk_T::chunk_size+4];
+		_buffer = new char[this->_bytesPerSample*this->_fmtChk.nChannels*Chunk_T::chunk_size+4];
 	}
 
 	virtual ~wavfile_chunker()
@@ -460,17 +462,17 @@ public:
 
 	Chunk_T* next()
 	{
-		size_t bytes_to_read = _bytesPerSample*_fmtChk.nChannels*Chunk_T::chunk_size, rd;
+		size_t bytes_to_read = this->_bytesPerSample*this->_fmtChk.nChannels*Chunk_T::chunk_size, rd;
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 
-		rd = _file->read(_buffer, 1, bytes_to_read);
+		rd = this->_file->read(_buffer, 1, bytes_to_read);
 		if (rd < bytes_to_read)
 		{
-			_eof = true;
+			this->_eof = true;
 			for (char *b= _buffer + (bytes_to_read - rd); b < _buffer + bytes_to_read; ++b)
 				*b = 0;
 		}
-		chk->load_from_bytes((uint8_t*)_buffer, _bytesPerSample);
+		chk->load_from_bytes((uint8_t*)_buffer, this->_bytesPerSample);
 		return chk;
 	}
 protected:
@@ -481,7 +483,7 @@ template <typename Chunk_T>
 class mp3file_chunker : public T_source<Chunk_T>, public file_chunker
 {
 public:
-	mp3file_chunker(const wchar_t * filename, Lock_T *lock=0) :
+	mp3file_chunker(const char * filename, Lock_T *lock=0) :
 		file_chunker(filename),
 		_smp_read(0),
 		_eof(false),
@@ -507,8 +509,8 @@ public:
 		unsigned n = 0;
 		size_t rd;
 		
-		Chunk_T::sample_t *smp_out = chk->_data;
-		Chunk_T::sample_t *smp_end = smp_out+Chunk_T::chunk_size;
+		typename Chunk_T::sample_t *smp_out = chk->_data;
+		typename Chunk_T::sample_t *smp_end = smp_out+Chunk_T::chunk_size;
 		if (_smp_read > 0)
 		{
 			for (; _smp_read < _synth.pcm.length && smp_out < smp_end; ++_smp_read, ++smp_out)
@@ -578,7 +580,7 @@ public:
 					if (_stream.error == MAD_ERROR_BUFLEN)
 						continue;
 					else
-						throw std::exception("fatal error during MPEG decoding");
+						throw string_exception("fatal error during MPEG decoding");
 			}
 
 			_sample_rate = (double)_frame.header.samplerate;
@@ -604,7 +606,7 @@ public:
 			}
 		} while (n == 0 || smp_out < smp_end);
 		for (; smp_out < smp_end; ++smp_out)
-			Zero<Chunk_T::sample_t>::set(*smp_out);
+			Zero<typename Chunk_T::sample_t>::set(*smp_out);
 		if (_lock) _lock->release();
 		return chk;
 	}
@@ -650,7 +652,7 @@ template <typename Chunk_T>
 class flacfile_chunker : public T_source<Chunk_T>
 {
 public:
-	flacfile_chunker(const wchar_t * filename, Lock_T *lock=0) :
+	flacfile_chunker(const char * filename, Lock_T *lock=0) :
 		_decoder(0),
 		_sample_rate(44100.0),
 		_eof(false),
@@ -663,14 +665,14 @@ public:
 		_lock(lock)
 	{
 		if((_decoder = FLAC__stream_decoder_new()) == NULL) {
-			throw std::exception("ERROR: allocating decoder");
+			throw string_exception("ERROR: allocating decoder");
 		}
 
 		if(FLAC__stream_decoder_init_file(_decoder, 
-			cwcs_to_ccs(filename), write_callback, metadata_callback, 
+			filename, write_callback, metadata_callback, 
 			error_callback, (void*)this) != FLAC__STREAM_DECODER_INIT_STATUS_OK)
 		{
-			throw std::exception("ERROR: initializing decoder");
+			throw string_exception("ERROR: initializing decoder");
 		}
 
 		FLAC__stream_decoder_process_until_end_of_metadata(_decoder);
@@ -749,12 +751,12 @@ public:
 			{
 			case FLAC__STREAM_DECODER_END_OF_STREAM:
 				_eof = true;
-				if (_len.samples == -1)
+				if (this->_len.samples == -1)
 				{
-					_len.samples = _samples;
-					_len.chunks = _samples / Chunk_T::chunk_size;
-					_len.smp_ofs_in_chk = _samples % Chunk_T::chunk_size;
-					_len.time = _samples / (double)_sample_rate;
+					this->_len.samples = _samples;
+					this->_len.chunks = _samples / Chunk_T::chunk_size;
+					this->_len.smp_ofs_in_chk = _samples % Chunk_T::chunk_size;
+					this->_len.time = _samples / (double)_sample_rate;
 				}
 				break;
 			case FLAC__STREAM_DECODER_SEEK_ERROR:

@@ -164,7 +164,7 @@ public:
 	controller(Decoder_T *dec) : _decoder(dec) {}
 	void process()
 	{
-		T_allocator<Decoder_T::chunk_t>::free(_decoder->next());
+		T_allocator<typename Decoder_T::chunk_t>::free(_decoder->next());
 	}
 	void process(Filter_T *filt, Filter_T *filt2)
 	{

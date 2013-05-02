@@ -53,11 +53,11 @@ public:
 class DiskFile : public GenericFile
 {
 public:
-	DiskFile(const wchar_t *filename, const wchar_t *mode=L"rb")
+	DiskFile(const char *filename, const char *mode="rb")
 	{
-		_wfopen_s(&_File, filename, mode);
+		_File = fopen(filename, mode);
 		if (_File == 0)
-			throw std::exception("file open failed");
+			throw string_exception("file open failed");
 	}
 	~DiskFile()
 	{

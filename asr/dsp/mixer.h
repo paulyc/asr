@@ -62,7 +62,7 @@ class xfader : public mixer<Source_T, 2>
 public:
 	typedef typename Source_T::chunk_t chunk_t;
 	xfader(Source_T *src1, Source_T *src2) :
-		mixer(src1, src2)
+		mixer<Source_T, 2>(src1, src2)
 	{
 		set_mix(0);
 	}
@@ -78,28 +78,28 @@ public:
 
 		if (m == 0)
 		{
-			_src1_mul = _src1_gain;
-			_src2_mul = 0.0;
+			this->_src1_mul = this->_src1_gain;
+			this->_src2_mul = 0.0;
 		}
 		else if (m == 500)
 		{
-			_src1_mul = _src1_gain;
-			_src2_mul = _src2_gain;
+			this->_src1_mul = this->_src1_gain;
+			this->_src2_mul = this->_src2_gain;
 		}
 		else if (m < 500)
 		{
-			_src1_mul = _src1_gain;
-			_src2_mul = pow(10.0, (-30.0 + m*(30./500.))/20.0)*_src2_gain;
+			this->_src1_mul = this->_src1_gain;
+			this->_src2_mul = pow(10.0, (-30.0 + m*(30./500.))/20.0)*this->_src2_gain;
 		}
 		else if (m != 1000)
 		{
-			_src2_mul = _src2_gain;
-			_src1_mul = pow(10.0, (-30.0 + (1000-m)*(30./500.))/20.0)*_src1_gain;
+			this->_src2_mul = this->_src2_gain;
+			this->_src1_mul = pow(10.0, (-30.0 + (1000-m)*(30./500.))/20.0)*this->_src1_gain;
 		}
 		else
 		{
-			_src2_mul = _src2_gain;
-			_src1_mul = 0.0;
+			this->_src2_mul = this->_src2_gain;
+			this->_src1_mul = 0.0;
 		}
 	}
 	void set_gain(int src, double gain)

@@ -24,19 +24,20 @@
 #include "controller.h"
 #include "speedparser.h"
 #include "wavformdisplay.h"
-#include "track.h"
 
 #include "iomgr.h"
 
 class ASIOProcessor;
 class GenericUI;
 class IMIDIDevice;
+template <typename T>
+class SeekablePitchableFileSource;
 
 template <typename Input_Chunk_T, typename Output_Chunk_T>
 class ChunkConverter : public T_source<Output_Chunk_T>, public T_sink<Input_Chunk_T>
 {
 public:
-	ChunkConverter(T_source<Input_Chunk_T> *src) : T_sink(src) {}
+	ChunkConverter(T_source<Input_Chunk_T> *src) : T_sink<Input_Chunk_T>(src) {}
 	Output_Chunk_T *next() { return 0; }
 };
 
@@ -48,10 +49,10 @@ class ChunkConverter<chunk_time_domain_1d<SamplePairf, chunk_size>, chunk_time_d
 	typedef chunk_time_domain_1d<SamplePairf, chunk_size> input_chunk_t;
 	typedef chunk_time_domain_1d<SamplePairInt16, chunk_size> output_chunk_t;
 public:
-	ChunkConverter(T_source<input_chunk_t> *src) : T_sink(src) {}
+	ChunkConverter(T_source<input_chunk_t> *src) : T_sink<chunk_time_domain_1d<SamplePairf, chunk_size> >(src) {}
 	output_chunk_t *next() 
 	{
-		input_chunk_t *in_chk = _src->next();
+		input_chunk_t *in_chk = this->_src->next();
 		SamplePairf *in_data = in_chk->_data;
 		float in;
 		output_chunk_t *out_chk = T_allocator<output_chunk_t>::alloc();
@@ -167,12 +168,9 @@ public:
 		_io_lock.release();
 	}
 
-	int get_track_id_for_filter(void *filt) const
-	{
-		return _tracks[0]->get_source() == filt ? 1 : 2;
-	}
+	int get_track_id_for_filter(void *filt) const;
 
-	void set_file_output(const wchar_t *filename)
+	void set_file_output(const char *filename)
 	{
 	//	pthread_mutex_lock(&_io_lock);
 		if (_file_out)
@@ -201,22 +199,14 @@ public:
 		return _sync_cue;
 	}
 
-	void trigger_sync_cue(int caller_id)
-	{
-		if (_sync_cue)
-		{
-			track_t *other_track = GetTrack(caller_id == 1 ? 2 : 1);
-			other_track->goto_cuepoint(false);
-			other_track->play();
-		}
-	}
+	void trigger_sync_cue(int caller_id);
 
 	bool is_waiting() const { return true; }
 
 	long _doubleBufferIndex;
 	bool _running;
 	double _speed;
-	const wchar_t *_default_src;
+	const char *_default_src;
 	bool _resample;
 	float _resamplerate;
 
@@ -269,7 +259,7 @@ public: // was protected
 	
 	IMIDIController *_midi_controller;
 public:
-	track_t::controller_t *_filter_controller;
+	FilterController<resampling_filter_td<chunk_t, double> > *_filter_controller;
 };
 
 #endif // !defined(_IO_H)

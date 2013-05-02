@@ -3,7 +3,7 @@ class gain : public T_source<typename Source_T::chunk_t>, public T_sink<typename
 {
 public:
 	gain(Source_T *src) :
-		T_sink(src),
+		T_sink<Source_T>(src),
 		_gain(1.0)
 		{
 		}
@@ -20,7 +20,7 @@ public:
 
 	typename Source_T::chunk_t *next()
 	{
-		typename Source_T::chunk_t *chk = _src->next();
+		typename Source_T::chunk_t *chk = this->_src->next();
 		for (typename Source_T::chunk_t::sample_t *s = chk->_data, 
 			*end = s + Source_T::chunk_t::chunk_size; s != end; ++s)
 		{

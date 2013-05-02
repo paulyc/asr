@@ -69,7 +69,7 @@ template <typename Chunk_T, int chunk_size, int fft_size>
 class peak_detector<SamplePairf, Chunk_T, chunk_size, fft_size> : public T_source<Chunk_T>, public T_sink<Chunk_T>
 {
 public:
-	typedef typename Chunk_T chunk_t;
+	typedef Chunk_T chunk_t;
 	struct pk_info
 	{
 		float val;
@@ -108,7 +108,7 @@ public:
 	dumb_resampler<double, double> _rs;
 
 	peak_detector(T_source<Chunk_T> *src) :
-		T_sink(src),
+		T_sink<Chunk_T>(src),
 		_rs(resampler_taps),
 		pk_out("peaks.txt"),
 		_smp(0)
@@ -508,7 +508,7 @@ public:
 		_rng_max[0] = 0.0f;
 		_rng_max[1] = 0.0f;
 		
-		Chunk_T *chk = _src->next();
+		Chunk_T *chk = this->_src->next();
 
 		SamplePairf *copy_from = chk->_data, *copy_end = copy_from+chunk_size;
 
@@ -557,7 +557,7 @@ public:
 		}
 		else 
 		{
-			for (std::deque<pos_info>::iterator i = _pos_stream.begin(); i != _pos_stream.end(); i++)
+			for (typename std::deque<pos_info>::iterator i = _pos_stream.begin(); i != _pos_stream.end(); i++)
 			{
 				const int indx = i->chk_ofs/fft_size;
 				double freq = new_freqs[indx], mod;

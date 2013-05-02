@@ -89,7 +89,7 @@ public:
 		  {
 			  CRITICAL_SECTION_GUARD(lock, true);
 			  int chk = int(double(left_chunk) + p*chunks_per_pixel_d);
-			    const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
+			    const typename Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				  double ofs_d = p*chunks_per_pixel_d - floor(p*chunks_per_pixel_d);
 				  int sub = int(ofs_d*10);
 				  _wav_heights[p].peak_top = max(meta.subband[sub].peak[0], meta.subband[sub].peak[1]);
@@ -110,7 +110,7 @@ public:
 				  for (int end_chk = chk+chunks_per_pixel; chk < end_chk; ++chk)
 				  {
 					  assert(chk < chunks_total);
-					const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
+					const typename Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 					SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
 					SetMin<double>::calc(_wav_heights[p].peak_bot, min(meta.peak_lo[0], meta.peak_lo[1]));
 					Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
@@ -155,7 +155,7 @@ public:
 						lock->release();
 						sched_yield();
 				  }
-				  Source_T::chunk_t *the_chk = _src->getSrc()->get_chunk(chk);
+				  typename Source_T::chunk_t *the_chk = _src->getSrc()->get_chunk(chk);
 				  if (lock) lock->acquire();
 				  for (; ofs < Source_T::chunk_t::chunk_size && smp < num_smp; ++ofs, ++smp)
 				  {

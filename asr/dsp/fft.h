@@ -125,14 +125,14 @@ public:
 		fftw_execute(p);
 		fftw_destroy_plan(p);
 		
-		for (int i=0; i<_N/2+1; ++i)
+		/*for (int i=0; i<_N/2+1; ++i)
 		{
 			double mag = sqrt(_fftCoeffs[i][0] * _fftCoeffs[i][0] + _fftCoeffs[i][1] * _fftCoeffs[i][1]);
 			double normalize = 1.0/mag;
 		//	printf("fftCoeff[%d] = %f + j%f (%f)\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1], mag);
 		//	_fftCoeffs[i][0] *= normalize;
 		//	_fftCoeffs[i][1] *= normalize;
-		}
+		}*/
 	}
 	fftw_complex *get_fft_coeffs() const
 	{
@@ -219,7 +219,7 @@ public:
 	// hops = number of hops >= 0
 	// buffer size = N + hops * R
 	STFTStream(const FFTWindowFilter &filt, int N, int R, int hops, int padding=0) : 
-		T_sink_source(0), _filt(filt), _N(N), _R(R), _hops(hops), _sourceChk(0), _padding(padding)
+		T_sink_source<chunk_t>(0), _filt(filt), _N(N), _R(R), _hops(hops), _sourceChk(0), _padding(padding)
 	{
 		_inBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N + hops * R));
 		_windowBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N+padding));

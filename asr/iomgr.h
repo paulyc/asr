@@ -19,7 +19,7 @@
 template <typename Chunk_T>
 class IOManager;
 
-interface IASIO;
+struct IASIO;
 
 #define ASIO_ASSERT_NO_ERROR(call) { \
 	e = call ; \

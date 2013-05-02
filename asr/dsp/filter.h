@@ -25,7 +25,7 @@ public:
 	}
 	Chunk_T *next()
 	{
-		Chunk_T *chk = _src->next();
+		Chunk_T *chk = this->_src->next();
 		for (SamplePairf *ptr = chk->_data, *end = ptr + Chunk_T::chunk_size; ptr != end; ++ptr)
 		{
 			(*ptr)[0] = fabs((*ptr)[0]);
@@ -230,10 +230,8 @@ public:
 		return chk;
 	}
 	
-	typename ASIOProcessor::pos_info last;
-	
 	friend class Controller;
-	typedef typename Chunk_T chunk_t;
+	typedef Chunk_T chunk_t;
 };
 
 class lowpass_filter : public T_source<chunk_t>

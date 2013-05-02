@@ -95,8 +95,8 @@ public:
 		callback2_job(deferred *d) : def(d) {}
 		void do_it()
 		{
-			(*d)();
-			delete d;
+			(*this->d)();
+			delete this->d;
 		}
 	};
 
@@ -132,7 +132,7 @@ public:
 		{
 			if (!track->load_step(_lock))
 			{
-				T_allocator<Track_T::chunk_t>::gc();
+				T_allocator<typename Track_T::chunk_t>::gc();
 				done = true;
 				printf("job done %p\n", this);
 			}

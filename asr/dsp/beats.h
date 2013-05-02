@@ -14,7 +14,7 @@ public:
 	{
 	//	chunk_t *chk = _src->next();
 		_bufferReadOfs = -10000;
-		SamplePairf values[10000] = {0.0,0.0};
+		SamplePairf values[10000] = {{0.0,0.0}};
 		_ringBuffer.write(values, 10000);
 	//	_ringBuffer.write(chk->_data, chunk_t::chunk_size);
 		
@@ -106,7 +106,7 @@ class BeatDetector : public T_sink_source<Chunk_T>
 {
 public:
 	BeatDetector() : 
-		T_sink_source(0),
+		T_sink_source<Chunk_T>(0),
 		_my_src(0),
 		_rectifier(&_s1),
 		_passthrough_sink(&_s2),
@@ -121,8 +121,8 @@ public:
 
 	void reset_source(T_source<Chunk_T> *src)
 	{
-		_src = src;
-		_my_src.reset_source(_src);
+		this->_src = src;
+		_my_src.reset_source(this->_src);
 		_s1.reset_source(&_my_src);
 		_s2.reset_source(&_rectifier);
 
@@ -177,7 +177,7 @@ public:
 	{
 		if (_beat_avg_list.empty())
 		{
-			std::list<point>::iterator i = _beat_list.begin();
+			typename std::list<point>::iterator i = _beat_list.begin();
 			double last_t = i->t;
 			_beat_avg_list.push_back(last_t);
 			i++;
@@ -241,7 +241,7 @@ public:
 				//	printf("hello\n");
 					_start = false;
 					// pick point with highest dx
-					for (std::list<point>::iterator i = _peak_list.begin(); i != _peak_list.end(); i++)
+					for (typename std::list<point>::iterator i = _peak_list.begin(); i != _peak_list.end(); i++)
 					{
 						if (i->dx > _max.dx && i->x > 0.15 * _x_max)
 						{
