@@ -1,6 +1,8 @@
 #include "config.h"
 #include "ui.h"
 
+#include "track.h"
+
 #include <cstdio>
 
 typedef ASIOProcessor ASIOP;

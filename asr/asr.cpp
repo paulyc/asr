@@ -9,7 +9,6 @@
 #include <exception>
 #include <iostream>
 #include <fstream>
-#include <hash_map>
 using std::exception;
 
 #include <pthread.h>
@@ -40,8 +39,10 @@ ASR::ASR(int argc, char **argv)
 	_asio = new ASIOProcessor;
 #if WINDOWS
 	_ui = new Win32UI(_asio);
-#else
+#elif OPENGL_ENABLED
 	_ui = new OpenGLUI(_asio, argc, argv);
+#else
+    _ui = new CommandlineUI(_asio);
 #endif
 }
 

@@ -1,6 +1,10 @@
 #ifndef _WAVFORMDISPLAY_H
 #define _WAVFORMDISPLAY_H
 
+#include <algorithm>
+using std::min;
+using std::max;
+
 #include <sched.h>
 #include <pthread.h>
 #include "type.h"

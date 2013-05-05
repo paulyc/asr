@@ -10,6 +10,7 @@
 		5F0C4F1517360CD60025E149 /* coreaudio.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5F0C4F1417360CD60025E149 /* coreaudio.1 */; };
 		5F0C4F1917360CE10025E149 /* CoreAudio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B381173235D90006871C /* CoreAudio.cpp */; };
 		5F0C4F1A17360CE90025E149 /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
+		5F0C4F1C1736E5D60025E149 /* ui_cli.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */; };
 		5FB2B2AA1732107C0006871C /* mac.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FB2B2A91732107C0006871C /* mac.1 */; };
 		5FB2B369173210A50006871C /* algo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B2173210A50006871C /* algo.cpp */; };
 		5FB2B36C173210A50006871C /* asr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B6173210A50006871C /* asr.cpp */; };
@@ -19,15 +20,9 @@
 		5FB2B370173210A50006871C /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
 		5FB2B371173210A50006871C /* fftw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B319173210A50006871C /* fftw.cpp */; };
 		5FB2B372173210A50006871C /* io.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B31D173210A50006871C /* io.cpp */; };
-		5FB2B373173210A50006871C /* iomgr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B31F173210A50006871C /* iomgr.cpp */; };
-		5FB2B374173210A50006871C /* iTunesCOMInterface_i.c in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B322173210A50006871C /* iTunesCOMInterface_i.c */; };
-		5FB2B375173210A50006871C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B324173210A50006871C /* main.cpp */; };
 		5FB2B376173210A50006871C /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B325173210A50006871C /* Makefile */; };
 		5FB2B377173210A50006871C /* malloc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B326173210A50006871C /* malloc.cpp */; };
 		5FB2B378173210A50006871C /* midi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B329173210A50006871C /* midi.cpp */; };
-		5FB2B379173210A50006871C /* speedparser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B355173210A50006871C /* speedparser.cpp */; };
-		5FB2B37A173210A50006871C /* test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B358173210A50006871C /* test.cpp */; };
-		5FB2B37B173210A50006871C /* tracer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B359173210A50006871C /* tracer.cpp */; };
 		5FB2B37C173210A50006871C /* ui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B35F173210A50006871C /* ui.cpp */; };
 		5FB2B37D173210A50006871C /* ui_gl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B361173210A50006871C /* ui_gl.cpp */; };
 		5FB2B37E173210A50006871C /* ui_win32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B362173210A50006871C /* ui_win32.cpp */; };
@@ -63,6 +58,7 @@
 /* Begin PBXFileReference section */
 		5F0C4F1017360CD60025E149 /* coreaudio */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = coreaudio; sourceTree = BUILT_PRODUCTS_DIR; };
 		5F0C4F1417360CD60025E149 /* coreaudio.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = coreaudio.1; sourceTree = "<group>"; };
+		5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ui_cli.cpp; sourceTree = "<group>"; };
 		5FB2B2A41732107C0006871C /* mac */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mac; sourceTree = BUILT_PRODUCTS_DIR; };
 		5FB2B2A91732107C0006871C /* mac.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = mac.1; sourceTree = "<group>"; };
 		5FB2B2B1173210A50006871C /* .out.swp */ = {isa = PBXFileReference; lastKnownFileType = file; path = .out.swp; sourceTree = "<group>"; };
@@ -308,6 +304,7 @@
 		5FB2B2B0173210A50006871C /* asr */ = {
 			isa = PBXGroup;
 			children = (
+				5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */,
 				5FB2B384173236400006871C /* AudioDevice.cpp */,
 				5FB2B385173236400006871C /* AudioDevice.h */,
 				5FB2B2B1173210A50006871C /* .out.swp */,
@@ -608,15 +605,9 @@
 				5FB2B370173210A50006871C /* fft.cpp in Sources */,
 				5FB2B371173210A50006871C /* fftw.cpp in Sources */,
 				5FB2B372173210A50006871C /* io.cpp in Sources */,
-				5FB2B373173210A50006871C /* iomgr.cpp in Sources */,
-				5FB2B374173210A50006871C /* iTunesCOMInterface_i.c in Sources */,
-				5FB2B375173210A50006871C /* main.cpp in Sources */,
 				5FB2B376173210A50006871C /* Makefile in Sources */,
 				5FB2B377173210A50006871C /* malloc.cpp in Sources */,
 				5FB2B378173210A50006871C /* midi.cpp in Sources */,
-				5FB2B379173210A50006871C /* speedparser.cpp in Sources */,
-				5FB2B37A173210A50006871C /* test.cpp in Sources */,
-				5FB2B37B173210A50006871C /* tracer.cpp in Sources */,
 				5FB2B37C173210A50006871C /* ui.cpp in Sources */,
 				5FB2B37D173210A50006871C /* ui_gl.cpp in Sources */,
 				5FB2B37E173210A50006871C /* ui_win32.cpp in Sources */,
@@ -624,6 +615,7 @@
 				5FB2B380173210A50006871C /* worker.cpp in Sources */,
 				5FB2B383173235D90006871C /* CoreAudio.cpp in Sources */,
 				5FB2B386173236400006871C /* AudioDevice.cpp in Sources */,
+				5F0C4F1C1736E5D60025E149 /* ui_cli.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -636,7 +628,10 @@
 				ADDITIONAL_SDKS = "";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				FRAMEWORK_SEARCH_PATHS = "";
-				HEADER_SEARCH_PATHS = "../fftw-3.3.3";
+				HEADER_SEARCH_PATHS = (
+					"../fftw-3.3.3",
+					"../libmad-0.15.1b",
+				);
 				OTHER_LDFLAGS = (
 					"-framework",
 					CoreFoundation,
@@ -653,7 +648,10 @@
 				ADDITIONAL_SDKS = "";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				FRAMEWORK_SEARCH_PATHS = "";
-				HEADER_SEARCH_PATHS = "../fftw-3.3.3";
+				HEADER_SEARCH_PATHS = (
+					"../fftw-3.3.3",
+					"../libmad-0.15.1b",
+				);
 				OTHER_LDFLAGS = (
 					"-framework",
 					CoreFoundation,

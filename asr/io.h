@@ -15,6 +15,8 @@
 #include <asio.h>
 #endif
 
+#include "iomgr.h"
+
 #include "asr.h"
 #include "type.h"
 #include "dsp/filter.h"
@@ -25,7 +27,7 @@
 #include "speedparser.h"
 #include "wavformdisplay.h"
 
-#include "iomgr.h"
+
 
 class ASIOProcessor;
 class GenericUI;

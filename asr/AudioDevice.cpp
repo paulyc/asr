@@ -24,9 +24,9 @@ void SineAudioOutputProcessor::Process(IAudioBuffer *buffer)
     int bufferSizeFrames = buffer->GetBufferSize() / _frameSize;
     for (int i = 0; i < bufferSizeFrames; ++i)
     {
-        const float32_t smp = sin(2*M_PI*_frequency*_time);
-        sample[i*2] = smp;
-        sample[i*2+1] = smp;
+        const float32_t smp = 0.7*sin(2*M_PI*_frequency*_time);
+        sample[i*8+2] = smp;
+        sample[i*8+3] = smp;
         _time += 1.0 / _sampleRate;
     }
 }
@@ -197,7 +197,7 @@ CoreAudioDevice::CoreAudioDevice(const CoreAudioDeviceDescriptor &desc) :
         if (streamDesc.mFormatFlags & kAudioFormatFlagIsBigEndian)
         {
             printf("Can't handle big endian\n");
-            throw std::exception();
+        //    throw std::exception();
         }
         
         sampleAlignment =

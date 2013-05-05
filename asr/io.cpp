@@ -42,6 +42,128 @@ ASIOProcessor::~ASIOProcessor()
 	Destroy();
 }
 
+void ASIOProcessor::Init()
+{
+#if WINDOWS
+	CoInitialize(0);
+    WindowsDriverFactory fac;
+    IAudioDeviceFactory *deviceFac = 0;
+    std::vector<const IAudioDriverDescriptor*> drivers = fac.Enumerate();
+    for (std::vector<const IAudioDriverDescriptor*>::iterator i = drivers.begin();
+         i != drivers.end();
+         i++)
+    {
+        if ((*i)->GetName() == std::string("ASIO"))
+            deviceFac = (*i)->Instantiate();
+    }
+    
+    if (!deviceFac)
+    {
+        throw string_exception("Failed to create ASIO device factory");
+    }
+    
+    ASIODriver drv(L"CreativeASIO");
+	_iomgr = dynamic_cast<ASIOManager<chunk_t>*>(drv.loadDriver());
+	
+	_iomgr->createBuffers(this);
+#elif MAC
+    MacAudioDriverFactory fac;
+    IAudioDeviceFactory *deviceFac = 0;
+    std::vector<const IAudioDriverDescriptor*> drivers = fac.Enumerate();
+    for (std::vector<const IAudioDriverDescriptor*>::iterator i = drivers.begin();
+         i != drivers.end();
+         i++)
+    {
+        if ((*i)->GetName() == std::string("CoreAudio"))
+            deviceFac = (*i)->Instantiate();
+    }
+    
+    if (!deviceFac)
+    {
+        throw string_exception("Failed to create CoreAudio device factory");
+    }
+    
+    IAudioDevice *device = 0;
+    std::vector<const IAudioDeviceDescriptor*> devices = deviceFac->Enumerate();
+    for (std::vector<const IAudioDeviceDescriptor*>::iterator devIter = devices.begin();
+         devIter != devices.end();
+         devIter++)
+    {
+        //if (dev->GetName() == std::string("Built-in Output"))
+        if (dev->GetName() == std::string("Saffire"))
+        {
+            device = (*devIter)->Instantiate();
+        }
+    }
+    if (!deviceFac)
+    {
+        throw string_exception("Failed to create audio device");
+    }
+    delete deviceFac;
+#endif
+    
+    _need_buffers = true;
+    
+#if WINDOWS
+	Win32MIDIDeviceFactory fac;
+#else
+    DummyMIDIDeviceFactory fac;
+#endif
+	fac.Enumerate();
+	IMIDIDevice *dev = fac.Instantiate(1, true);
+	if (dev)
+	{
+		printf("Have midi\n");
+		_midi_controller = new CDJ350MIDIController(dev, (IControlListener**)&_filter_controller);
+		//_midi_controller->RegisterEventHandler(ControllerCallback, this);
+	}
+}
+
+// stop using ui before destroying
+void ASIOProcessor::Finish()
+{
+	_finishing = true;
+	if (_running)
+		Stop();
+    
+#if GENERATE_LOOP
+	_do_gen.signal();
+	pthread_join(_gen_th, 0);
+#endif
+    
+	// something weird with this? go before the last lines?
+	_io_lock.acquire();
+	_gen_done.signal();
+	_io_lock.release();
+    
+	delete _tracks[0];
+	delete _tracks[1];
+	_tracks.resize(0);
+}
+
+void ASIOProcessor::Destroy()
+{
+#if WINDOWS
+    delete _iomgr;
+	CoUninitialize();
+#endif
+    
+	delete _my_pk_det;
+    //	delete _my_gain;
+	
+	delete _file_out;
+	delete _cue;
+	delete _master_xfader;
+	delete _aux;
+    
+	T_allocator<chunk_t>::gc();
+	T_allocator<chunk_t>::dump_leaks();
+    
+#if WINDOWS
+	Tracer::printTrace();
+#endif
+}
+
 void ASIOProcessor::CreateTracks()
 {
 	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 1, _default_src));
@@ -118,33 +240,6 @@ void ASIOProcessor::CreateTracks()
 #endif
 }
 
-void ASIOProcessor::Init()
-{
-#if WINDOWS
-	CoInitialize(0);
-#endif
-	ASIODriver drv(L"CreativeASIO");
-	_iomgr = dynamic_cast<ASIOManager<chunk_t>*>(drv.loadDriver());
-	
-	_iomgr->createBuffers(this);
-
-    _need_buffers = true;
-
-#if WINDOWS
-	Win32MIDIDeviceFactory fac;
-#else
-    DummyMIDIDeviceFactory fac;
-#endif
-	fac.Enumerate();
-	IMIDIDevice *dev = fac.Instantiate(1, true);
-	if (dev)
-	{
-		printf("Have midi\n");
-		_midi_controller = new CDJ350MIDIController(dev, (IControlListener**)&_filter_controller);
-		//_midi_controller->RegisterEventHandler(ControllerCallback, this);
-	}
-}
-
 void ASIOProcessor::ControllerCallback(ControlMsg *msg, void *cbParam)
 {
 	ASIOProcessor *io = static_cast<ASIOProcessor*>(cbParam);
@@ -152,51 +247,6 @@ void ASIOProcessor::ControllerCallback(ControlMsg *msg, void *cbParam)
 
 void ASIOProcessor::Reconfig()
 {
-}
-
-// stop using ui before destroying
-void ASIOProcessor::Finish()
-{
-	_finishing = true;
-	if (_running)
-		Stop();
-
-#if GENERATE_LOOP
-	_do_gen.signal();
-	pthread_join(_gen_th, 0);
-#endif
-
-	// something weird with this? go before the last lines?
-	_io_lock.acquire();
-	_gen_done.signal();
-	_io_lock.release();
-
-	delete _tracks[0];
-	delete _tracks[1];
-	_tracks.resize(0);
-}
-
-void ASIOProcessor::Destroy()
-{
-	delete _iomgr;
-#if WINDOWS
-	CoUninitialize();
-#endif
-
-	delete _my_pk_det;
-//	delete _my_gain;
-	
-	delete _file_out;
-	delete _cue;
-	delete _master_xfader;
-	delete _aux;
-
-	T_allocator<chunk_t>::gc();
-	T_allocator<chunk_t>::dump_leaks();
-
-#if WINDOWS
-	Tracer::printTrace();
-#endif
 }
 
 ASIOError ASIOProcessor::Start()

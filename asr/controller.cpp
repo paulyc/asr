@@ -1,5 +1,6 @@
 #include "io.h"
 #include "controller.h"
+#include "track.h"
 
 void MagicController::do_magic()
 {

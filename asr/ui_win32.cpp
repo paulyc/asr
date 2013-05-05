@@ -405,8 +405,6 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-ASIOProcessor *Win32UI::_io = 0;
-
 Win32UI::Win32UI(ASIOProcessor *io) :
 	GenericUI(io, 
 		UITrack(io, this, 1, IDC_EDIT1, IDC_EDIT3, IDC_EDIT5), 
@@ -414,7 +412,6 @@ Win32UI::Win32UI(ASIOProcessor *io) :
 	_want_render(false),
 	_want_quit(false)
 {
-	_io = io;
 }
 
 void Win32UI::create()

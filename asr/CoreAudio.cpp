@@ -26,7 +26,9 @@ int main2()
          devIter++)
     {
         const IAudioDeviceDescriptor *dev = *devIter;
-        if (dev->GetName() == std::string("Built-in Output"))
+        printf("%s\n", dev->GetName().c_str());
+        //if (dev->GetName() == std::string("Built-in Output"))
+        if (dev->GetName() == std::string("Saffire"))
         {
             device = dev->Instantiate();
         }

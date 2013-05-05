@@ -4,11 +4,12 @@
 #include <vector>
 #include <string>
 
+#include "AudioDevice.h"
+
 #include "asr.h"
 #include "type.h"
 #include "asiodrv.h"
 #include "util.h"
-#include "AudioDevice.h"
 #include "myasio.h"
 
 #define CHOOSE_CHANNELS 0

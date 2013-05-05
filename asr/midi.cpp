@@ -1,5 +1,7 @@
 #include "midi.h"
 
+#if WINDOWS
+
 Win32MIDIDevice::Win32MIDIDevice() :
 	_handle(NULL),
 	_cb(0)
@@ -187,3 +189,5 @@ int main()
 	return 0;
 }
 #endif
+
+#endif // WINDOWS

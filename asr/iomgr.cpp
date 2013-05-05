@@ -1,5 +1,7 @@
 #include "iomgr.h"
 
+#if WINDOWS
+
 extern IASIO *asiodrv;
 
 std::vector<IODriver*> IODriver::enumerate()
@@ -212,3 +214,5 @@ void ASIOManager<Chunk_T>::addOutput(AudioOutput *output)
 {
 	_outputs.push_back(output);
 }
+
+#endif // WINDOWS

@@ -8,6 +8,7 @@
 using namespace std;
 
 #include "asr.h"
+#include "chunk.h"
 
 template <int data_size_n>
 struct chunk_float32_T_size : public chunk_T_T_size<float, data_size_n>

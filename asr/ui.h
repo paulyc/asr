@@ -193,7 +193,6 @@ public:
 	HACCEL  _accelTable;
 
 private:
-	static ASIOProcessor *_io;
 	void set_text_field_impl(int id, const wchar_t *txt, bool del);
 	void set_clip_impl(int t_id);
 	void render_impl(int t_id);
@@ -254,5 +253,28 @@ private:
 	void render_impl(int t_id);
 };
 #endif
+
+class CommandlineUI : public GenericUI
+{
+public:
+	CommandlineUI(ASIOProcessor *io) :
+        GenericUI(io,
+              UITrack(io, this, 1, 1, 2, 3),
+              UITrack(io, this, 2, 4, 5, 6))
+    {
+    }
+    
+	virtual void create() {}
+	virtual void destroy() {}
+	virtual void main_loop() = 0;
+	virtual bool running() { return true; }
+	virtual void do_quit() {}
+    virtual void render(int) {}
+	virtual void set_track_filename(int t) {}
+	virtual void set_position(void *t, double tm, bool invalidate);
+	virtual void set_clip(int t);
+	virtual bool want_render() {return false;}
+	virtual void set_text_field(int id, const wchar_t *txt, bool del);
+};
 
 #endif // !defined(UI_H)
