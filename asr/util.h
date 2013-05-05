@@ -3,14 +3,19 @@
 
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <climits>
 
-#include <asio.h>
 #include <fftw3.h>
 
-#include "asr.h"
+#include "type.h"
+#include "lock.h"
+
+#if WINDOWS
+#include <asio.h>
 
 const char* asio_error_str(ASIOError e);
 const char* asio_sampletype_str(ASIOSampleType t);
+#endif // WINDOWS
 
 template <typename T>
 class Zero
@@ -273,10 +278,6 @@ public:
 	}
 };
 
-template <typename Pair_T, typename From_T>
-inline void PairFromT(Pair_T &p, From_T s1, From_T s2);
-
-template <>
 inline void PairFromT(SamplePairf &p, short s1, short s2)
 {
 	if (s1 >= 0)
@@ -634,7 +635,22 @@ lock->acquire(); \
 lock->release(); \
 if (yield_condition) sched_yield(); }
 
+#if 0
 #define min(x,y) ((x) < (y) ? (x) : (y))
 #define max(x,y) ((x) > (y) ? (x) : (y))
+#endif
+
+#if WINDOWS
+typedef std::exception string_exception;
+#else
+class string_exception : public std::exception
+{
+public:
+	string_exception(const char *p) : std::exception(), _p(p) {}
+	const char *what() { return _p; }
+private:
+	const char *_p;
+};
+#endif
 
 #endif

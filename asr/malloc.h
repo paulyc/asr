@@ -1,10 +1,12 @@
 #ifndef _MALLOC_H
 #define _MALLOC_H
 
+#include "config.h"
+
 #include <exception>
 #include <queue>
 #if MAC
-#include <tr1/unordered_map>
+#include <unordered_map>
 #else
 #include <hash_map>
 #endif
@@ -12,6 +14,8 @@
 #ifdef WIN32
 #include <windows.h>
 #endif
+
+#include "util.h"
 
 template <int PageSize=0x1000>
 struct Page {
@@ -42,19 +46,6 @@ struct PageListNode {
 	PageListNode<PageSize> *prev, *next;
 };
 
-#if WINDOWS
-typedef std::exception string_exception;
-#else
-class string_exception : public std::exception
-{
-public:
-	string_exception(const char *p) : std::exception(), _p(p) {}
-	const char *what() { return _p; }
-private:
-	const char *_p;
-};
-#endif
-
 class StackAllocator
 {
 public:
@@ -67,7 +58,7 @@ public:
 	}
 	void* alloc(int n) {
 		if (n > Page<>::size - sizeof(PageListNode<>))
-			throw string_exception("StackAllocator size too large " + n);
+			throw string_exception("StackAllocator size too large");
 		if (_top + n >= (char*)_last->page.p + Page<>::size)
 		{
 			Page<> new_page = PageAllocator<>::alloc();
@@ -125,7 +116,7 @@ class Pooled_N_Allocator
 {
 public:
 	Pooled_N_Allocator() :
-	  _first(PageAllocator<>::alloc())
+	  _first(PageAllocator<>::alloc(), 0, 0)
 	{
 		_last = &_first;
 		_top_ptr = _first.page.p;
@@ -189,7 +180,7 @@ protected:
 #if WINDOWS
 	typedef stdext::hash_map<T*, t_info> info_map_t;
 #else
-	typedef typename std::tr1::unordered_map<T*, typename T_allocator<T>::t_info> info_map_t;
+	typedef typename std::unordered_map<T*, typename T_allocator<T>::t_info> info_map_t;
 #endif
 	static info_map_t _info_map;
 #endif

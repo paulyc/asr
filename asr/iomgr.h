@@ -1,8 +1,6 @@
 #ifndef _IOMGR_H
 #define _IOMGR_H
 
-#include <asio.h>
-
 #include <vector>
 #include <string>
 
@@ -10,6 +8,7 @@
 #include "type.h"
 #include "asiodrv.h"
 #include "util.h"
+#include "AudioDevice.h"
 #include "myasio.h"
 
 #define CHOOSE_CHANNELS 0
@@ -105,8 +104,8 @@ public:
 	void processInputs(long doubleBufferIndex);
 	void switchBuffers(long doubleBufferIndex);
 
-	void addInput(IOInput *input);
-	void addOutput(IOOutput *output);
+	void addInput(AudioInput *input);
+	void addOutput(AudioOutput *output);
 
 	sample_t** getBuffers (int index) const;
 
@@ -126,8 +125,8 @@ protected:
 	long _bufSize;
 	long _preferredSize;
 
-	std::list<IOOutput*> _outputs;
-	std::list<IOInput*> _inputs;
+	std::list<AudioOutput*> _outputs;
+	std::list<AudioInput*> _inputs;
 };
 
 #endif // !defined(IOMGR_H)

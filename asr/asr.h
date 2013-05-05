@@ -1,9 +1,11 @@
 #ifndef _ASR_H
 #define _ASR_H
 
+#include "config.h"
+
 #include <map>
 #if MAC
-#include <ext/hash_map>
+#include <unordered_map>
 #else
 #include <hash_map>
 #endif
@@ -23,7 +25,6 @@
 #include <windows.h>
 #endif
 
-#include "config.h"
 #include "malloc.h"
 
 #include "type.h"

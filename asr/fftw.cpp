@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
@@ -5,7 +6,6 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <fftw3.h>
-#define N 2048
 
 #define INPUT_FILE_SAMPLING_FREQUENCY 44100.0
 
@@ -30,6 +30,10 @@ double impulseResponsePeriod;
 double rho;
 double impulseResponseScale; // "maintains unity gain in the passband"
 
+#include "util.h"
+
+const int N = 2048;
+
 void BuildKaiserTable()
 {
 	double time;
@@ -50,10 +54,10 @@ void SetOutputSamplingFrequency(double f)
 	outputSamplingFrequency = f;
 	outputSamplingPeriod = 1.0 / outputSamplingFrequency;
 
-	impulseResponseFrequency = min(inputSamplingFrequency, outputSamplingFrequency);
+	impulseResponseFrequency = fmin(inputSamplingFrequency, outputSamplingFrequency);
 	impulseResponsePeriod = 1.0 / impulseResponseFrequency;
 	rho = outputSamplingFrequency / inputSamplingFrequency;
-	impulseResponseScale = min(1.0, rho);
+	impulseResponseScale = fmin(1.0, rho);
 }
 
 void init()
@@ -285,12 +289,12 @@ void aud_processor_init(struct aud_processor * proc)
 	aud_smp * in_ptr;
 
 	proc->sampleCount = 0;
-	fopen_s(&proc->ctrl_in, "G:\\My Music\\projects\\serato2.raw", "rb");
-	fopen_s(&proc->ctrl_out, "output.txt", "w");
+	proc->ctrl_in = fopen("G:\\My Music\\projects\\serato2.raw", "rb");
+	proc->ctrl_out = fopen("output.txt", "w");
 	proc->in = (float*) fftwf_malloc(sizeof(float) * N*4);
 	proc->out = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex) * (N*4));
-	fopen_s(&proc->aud_in, "source.raw", "rb");
-	fopen_s(&proc->aud_out, "sourceout.raw", "wb");
+	proc->aud_in = fopen("source.raw", "rb");
+	proc->aud_out = fopen("sourceout.raw", "wb");
 	proc->in_buf = (aud_smp*) fftwf_malloc(sizeof(aud_smp) * N*2);
 	proc->out_buf = (aud_smp*) fftwf_malloc(sizeof(aud_smp) * N);
 	proc->t_out = 0.0;
@@ -458,8 +462,6 @@ void do_fftw()
 	}
 	aud_processor_destroy(&proc);
 }
-
-#undef N
 
 /*
 int main()

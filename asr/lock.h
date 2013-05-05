@@ -162,6 +162,7 @@ protected:
 	pthread_t _owner;
 };
 
+#if WINDOWS
 class FastUserSpinLock
 {
 public:
@@ -645,6 +646,8 @@ public:
 };
 #endif
 #endif
+
+#endif //WINDOWS
 
 typedef PthreadLock Lock_T;
 typedef PthreadCondition Condition_T;

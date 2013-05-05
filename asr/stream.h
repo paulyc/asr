@@ -4,6 +4,9 @@
 #include <queue>
 #include <pthread.h>
 
+#include "malloc.h"
+#include "util.h"
+
 template <typename T>
 class T_source
 {

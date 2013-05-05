@@ -1,6 +1,7 @@
 #ifndef _BUFFER_H
 #define _BUFFER_H
 
+#include <algorithm>
 #include <vector>
 #include <pthread.h>
 
@@ -311,7 +312,7 @@ public:
 		do
 		{
 			chk_left = Chunk_T::chunk_size - smp_ofs;
-			to_cpy = min(chk_left, num);
+			to_cpy = std::min(chk_left, num);
 			pthread_mutex_lock(&_buffer_lock);
 			if (chk_ofs >= _chks.size())
 				_chks.resize(chk_ofs*2, 0);

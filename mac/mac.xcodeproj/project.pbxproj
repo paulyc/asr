@@ -30,6 +30,8 @@
 		5FB2B37E173210A50006871C /* ui_win32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B362173210A50006871C /* ui_win32.cpp */; };
 		5FB2B37F173210A50006871C /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B363173210A50006871C /* util.cpp */; };
 		5FB2B380173210A50006871C /* worker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B367173210A50006871C /* worker.cpp */; };
+		5FB2B383173235D90006871C /* CoreAudio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B381173235D90006871C /* CoreAudio.cpp */; };
+		5FB2B386173236400006871C /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -229,6 +231,10 @@
 		5FB2B366173210A50006871C /* wavformdisplay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wavformdisplay.h; sourceTree = "<group>"; };
 		5FB2B367173210A50006871C /* worker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = worker.cpp; sourceTree = "<group>"; };
 		5FB2B368173210A50006871C /* worker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = worker.h; sourceTree = "<group>"; };
+		5FB2B381173235D90006871C /* CoreAudio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CoreAudio.cpp; sourceTree = "<group>"; };
+		5FB2B382173235D90006871C /* CoreAudio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreAudio.h; sourceTree = "<group>"; };
+		5FB2B384173236400006871C /* AudioDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudioDevice.cpp; sourceTree = "<group>"; };
+		5FB2B385173236400006871C /* AudioDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioDevice.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -270,6 +276,8 @@
 		5FB2B2B0173210A50006871C /* asr */ = {
 			isa = PBXGroup;
 			children = (
+				5FB2B384173236400006871C /* AudioDevice.cpp */,
+				5FB2B385173236400006871C /* AudioDevice.h */,
 				5FB2B2B1173210A50006871C /* .out.swp */,
 				5FB2B2B2173210A50006871C /* algo.cpp */,
 				5FB2B2B3173210A50006871C /* asio.cpp */,
@@ -346,6 +354,8 @@
 				5FB2B366173210A50006871C /* wavformdisplay.h */,
 				5FB2B367173210A50006871C /* worker.cpp */,
 				5FB2B368173210A50006871C /* worker.h */,
+				5FB2B381173235D90006871C /* CoreAudio.cpp */,
+				5FB2B382173235D90006871C /* CoreAudio.h */,
 			);
 			name = asr;
 			path = ../asr;
@@ -553,6 +563,8 @@
 				5FB2B37E173210A50006871C /* ui_win32.cpp in Sources */,
 				5FB2B37F173210A50006871C /* util.cpp in Sources */,
 				5FB2B380173210A50006871C /* worker.cpp in Sources */,
+				5FB2B383173235D90006871C /* CoreAudio.cpp in Sources */,
+				5FB2B386173236400006871C /* AudioDevice.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -619,6 +631,9 @@
 		5FB2B2AE1732107C0006871C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				HEADER_SEARCH_PATHS = "../fftw-3.3.3";
+				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -626,6 +641,9 @@
 		5FB2B2AF1732107C0006871C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				HEADER_SEARCH_PATHS = "../fftw-3.3.3";
+				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -649,6 +667,7 @@
 				5FB2B2AF1732107C0006871C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

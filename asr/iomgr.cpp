@@ -319,13 +319,13 @@ void ASIOManager<Chunk_T>::switchBuffers(long doubleBufferIndex)
 }
 
 template <typename Chunk_T>
-void ASIOManager<Chunk_T>::addInput(IOInput *input)
+void ASIOManager<Chunk_T>::addInput(AudioInput *input)
 {
 	_inputs.push_back(input);
 }
 
 template <typename Chunk_T>
-void ASIOManager<Chunk_T>::addOutput(IOOutput *output)
+void ASIOManager<Chunk_T>::addOutput(AudioOutput *output)
 {
 	_outputs.push_back(output);
 }

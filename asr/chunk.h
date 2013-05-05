@@ -4,6 +4,7 @@
 #include <fftw3.h>
 #include <list>
 #include <cassert>
+#include "type.h"
 #include "util.h"
 
 #if WINDOWS
@@ -125,12 +126,12 @@ class chunk_time_domain : public chunk_base_domain<Sample_T>
 public:
 	void init_from_chunk(chunk_freq_domain<Sample_T> *chk)
 	{
-		copy_from_chunk_transform(chk, FFTW_BACKWARD);
+		this->copy_from_chunk_transform(chk, FFTW_BACKWARD);
 	}
 
 	void init_from_chunk(chunk_time_domain<Sample_T> *chk)
 	{
-		copy_from_chunk_direct(chk);
+		this->copy_from_chunk_direct(chk);
 	}
 };
 
@@ -291,7 +292,7 @@ public:
 	{
 		for (int r=0; r < this->chunk_size; ++r)
 		{
-			PairFromT<SamplePairf, Src_T>(this->_data[r], buf[r*2], buf[r*2+1]);
+			PairFromT(this->_data[r], buf[r*2], buf[r*2+1]);
 		}
 	}
 

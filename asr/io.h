@@ -1,7 +1,6 @@
 #ifndef _IO_H
 #define _IO_H
 
-#include <asio.h>
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
@@ -13,6 +12,7 @@
 
 #ifdef WIN32
 #include <objbase.h>
+#include <asio.h>
 #endif
 
 #include "asr.h"

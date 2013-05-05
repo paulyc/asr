@@ -1,7 +1,12 @@
 #ifndef _MYASIO_H
 #define _MYASIO_H
 
+#if WINDOWS
+
+#include <asio.h>
 #include <semaphore.h>
+
+#include "AudioDevice.h"
 
 class ASIOProcessor;
 
@@ -15,27 +20,11 @@ public:
 	static ASIOProcessor *io;
 };
 
-class IOInput
-{
-public:
-	virtual ~IOInput() {}
-	virtual void process(int doubleBufferIndex) = 0;
-};
-
-class IOOutput
-{
-public:
-	virtual ~IOOutput() {}
-
-	virtual void process() = 0;
-	virtual void switchBuffers(int dbIndex) = 0;
-};
-
-class IASIOSink : public IOOutput
+class IASIOSink : public AudioOutput
 {
 };
 
-class IASIOSource : public IOInput
+class IASIOSource : public AudioInput
 {
 public:
 	virtual ~IASIOSource() {}
@@ -110,5 +99,7 @@ protected:
 	Output_Sample_T *_chk_ptr;
 	sem_t _next_sem;
 };
+
+#endif // WINDOWS
 
 #endif // !defined(_MYASIO_H)
