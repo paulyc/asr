@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5F0C4F1517360CD60025E149 /* coreaudio.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5F0C4F1417360CD60025E149 /* coreaudio.1 */; };
+		5F0C4F1917360CE10025E149 /* CoreAudio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B381173235D90006871C /* CoreAudio.cpp */; };
+		5F0C4F1A17360CE90025E149 /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
 		5FB2B2AA1732107C0006871C /* mac.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FB2B2A91732107C0006871C /* mac.1 */; };
 		5FB2B369173210A50006871C /* algo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B2173210A50006871C /* algo.cpp */; };
 		5FB2B36C173210A50006871C /* asr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B6173210A50006871C /* asr.cpp */; };
@@ -35,6 +38,16 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		5F0C4F0E17360CD60025E149 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				5F0C4F1517360CD60025E149 /* coreaudio.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		5FB2B2A21732107C0006871C /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -48,6 +61,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5F0C4F1017360CD60025E149 /* coreaudio */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = coreaudio; sourceTree = BUILT_PRODUCTS_DIR; };
+		5F0C4F1417360CD60025E149 /* coreaudio.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = coreaudio.1; sourceTree = "<group>"; };
 		5FB2B2A41732107C0006871C /* mac */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mac; sourceTree = BUILT_PRODUCTS_DIR; };
 		5FB2B2A91732107C0006871C /* mac.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = mac.1; sourceTree = "<group>"; };
 		5FB2B2B1173210A50006871C /* .out.swp */ = {isa = PBXFileReference; lastKnownFileType = file; path = .out.swp; sourceTree = "<group>"; };
@@ -238,6 +253,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		5F0C4F0D17360CD60025E149 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5FB2B2A11732107C0006871C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -248,11 +270,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5F0C4F1117360CD60025E149 /* coreaudio */ = {
+			isa = PBXGroup;
+			children = (
+				5F0C4F1417360CD60025E149 /* coreaudio.1 */,
+			);
+			path = coreaudio;
+			sourceTree = "<group>";
+		};
 		5FB2B29B1732107C0006871C = {
 			isa = PBXGroup;
 			children = (
 				5FB2B2B0173210A50006871C /* asr */,
 				5FB2B2A61732107C0006871C /* mac */,
+				5F0C4F1117360CD60025E149 /* coreaudio */,
 				5FB2B2A51732107C0006871C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -261,6 +292,7 @@
 			isa = PBXGroup;
 			children = (
 				5FB2B2A41732107C0006871C /* mac */,
+				5F0C4F1017360CD60025E149 /* coreaudio */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -493,6 +525,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		5F0C4F0F17360CD60025E149 /* coreaudio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5F0C4F1617360CD60025E149 /* Build configuration list for PBXNativeTarget "coreaudio" */;
+			buildPhases = (
+				5F0C4F0C17360CD60025E149 /* Sources */,
+				5F0C4F0D17360CD60025E149 /* Frameworks */,
+				5F0C4F0E17360CD60025E149 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = coreaudio;
+			productName = coreaudio;
+			productReference = 5F0C4F1017360CD60025E149 /* coreaudio */;
+			productType = "com.apple.product-type.tool";
+		};
 		5FB2B2A31732107C0006871C /* mac */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5FB2B2AD1732107C0006871C /* Build configuration list for PBXNativeTarget "mac" */;
@@ -532,11 +581,21 @@
 			projectRoot = "";
 			targets = (
 				5FB2B2A31732107C0006871C /* mac */,
+				5F0C4F0F17360CD60025E149 /* coreaudio */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5F0C4F0C17360CD60025E149 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5F0C4F1917360CE10025E149 /* CoreAudio.cpp in Sources */,
+				5F0C4F1A17360CE90025E149 /* AudioDevice.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5FB2B2A01732107C0006871C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -571,6 +630,40 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		5F0C4F1717360CD60025E149 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ADDITIONAL_SDKS = "";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				FRAMEWORK_SEARCH_PATHS = "";
+				HEADER_SEARCH_PATHS = "../fftw-3.3.3";
+				OTHER_LDFLAGS = (
+					"-framework",
+					CoreFoundation,
+					"-framework",
+					CoreAudio,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		5F0C4F1817360CD60025E149 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ADDITIONAL_SDKS = "";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				FRAMEWORK_SEARCH_PATHS = "";
+				HEADER_SEARCH_PATHS = "../fftw-3.3.3";
+				OTHER_LDFLAGS = (
+					"-framework",
+					CoreFoundation,
+					"-framework",
+					CoreAudio,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		5FB2B2AB1732107C0006871C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -631,7 +724,9 @@
 		5FB2B2AE1732107C0006871C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ADDITIONAL_SDKS = "";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				FRAMEWORK_SEARCH_PATHS = "";
 				HEADER_SEARCH_PATHS = "../fftw-3.3.3";
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -641,7 +736,9 @@
 		5FB2B2AF1732107C0006871C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ADDITIONAL_SDKS = "";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				FRAMEWORK_SEARCH_PATHS = "";
 				HEADER_SEARCH_PATHS = "../fftw-3.3.3";
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -651,6 +748,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		5F0C4F1617360CD60025E149 /* Build configuration list for PBXNativeTarget "coreaudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5F0C4F1717360CD60025E149 /* Debug */,
+				5F0C4F1817360CD60025E149 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		5FB2B29F1732107C0006871C /* Build configuration list for PBXProject "mac" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

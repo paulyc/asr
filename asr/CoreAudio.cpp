@@ -6,9 +6,9 @@
 //  Copyright (c) 2013 Paul Ciarlo. All rights reserved.
 //
 
-#include "AudioDevice.h"
-
 #include <CoreAudio/CoreAudio.h>
+
+#include "AudioDevice.h"
 
 struct dat {
     int x;

@@ -23,6 +23,7 @@ typedef short SamplePairInt16[2];
 typedef fftwf_complex ComplexPairf[2];
 typedef fftw_complex ComplexPaird[2];
 
+#if WINDOWS
 typedef signed char int8_t;
 typedef unsigned char uint8_t;
 typedef short int16_t;
@@ -35,6 +36,9 @@ typedef unsigned __int64 uint64_t;
 #else
 typedef signed long long int64_t;
 typedef unsigned long long uint64_t;
+#endif
+#else // !WINDOWS
+#include <cstdint>
 #endif
 
 typedef float float32_t;

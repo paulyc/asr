@@ -14,16 +14,17 @@ SineAudioOutputProcessor::SineAudioOutputProcessor(float32_t frequency, const IA
     _frequency(frequency),
     _time(0.0)
 {
-    _bufferSize = streamDesc->GetBufferSizeFrames();
     _sampleRate = streamDesc->GetSampleRate();
+    _frameSize = streamDesc->GetNumChannels() * streamDesc->GetSampleWordSizeInBytes();
 }
     
 void SineAudioOutputProcessor::Process(IAudioBuffer *buffer)
 {
-    int32_t *sample = (int32_t*)buffer->GetBuffer();
-    for (int i = 0; i < _bufferSize; ++i)
+    float32_t *sample = (float32_t*)buffer->GetBuffer();
+    int bufferSizeFrames = buffer->GetBufferSize() / _frameSize;
+    for (int i = 0; i < bufferSizeFrames; ++i)
     {
-        const int32_t smp = int32_t(sin(2*M_PI*_frequency*_time) * 0x7FFFFFFF) >> 8;
+        const float32_t smp = sin(2*M_PI*_frequency*_time);
         sample[i*2] = smp;
         sample[i*2+1] = smp;
         _time += 1.0 / _sampleRate;
@@ -138,11 +139,20 @@ CoreAudioDevice::CoreAudioDevice(const CoreAudioDeviceDescriptor &desc) :
     AudioStreamBasicDescription streamDesc;
     AudioObjectGetPropertyData(_desc.GetID(), &propertyAddress, 0, NULL, &propertySize, myStreams);
     
-    propertySize = sizeof(streamDesc);
-    propertyAddress.mSelector = kAudioStreamPropertyPhysicalFormat;
+    /*UInt32 running;
+    propertyAddress.mSelector = kAudioDevicePropertyDeviceIsRunning;
+    propertySize = sizeof(running);
+    AudioObjectGetPropertyData(_desc.GetID(), &propertyAddress, 0, NULL, &propertySize, &running);
+    printf("running %d\n", running);
+    running = 1;
+    AudioObjectSetPropertyData(_desc.GetID(), &propertyAddress, 0, NULL, propertySize, &running);*/
     
     for (UInt32 i = 0; i < numStreams; ++i)
     {
+        propertySize = sizeof(streamDesc);
+        //propertyAddress.mSelector = kAudioStreamPropertyPhysicalFormat;
+        propertyAddress.mSelector = kAudioStreamPropertyVirtualFormat;
+        
         result = AudioObjectGetPropertyData(myStreams[i], &propertyAddress, 0, NULL, &propertySize, &streamDesc);
         union {
             UInt32 id;
@@ -155,7 +165,7 @@ CoreAudioDevice::CoreAudioDevice(const CoreAudioDeviceDescriptor &desc) :
         propertySize = sizeof(isInput);
         result = AudioObjectGetPropertyData(myStreams[i], &propertyAddress, 0, NULL, &propertySize, &isInput);
         
-        printf("res = %d input = %d id = %c%c%c%c smp rate %f bits %d flags %08x bytes %d framespp %d bytespf %d\n", result, isInput, un.chs[3], un.chs[2], un.chs[1], un.chs[0], streamDesc.mSampleRate, streamDesc.mBitsPerChannel, streamDesc.mFormatFlags, streamDesc.mBytesPerPacket, streamDesc.mFramesPerPacket, streamDesc.mBytesPerFrame);
+        printf("res = %d input = %d id = %c%c%c%c smp rate %f bits %d flags %08x bytes %d framespp %d bytespf %d cpf %d\n", result, isInput, un.chs[3], un.chs[2], un.chs[1], un.chs[0], streamDesc.mSampleRate, streamDesc.mBitsPerChannel, streamDesc.mFormatFlags, streamDesc.mBytesPerPacket, streamDesc.mFramesPerPacket, streamDesc.mBytesPerFrame, streamDesc.mChannelsPerFrame);
         
         IAudioStreamDescriptor::StreamType streamType =
             isInput ?
@@ -167,7 +177,6 @@ CoreAudioDevice::CoreAudioDevice(const CoreAudioDeviceDescriptor &desc) :
         int sampleWordSizeBytes = streamDesc.mBytesPerFrame / channels;
         IAudioStreamDescriptor::SampleAlignment sampleAlignment;
         float64_t sampleRate = streamDesc.mSampleRate;
-        int bufferSizeFrames = streamDesc.mFramesPerPacket;
         
         switch (streamDesc.mFormatID)
         {
@@ -196,7 +205,9 @@ CoreAudioDevice::CoreAudioDevice(const CoreAudioDeviceDescriptor &desc) :
             IAudioStreamDescriptor::MostSignificant :
             IAudioStreamDescriptor::LeastSignifcant;
         
-        _streams.push_back(CoreAudioStreamDescriptor(myStreams[i], _desc.GetID(), streamType, channels, sampleType, sampleSizeBits, sampleWordSizeBytes, sampleAlignment, sampleRate, bufferSizeFrames));
+        printf("%d\n", streamDesc.mFormatFlags);
+        
+        _streams.push_back(CoreAudioStreamDescriptor(myStreams[i], _desc.GetID(), streamType, channels, sampleType, sampleSizeBits, sampleWordSizeBytes, sampleAlignment, sampleRate));
     }
 }
 
@@ -255,7 +266,9 @@ OSStatus CoreAudioStream::_audioCB(AudioObjectID           inDevice,
     {
         //printf("ch %d size %d\n", outOutputData->mBuffers[i].mNumberChannels,
         //       outOutputData->mBuffers[i].mDataByteSize);
+        //outOutputData->mBuffers[i].m
         buf.SetBuffer(outOutputData->mBuffers[i].mData);
+        buf.SetBufferSize(outOutputData->mBuffers[i].mDataByteSize);
         ((CoreAudioStream*)inClientData)->_proc->Process(&buf);
     }
     return 0;

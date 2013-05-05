@@ -13,6 +13,10 @@
 #include <vector>
 
 #include "config.h"
+#if MAC
+#include <CoreAudio/CoreAudio.h>
+#endif
+
 #include "type.h"
 
 class IAudioDeviceFactory;
@@ -81,7 +85,6 @@ public:
     virtual int             GetSampleWordSizeInBytes() const = 0;
     virtual SampleAlignment GetSampleAlignment() const = 0;
     virtual float64_t       GetSampleRate() const = 0;
-    virtual int             GetBufferSizeFrames() const = 0;
     
     virtual IAudioStream *GetStream() const = 0;
 };
@@ -110,6 +113,7 @@ class IAudioBuffer
 {
 public:
     virtual void *GetBuffer() = 0;
+    virtual int GetBufferSize() const = 0;
 };
 
 class SimpleAudioBuffer : public IAudioBuffer
@@ -120,8 +124,11 @@ public:
     
     virtual void *GetBuffer() { return _buffer; }
     void SetBuffer(void *buf) { _buffer = buf; }
+    virtual int GetBufferSize() const { return _bufferSize; }
+    void SetBufferSize(int sz) { _bufferSize = sz; }
 private:
     void *_buffer;
+    int _bufferSize;
 };
 
 class IAudioStreamProcessor
@@ -139,8 +146,8 @@ public:
 private:
     float32_t _frequency;
     float64_t _time;
-    int _bufferSize;
     float64_t _sampleRate;
+    int _frameSize;
 };
 
 class IAudioStream
@@ -153,8 +160,6 @@ public:
 };
 
 #if MAC
-#include <CoreAudio/CoreAudio.h>
-
 class IAudioDeviceFactory;
 
 class MacAudioDriverDescriptor : public IAudioDriverDescriptor
@@ -219,8 +224,7 @@ public:
                               int             sampleSizeBits,
                               int             sampleWordSizeBytes,
                               SampleAlignment alignment,
-                              float64_t       sampleRate,
-                              int             bufferSizeFrames) :
+                              float64_t       sampleRate) :
         _id(id),
         _deviceID(deviceID),
         _type(type),
@@ -229,8 +233,7 @@ public:
         _sampleSizeBits(sampleSizeBits),
         _sampleWordSizeBytes(sampleWordSizeBytes),
         _alignment(alignment),
-        _sampleRate(sampleRate),
-        _bufferSizeFrames(bufferSizeFrames)
+        _sampleRate(sampleRate)
     {
     }
     
@@ -241,7 +244,6 @@ public:
     virtual int             GetSampleWordSizeInBytes() const { return _sampleWordSizeBytes; }
     virtual SampleAlignment GetSampleAlignment() const { return _alignment; }
     virtual float64_t       GetSampleRate() const { return _sampleRate; }
-    virtual int             GetBufferSizeFrames() const { return _bufferSizeFrames; }
     
     virtual IAudioStream *GetStream() const;
     
@@ -257,7 +259,6 @@ private:
     int             _sampleWordSizeBytes;
     SampleAlignment _alignment;
     float64_t       _sampleRate;
-    int             _bufferSizeFrames;
 };
 
 class CoreAudioDevice : public IAudioDevice
