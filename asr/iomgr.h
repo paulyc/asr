@@ -113,15 +113,11 @@ public:
 
 protected:
 	IASIO *_drv;
-
-	ASIODriverInfo _drv_info;
+	
 	ASIOBufferInfo *_buffer_infos;
 	size_t _buffer_infos_len;
 	ASIOCallbacks _cb;
-	long _numInputChannels;
-	long _numOutputChannels;
-	ASIOChannelInfo *_input_channel_infos;
-	ASIOChannelInfo *_output_channel_infos;
+	
 	long _bufSize;
 	long _preferredSize;
 

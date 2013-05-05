@@ -11,91 +11,14 @@ std::vector<IODriver*> IODriver::enumerate()
 
 IOManager<chunk_t>* ASIODriver::loadDriver()
 {
-#if WINDOWS
-#define ASIODRV_DESC		L"description"
-#define INPROC_SERVER		L"InprocServer32"
-#define ASIO_PATH			L"software\\asio"
-#define COM_CLSID			L"clsid"
-#define MAXPATHLEN			512
-#define MAXDRVNAMELEN		128
-
-	CLSID clsid;// = {0x835F8B5B, 0xF546, 0x4881, 0xB4, 0xA3, 0xB6, 0xB5, 0xE8, 0xE3, 0x35, 0xEF};
-#if 0
-	HKEY hkEnum, hkSub;
-	TCHAR keyname[MAXDRVNAMELEN];
-	DWORD index = 0;
-
-	cr = RegOpenKey(HKEY_LOCAL_MACHINE, ASIO_PATH, &hkEnum);
-	while (cr == ERROR_SUCCESS) {
-		if ((cr = RegEnumKey(hkEnum, index++, keyname, MAXDRVNAMELEN))== ERROR_SUCCESS) {
-		//	lpdrvlist = newDrvStruct (hkEnum,keyname,0,lpdrvlist);
-			if ((cr = RegOpenKeyEx(hkEnum, keyname, 0, KEY_READ, &hkEnum)) == ERROR_SUCCESS) {
-				atatype = REG_SZ; datasize = 256;
-				cr = RegQueryValueEx(hkSub, COM_CLSID, 0, &datatype,(LPBYTE)databuf,&datasize);
-				if (cr == ERROR_SUCCESS) {
-					MultiByteToWideChar(CP_ACP,0,(LPCSTR)databuf,-1,(LPWSTR)wData,100);
-					if ((cr = CLSIDFromString((LPOLESTR)wData,(LPCLSID)&clsid)) == S_OK) {
-						memcpy(&lpdrv->clsid,&clsid,sizeof(CLSID));
-					}
-
-					datatype = REG_SZ; datasize = 256;
-					cr = RegQueryValueEx(hkSub,ASIODRV_DESC,0,&datatype,(LPBYTE)databuf,&datasize);
-					if (cr == ERROR_SUCCESS) {
-						strcpy(lpdrv->drvname,databuf);
-					}
-					else strcpy(lpdrv->drvname,keyname);
-				}
-				RegCloseKey(hksub);
-			}
-		}
-		else fin = TRUE;
-	}
-	if (hkEnum) RegCloseKey(hkEnum);
-#else
-	// fixme, these ids change every reboot
-	// Firebox {835F8B5B-F546-4881-B4A3-B6B5E8E335EF}
-	// Creative ASIO {48653F81-8A2E-11D3-9EF0-00C0F02DD390}
-	// SB Audigy 2 ZS ASIO {4C46559D-03A7-467A-8C58-2ABC5B749A1E}
-	// SB Audigy 2 ZS ASIO 24/96 {98B6A52A-4FF7-4147-B224-CC256C3C4C64}
-	//const char * drvdll = "d:\\program files\\presonus\\1394audiodriver_firebox\\ps_asio.dll";
-#if !DUMMY_ASIO
-#if !PARALLELS_ASIO
-	CLSIDFromString(OLESTR("{23638883-0B8C-4324-BBD5-35C3CF1B73BF}"), &clsid);
-#else
-	CLSIDFromString(OLESTR("{232685C6-6548-49D8-846D-4141A3EF7560}"), &clsid);
-#endif // !PARALLELS_ASIO
-#endif // !DUMMY_ASIO
-#endif
-
-#if DUMMY_ASIO
-	asiodrv = new DummyASIO;
-	HRESULT rc = S_OK;
-#else
-	HRESULT rc = CoCreateInstance(clsid, 0, CLSCTX_INPROC_SERVER, clsid, (LPVOID *)&asiodrv);
-#endif
-
-	if (rc == S_OK) { // programmers making design decisions = $$$?
-		printf("i got this %p\n", asiodrv);
-	} else {
-		abort(); 
-	}
-
-	return new ASIOManager<chunk_t>(asiodrv);
-#endif
+    //return new ASIOManager<chunk_t>(asiodrv);
 }
 
 template <typename Chunk_T>
 ASIOManager<Chunk_T>::ASIOManager(IASIO *drv) : 
 	_drv(drv), 
-	_buffer_infos(0),
-	_input_channel_infos(0),
-	_output_channel_infos(0)
+	_buffer_infos(0)
 {
-	ASIOError e;
-
-	_drv_info.asioVersion = 2;
-	_drv_info.sysRef = 0;
-	ASIO_ASSERT_NO_ERROR(ASIOInit(&_drv_info));
 
 	enumerateIOs();
 }
@@ -107,17 +30,14 @@ ASIOManager<Chunk_T>::~ASIOManager()
 	ASIOError e = ASIODisposeBuffers();
 	e = ASIOExit();
 	free(_buffer_infos);
-	free(_output_channel_infos);
-	free(_input_channel_infos);
 
-
-	for (std::list<IOInput*>::iterator i = _inputs.begin();
+	for (std::list<AudioInput*>::iterator i = _inputs.begin();
 		i != _inputs.end();
 		i++)
 	{
 		delete *i;
 	}
-	for (std::list<IOOutput*>::iterator i = _outputs.begin();
+	for (std::list<AudioOutput*>::iterator i = _outputs.begin();
 		i != _outputs.end();
 		i++)
 	{
@@ -128,42 +48,7 @@ ASIOManager<Chunk_T>::~ASIOManager()
 template <typename Chunk_T>
 void ASIOManager<Chunk_T>::enumerateIOs()
 {
-	/*
-	ASIOGetChannels();
-	ASIOGetBufferSize();
-	ASIOCanSampleRate();
-	ASIOGetSampleRate();
-	ASIOGetClockSources();
-	ASIOGetChannelInfo();
-	ASIOSetSampleRate();
-	ASIOSetClockSource();
-	ASIOGetLatencies();
-	ASIOFuture();
-	*/
-
-	ASIOError e;
-	long minSize, maxSize, granularity;
 	
-	ASIO_ASSERT_NO_ERROR(ASIOGetBufferSize(&minSize, &maxSize, &_preferredSize, &granularity));
-	ASIO_ASSERT_NO_ERROR(ASIOGetChannels(&_numInputChannels, &_numOutputChannels));
-
-	_input_channel_infos = (ASIOChannelInfo*)malloc(_numInputChannels*sizeof(ASIOChannelInfo));
-	for (long ch = 0; ch < _numInputChannels; ++ch)
-	{
-		_input_channel_infos[ch].channel = ch;
-		_input_channel_infos[ch].isInput = ASIOTrue;
-		ASIO_ASSERT_NO_ERROR(ASIOGetChannelInfo(&_input_channel_infos[ch]));
-		printf("Input Channel %d\nName: %s\nSample Type: %d\n\n", ch, _input_channel_infos[ch].name, _input_channel_infos[ch].type);
-	}
-
-	_output_channel_infos = (ASIOChannelInfo*)malloc(_numOutputChannels*sizeof(ASIOChannelInfo));
-	for (long ch = 0; ch < _numOutputChannels; ++ch)
-	{
-		_output_channel_infos[ch].channel = ch;
-		_output_channel_infos[ch].isInput = ASIOFalse;
-		ASIO_ASSERT_NO_ERROR(ASIOGetChannelInfo(&_output_channel_infos[ch]));
-		printf("Output Channel %d\nName: %s\nSample Type: %d\n\n", ch, _output_channel_infos[ch].name, _output_channel_infos[ch].type);
-	}
 }
 
 template <typename Chunk_T>
@@ -236,8 +121,6 @@ void ASIOManager<Chunk_T>::createBuffers(ASIOProcessor *io)
 	_buffer_infos[4].channelNum = ch_output2_l;
 	_buffer_infos[5].isInput = ASIOFalse;
 	_buffer_infos[5].channelNum = ch_output2_r;
-
-	ASIOSetSampleRate(48000.0);
 #endif
 #endif
 

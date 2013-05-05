@@ -38,7 +38,7 @@ typedef signed long long int64_t;
 typedef unsigned long long uint64_t;
 #endif
 #else // !WINDOWS
-#include <cstdint>
+#include <stdint.h>
 #endif
 
 typedef float float32_t;
