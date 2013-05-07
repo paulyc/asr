@@ -86,6 +86,7 @@ class GenericUI
 {
 public:
 	GenericUI(ASIOProcessor *io, UITrack t1, UITrack t2);
+    virtual ~GenericUI() {}
 
 	virtual void create() = 0;
 	virtual void destroy() = 0;

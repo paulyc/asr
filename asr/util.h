@@ -402,6 +402,7 @@ private:
 class deferred
 {
 public:
+    virtual ~deferred() {}
 	virtual void operator()() = 0;
 };
 

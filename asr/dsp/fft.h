@@ -306,12 +306,12 @@ public:
 
 			assert(_readPtr >= _synthPtr);
 			SamplePaird *synthEnd = _synthBuf + _N + _hops * _R;
-			int copy = synthEnd - _synthPtr;
-			int readOfs = _readPtr - _synthPtr;
+			long copy = synthEnd - _synthPtr;
+			long readOfs = _readPtr - _synthPtr;
 			memmove(_synthBuf, _synthPtr, copy*sizeof(SamplePaird));
 			_synthPtr = _synthBuf;
 			_readPtr = _synthPtr + readOfs;
-			for (int i=copy; i <  _N + _hops * _R; ++i)
+			for (long i=copy; i <  _N + _hops * _R; ++i)
 			{
 				_synthBuf[i][0] = 0.0;
 				_synthBuf[i][1] = 0.0;

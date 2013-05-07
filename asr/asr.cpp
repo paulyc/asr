@@ -22,8 +22,6 @@ using std::exception;
 #include "type.h"
 #include "util.h"
 
-#include "fftw.h"
-
 #include "dsp/filter.h"
 #include "display.h"
 

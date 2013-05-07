@@ -18,7 +18,6 @@
 		5FB2B36E173210A50006871C /* decoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B30D173210A50006871C /* decoder.cpp */; };
 		5FB2B36F173210A50006871C /* beats.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B311173210A50006871C /* beats.cpp */; };
 		5FB2B370173210A50006871C /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
-		5FB2B371173210A50006871C /* fftw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B319173210A50006871C /* fftw.cpp */; };
 		5FB2B372173210A50006871C /* io.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B31D173210A50006871C /* io.cpp */; };
 		5FB2B376173210A50006871C /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B325173210A50006871C /* Makefile */; };
 		5FB2B377173210A50006871C /* malloc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B326173210A50006871C /* malloc.cpp */; };
@@ -603,7 +602,6 @@
 				5FB2B36E173210A50006871C /* decoder.cpp in Sources */,
 				5FB2B36F173210A50006871C /* beats.cpp in Sources */,
 				5FB2B370173210A50006871C /* fft.cpp in Sources */,
-				5FB2B371173210A50006871C /* fftw.cpp in Sources */,
 				5FB2B372173210A50006871C /* io.cpp in Sources */,
 				5FB2B376173210A50006871C /* Makefile in Sources */,
 				5FB2B377173210A50006871C /* malloc.cpp in Sources */,
