@@ -3,6 +3,7 @@
 #include "tracer.h"
 
 #include <queue>
+#include <algorithm>
 
 #include <pthread.h>
 #include <semaphore.h>
@@ -14,6 +15,38 @@
 
 #include "track.h"
 
+void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
+{
+    const int stride = buf->GetStride();
+    int to_write = buf->GetBufferSizeFrames(), loop_write, written=0, chunk_left;
+	float32_t * const write = (float32_t* const)buf->GetBuffer();
+
+	while (to_write > 0)
+	{
+		if (!_chk || _read - _chk->_data >= chunk_t::chunk_size)
+		{
+			T_allocator<chunk_t>::free(_chk);
+			_chk = 0;
+            
+			this->_src_lock.acquire();
+			_chk = _src->next();
+			this->_src_lock.release();
+			_read = _chk->_data;
+		}
+        chunk_left = chunk_t::chunk_size - (_read - _chk->_data);
+		loop_write = std::min(to_write, chunk_left);
+        for (int i = 0; i < loop_write; ++i)
+        {
+            write[i*stride+_ch1id] = _read[i][0];
+            write[i*stride+_ch2id] = _read[i][1];
+        }
+        
+		_read += loop_write;
+		to_write -= loop_write;
+		written += loop_write;
+	}
+}
+
 CoreAudioOutputProcessor::CoreAudioOutputProcessor(const IAudioStreamDescriptor *streamDesc)
 {
     _channels = streamDesc->GetNumChannels();
@@ -22,67 +55,13 @@ CoreAudioOutputProcessor::CoreAudioOutputProcessor(const IAudioStreamDescriptor 
 
 void CoreAudioOutputProcessor::Process(IAudioBuffer *buffer)
 {
-    float32_t *samples = (float32_t*)buffer->GetBuffer();
-    int bufferSizeFrames = buffer->GetBufferSize() / _frameSize;
     for (std::vector<CoreAudioOutput>::iterator out = _outputs.begin();
          out != _outputs.end();
          out++)
     {
-        for (int i = 0; i < bufferSizeFrames; ++i)
-        {
-            const float32_t smp = 0.0f;
-            samples[i*_channels+out->_ch1ofs] = smp;
-            samples[i*_channels+out->_ch2ofs] = smp;
-        }
+        out->process(dynamic_cast<MultichannelAudioBuffer*>(buffer));
     }
-    /*
-    int to_write = bufferSizeFrames, loop_write, written=0;
-	float32_t *write, *end_write;
-	typename chunk_t::sample_t *read;
-	while (to_write > 0)
-	{
-		if (!_chk || _read - _chk->_data >= chunk_t::chunk_size)
-		{
-			T_allocator<chunk_t>::free(_chk);
-			_chk = 0;
-            
-			pthread_mutex_lock(&this->_src_lock);
-			_chk = _src_t->next();
-			pthread_mutex_unlock(&this->_src_lock);
-			_read = _chk->_data;
-		}
-		loop_write = min(to_write, chunk_t::chunk_size - (_read - _chk->_data));
-		for (write = _bufL + written,
-             end_write = write + loop_write,
-             read = _read;
-             write != end_write;
-             ++write, ++read)
-		{
-            //	*write = Output_Sample_T((*read)[0] * MaxVal<Output_Sample_T>::val);
-			if ((*read)[0] < 0.0f)
-				*write = Output_Sample_T(-max(-1.0f, (*read)[0]) * MinVal<Output_Sample_T>::val);
-			else
-				*write = Output_Sample_T(min(1.0f, (*read)[0]) * MaxVal<Output_Sample_T>::val);
-		}
-		for (write = _bufR + written,
-             end_write = write + loop_write,
-             read = _read;
-             write != end_write;
-             ++write, ++read)
-		{
-            //	*write = Output_Sample_T((*read)[1] * MaxVal<Output_Sample_T>::val);
-			if ((*read)[1] < 0.0f)
-				*write = Output_Sample_T(-max(-1.0f, (*read)[1]) * MinVal<Output_Sample_T>::val);
-			else
-				*write = Output_Sample_T(min(1.0f, (*read)[1]) * MaxVal<Output_Sample_T>::val);
-		}
-		_read += loop_write;
-		to_write -= loop_write;
-		written += loop_write;
-	}*/
 }
-
-
 
 ASIOProcessor::ASIOProcessor() :
 	_running(false),
@@ -287,7 +266,9 @@ void ASIOProcessor::CreateTracks()
         else
         {
             _outputStream = (*i)->GetStream();
-            _outputStreamProcessor = new CoreAudioOutputProcessor(&_main_mgr);
+            _outputStreamProcessor = new CoreAudioOutputProcessor(_outputStream->GetDescriptor());
+            _outputStreamProcessor->AddOutput(CoreAudioOutput(&_main_mgr, 0, 1));
+            _outputStreamProcessor->AddOutput(CoreAudioOutput(&_2_mgr, 2, 3));
         }
     }
 
@@ -372,6 +353,7 @@ void ASIOProcessor::Stop()
 
 void ASIOProcessor::BufferSwitch(long doubleBufferIndex)
 {
+#if 0
 	_waiting = true;
 	_io_lock.acquire();
 	_waiting = false;
@@ -405,6 +387,7 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex)
 #endif
 
 	_io_lock.release();
+#endif
 }
 
 void ASIOProcessor::GenerateOutput()
@@ -445,7 +428,7 @@ void ASIOProcessor::GenerateOutput()
 		}
 	}
 
-    _iomgr->processOutputs();
+    //_iomgr->processOutputs();
     _need_buffers = false;
 	_gen_done.signal();
     

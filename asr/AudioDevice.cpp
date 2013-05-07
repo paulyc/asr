@@ -57,7 +57,6 @@ CoreAudioDeviceFactory::CoreAudioDeviceFactory()
     UInt32 numDevices;
     OSStatus result;
     AudioDeviceID *deviceList = 0;
-    std::vector<AudioDeviceDescriptor> devices;
     
     AudioObjectPropertyAddress propertyAddress = { kAudioHardwarePropertyDevices, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMaster };
     result = AudioObjectGetPropertyDataSize(kAudioObjectSystemObject,
@@ -207,7 +206,7 @@ CoreAudioDevice::CoreAudioDevice(const CoreAudioDeviceDescriptor &desc) :
         
         printf("%d\n", streamDesc.mFormatFlags);
         
-        _streams.push_back(CoreAudioStreamDescriptor(myStreams[i], _desc.GetID(), streamType, channels, sampleType, sampleSizeBits, sampleWordSizeBytes, sampleAlignment, sampleRate));
+        _streams.push_back(CoreAudioStreamDescriptor(myStreams[i], this, streamType, channels, sampleType, sampleSizeBits, sampleWordSizeBytes, sampleAlignment, sampleRate));
     }
 }
 
@@ -291,16 +290,17 @@ OSStatus CoreAudioStream::_audioCB(AudioObjectID           inDevice,
                                    const AudioTimeStamp*   inOutputTime,
                                    void*                   inClientData)
 {
-    SimpleAudioBuffer buf;
+    const CoreAudioStream* const stream = (const CoreAudioStream* const)inClientData;
+    const int nChannels = stream->_desc.GetNumChannels();
+    const int bytesPerFrame = nChannels * stream->_desc.GetSampleWordSizeInBytes();
+    
+    CoreAudioBuffer buf(nChannels, bytesPerFrame);
     UInt32 numBuffers = outOutputData->mNumberBuffers;
     for (UInt32 i = 0; i < numBuffers; ++i)
     {
-        //printf("ch %d size %d\n", outOutputData->mBuffers[i].mNumberChannels,
-        //       outOutputData->mBuffers[i].mDataByteSize);
-        //outOutputData->mBuffers[i].m
         buf.SetBuffer(outOutputData->mBuffers[i].mData);
         buf.SetBufferSize(outOutputData->mBuffers[i].mDataByteSize);
-        ((CoreAudioStream*)inClientData)->_proc->Process(&buf);
+        stream->_proc->Process(&buf);
     }
     return 0;
 }

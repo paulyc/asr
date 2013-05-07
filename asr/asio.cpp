@@ -1,3 +1,5 @@
+#if WINDOWS
+
 /*
 template <typename Input_Sample_T, typename Output_Sample_T, typename Chunk_T, int chunk_size>
 void asio_sink<Input_Sample_T, Output_Sample_T, Chunk_T, chunk_size, false>::process()
@@ -148,8 +150,6 @@ void asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::process(int doubleBu
 		_sink->process();
 	}
 }
-
-#if WINDOWS
 
 ASIOProcessor *MyASIOCallbacks::io = 0;
 

@@ -112,6 +112,38 @@ private:
     int _bufferSize;
 };
 
+class MultichannelAudioBuffer : public IAudioBuffer
+{
+public:
+    MultichannelAudioBuffer() : _buffer(0) {}
+    MultichannelAudioBuffer(void *buf) : _buffer(buf) {}
+    
+    virtual void *GetBuffer() { return _buffer; }
+    void SetBuffer(void *buf) { _buffer = buf; }
+    virtual int GetBufferSize() const { return _bufferSize; }
+    void SetBufferSize(int sz) { _bufferSize = sz; }
+    
+    virtual int GetBufferSizeFrames() = 0;
+    virtual void *GetChannelBuffer(int ch) = 0;
+    virtual int GetStride() = 0;
+protected:
+    void *_buffer;
+    int _bufferSize;
+};
+
+class CoreAudioBuffer : public MultichannelAudioBuffer
+{
+public:
+    CoreAudioBuffer(int channels, int bytesPerFrame) : _channels(channels), _bytesPerFrame(bytesPerFrame) {}
+    
+    virtual int GetBufferSizeFrames() { return _bufferSize / _bytesPerFrame; }
+    virtual void *GetChannelBuffer(int ch) { return ((float32_t*)_buffer) + ch; }
+    virtual int GetStride() { return _channels; }
+private:
+    int _channels;
+    int _bytesPerFrame;
+};
+
 class IAudioStreamProcessor
 {
 public:

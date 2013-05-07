@@ -6,6 +6,7 @@
 
 #include "malloc.h"
 #include "util.h"
+#include "lock.h"
 
 template <typename T>
 class T_source
@@ -102,20 +103,18 @@ public:
 	T_sink_sourceable(T_source<T> *src) :
 	  T_sink<T>(src)
 	{
-		pthread_mutex_init(&_src_lock, 0);
 	}
 	virtual ~T_sink_sourceable()
 	{
-		pthread_mutex_destroy(&_src_lock);
 	}
 	void set_source(T_source<T> *src)
 	{
-		pthread_mutex_lock(&_src_lock);
+		_src_lock.acquire();
 		this->_src = src;
-		pthread_mutex_unlock(&_src_lock);
+		_src_lock.release();
 	}
 protected:
-	pthread_mutex_t _src_lock;
+	Lock_T _src_lock;
 };
 
 template <typename T>

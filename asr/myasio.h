@@ -20,10 +20,6 @@ public:
 	static ASIOProcessor *io;
 };
 
-class IASIOSink : public AudioOutput
-{
-};
-
 class IASIOSource : public AudioInput
 {
 public:
@@ -34,18 +30,14 @@ public:
 };
 
 template <typename Chunk_T, typename Source_T, typename Output_Sample_T>
-class asio_sink : public IASIOSink, public T_sink_sourceable<Chunk_T>
+class asio_sink : public AudioOutput
 {
 public:
 	asio_sink(Source_T *src, Output_Sample_T **bufs1, Output_Sample_T **bufs2, long bufSz) :
-	  T_sink_sourceable<Chunk_T>(src),
+	  AudioOutput(src),
 	  _buf_size(bufSz),
 	  _src_t(src)
 	{
-	//	_chk = _src->next();
-	//	_read = _chk->_data;
-		_chk = 0;
-		_read = 0;
 		_buffers[0] = bufs1;
 		_buffers[1] = bufs2;
 		_bufL = new Output_Sample_T[_buf_size];
@@ -55,13 +47,10 @@ public:
 	{
 		delete [] _bufR;
 		delete [] _bufL;
-		T_allocator<Chunk_T>::free(_chk);
 	}
     void process();
 	void switchBuffers(int dbIndex);
 protected:
-	Chunk_T *_chk;
-	typename Chunk_T::sample_t *_read;
 	Output_Sample_T **_buffers[2];
 	long _buf_size;
 	Source_T *_src_t;

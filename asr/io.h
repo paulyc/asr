@@ -33,6 +33,26 @@ class IMIDIDevice;
 template <typename T>
 class SeekablePitchableFileSource;
 
+class ChunkGenerator
+{
+public:
+    void AddChunkSource(T_source<chunk_t> *src, int id);
+    chunk_t* GetNextChunk(int streamID);
+};
+
+class BlockingChunkStream : public T_source<chunk_t>
+{
+public:
+    BlockingChunkStream(ChunkGenerator *gen, int streamID) : _gen(gen), _streamID(streamID) {}
+    chunk_t *next()
+    {
+        return _gen->GetNextChunk(_streamID);
+    }
+private:
+    ChunkGenerator *_gen;
+    int _streamID;
+};
+
 class AudioInput
 {
 public:
@@ -41,13 +61,29 @@ public:
 	virtual void process(int doubleBufferIndex) {}
 };
 
-class AudioOutput
+class AudioOutput : public T_sink_sourceable<chunk_t>
 {
 public:
-	virtual ~AudioOutput() {}
+    AudioOutput(T_source<chunk_t> *src, int ch1id, int ch2id) :
+        T_sink_sourceable<chunk_t>(src),
+        _ch1id(ch1id),
+        _ch2id(ch2id)
+    {
+        _chk = 0;
+        _read = 0;
+    }
+	virtual ~AudioOutput()
+    {
+        T_allocator<chunk_t>::free(_chk);
+    }
     
-	virtual void process() {}
+	virtual void process(MultichannelAudioBuffer *buf);
 	virtual void switchBuffers(int dbIndex) {}
+protected:
+    int _ch1id;
+    int _ch2id;
+	chunk_t *_chk;
+	typename chunk_t::sample_t *_read;
 };
 
 #if MAC
@@ -58,11 +94,8 @@ class CoreAudioInput : public AudioInput
 class CoreAudioOutput : public AudioOutput
 {
 public:
-    CoreAudioOutput(T_source<chunk_t> *src, int ch1ofs, int ch2ofs) : _src(src), _ch1ofs(ch1ofs), _ch2ofs(ch2ofs) {}
-    
-    T_source<chunk_t> *_src;
-    int _ch1ofs;
-    int _ch2ofs;
+    CoreAudioOutput(T_source<chunk_t> *src, int ch1ofs, int ch2ofs) : AudioOutput(src, ch1ofs, ch2ofs) {}
+    virtual void process(MultichannelAudioBuffer *buf);
 };
 
 class CoreAudioOutputProcessor : public IAudioStreamProcessor
