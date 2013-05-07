@@ -17,7 +17,7 @@ void CommandlineUI::main_loop()
     }
 }
 
-void CommandlineUI::set_text_field(int id, const wchar_t *txt, bool del)
+void CommandlineUI::set_text_field(int id, const char *txt, bool del)
 {
     std::cout << "set text " << id << " " << txt << std::endl;
 }

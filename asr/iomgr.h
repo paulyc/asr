@@ -12,6 +12,35 @@
 #include "util.h"
 #include "myasio.h"
 
+struct chunk_buffer : public T_source<chunk_t>
+{
+	chunk_buffer():_c(0){}
+	chunk_t* _c;
+	chunk_t* next()
+	{
+		assert(_c);
+		chunk_t *r = _c;
+		_c = 0;
+		return r;
+	}
+};
+
+template <typename Chunk_T>
+struct chunk_buffer_t : public T_source<Chunk_T>
+{
+	chunk_buffer_t():_c(0){}
+	Chunk_T* _c;
+	Chunk_T* next()
+	{
+		assert(_c);
+		Chunk_T *r = _c;
+		_c = 0;
+		return r;
+	}
+};
+
+#if WINDOWS
+
 #define CHOOSE_CHANNELS 0
 #define RUN 0
 #define INPUT_PERIOD (1.0/44100.0)
@@ -60,33 +89,6 @@ protected:
 	
 };
 
-struct chunk_buffer : public T_source<chunk_t>
-{
-	chunk_buffer():_c(0){}
-	chunk_t* _c;
-	chunk_t* next()
-	{
-		assert(_c);
-		chunk_t *r = _c;
-		_c = 0;
-		return r;
-	}
-};
-
-template <typename Chunk_T>
-struct chunk_buffer_t : public T_source<Chunk_T>
-{
-	chunk_buffer_t():_c(0){}
-	Chunk_T* _c;
-	Chunk_T* next()
-	{
-		assert(_c);
-		Chunk_T *r = _c;
-		_c = 0;
-		return r;
-	}
-};
-
 template <typename Chunk_T>
 class ASIOManager : public IOManager<Chunk_T>
 {
@@ -125,5 +127,7 @@ protected:
 	std::list<AudioOutput*> _outputs;
 	std::list<AudioInput*> _inputs;
 };
+
+#endif // WINDOWS
 
 #endif // !defined(IOMGR_H)

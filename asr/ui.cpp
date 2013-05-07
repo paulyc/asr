@@ -275,21 +275,21 @@ UIText::UIText(GenericUI *ui, int i) : _ui(ui), id(i)
 {
 }
 
-void UIText::set_text(const wchar_t *txt, bool del=true)
+void UIText::set_text(const char *txt, bool del=true)
 {
 	_ui->set_text_field(id, txt, del);
 }
 
 void UIText::set_text_pct(double pct)
 {
-	wchar_t *buf = new wchar_t[32];
-	swprintf(buf, 32, L"%.02f%%", pct);
+	char *buf = new char[32];
+	snprintf(buf, 32, "%.02f%%", pct);
 	set_text(buf);
 }
 
 void UIText::set_text_db(double db)
 {
-	wchar_t *buf = new wchar_t[64];
-	swprintf(buf, 64, L"%.02f dB", db);
+	char *buf = new char[64];
+	snprintf(buf, 64, "%.02f dB", db);
 	set_text(buf);
 }

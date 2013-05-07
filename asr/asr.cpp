@@ -16,17 +16,21 @@ using std::exception;
 #include <fftw3.h>
 #include <emmintrin.h>
 
+#include "io.h"
+
 #include "asr.h"
 #include "type.h"
 #include "util.h"
 
 #include "fftw.h"
 
-#include "wavfile.h"
 #include "dsp/filter.h"
 #include "display.h"
+
+#if WINDOWS
 #include "asiodrv.cpp"
-#include "io.h"
+#endif
+
 #include "speedparser.h"
 #include "ui.h"
 #include "tracer.h"

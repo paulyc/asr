@@ -1,5 +1,7 @@
 #include "util.h"
 
+#if WINDOWS
+
 const char* asio_error_str(ASIOError e)
 {
 	switch (e)
@@ -86,6 +88,8 @@ const char* asio_sampletype_str(ASIOSampleType t)
 	}
 }
 
+#endif // WINDOWS
+
 template <>
 double sinc(double x)
 {
@@ -108,7 +112,9 @@ double delta(double x, double a=0.001)
 	return exp(-(x*x)/(a*a))/(a*0.5*M_2_SQRTPI);
 }
 
+template <>
 KaiserWindowTable<double> *KaiserWindowTable<double>::_inst = 0;
+template <>
 KaiserWindowTable<float> *KaiserWindowTable<float>::_inst = 0;
 
 template <>

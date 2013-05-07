@@ -1,8 +1,8 @@
 #ifndef _WAVFILE_H
 #define _WAVFILE_H
 
-#include "file.h"
 #include "io.h"
+#include "file.h"
 #include "lock.h"
 #include <string>
 #include <exception>
@@ -106,7 +106,7 @@ public:
 		load_header(filename);
 		_buffer = new char[_bytesPerSample*_nChannels*Chunk_T::chunk_size+4];
 	}
-	ifffile_chunker(GenericFile *file) :
+	ifffile_chunker(DiskFile *file) :
 		file_chunker(file),
 		_type(Unknown),
 		_eof(false)
@@ -329,7 +329,7 @@ public:
 	{
 		load_header(filename);
 	}
-	wavfile_chunker_base(GenericFile *file) :
+	wavfile_chunker_base(DiskFile *file) :
 		file_chunker(file),
 		_eof(false)
 	{

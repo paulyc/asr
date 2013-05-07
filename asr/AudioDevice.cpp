@@ -225,31 +225,62 @@ std::vector<const IAudioStreamDescriptor*> CoreAudioDevice::GetStreams() const
 
 void CoreAudioDevice::Start()
 {
-    
+    for (std::vector<IAudioStream*>::iterator i = _streamRegister.begin();
+         i != _streamRegister.end();
+         i++)
+    {
+        (*i)->Start();
+    }
 }
 
 void CoreAudioDevice::Stop()
 {
-    
+    for (std::vector<IAudioStream*>::iterator i = _streamRegister.begin();
+         i != _streamRegister.end();
+         i++)
+    {
+        (*i)->Stop();
+    }
 }
 
 IAudioStream *CoreAudioStreamDescriptor::GetStream() const
 {
-    return new CoreAudioStream(*this);
+    IAudioStream *stream = new CoreAudioStream(*this, _device);
+    _device->RegisterStream(stream);
+    return stream;
+}
+
+AudioDeviceID CoreAudioStreamDescriptor::GetDeviceID() const
+{
+    return _device->GetID();
 }
 
 CoreAudioStream::~CoreAudioStream()
 {
-    if (_procID != 0)
-        AudioDeviceStop(_desc.GetDeviceID(), _procID);
+    if (_proc)
+        AudioDeviceDestroyIOProcID(_desc.GetDeviceID(), _procID);
 }
 
 void CoreAudioStream::SetProc(IAudioStreamProcessor *proc)
 {
     _proc = proc;
-    
     AudioDeviceCreateIOProcID(_desc.GetDeviceID(), _audioCB, this, &_procID);
-    AudioDeviceStart(_desc.GetDeviceID(), _procID);
+}
+
+void CoreAudioStream::Start()
+{
+    if (_proc)
+    {
+        AudioDeviceStart(_desc.GetDeviceID(), _procID);
+    }
+}
+
+void CoreAudioStream::Stop()
+{
+    if (_proc)
+    {
+        AudioDeviceStop(_desc.GetDeviceID(), _procID);
+    }
 }
 
 OSStatus CoreAudioStream::_audioCB(AudioObjectID           inDevice,

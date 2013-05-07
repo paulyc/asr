@@ -7,6 +7,7 @@
 
 //#include "track.h"
 #include "util.h"
+#include "malloc.h"
 
 class Worker
 {

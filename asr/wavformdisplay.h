@@ -168,19 +168,19 @@ public:
 					  {
 						  if (the_chk->_data[ofs][0] > 0.0f)
 						  {
-							_wav_heights[p].peak_top = max(the_chk->_data[ofs][0], _wav_heights[p].peak_top);
+                              _wav_heights[p].peak_top = fmax(the_chk->_data[ofs][0], _wav_heights[p].peak_top);
 							_wav_heights[p].peak_bot = 0.0f;
 						  }
 						  else
 						  {
 							  _wav_heights[p].peak_top = 0.0f;
-							_wav_heights[p].peak_bot = min(the_chk->_data[ofs][0], _wav_heights[p].peak_bot);
+							_wav_heights[p].peak_bot = fmin(the_chk->_data[ofs][0], _wav_heights[p].peak_bot);
 						  }
 					  }
 					  else
 					  {
-						  _wav_heights[p].peak_top = max(the_chk->_data[ofs][0], _wav_heights[p].peak_top);
-						  _wav_heights[p].peak_bot = min(the_chk->_data[ofs][0], _wav_heights[p].peak_bot);
+						  _wav_heights[p].peak_top = fmax(the_chk->_data[ofs][0], _wav_heights[p].peak_top);
+						  _wav_heights[p].peak_bot = fmin(the_chk->_data[ofs][0], _wav_heights[p].peak_bot);
 					  }
 					//  assert(chk < chunks);
 				//	const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
@@ -265,7 +265,7 @@ public:
 		_left = _center - 0.5/_zoom;
 		_right = _center + 0.5/_zoom;
 	//  printf("z %f\n",_zoom);
-	  _level = (int)(min(log(_zoom) / log(2.0), 8));
+	  _level = (int)(fmin(log(_zoom) / log(2.0), 8));
   }
 
   void set_left(double l)

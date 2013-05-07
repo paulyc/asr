@@ -267,7 +267,7 @@ public:
 			if (to_fill == 0)
 				break;
 			ofs_in_chk = _smp_ofs % Chunk_T::chunk_size;
-			loop_fill = min(to_fill, Chunk_T::chunk_size - ofs_in_chk);
+			loop_fill = std::min(to_fill, Chunk_T::chunk_size - ofs_in_chk);
 			memcpy(to_ptr, buf_chk->_data + ofs_in_chk, loop_fill*sizeof(typename Chunk_T::sample_t));
 			to_fill -= loop_fill;
 			to_ptr += loop_fill;

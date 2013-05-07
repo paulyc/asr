@@ -11,6 +11,8 @@ public:
 	GenericFile() : 
 	  _eof(false)
 	{}
+    
+    virtual ~GenericFile() {}
 
 	virtual size_t read(void *DstBuf, size_t ElementSize, size_t Count) = 0;
 	virtual void seek(long ofs) = 0;

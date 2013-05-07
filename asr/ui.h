@@ -106,7 +106,7 @@ public:
 	virtual void do_paint();
 	enum SliderType { PitchCoarse, PitchFine, Gain, XfadeMaster, XfadeCue };
 	virtual void slider_move(double pos, SliderType t, int x);
-	virtual void set_text_field(int id, const wchar_t *txt, bool del) = 0;
+	virtual void set_text_field(int id, const char *txt, bool del) = 0;
 	virtual void set_main_mix(double pos){}
     virtual void set_dirty(int track_id)
     {
@@ -154,7 +154,7 @@ public:
 	{
 		_future.submit(d);
 	}
-	virtual void drop_file(const wchar_t *filename, bool track1);
+	virtual void drop_file(const char *filename, bool track1);
 	UITrack& get_track(int track_id) { return track_id == 1 ? _track1 : _track2; }
 	double get_track_pitch(int track_id) { return get_track(track_id).get_pitch(); }
 	//protected:
@@ -266,7 +266,7 @@ public:
     
 	virtual void create() {}
 	virtual void destroy() {}
-	virtual void main_loop() = 0;
+	virtual void main_loop();
 	virtual bool running() { return true; }
 	virtual void do_quit() {}
     virtual void render(int) {}
@@ -274,7 +274,7 @@ public:
 	virtual void set_position(void *t, double tm, bool invalidate);
 	virtual void set_clip(int t);
 	virtual bool want_render() {return false;}
-	virtual void set_text_field(int id, const wchar_t *txt, bool del);
+	virtual void set_text_field(int id, const char *txt, bool del);
 };
 
 #endif // !defined(UI_H)

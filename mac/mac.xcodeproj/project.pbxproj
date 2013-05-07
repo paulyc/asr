@@ -725,7 +725,11 @@
 				ADDITIONAL_SDKS = "";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				FRAMEWORK_SEARCH_PATHS = "";
-				HEADER_SEARCH_PATHS = "../fftw-3.3.3";
+				HEADER_SEARCH_PATHS = (
+					"../fftw-3.3.3",
+					"../libmad-0.15.1b",
+					"../flac-1.2.1/include",
+				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -737,7 +741,11 @@
 				ADDITIONAL_SDKS = "";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				FRAMEWORK_SEARCH_PATHS = "";
-				HEADER_SEARCH_PATHS = "../fftw-3.3.3";
+				HEADER_SEARCH_PATHS = (
+					"../fftw-3.3.3",
+					"../libmad-0.15.1b",
+					"../flac-1.2.1/include",
+				);
 				OTHER_CFLAGS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

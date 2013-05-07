@@ -27,13 +27,69 @@
 #include "speedparser.h"
 #include "wavformdisplay.h"
 
-
-
 class ASIOProcessor;
 class GenericUI;
 class IMIDIDevice;
 template <typename T>
 class SeekablePitchableFileSource;
+
+class AudioInput
+{
+public:
+	virtual ~AudioInput() {}
+    
+	virtual void process(int doubleBufferIndex) {}
+};
+
+class AudioOutput
+{
+public:
+	virtual ~AudioOutput() {}
+    
+	virtual void process() {}
+	virtual void switchBuffers(int dbIndex) {}
+};
+
+#if MAC
+class CoreAudioInput : public AudioInput
+{
+};
+
+class CoreAudioOutput : public AudioOutput
+{
+public:
+    CoreAudioOutput(T_source<chunk_t> *src, int ch1ofs, int ch2ofs) : _src(src), _ch1ofs(ch1ofs), _ch2ofs(ch2ofs) {}
+    
+    T_source<chunk_t> *_src;
+    int _ch1ofs;
+    int _ch2ofs;
+};
+
+class CoreAudioOutputProcessor : public IAudioStreamProcessor
+{
+public:
+    CoreAudioOutputProcessor(const IAudioStreamDescriptor *streamDesc);
+    
+    void AddOutput(const CoreAudioOutput &out) { _outputs.push_back(out); }
+    virtual void Process(IAudioBuffer *buffer);
+private:
+    int _channels;
+    int _frameSize;
+    std::vector<CoreAudioOutput> _outputs;
+    
+    chunk_t *_chk;
+	typename chunk_t::sample_t *_read;
+};
+
+class CoreAudioInputProcessor : public IAudioStreamProcessor
+{
+public:
+    void AddInput(const CoreAudioInput &in);
+    virtual void Process(IAudioBuffer *buffer);
+};
+#elif WINDOWS
+
+#endif // WINDOWS
 
 template <typename Input_Chunk_T, typename Output_Chunk_T>
 class ChunkConverter : public T_source<Output_Chunk_T>, public T_sink<Input_Chunk_T>
@@ -89,10 +145,10 @@ public:
 	virtual ~ASIOProcessor();
 
 public:
-	ASIOError Start();
-	ASIOError Stop();
+	void Start();
+	void Stop();
 
-	void BufferSwitch(long doubleBufferIndex, ASIOBool directProcess);
+	void BufferSwitch(long doubleBufferIndex);
 	void GenerateLoop(pthread_t th);
 	void GenerateOutput();
 
@@ -217,7 +273,6 @@ public: // was protected
 	void Reconfig();
 	void Destroy();
 	void Finish();
-	static void ControllerCallback(ControlMsg *msg, void *cbParam);
 
 	const static int inputBuffersize = 4*BUFFERSIZE;
 	
@@ -228,7 +283,7 @@ public: // was protected
 	std::ofstream _log;
 
 	peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *_my_pk_det;
-	gain<asio_source<short, SamplePairf, chunk_t> > *_my_gain;
+	gain<T_source<chunk_t> > *_my_gain;
 	//file_raw_output<chunk_t> *_file_out;
 	file_raw_output<chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> > *_file_out;
 	typedef peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>::pos_info pos_info;
@@ -254,7 +309,7 @@ public: // was protected
 	pthread_t _gen_th;
     bool _need_buffers;
 
-	ASIOManager<chunk_t>* _iomgr;
+    IAudioDevice *_device;
 	bool _sync_cue;
 
 	bool _waiting;
@@ -262,6 +317,16 @@ public: // was protected
 	IMIDIController *_midi_controller;
 public:
 	FilterController<resampling_filter_td<chunk_t, double> > *_filter_controller;
+    
+    IAudioStream *_inputStream;
+    IAudioStream *_outputStream;
+    
+#if MAC
+    CoreAudioInputProcessor *_inputStreamProcessor;
+    CoreAudioOutputProcessor *_outputStreamProcessor;
+#elif WINDOWS
+    
+#endif // WINDOWS
 };
 
 #endif // !defined(_IO_H)

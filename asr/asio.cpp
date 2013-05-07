@@ -149,6 +149,8 @@ void asio_source<Input_Sample_T, Output_Sample_T, Chunk_T>::process(int doubleBu
 	}
 }
 
+#if WINDOWS
+
 ASIOProcessor *MyASIOCallbacks::io = 0;
 
 /*
@@ -201,3 +203,5 @@ long MyASIOCallbacks::asioMessage(long selector, long value, void *message, doub
 	}
 	return ASE_OK;
 }
+
+#endif // WINDOWS

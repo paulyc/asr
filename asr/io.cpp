@@ -14,6 +14,76 @@
 
 #include "track.h"
 
+CoreAudioOutputProcessor::CoreAudioOutputProcessor(const IAudioStreamDescriptor *streamDesc)
+{
+    _channels = streamDesc->GetNumChannels();
+    _frameSize = _channels * streamDesc->GetSampleWordSizeInBytes();
+}
+
+void CoreAudioOutputProcessor::Process(IAudioBuffer *buffer)
+{
+    float32_t *samples = (float32_t*)buffer->GetBuffer();
+    int bufferSizeFrames = buffer->GetBufferSize() / _frameSize;
+    for (std::vector<CoreAudioOutput>::iterator out = _outputs.begin();
+         out != _outputs.end();
+         out++)
+    {
+        for (int i = 0; i < bufferSizeFrames; ++i)
+        {
+            const float32_t smp = 0.0f;
+            samples[i*_channels+out->_ch1ofs] = smp;
+            samples[i*_channels+out->_ch2ofs] = smp;
+        }
+    }
+    /*
+    int to_write = bufferSizeFrames, loop_write, written=0;
+	float32_t *write, *end_write;
+	typename chunk_t::sample_t *read;
+	while (to_write > 0)
+	{
+		if (!_chk || _read - _chk->_data >= chunk_t::chunk_size)
+		{
+			T_allocator<chunk_t>::free(_chk);
+			_chk = 0;
+            
+			pthread_mutex_lock(&this->_src_lock);
+			_chk = _src_t->next();
+			pthread_mutex_unlock(&this->_src_lock);
+			_read = _chk->_data;
+		}
+		loop_write = min(to_write, chunk_t::chunk_size - (_read - _chk->_data));
+		for (write = _bufL + written,
+             end_write = write + loop_write,
+             read = _read;
+             write != end_write;
+             ++write, ++read)
+		{
+            //	*write = Output_Sample_T((*read)[0] * MaxVal<Output_Sample_T>::val);
+			if ((*read)[0] < 0.0f)
+				*write = Output_Sample_T(-max(-1.0f, (*read)[0]) * MinVal<Output_Sample_T>::val);
+			else
+				*write = Output_Sample_T(min(1.0f, (*read)[0]) * MaxVal<Output_Sample_T>::val);
+		}
+		for (write = _bufR + written,
+             end_write = write + loop_write,
+             read = _read;
+             write != end_write;
+             ++write, ++read)
+		{
+            //	*write = Output_Sample_T((*read)[1] * MaxVal<Output_Sample_T>::val);
+			if ((*read)[1] < 0.0f)
+				*write = Output_Sample_T(-max(-1.0f, (*read)[1]) * MinVal<Output_Sample_T>::val);
+			else
+				*write = Output_Sample_T(min(1.0f, (*read)[1]) * MaxVal<Output_Sample_T>::val);
+		}
+		_read += loop_write;
+		to_write -= loop_write;
+		written += loop_write;
+	}*/
+}
+
+
+
 ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
@@ -30,9 +100,13 @@ ASIOProcessor::ASIOProcessor() :
 	_file_out(0),
 	_ui(0),
 	_finishing(false),
-	_iomgr(0),
+	_device(0),
 	_sync_cue(false),
-	_midi_controller(0)
+	_midi_controller(0),
+    _inputStream(0),
+    _outputStream(0),
+    _inputStreamProcessor(0),
+    _outputStreamProcessor(0)
 {
 	Init();
 }
@@ -62,10 +136,24 @@ void ASIOProcessor::Init()
         throw string_exception("Failed to create ASIO device factory");
     }
     
-    ASIODriver drv(L"CreativeASIO");
-	_iomgr = dynamic_cast<ASIOManager<chunk_t>*>(drv.loadDriver());
+    std::vector<const IAudioDeviceDescriptor*> devices = deviceFac->Enumerate();
+    for (std::vector<const IAudioDeviceDescriptor*>::iterator devIter = devices.begin();
+         devIter != devices.end();
+         devIter++)
+    {
+        //if (dev->GetName() == std::string("Built-in Output"))
+        if (dev->GetName() == std::string("Saffire"))
+        {
+            _device = (*devIter)->Instantiate();
+        }
+    }
+    if (!_device)
+    {
+        throw string_exception("Failed to create audio device");
+    }
+    delete deviceFac;
 	
-	_iomgr->createBuffers(this);
+    _iomgr->createBuffers(this);
 #elif MAC
     MacAudioDriverFactory fac;
     IAudioDeviceFactory *deviceFac = 0;
@@ -83,19 +171,18 @@ void ASIOProcessor::Init()
         throw string_exception("Failed to create CoreAudio device factory");
     }
     
-    IAudioDevice *device = 0;
     std::vector<const IAudioDeviceDescriptor*> devices = deviceFac->Enumerate();
     for (std::vector<const IAudioDeviceDescriptor*>::iterator devIter = devices.begin();
          devIter != devices.end();
          devIter++)
     {
         //if (dev->GetName() == std::string("Built-in Output"))
-        if (dev->GetName() == std::string("Saffire"))
+        if (_device->GetDescriptor()->GetName() == std::string("Saffire"))
         {
-            device = (*devIter)->Instantiate();
+            _device = (*devIter)->Instantiate();
         }
     }
-    if (!deviceFac)
+    if (!_device)
     {
         throw string_exception("Failed to create audio device");
     }
@@ -105,17 +192,16 @@ void ASIOProcessor::Init()
     _need_buffers = true;
     
 #if WINDOWS
-	Win32MIDIDeviceFactory fac;
+	Win32MIDIDeviceFactory midifac;
 #else
-    DummyMIDIDeviceFactory fac;
+    DummyMIDIDeviceFactory midifac;
 #endif
 	fac.Enumerate();
-	IMIDIDevice *dev = fac.Instantiate(1, true);
+	IMIDIDevice *dev = midifac.Instantiate(1, true);
 	if (dev)
 	{
 		printf("Have midi\n");
 		_midi_controller = new CDJ350MIDIController(dev, (IControlListener**)&_filter_controller);
-		//_midi_controller->RegisterEventHandler(ControllerCallback, this);
 	}
 }
 
@@ -143,8 +229,13 @@ void ASIOProcessor::Finish()
 
 void ASIOProcessor::Destroy()
 {
+    delete _inputStream;
+    delete _inputStreamProcessor;
+    delete _outputStream;
+    delete _outputStreamProcessor;
+    delete _device;
+    
 #if WINDOWS
-    delete _iomgr;
 	CoUninitialize();
 #endif
     
@@ -183,8 +274,24 @@ void ASIOProcessor::CreateTracks()
 	_master_xfader->set_gain(1, gain);
 	_master_xfader->set_gain(2, gain);
 	//_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
+    
+    std::vector<const IAudioStreamDescriptor*> streams = _device->GetStreams();
+    for (std::vector<const IAudioStreamDescriptor*>::iterator i = streams.begin();
+         i != streams.end();
+         i++)
+    {
+        if ((*i)->GetStreamType() == IAudioStreamDescriptor::Input)
+        {
+            //_inputStream = (*i)->GetStream();
+        }
+        else
+        {
+            _outputStream = (*i)->GetStream();
+            _outputStreamProcessor = new CoreAudioOutputProcessor(&_main_mgr);
+        }
+    }
 
-	asio_sink<chunk_t, chunk_buffer, int32_t> *main_out = new asio_sink<chunk_t, chunk_buffer, int32_t>(
+	/*asio_sink<chunk_t, chunk_buffer, int32_t> *main_out = new asio_sink<chunk_t, chunk_buffer, int32_t>(
 		&_main_mgr,
 		_iomgr->getBuffers(2), 
 		_iomgr->getBuffers(3),
@@ -204,25 +311,26 @@ void ASIOProcessor::CreateTracks()
 		_iomgr->getBufferSize(),
 		_iomgr->getBuffers(0),
 		_iomgr->getBuffers(1));
-	_iomgr->addInput(input1);
+	_iomgr->addInput(input1);*/
 
 #if !PARALLELS_ASIO
-	T_sink<chunk_t> *dummy_sink2 = new T_sink<chunk_t>(input1);
+	/*T_sink<chunk_t> *dummy_sink2 = new T_sink<chunk_t>(input1);
 	asio_source<int32_t, SamplePairf, chunk_t> *input2 = new asio_source<int32_t, SamplePairf, chunk_t>(
 		dummy_sink2,
 		_iomgr->getBufferSize(),
 		_iomgr->getBuffers(6),
 		_iomgr->getBuffers(7));
 	_iomgr->addInput(input2);
-
-	_aux = new ChunkConverter<chunk_t, chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> >(input2);
+*/
+	//_aux = new ChunkConverter<chunk_t, chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> >(input2);
 #endif
 
 	try {
 	//	_my_gain = new gain<asio_source<short, SamplePairf, chunk_t> >(_my_source);
 	//	_my_gain->set_gain_db(36.0);
-		_my_pk_det = new peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>(input1);
-		dummy_sink->set_src(_my_pk_det);
+        
+	//	_my_pk_det = new peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>(input1);
+	//	dummy_sink->set_src(_my_pk_det);
 
 	//	_my_raw_output = new file_raw_output<chunk_t>(_my_pk_det);
 	} catch (std::exception e) {
@@ -240,34 +348,29 @@ void ASIOProcessor::CreateTracks()
 #endif
 }
 
-void ASIOProcessor::ControllerCallback(ControlMsg *msg, void *cbParam)
-{
-	ASIOProcessor *io = static_cast<ASIOProcessor*>(cbParam);
-}
-
 void ASIOProcessor::Reconfig()
 {
 }
 
-ASIOError ASIOProcessor::Start()
+void ASIOProcessor::Start()
 {
 	_running = true;
 	_src_active = true;
 	if (_midi_controller)
 		_midi_controller->Start();
-	return ASIOStart();
+	_device->Start();
 }
 
-ASIOError ASIOProcessor::Stop()
+void ASIOProcessor::Stop()
 {
 	_running = false;
 	_src_active = false;
 	if (_midi_controller)
 		_midi_controller->Stop();
-	return ASIOStop();
+    _device->Stop();
 }
 
-void ASIOProcessor::BufferSwitch(long doubleBufferIndex, ASIOBool directProcess)
+void ASIOProcessor::BufferSwitch(long doubleBufferIndex)
 {
 	_waiting = true;
 	_io_lock.acquire();

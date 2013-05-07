@@ -109,10 +109,10 @@ public:
 			{
 				meta.abs_sum[0] += meta.subband[i].abs_sum[0];
 				meta.abs_sum[1] += meta.subband[i].abs_sum[1];
-				meta.peak[0] = max(meta.peak[0], meta.subband[i].peak[0]);
-				meta.peak[1] = max(meta.peak[1], meta.subband[i].peak[1]);
-				meta.peak_lo[0] = min(meta.peak_lo[0], meta.subband[i].peak_lo[0]);
-				meta.peak_lo[1] = min(meta.peak_lo[1], meta.subband[i].peak_lo[1]);
+				meta.peak[0] = fmax(meta.peak[0], meta.subband[i].peak[0]);
+				meta.peak[1] = fmax(meta.peak[1], meta.subband[i].peak[1]);
+				meta.peak_lo[0] = fmin(meta.peak_lo[0], meta.subband[i].peak_lo[0]);
+				meta.peak_lo[1] = fmin(meta.peak_lo[1], meta.subband[i].peak_lo[1]);
 
 				Quotient<Sample_T>::calc(meta.subband[i].avg, meta.subband[i].abs_sum, Chunk_T::chunk_size/10);
 				dBm<Sample_T>::calc(meta.subband[i].avg_db, meta.subband[i].avg);

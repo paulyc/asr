@@ -39,23 +39,6 @@ public:
     virtual std::vector<const IAudioDriverDescriptor*> Enumerate() const = 0;
 };
 
-class AudioInput
-{
-public:
-	virtual ~AudioInput() {}
-    
-	virtual void process(int doubleBufferIndex) = 0;
-};
-
-class AudioOutput
-{
-public:
-	virtual ~AudioOutput() {}
-    
-	virtual void process() = 0;
-	virtual void switchBuffers(int dbIndex) = 0;
-};
-
 class IAudioDevice;
 class IAudioStream;
 
@@ -64,14 +47,6 @@ class IAudioDeviceDescriptor
 public:
     virtual std::string GetName() const = 0;
     virtual IAudioDevice *Instantiate() const = 0;
-};
-
-struct AudioDeviceDescriptor
-{
-    AudioDeviceDescriptor(std::string strName) : name(strName) {}
-    AudioDeviceDescriptor(const char * cStrName) : name(cStrName) {}
-    
-    std::string name;
 };
 
 class IAudioStreamDescriptor
@@ -100,6 +75,8 @@ public:
     virtual std::vector<const IAudioDeviceDescriptor*> Enumerate() const = 0;
 };
 
+class IAudioStream;
+
 class IAudioDevice
 {
 public:
@@ -107,6 +84,7 @@ public:
     
     virtual const IAudioDeviceDescriptor *GetDescriptor() const = 0;
     virtual std::vector<const IAudioStreamDescriptor*> GetStreams() const = 0;
+    virtual void RegisterStream(IAudioStream *stream) = 0;
     
     virtual void Start() = 0;
     virtual void Stop() = 0;
@@ -160,6 +138,9 @@ public:
     
     virtual const IAudioStreamDescriptor *GetDescriptor() const = 0;
     virtual void SetProc(IAudioStreamProcessor *proc) = 0;
+    
+    virtual void Start() = 0;
+    virtual void Stop() = 0;
 };
 
 #if MAC
@@ -216,11 +197,13 @@ private:
     std::vector<CoreAudioDeviceDescriptor> _devices;
 };
 
+class CoreAudioDevice;
+
 class CoreAudioStreamDescriptor : public IAudioStreamDescriptor
 {
 public:
     CoreAudioStreamDescriptor(AudioStreamID   id,
-                              AudioDeviceID   deviceID,
+                              CoreAudioDevice *device,
                               StreamType      type,
                               int             channels,
                               SampleType      sampleType,
@@ -229,7 +212,7 @@ public:
                               SampleAlignment alignment,
                               float64_t       sampleRate) :
         _id(id),
-        _deviceID(deviceID),
+        _device(device),
         _type(type),
         _nChannels(channels),
         _sampleType(sampleType),
@@ -251,17 +234,17 @@ public:
     virtual IAudioStream *GetStream() const;
     
     AudioStreamID GetID() const { return _id; }
-    AudioDeviceID GetDeviceID() const { return _deviceID; }
+    AudioDeviceID GetDeviceID() const;
 private:
-    AudioStreamID   _id;
-    AudioDeviceID   _deviceID;
-    StreamType      _type;
-    int             _nChannels;
-    SampleType      _sampleType;
-    int             _sampleSizeBits;
-    int             _sampleWordSizeBytes;
-    SampleAlignment _alignment;
-    float64_t       _sampleRate;
+    AudioStreamID    _id;
+    CoreAudioDevice* _device;
+    StreamType       _type;
+    int              _nChannels;
+    SampleType       _sampleType;
+    int              _sampleSizeBits;
+    int              _sampleWordSizeBytes;
+    SampleAlignment  _alignment;
+    float64_t        _sampleRate;
 };
 
 class CoreAudioDevice : public IAudioDevice
@@ -269,24 +252,30 @@ class CoreAudioDevice : public IAudioDevice
 public:
     CoreAudioDevice(const CoreAudioDeviceDescriptor &desc);
     
+    virtual AudioDeviceID GetID() const { return _desc.GetID(); }
     virtual const IAudioDeviceDescriptor *GetDescriptor() const { return &_desc; }
     virtual std::vector<const IAudioStreamDescriptor*> GetStreams() const;
+    virtual void RegisterStream(IAudioStream *stream) { _streamRegister.push_back(stream); }
     
     virtual void Start();
     virtual void Stop();
 private:
     CoreAudioDeviceDescriptor _desc;
     std::vector<CoreAudioStreamDescriptor> _streams;
+    std::vector<IAudioStream*> _streamRegister;
 };
 
 class CoreAudioStream : public IAudioStream
 {
 public:
-    CoreAudioStream(const CoreAudioStreamDescriptor &desc) : _desc(desc), _proc(0), _procID(0) {}
+    CoreAudioStream(const CoreAudioStreamDescriptor &desc, CoreAudioDevice *dev) : _desc(desc), _proc(0), _procID(0), _device(dev) {}
     virtual ~CoreAudioStream();
     
     virtual const IAudioStreamDescriptor *GetDescriptor() const { return &_desc; }
     virtual void SetProc(IAudioStreamProcessor *proc);
+    
+    virtual void Start();
+    virtual void Stop();
     
 private:
     static OSStatus _audioCB(AudioObjectID           inDevice,
@@ -300,6 +289,7 @@ private:
     CoreAudioStreamDescriptor _desc;
     IAudioStreamProcessor *_proc;
     AudioDeviceIOProcID _procID;
+    CoreAudioDevice *_device;
 };
 
 #elif WINDOWS
@@ -408,9 +398,10 @@ public:
     
     virtual const IAudioDeviceDescriptor *GetDescriptor() const { return &_desc; }
     virtual std::vector<const IAudioStreamDescriptor*> GetStreams() const;
+    virtual void RegisterStream(IAudioStream *stream);
     
-    virtual void Start();
-    virtual void Stop();
+    virtual void Start() { ASIOStart(); }
+    virtual void Stop() { ASIOStop(); }
 private:
     ASIODeviceDescriptor _desc;
     IASIO *_asio;
@@ -424,6 +415,9 @@ public:
     
     virtual const IAudioStreamDescriptor *GetDescriptor() const;
     virtual void SetProc(IAudioStreamProcessor *proc);
+    
+    virtual void Start();
+    virtual void Stop();
 };
 
 #endif // WINDOWS

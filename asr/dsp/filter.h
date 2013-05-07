@@ -127,13 +127,13 @@ public:
 		_output_sampling_rate = f;
 		_output_sampling_period = Precision_T(1.0) / _output_sampling_rate;
 
-		_impulse_response_frequency = min(_input_sampling_rate, _output_sampling_rate);
+		_impulse_response_frequency = std::min(_input_sampling_rate, _output_sampling_rate);
 		_impulse_response_period = Precision_T(1.0) / _impulse_response_frequency;
 		//_impulse_response_frequency = _output_sampling_rate;
 		//_impulse_response_period = Precision_T(1.0) / _impulse_response_frequency;
 		
 		_rho = _output_sampling_rate / _input_sampling_rate;
-		_impulse_response_scale = min(Precision_T(1.0), _rho);
+		_impulse_response_scale = std::min(Precision_T(1.0), _rho);
 	//	fill_coeff_tbl(_input_sampling_period);
 	}
 
@@ -150,7 +150,7 @@ public:
 	void set_output_scale(Precision_T s)
 	{
 		_output_scale = s;
-		_impulse_response_scale = min(Precision_T(1.0), _rho);
+		_impulse_response_scale = fmin(Precision_T(1.0), _rho);
 	//	fill_coeff_tbl(_input_sampling_period);
 	}
 
