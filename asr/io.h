@@ -8,6 +8,7 @@
 #include <fstream>
 #include <queue>
 #include <exception>
+#include <unordered_map>
 #include <semaphore.h>
 
 #ifdef WIN32
@@ -20,12 +21,14 @@
 #include "asr.h"
 #include "type.h"
 #include "dsp/filter.h"
+#include "dsp/gain.h"
 #include "buffer.h"
 #include "decoder.h"
 #include "asiodrv.h"
 #include "controller.h"
 #include "speedparser.h"
 #include "wavformdisplay.h"
+#include "worker.h"
 
 class ASIOProcessor;
 class GenericUI;
@@ -33,11 +36,21 @@ class IMIDIDevice;
 template <typename T>
 class SeekablePitchableFileSource;
 
-class ChunkGenerator
+class ChunkGenerator : public IChunkGeneratorCallback<chunk_t>
 {
 public:
     void AddChunkSource(T_source<chunk_t> *src, int id);
     chunk_t* GetNextChunk(int streamID);
+    void chunkCb(chunk_t *chunk, int id);
+private:
+    struct stream {
+        stream() : _src(0), _nextChk(0) {}
+        stream(T_source<chunk_t> *src) : _src(src), _nextChk(0) {}
+        T_source<chunk_t> *_src;
+        chunk_t *_nextChk;
+    };
+    Lock_T _lock;
+    std::unordered_map<int, stream> _streams;
 };
 
 class BlockingChunkStream : public T_source<chunk_t>
@@ -94,8 +107,11 @@ class CoreAudioInput : public AudioInput
 class CoreAudioOutput : public AudioOutput
 {
 public:
-    CoreAudioOutput(T_source<chunk_t> *src, int ch1ofs, int ch2ofs) : AudioOutput(src, ch1ofs, ch2ofs) {}
+    CoreAudioOutput(ChunkGenerator *gen, int id, int ch1ofs, int ch2ofs) : AudioOutput(0, ch1ofs, ch2ofs), _gen(gen), _id(id) {}
     virtual void process(MultichannelAudioBuffer *buf);
+private:
+    ChunkGenerator *_gen;
+    int _id;
 };
 
 class CoreAudioOutputProcessor : public IAudioStreamProcessor
@@ -360,6 +376,8 @@ public:
 #elif WINDOWS
     
 #endif // WINDOWS
+    ChunkGenerator _gen;
+    gain<T_source<chunk_t> > *_gain1, *_gain2;
 };
 
 #endif // !defined(_IO_H)

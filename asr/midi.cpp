@@ -75,6 +75,8 @@ IMIDIDevice* Win32MIDIDeviceFactory::Instantiate(int id, bool input)
 	return 0;
 }
 
+#endif // WINDOWS
+
 CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev, IControlListener **listener) : 
 	_dev(dev),
 	_listener(listener),
@@ -124,7 +126,11 @@ static double GetBend(int code)
 void CDJ350MIDIController::DeviceCallback(uint32_t msg, uint32_t param, float64_t time, void *cbParam)
 {
 	CDJ350MIDIController *control = static_cast<CDJ350MIDIController*>(cbParam);
+#if WINDOWS
 	time = timeGetTime() / 1000.0;
+#else
+    time = 0.0;
+#endif
 	int ch = param & 0xF;
 	MsgType msgType = (MsgType)((param & 0xFF00) >> 8);
 	int code = (param & 0xFF0000) >> 16;
@@ -189,5 +195,3 @@ int main()
 	return 0;
 }
 #endif
-
-#endif // WINDOWS

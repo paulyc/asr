@@ -444,6 +444,7 @@ public:
 		_loading_lock.acquire();
 		while (!_loaded) 
 			_track_loaded.wait(_loading_lock);
+        _loading_lock.release();
 
 		delete _future;
 		_future = 0;

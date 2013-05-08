@@ -15,6 +15,38 @@
 
 #include "track.h"
 
+void ChunkGenerator::AddChunkSource(T_source<chunk_t> *src, int id)
+{
+    _lock.acquire();
+    _streams[id] = stream(src);
+    Worker::do_job(new Worker::generate_chunk_job<T_source<chunk_t>, chunk_t>(src, this, id, 0),
+                   false, true);
+    _lock.release();
+}
+
+chunk_t* ChunkGenerator::GetNextChunk(int streamID)
+{
+    chunk_t *chk = 0;
+    _lock.acquire();
+    chk = _streams[streamID]._nextChk;
+    if (!chk)
+        chk = zero_source<chunk_t>::get()->next();
+    else
+    {
+        Worker::do_job(new Worker::generate_chunk_job<T_source<chunk_t>, chunk_t>(_streams[streamID]._src, this, streamID, 0),
+                       false, true);
+    }
+    _lock.release();
+    return chk;
+}
+
+void ChunkGenerator::chunkCb(chunk_t *chunk, int id)
+{
+    _lock.acquire();
+    _streams[id]._nextChk = chunk;
+    _lock.release();
+}
+
 void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
 {
     const int stride = buf->GetStride();
@@ -29,7 +61,7 @@ void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
 			_chk = 0;
             
 			this->_src_lock.acquire();
-			_chk = _src->next();
+			_chk = _gen->GetNextChunk(_id);
 			this->_src_lock.release();
 			_read = _chk->_data;
 		}
@@ -85,7 +117,8 @@ ASIOProcessor::ASIOProcessor() :
     _inputStream(0),
     _outputStream(0),
     _inputStreamProcessor(0),
-    _outputStreamProcessor(0)
+    _outputStreamProcessor(0),
+    _gain1(0), _gain2(0)
 {
 	Init();
 }
@@ -194,16 +227,12 @@ void ASIOProcessor::Finish()
 #if GENERATE_LOOP
 	_do_gen.signal();
 	pthread_join(_gen_th, 0);
-#endif
     
 	// something weird with this? go before the last lines?
 	_io_lock.acquire();
 	_gen_done.signal();
 	_io_lock.release();
-    
-	delete _tracks[0];
-	delete _tracks[1];
-	_tracks.resize(0);
+#endif
 }
 
 void ASIOProcessor::Destroy()
@@ -226,6 +255,14 @@ void ASIOProcessor::Destroy()
 	delete _master_xfader;
 	delete _aux;
     
+    // probably want to join on worker threads exiting so we dont destroy this while generating
+    delete _gain1;
+    delete _gain2;
+    
+	delete _tracks[0];
+	delete _tracks[1];
+	_tracks.resize(0);
+    
 	T_allocator<chunk_t>::gc();
 	T_allocator<chunk_t>::dump_leaks();
     
@@ -243,16 +280,28 @@ void ASIOProcessor::CreateTracks()
 
 	//_bp_filter = new bandpass_filter_td<chunk_t>(_tracks[0], 20.0, 200.0, 48000.0, 48000.0);
 	
-	_master_xfader = new xfader<T_source<chunk_t> >(_tracks[0], _tracks[1]);
+    _gain1 = new gain<T_source<chunk_t> >(_tracks[0]);
+    _gain1->set_gain_db(-3.0);
+    _gain2 = new gain<T_source<chunk_t> >(_tracks[1]);
+    _gain2->set_gain_db(-3.0);
+    
+    _gen.AddChunkSource(_gain1, 1);
+    _gen.AddChunkSource(_gain2, 2);
+    
+    /*
+    _master_xfader = new xfader<T_source<chunk_t> >(_tracks[0], _tracks[1]);
+    _master_xfader->set_mix(0);
 	_cue = new xfader<T_source<chunk_t> >(_tracks[0], _tracks[1]);
 	_cue->set_mix(1000);
-	const double gain = pow(10., -3./20.);
+	
 	//const double gain = 1.0;
 	_cue->set_gain(1, gain);
 	_cue->set_gain(2, gain);
 	_master_xfader->set_gain(1, gain);
 	_master_xfader->set_gain(2, gain);
 	//_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
+    */
+    
     
     std::vector<const IAudioStreamDescriptor*> streams = _device->GetStreams();
     for (std::vector<const IAudioStreamDescriptor*>::iterator i = streams.begin();
@@ -267,8 +316,8 @@ void ASIOProcessor::CreateTracks()
         {
             _outputStream = (*i)->GetStream();
             _outputStreamProcessor = new CoreAudioOutputProcessor(_outputStream->GetDescriptor());
-            _outputStreamProcessor->AddOutput(CoreAudioOutput(&_main_mgr, 0, 1));
-            _outputStreamProcessor->AddOutput(CoreAudioOutput(&_2_mgr, 2, 3));
+            _outputStreamProcessor->AddOutput(CoreAudioOutput(&_gen, 1, 0, 1));
+            _outputStreamProcessor->AddOutput(CoreAudioOutput(&_gen, 2, 2, 3));
         }
     }
 

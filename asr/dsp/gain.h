@@ -1,9 +1,12 @@
+#ifndef _ASR_GAIN_H_
+#define _ASR_GAIN_H_
+
 template <typename Source_T>
 class gain : public T_source<typename Source_T::chunk_t>, public T_sink<typename Source_T::chunk_t>
 {
 public:
 	gain(Source_T *src) :
-		T_sink<Source_T>(src),
+		T_sink<typename Source_T::chunk_t>(src),
 		_gain(1.0)
 		{
 		}
@@ -32,3 +35,5 @@ public:
 protected:
 	double _gain;
 };
+
+#endif

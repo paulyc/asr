@@ -9,6 +9,13 @@
 #include "util.h"
 #include "malloc.h"
 
+template <typename T>
+class IChunkGeneratorCallback
+{
+public:
+    virtual void chunkCb(T *chunk, int id) = 0;
+};
+
 class Worker
 {
 	//friend class Track;
@@ -27,6 +34,7 @@ public:
 	static void init()
 	{
 		(new Worker)->spin(true);
+        (new Worker)->spin(true);
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
@@ -51,19 +59,20 @@ public:
 		pthread_t _thread;
 	};
 
-	template <typename Source_T>
+	template <typename Source_T, typename Chunk_T>
 	struct generate_chunk_job : public job
 	{
 		Source_T *src;
-		typename Source_T::chunk_t **result;
+        IChunkGeneratorCallback<Chunk_T> *cbObj;
+        int chkId;
 		Lock_T *lock;
 		generate_chunk_job(Source_T *s, 
-			typename Source_T::chunk_t **r, Lock_T *l) :
-			src(s), result(r), lock(l) {_name="generate chunk";}
+			IChunkGeneratorCallback<Chunk_T> *cbo, int cid, Lock_T *l) :
+			src(s), cbObj(cbo), chkId(cid), lock(l) {_name="generate chunk";}
 
 		void do_it()
 		{
-			*result = src->next();
+			cbObj->chunkCb(src->next(), chkId);
 		}
 	};
 

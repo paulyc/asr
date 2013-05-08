@@ -58,6 +58,8 @@
 		5F0C4F1017360CD60025E149 /* coreaudio */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = coreaudio; sourceTree = BUILT_PRODUCTS_DIR; };
 		5F0C4F1417360CD60025E149 /* coreaudio.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = coreaudio.1; sourceTree = "<group>"; };
 		5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ui_cli.cpp; sourceTree = "<group>"; };
+		5F0C4F1D1738D6770025E149 /* task.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = task.cpp; sourceTree = "<group>"; };
+		5F0C4F1E1738D6770025E149 /* task.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = task.h; sourceTree = "<group>"; };
 		5FB2B2A41732107C0006871C /* mac */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mac; sourceTree = BUILT_PRODUCTS_DIR; };
 		5FB2B2A91732107C0006871C /* mac.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = mac.1; sourceTree = "<group>"; };
 		5FB2B2B1173210A50006871C /* .out.swp */ = {isa = PBXFileReference; lastKnownFileType = file; path = .out.swp; sourceTree = "<group>"; };
@@ -303,6 +305,8 @@
 		5FB2B2B0173210A50006871C /* asr */ = {
 			isa = PBXGroup;
 			children = (
+				5F0C4F1D1738D6770025E149 /* task.cpp */,
+				5F0C4F1E1738D6770025E149 /* task.h */,
 				5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */,
 				5FB2B384173236400006871C /* AudioDevice.cpp */,
 				5FB2B385173236400006871C /* AudioDevice.h */,
@@ -729,6 +733,12 @@
 					"../flac-1.2.1/include",
 				);
 				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-framework",
+					CoreAudio,
+					"-framework",
+					CoreFoundation,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -745,6 +755,12 @@
 					"../flac-1.2.1/include",
 				);
 				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-framework",
+					CoreAudio,
+					"-framework",
+					CoreFoundation,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -759,6 +775,7 @@
 				5F0C4F1817360CD60025E149 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		5FB2B29F1732107C0006871C /* Build configuration list for PBXProject "mac" */ = {
 			isa = XCConfigurationList;
