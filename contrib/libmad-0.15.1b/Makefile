@@ -126,7 +126,7 @@ CC = gcc
 CCAS = gcc
 CCASFLAGS = -g -O2
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Wall -march=i486 -g -O -fforce-addr -fthread-jumps -fcse-follow-jumps -fcse-skip-blocks -fexpensive-optimizations -fregmove -fschedule-insns2 -fstrength-reduce
+CFLAGS = -Wall -march=x86-64 -g -O -fforce-addr -fthread-jumps -fcse-follow-jumps -fcse-skip-blocks -fexpensive-optimizations -fregmove -fschedule-insns2 -fstrength-reduce
 CPP = gcc -E
 CPPFLAGS = 
 CXX = g++
