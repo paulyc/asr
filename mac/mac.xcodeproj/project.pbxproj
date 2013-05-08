@@ -732,12 +732,21 @@
 					"../libmad-0.15.1b",
 					"../flac-1.2.1/include",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"../contrib/libmad-0.15.1b/.libs",
+					../contrib/flac/src/libFLAC/.libs,
+					"../contrib/fftw-3.3.3/.libs",
+				);
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = (
 					"-framework",
 					CoreAudio,
 					"-framework",
 					CoreFoundation,
+					"-lmad",
+					"-lFLAC-static",
+					"-lfftw3",
+					"-lfftw3f",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -754,12 +763,21 @@
 					"../libmad-0.15.1b",
 					"../flac-1.2.1/include",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"../contrib/libmad-0.15.1b/.libs",
+					../contrib/flac/src/libFLAC/.libs,
+					"../contrib/fftw-3.3.3/.libs",
+				);
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = (
 					"-framework",
 					CoreAudio,
 					"-framework",
 					CoreFoundation,
+					"-lmad",
+					"-lFLAC-static",
+					"-lfftw3",
+					"-lfftw3f",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

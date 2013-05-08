@@ -64,7 +64,9 @@ int main2()
     return 0;
 }
 
+#if 0
 int main()
 {
     return main2();
 }
+#endif

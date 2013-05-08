@@ -90,7 +90,7 @@ public:
         T_allocator<chunk_t>::free(_chk);
     }
     
-	virtual void process(MultichannelAudioBuffer *buf);
+	virtual void process(MultichannelAudioBuffer *buf) = 0;
 	virtual void switchBuffers(int dbIndex) {}
 protected:
     int _ch1id;
