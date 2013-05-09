@@ -18,10 +18,10 @@ public:
 			smp < chk->_data + Chunk_T::chunk_size; 
 			++smp)
 		{
-			double v = abs((*smp)[0]);
+			double v = fabs((*smp)[0]);
 			if (v > max)
 				max = v;
-			v = abs((*smp)[1]);
+			v = fabs((*smp)[1]);
 			if (v > max)
 				max = v;
 		}

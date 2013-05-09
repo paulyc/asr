@@ -631,10 +631,15 @@ protected:
 	T *_next;
 };
 
+#if 1
+#define CRITICAL_SECTION_GUARD(lock, yield_condition)
+#else
 #define CRITICAL_SECTION_GUARD(lock, yield_condition) if (lock) { \
 lock->acquire(); \
 lock->release(); \
 if (yield_condition) sched_yield(); }
+#endif
+
 
 #if 0
 #define min(x,y) ((x) < (y) ? (x) : (y))

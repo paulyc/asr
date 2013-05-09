@@ -243,7 +243,7 @@ public:
 					// pick point with highest dx
 					for (typename std::list<point>::iterator i = _peak_list.begin(); i != _peak_list.end(); i++)
 					{
-						if (i->dx > _max.dx && i->x > 0.15 * _x_max)
+						if (i->dx > _max.dx && i->x > 0.25 * _x_max)
 						{
 							_max = *i;
 							_maxs.push_back(_max);
@@ -259,7 +259,8 @@ public:
 							if (_last_beat.valid)
 							{
 								double dt = _maxs.begin()->t - _last_beat.t;
-								if (_dt_points < 5 || abs(dt-_dt_avg) / _dt_avg < 0.1)
+                                // todo revise this: pick first 5 better
+								if (60.0/dt > 60.0 && 60.0/dt < 180.0 && (_dt_points < 5 || fabs(dt-_dt_avg) / _dt_avg < 0.1))
 								{
 									_dt_sum += dt;
 									++_dt_points;

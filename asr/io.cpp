@@ -29,6 +29,7 @@ chunk_t* ChunkGenerator::GetNextChunk(int streamID)
     chunk_t *chk = 0;
     _lock.acquire();
     chk = _streams[streamID]._nextChk;
+    _streams[streamID]._nextChk = 0;
     if (!chk)
         chk = zero_source<chunk_t>::get()->next();
     else
@@ -99,7 +100,8 @@ ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
 	//_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
-	_default_src("clip.wav"),
+	_default_src("/Users/paulyc/Downloads/4045992_Wayfarer_Original_Mix.aiff"),
+//_default_src("clip.wav"),
 	//_default_src(L"H:\\Music\\Heatbeat - Hadoken (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Sean Tyas - Melbourne (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Super8 & Tab, Anton Sonin - Black Is The New Yellow (Activa Remix).wav"),
