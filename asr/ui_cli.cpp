@@ -4,6 +4,8 @@
 #include <iostream>
 #include <cstdio>
 
+#include "track.h"
+
 void CommandlineUI::main_loop()
 {
     std::string line;
@@ -13,6 +15,22 @@ void CommandlineUI::main_loop()
         if (line == std::string("q") || line == std::string("quit"))
         {
             break;
+        }
+        else if (line == std::string("start"))
+        {
+            _io->Start();
+        }
+        else if (line == std::string("stop"))
+        {
+            _io->Stop();
+        }
+        else if (line == std::string("p1"))
+        {
+            _io->GetTrack(1)->play_pause(false);
+        }
+        else if (line == std::string("p2"))
+        {
+            _io->GetTrack(2)->play_pause(false);
         }
     }
 }

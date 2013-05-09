@@ -17,8 +17,8 @@ public:
 	}
 
 	void set_gain_db(double g_db)
-	{//wrong, inverse
-		dBm<double>::calc(_gain, g_db);
+	{
+        _gain = pow(10.0, g_db/20.0);
 	}
 
 	typename Source_T::chunk_t *next()

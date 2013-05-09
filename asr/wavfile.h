@@ -34,13 +34,13 @@ struct RIFFChunk
 
 struct WAVFormatChunk
 {
-	short format;
-	short nChannels;
-	long sampleRate;
-	long byteRate;
-	short blockAlign;
-	short bitsPerSample;
-	short padding; // hack for files that do not conform to wav standard
+	int16_t format;
+	int16_t nChannels;
+	int32_t sampleRate;
+	int32_t byteRate;
+	int16_t blockAlign;
+	int16_t bitsPerSample;
+	int16_t padding; // hack for files that do not conform to wav standard
 };
 
 struct float80

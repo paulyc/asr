@@ -508,7 +508,7 @@ private:
 	}
 
 public:
-	Chunk_T* next(void *dummy=0)
+	Chunk_T* next()
 	{
 		Chunk_T *chk;
 

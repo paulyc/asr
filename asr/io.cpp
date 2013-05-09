@@ -99,7 +99,7 @@ ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
 	//_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
-	_default_src("..\\asr\\clip.wav"),
+	_default_src("clip.wav"),
 	//_default_src(L"H:\\Music\\Heatbeat - Hadoken (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Sean Tyas - Melbourne (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Super8 & Tab, Anton Sonin - Black Is The New Yellow (Activa Remix).wav"),
@@ -280,6 +280,7 @@ void ASIOProcessor::CreateTracks()
 
 	//_bp_filter = new bandpass_filter_td<chunk_t>(_tracks[0], 20.0, 200.0, 48000.0, 48000.0);
 	
+    //const double gain =
     _gain1 = new gain<T_source<chunk_t> >(_tracks[0]);
     _gain1->set_gain_db(-3.0);
     _gain2 = new gain<T_source<chunk_t> >(_tracks[1]);
@@ -320,6 +321,7 @@ void ASIOProcessor::CreateTracks()
             _outputStreamProcessor->AddOutput(CoreAudioOutput(&_gen, 2, 2, 3));
         }
     }
+    _outputStream->SetProc(_outputStreamProcessor);
 
 	/*asio_sink<chunk_t, chunk_buffer, int32_t> *main_out = new asio_sink<chunk_t, chunk_buffer, int32_t>(
 		&_main_mgr,
