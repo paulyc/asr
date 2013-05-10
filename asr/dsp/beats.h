@@ -131,7 +131,7 @@ public:
 		_t = 0.0;
 		_pos = true;
 		_start = false;
-		_x_max = 0.0;
+		_x_max = 10.0;
 		_chk_ofs = 0;
 
 		_dt_sum = 0.0;
@@ -188,6 +188,10 @@ public:
 			while (i != _beat_list.end())
 			{
 				double dt = i->t - last_t;
+             //   if (fabs(dt - bpm) / bpm < 0.1)
+              //  {
+                    
+             //   }
 				if (dt > 1.5*_dt_avg)
 				{
 					last_t += _dt_avg;
@@ -273,6 +277,8 @@ public:
             }
         }
         printf("final avg %f\n", final_sum / final_count);
+        _dt_avg = 60.0 / (final_sum / final_count);
+        beats();
     }
     
     double filter(double avg, double stddev)
@@ -329,7 +335,7 @@ public:
 					// pick point with highest dx
 					for (typename std::list<point>::iterator i = _peak_list.begin(); i != _peak_list.end(); i++)
 					{
-						if (i->dx > _max.dx && i->x > 0.25 * _x_max)
+						if (i->dx > _max.dx && i->x > 0.15 * _x_max)
 						{
 							_max = *i;
 							_maxs.push_back(_max);
@@ -403,6 +409,7 @@ public:
 	
 	//	T_allocator<Chunk_T>::free(passthru_chk);
 	//	return process_chk;
+    //    printf("xmax %f\n", _x_max);
 		T_allocator<Chunk_T>::free(process_chk);
 		return passthru_chk;
 	}
