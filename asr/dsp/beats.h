@@ -215,6 +215,68 @@ public:
 		}
 		return _beat_avg_list;
 	}
+    
+    void analyze()
+    {
+        double sum = 0.0;
+        double square_sum = 0.0;
+        std::list<double>::iterator i = _bpm_list.begin();
+        for (i++;
+             i != _bpm_list.end();
+             i++)
+        {
+            const double dt = *i;
+            sum += dt;
+            square_sum += dt*dt;
+        }
+        const double avg = sum / _bpm_list.size();
+        const double square_avg = square_sum / _bpm_list.size();
+        const double stddev = sqrt(square_avg - avg*avg);
+        printf("avg = %f stddev = %f\n", avg, stddev);
+        double bpm = filter(avg, stddev);
+        
+        double final_sum = 0.0;
+        int final_count = 0;
+        for (std::list<double>::iterator i = _bpm_list.begin();
+             i != _bpm_list.end();
+             i++)
+        {
+            const double dt = *i;
+            if (fabs(dt - bpm) / bpm < 0.1)
+            {
+                final_sum += dt;
+                ++final_count;
+            }
+        }
+        printf("final avg %f\n", final_sum / final_count);
+    }
+    
+    double filter(double avg, double stddev)
+    {
+        double sum = 0.0;
+        double square_sum = 0.0;
+        int valid_count = 0;
+        for (std::list<double>::iterator i = _bpm_list.begin();
+             i != _bpm_list.end();
+             i++)
+        {
+            const double dt = *i;
+            if (fabs(dt - avg) < stddev)
+            {
+                sum += dt;
+                square_sum += dt*dt;
+                ++valid_count;
+            }
+        }
+        const double new_avg = sum / valid_count;
+        const double square_avg = square_sum / valid_count;
+        const double new_stddev = sqrt(square_avg - new_avg*new_avg);
+        printf("filter avg = %f filter stddev = %f\n", new_avg, new_stddev);
+        if (new_stddev < new_avg * 0.05)
+            return new_avg;
+        else
+            return filter(new_avg, new_stddev);
+    }
 
 	Chunk_T *next()
 	{
@@ -266,6 +328,7 @@ public:
 									++_dt_points;
 									_dt_avg = _dt_sum / _dt_points;
 								}
+                                _bpm_list.push_back(60.0/dt);
 								printf("bpm %f avg %f\n", 60.0/dt, 60.0/_dt_avg);
 							}
 							_last_beat = *_maxs.begin();
@@ -344,6 +407,7 @@ private:
 	int _dt_points;
 	double _dt_avg;
 	double _last_t;
+    std::list<double> _bpm_list;
 };
 
 #endif

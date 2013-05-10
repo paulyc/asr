@@ -100,7 +100,9 @@ ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
 	//_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
-	_default_src("/Users/paulyc/Downloads/4045992_Wayfarer_Original_Mix.aiff"),
+	_default_src("/Users/paulyc/Downloads/3863535_Fall_With_Me_feat__The_Glass_Child_Original_Mix.aiff"),
+//4233537_Mesocyclone_Original_Mix.aiff
+//4045992_Wayfarer_Original_Mix.aiff"),
 //_default_src("clip.wav"),
 	//_default_src(L"H:\\Music\\Heatbeat - Hadoken (Original Mix).wav"),
 	//_default_src(L"H:\\Music\\Sean Tyas - Melbourne (Original Mix).wav"),

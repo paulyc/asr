@@ -389,6 +389,11 @@ public:
 
 		_filename = 0;
 	}
+    
+    void analyze()
+    {
+        _detector.analyze();
+    }
 
 	virtual typename T_source<Chunk_T>::pos_info& len()
 	{
@@ -587,6 +592,8 @@ public:
 	//	{
 		//	GenericUI *ui;
 	//		pthread_mutex_unlock(lock);
+        
+        this->analyze();
 			
 			this->_resample_filter->set_output_scale(1.0f / this->_src->maxval());
 			//_meta->load_metadata(lock);
