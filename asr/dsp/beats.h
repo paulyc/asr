@@ -148,6 +148,7 @@ public:
 		_last_beat = point();
         
         _bpm_list.clear();
+        _final_bpm_list.clear();
 	}
 
 	struct point
@@ -159,6 +160,13 @@ public:
 		double x;
 		double dx;
 	};
+    struct new_beat
+    {
+        new_beat() : bpm(0.0), t(0.0){}
+        new_beat(double bpm_, double t_) : bpm(bpm_), t(t_) {}
+        double bpm;
+        double t;
+    };
 	int _chk_ofs;
 
 	virtual void seek_chk(int chk_ofs)
@@ -181,17 +189,13 @@ public:
 	{
 		if (_beat_avg_list.empty())
 		{
-			typename std::list<point>::iterator i = _beat_list.begin();
-			double last_t = i->t;
+			std::list<double>::iterator i = _final_bpm_list.begin();
+			double last_t = *i;
 			_beat_avg_list.push_back(last_t);
 			i++;
-			while (i != _beat_list.end())
+			while (i != _final_bpm_list.end())
 			{
-				double dt = i->t - last_t;
-             //   if (fabs(dt - bpm) / bpm < 0.1)
-              //  {
-                    
-             //   }
+				const double dt = *i - last_t;
 				if (dt > 1.5*_dt_avg)
 				{
 					last_t += _dt_avg;
@@ -207,7 +211,7 @@ public:
 				else
 				{
 					last_t += _dt_avg;
-					double diff = 0.1 * (i->t - last_t);
+					double diff = 0.1 * (*i - last_t);
 					last_t += diff;
 					printf("bpm = %f\n", 60.0/(_dt_avg+diff));
 					_beat_avg_list.push_back(last_t);
@@ -226,54 +230,24 @@ public:
     
     void analyze()
     {
-     //   int bins[256] = {0};
-        double sum = 0.0;
-        double square_sum = 0.0;
-        std::list<double>::iterator i = _bpm_list.begin();
-        for (i++;
-             i != _bpm_list.end();
-             i++)
-        {
-            const double dt = *i;
-            sum += dt;
-            square_sum += dt*dt;
-          //  if (dt < 256.0)
-          //  {
-          //      bins[int(dt)]++;
-          //  }
-        }
-        
-     /*   int max_bin = 0;
-        int max_count = 0;
-        for (int j=0; j<256; ++j)
-        {
-            if (bins[j] > max_count)
-            {
-                max_bin = j;
-                max_count = bins[j];
-            }
-        }
-        printf("max bin is %d at %d\n", max_bin, max_count);
-        printf("%d %d\n", bins[max_bin-1], bins[max_bin+2]);*/
-        
-        const double avg = sum / _bpm_list.size();
-        const double square_avg = square_sum / _bpm_list.size();
-        const double stddev = sqrt(square_avg - avg*avg);
+        const double avg = 60.0/_dt_avg;
+        const double stddev = avg * 0.1;
         printf("avg = %f stddev = %f\n", avg, stddev);
         
         double bpm = filter(avg, stddev);
         
         double final_sum = 0.0;
         int final_count = 0;
-        for (std::list<double>::iterator i = _bpm_list.begin();
+        for (typename std::list<new_beat>::iterator i = _bpm_list.begin();
              i != _bpm_list.end();
              i++)
         {
-            const double dt = *i;
+            const double dt = i->bpm;
             if (fabs(dt - bpm) / bpm < 0.1)
             {
                 final_sum += dt;
                 ++final_count;
+                _final_bpm_list.push_back(i->t);
             }
         }
         printf("final avg %f\n", final_sum / final_count);
@@ -286,11 +260,11 @@ public:
         double sum = 0.0;
         double square_sum = 0.0;
         int valid_count = 0;
-        for (std::list<double>::iterator i = _bpm_list.begin();
+        for (typename std::list<new_beat>::iterator i = _bpm_list.begin();
              i != _bpm_list.end();
              i++)
         {
-            const double dt = *i;
+            const double dt = i->bpm;
             if (fabs(dt - avg) < stddev)
             {
                 sum += dt;
@@ -358,7 +332,7 @@ public:
 									++_dt_points;
 									_dt_avg = _dt_sum / _dt_points;
 								}
-                                _bpm_list.push_back(60.0/dt);
+                                _bpm_list.push_back(new_beat(60.0/dt, _last_beat.t));
 								printf("bpm %f avg %f\n", 60.0/dt, 60.0/_dt_avg);
 							}
 							_last_beat = *_maxs.begin();
@@ -484,7 +458,8 @@ private:
 	int _dt_points;
 	double _dt_avg;
 	double _last_t;
-    std::list<double> _bpm_list;
+    std::list<new_beat> _bpm_list;
+    std::list<double> _final_bpm_list;
 };
 
 #endif
