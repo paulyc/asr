@@ -48,6 +48,12 @@ ASR::ASR(int argc, char **argv)
 #endif
 }
 
+ASR::ASR(GenericUI *ui) : _ui(ui)
+{
+    _asio = new ASIOProcessor;
+    _ui->_io = _asio;
+}
+
 ASR::~ASR()
 {
 	_asio->Finish();
@@ -63,7 +69,7 @@ void ASR::execute()
 	_ui->destroy();
 }
 
-#if 1
+#if !TEST_BEATS
 int main(int argc, char **argv)
 {
 #if 0
@@ -72,34 +78,6 @@ int main(int argc, char **argv)
 	tester->test();
 	delete tester;
 	return 0;
-#endif
-#if 0
-#include "dsp/filter.h"
-#include <iostream>
-	using namespace std;
-	dumb_resampler<double,double> rs(13);
-	double *buf = rs.get_tap_buffer();
-	buf[0] = 1.0;
-	buf[1] = 1.0;
-	buf[2] = 1.0;
-	buf[3] = 1.0;
-	buf[4] = 1.0;
-	buf[5] = 1.0;
-	buf[6] = -1.0;
-	buf[7] = 1.0;
-	buf[8] = 1.0;
-	buf[9] = 1.0;
-	buf[10] = 1.0;
-	buf[11] = 1.0;
-	buf[12] = 1.0;
-
-	for (double d = -7; d < -5; d += 0.01){ 
-		cout << d << " : " << rs.apply(d) << endl;
-	}
-	return 0;
-#endif
-#if TEST
-	return test_main();
 #endif
 
 	//freopen("stdout.txt", "w", stdout);

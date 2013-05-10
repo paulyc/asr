@@ -73,4 +73,6 @@
 
 #define CHUNK_SIZE 1024
 
+#define TEST_BEATS 0
+
 #endif // !defined(_CONFIG_H)

@@ -42,6 +42,7 @@ class ASR
 {
 public:
 	ASR(int argc, char **argv);
+    ASR(GenericUI *ui);
 	~ASR();
 
 	void execute();

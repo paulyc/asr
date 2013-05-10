@@ -11,12 +11,21 @@
 		5F0C4F1917360CE10025E149 /* CoreAudio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B381173235D90006871C /* CoreAudio.cpp */; };
 		5F0C4F1A17360CE90025E149 /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
 		5F0C4F1C1736E5D60025E149 /* ui_cli.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */; };
+		5F1F0ED7173C8E8B00DEA888 /* ui_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */; };
+		5F1F0F26173C9F3100DEA888 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1F0F25173C9F3100DEA888 /* Cocoa.framework */; };
+		5F1F0F30173C9F3200DEA888 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5F1F0F2E173C9F3200DEA888 /* InfoPlist.strings */; };
+		5F1F0F32173C9F3200DEA888 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0F31173C9F3200DEA888 /* main.m */; };
+		5F1F0F36173C9F3200DEA888 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 5F1F0F34173C9F3200DEA888 /* Credits.rtf */; };
+		5F1F0F39173C9F3200DEA888 /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0F38173C9F3200DEA888 /* AppDelegate.mm */; };
+		5F1F0F3C173C9F3200DEA888 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5F1F0F3A173C9F3200DEA888 /* MainMenu.xib */; };
+		5F1F0F40173CA8C700DEA888 /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B363173210A50006871C /* util.cpp */; };
+		5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
+		5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */; };
 		5FB2B2AA1732107C0006871C /* mac.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FB2B2A91732107C0006871C /* mac.1 */; };
 		5FB2B369173210A50006871C /* algo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B2173210A50006871C /* algo.cpp */; };
 		5FB2B36C173210A50006871C /* asr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B6173210A50006871C /* asr.cpp */; };
 		5FB2B36D173210A50006871C /* controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2C7173210A50006871C /* controller.cpp */; };
 		5FB2B36E173210A50006871C /* decoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B30D173210A50006871C /* decoder.cpp */; };
-		5FB2B36F173210A50006871C /* beats.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B311173210A50006871C /* beats.cpp */; };
 		5FB2B370173210A50006871C /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
 		5FB2B372173210A50006871C /* io.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B31D173210A50006871C /* io.cpp */; };
 		5FB2B376173210A50006871C /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B325173210A50006871C /* Makefile */; };
@@ -60,9 +69,23 @@
 		5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ui_cli.cpp; sourceTree = "<group>"; };
 		5F0C4F1D1738D6770025E149 /* task.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = task.cpp; sourceTree = "<group>"; };
 		5F0C4F1E1738D6770025E149 /* task.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = task.h; sourceTree = "<group>"; };
+		5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ui_cocoa.mm; sourceTree = "<group>"; };
+		5F1F0ED8173C8F2C00DEA888 /* ui_cocoa.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ui_cocoa.hpp; sourceTree = "<group>"; };
+		5F1F0F23173C9F3100DEA888 /* ASR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ASR.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5F1F0F25173C9F3100DEA888 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		5F1F0F28173C9F3100DEA888 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		5F1F0F29173C9F3100DEA888 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		5F1F0F2A173C9F3100DEA888 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		5F1F0F2D173C9F3200DEA888 /* ASR-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "ASR-Info.plist"; sourceTree = "<group>"; };
+		5F1F0F2F173C9F3200DEA888 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		5F1F0F31173C9F3200DEA888 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		5F1F0F33173C9F3200DEA888 /* ASR-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ASR-Prefix.pch"; sourceTree = "<group>"; };
+		5F1F0F35173C9F3200DEA888 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
+		5F1F0F37173C9F3200DEA888 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		5F1F0F38173C9F3200DEA888 /* AppDelegate.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
+		5F1F0F3B173C9F3200DEA888 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		5FB2B2A41732107C0006871C /* mac */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mac; sourceTree = BUILT_PRODUCTS_DIR; };
 		5FB2B2A91732107C0006871C /* mac.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = mac.1; sourceTree = "<group>"; };
-		5FB2B2B1173210A50006871C /* .out.swp */ = {isa = PBXFileReference; lastKnownFileType = file; path = .out.swp; sourceTree = "<group>"; };
 		5FB2B2B2173210A50006871C /* algo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = algo.cpp; sourceTree = "<group>"; };
 		5FB2B2B3173210A50006871C /* asio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asio.cpp; sourceTree = "<group>"; };
 		5FB2B2B4173210A50006871C /* asiodrv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asiodrv.cpp; sourceTree = "<group>"; };
@@ -257,6 +280,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5F1F0F20173C9F3100DEA888 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5F1F0F26173C9F3100DEA888 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5FB2B2A11732107C0006871C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -275,12 +306,56 @@
 			path = coreaudio;
 			sourceTree = "<group>";
 		};
+		5F1F0F24173C9F3100DEA888 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5F1F0F25173C9F3100DEA888 /* Cocoa.framework */,
+				5F1F0F27173C9F3100DEA888 /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		5F1F0F27173C9F3100DEA888 /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5F1F0F28173C9F3100DEA888 /* AppKit.framework */,
+				5F1F0F29173C9F3100DEA888 /* CoreData.framework */,
+				5F1F0F2A173C9F3100DEA888 /* Foundation.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		5F1F0F2B173C9F3100DEA888 /* ASR */ = {
+			isa = PBXGroup;
+			children = (
+				5F1F0F37173C9F3200DEA888 /* AppDelegate.h */,
+				5F1F0F38173C9F3200DEA888 /* AppDelegate.mm */,
+				5F1F0F3A173C9F3200DEA888 /* MainMenu.xib */,
+				5F1F0F2C173C9F3200DEA888 /* Supporting Files */,
+			);
+			path = ASR;
+			sourceTree = "<group>";
+		};
+		5F1F0F2C173C9F3200DEA888 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				5F1F0F2D173C9F3200DEA888 /* ASR-Info.plist */,
+				5F1F0F2E173C9F3200DEA888 /* InfoPlist.strings */,
+				5F1F0F31173C9F3200DEA888 /* main.m */,
+				5F1F0F33173C9F3200DEA888 /* ASR-Prefix.pch */,
+				5F1F0F34173C9F3200DEA888 /* Credits.rtf */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
 		5FB2B29B1732107C0006871C = {
 			isa = PBXGroup;
 			children = (
 				5FB2B2B0173210A50006871C /* asr */,
 				5FB2B2A61732107C0006871C /* mac */,
 				5F0C4F1117360CD60025E149 /* coreaudio */,
+				5F1F0F2B173C9F3100DEA888 /* ASR */,
+				5F1F0F24173C9F3100DEA888 /* Frameworks */,
 				5FB2B2A51732107C0006871C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -290,6 +365,7 @@
 			children = (
 				5FB2B2A41732107C0006871C /* mac */,
 				5F0C4F1017360CD60025E149 /* coreaudio */,
+				5F1F0F23173C9F3100DEA888 /* ASR.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -305,12 +381,13 @@
 		5FB2B2B0173210A50006871C /* asr */ = {
 			isa = PBXGroup;
 			children = (
+				5F1F0ED8173C8F2C00DEA888 /* ui_cocoa.hpp */,
+				5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */,
 				5F0C4F1D1738D6770025E149 /* task.cpp */,
 				5F0C4F1E1738D6770025E149 /* task.h */,
 				5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */,
 				5FB2B384173236400006871C /* AudioDevice.cpp */,
 				5FB2B385173236400006871C /* AudioDevice.h */,
-				5FB2B2B1173210A50006871C /* .out.swp */,
 				5FB2B2B2173210A50006871C /* algo.cpp */,
 				5FB2B2B3173210A50006871C /* asio.cpp */,
 				5FB2B2B4173210A50006871C /* asiodrv.cpp */,
@@ -542,6 +619,23 @@
 			productReference = 5F0C4F1017360CD60025E149 /* coreaudio */;
 			productType = "com.apple.product-type.tool";
 		};
+		5F1F0F22173C9F3100DEA888 /* ASR */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5F1F0F3D173C9F3200DEA888 /* Build configuration list for PBXNativeTarget "ASR" */;
+			buildPhases = (
+				5F1F0F1F173C9F3100DEA888 /* Sources */,
+				5F1F0F20173C9F3100DEA888 /* Frameworks */,
+				5F1F0F21173C9F3100DEA888 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ASR;
+			productName = ASR;
+			productReference = 5F1F0F23173C9F3100DEA888 /* ASR.app */;
+			productType = "com.apple.product-type.application";
+		};
 		5FB2B2A31732107C0006871C /* mac */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5FB2B2AD1732107C0006871C /* Build configuration list for PBXNativeTarget "mac" */;
@@ -582,9 +676,23 @@
 			targets = (
 				5FB2B2A31732107C0006871C /* mac */,
 				5F0C4F0F17360CD60025E149 /* coreaudio */,
+				5F1F0F22173C9F3100DEA888 /* ASR */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5F1F0F21173C9F3100DEA888 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5F1F0F30173C9F3200DEA888 /* InfoPlist.strings in Resources */,
+				5F1F0F36173C9F3200DEA888 /* Credits.rtf in Resources */,
+				5F1F0F3C173C9F3200DEA888 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		5F0C4F0C17360CD60025E149 /* Sources */ = {
@@ -596,6 +704,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5F1F0F1F173C9F3100DEA888 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5F1F0F32173C9F3200DEA888 /* main.m in Sources */,
+				5F1F0F39173C9F3200DEA888 /* AppDelegate.mm in Sources */,
+				5F1F0F40173CA8C700DEA888 /* util.cpp in Sources */,
+				5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */,
+				5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		5FB2B2A01732107C0006871C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -604,7 +724,6 @@
 				5FB2B36C173210A50006871C /* asr.cpp in Sources */,
 				5FB2B36D173210A50006871C /* controller.cpp in Sources */,
 				5FB2B36E173210A50006871C /* decoder.cpp in Sources */,
-				5FB2B36F173210A50006871C /* beats.cpp in Sources */,
 				5FB2B370173210A50006871C /* fft.cpp in Sources */,
 				5FB2B372173210A50006871C /* io.cpp in Sources */,
 				5FB2B376173210A50006871C /* Makefile in Sources */,
@@ -618,10 +737,38 @@
 				5FB2B383173235D90006871C /* CoreAudio.cpp in Sources */,
 				5FB2B386173236400006871C /* AudioDevice.cpp in Sources */,
 				5F0C4F1C1736E5D60025E149 /* ui_cli.cpp in Sources */,
+				5F1F0ED7173C8E8B00DEA888 /* ui_cocoa.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		5F1F0F2E173C9F3200DEA888 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5F1F0F2F173C9F3200DEA888 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		5F1F0F34173C9F3200DEA888 /* Credits.rtf */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5F1F0F35173C9F3200DEA888 /* en */,
+			);
+			name = Credits.rtf;
+			sourceTree = "<group>";
+		};
+		5F1F0F3A173C9F3200DEA888 /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				5F1F0F3B173C9F3200DEA888 /* en */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		5F0C4F1717360CD60025E149 /* Debug */ = {
@@ -636,9 +783,15 @@
 				);
 				OTHER_LDFLAGS = (
 					"-framework",
-					CoreFoundation,
-					"-framework",
 					CoreAudio,
+					"-framework",
+					CoreFoundation,
+					"-lmad",
+					"-lFLAC-static",
+					"-lfftw3",
+					"-lfftw3f",
+					"-framework",
+					AppKit,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -656,11 +809,85 @@
 				);
 				OTHER_LDFLAGS = (
 					"-framework",
-					CoreFoundation,
-					"-framework",
 					CoreAudio,
+					"-framework",
+					CoreFoundation,
+					"-lmad",
+					"-lFLAC-static",
+					"-lfftw3",
+					"-lfftw3f",
+					"-framework",
+					AppKit,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		5F1F0F3E173C9F3200DEA888 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "ASR/ASR-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
+					"../fftw-3.3.3",
+					"../libmad-0.15.1b",
+					"../flac-1.2.1/include",
+				);
+				INFOPLIST_FILE = "ASR/ASR-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"../contrib/libmad-0.15.1b/.libs",
+					../contrib/flac/src/libFLAC/.libs,
+					"../contrib/fftw-3.3.3/.libs",
+				);
+				OTHER_LDFLAGS = (
+					"-framework",
+					CoreAudio,
+					"-framework",
+					CoreFoundation,
+					"-lmad",
+					"-lFLAC-static",
+					"-lfftw3",
+					"-lfftw3f",
+					"-framework",
+					AppKit,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		5F1F0F3F173C9F3200DEA888 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "ASR/ASR-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
+					"../fftw-3.3.3",
+					"../libmad-0.15.1b",
+					"../flac-1.2.1/include",
+				);
+				INFOPLIST_FILE = "ASR/ASR-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"../contrib/libmad-0.15.1b/.libs",
+					../contrib/flac/src/libFLAC/.libs,
+					"../contrib/fftw-3.3.3/.libs",
+				);
+				OTHER_LDFLAGS = (
+					"-framework",
+					CoreAudio,
+					"-framework",
+					CoreFoundation,
+					"-lmad",
+					"-lFLAC-static",
+					"-lfftw3",
+					"-lfftw3f",
+					"-framework",
+					AppKit,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
 		};
@@ -747,6 +974,8 @@
 					"-lFLAC-static",
 					"-lfftw3",
 					"-lfftw3f",
+					"-framework",
+					AppKit,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -778,6 +1007,8 @@
 					"-lFLAC-static",
 					"-lfftw3",
 					"-lfftw3f",
+					"-framework",
+					AppKit,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -794,6 +1025,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		5F1F0F3D173C9F3200DEA888 /* Build configuration list for PBXNativeTarget "ASR" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5F1F0F3E173C9F3200DEA888 /* Debug */,
+				5F1F0F3F173C9F3200DEA888 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 		5FB2B29F1732107C0006871C /* Build configuration list for PBXProject "mac" */ = {
 			isa = XCConfigurationList;

@@ -4,6 +4,8 @@
 #include <assert.h>
 
 #include "fft.h"
+#include "buffer.h"
+#include "wavfile.h"
 
 class FilterSourceImpl : public FilterSource<chunk_t>
 {
@@ -144,6 +146,8 @@ public:
 		_max = point();
 		_maxs.clear();
 		_last_beat = point();
+        
+        _bpm_list.clear();
 	}
 
 	struct point
@@ -218,6 +222,7 @@ public:
     
     void analyze()
     {
+     //   int bins[256] = {0};
         double sum = 0.0;
         double square_sum = 0.0;
         std::list<double>::iterator i = _bpm_list.begin();
@@ -228,11 +233,30 @@ public:
             const double dt = *i;
             sum += dt;
             square_sum += dt*dt;
+          //  if (dt < 256.0)
+          //  {
+          //      bins[int(dt)]++;
+          //  }
         }
+        
+     /*   int max_bin = 0;
+        int max_count = 0;
+        for (int j=0; j<256; ++j)
+        {
+            if (bins[j] > max_count)
+            {
+                max_bin = j;
+                max_count = bins[j];
+            }
+        }
+        printf("max bin is %d at %d\n", max_bin, max_count);
+        printf("%d %d\n", bins[max_bin-1], bins[max_bin+2]);*/
+        
         const double avg = sum / _bpm_list.size();
         const double square_avg = square_sum / _bpm_list.size();
         const double stddev = sqrt(square_avg - avg*avg);
         printf("avg = %f stddev = %f\n", avg, stddev);
+        
         double bpm = filter(avg, stddev);
         
         double final_sum = 0.0;
@@ -313,7 +337,7 @@ public:
 						else if (!_maxs.empty() && i->x < 0.05 * _x_max)//_max.x)
 						{
 							// pick first
-							if (!_last_beat.valid && _dt_points > 5)
+							if (!_last_beat.valid && _dt_points > 25)
 							{
 								_last_beat.t = _maxs.begin()->t - _dt_avg;
 								_last_beat.valid = true;
@@ -322,7 +346,7 @@ public:
 							{
 								double dt = _maxs.begin()->t - _last_beat.t;
                                 // todo revise this: pick first 5 better
-								if (60.0/dt > 60.0 && 60.0/dt < 180.0 && (_dt_points < 5 || fabs(dt-_dt_avg) / _dt_avg < 0.1))
+								if (60.0/dt > 60.0 && 60.0/dt < 180.0 && (_dt_points < 25 || fabs(dt-_dt_avg) / _dt_avg < 0.1))
 								{
 									_dt_sum += dt;
 									++_dt_points;
@@ -382,6 +406,52 @@ public:
 		T_allocator<Chunk_T>::free(process_chk);
 		return passthru_chk;
 	}
+    
+    static void test_main()
+    {
+        T_source<chunk_t> *src = 0;
+        BeatDetector<chunk_t> detector;
+        std::string filenamestr;
+        
+        while (FileOpenDialog::OpenSingleFile(filenamestr))
+        {
+             std::cout << filenamestr << std::endl;
+            const char *filename = filenamestr.c_str();
+            if (strstr(filename, ".mp3") == filename + strlen(filename) - 4)
+            {
+                src = new mp3file_chunker<Chunk_T>(filename);
+            }
+            else if (strstr(filename, ".wav") == filename + strlen(filename) - 4)
+            {
+                src = new wavfile_chunker<Chunk_T>(filename);
+                //src = new ifffile_chunker<Chunk_T>(filename);
+            }
+            else if (strstr(filename, ".flac") == filename + strlen(filename) - 5)
+            {
+                src = new flacfile_chunker<Chunk_T>(filename);
+            }
+            else
+            {
+                src = new ifffile_chunker<Chunk_T>(filename);
+            }
+            detector.reset_source(src);
+            int chks = 0;
+            while (detector.len().chunks == -1)
+            {
+                ++chks;
+                T_allocator<chunk_t>::free(detector.next());
+            }
+            while (chks < detector.len().chunks)
+            {
+                ++chks;
+                T_allocator<chunk_t>::free(detector.next());
+            }
+            detector.analyze();
+            delete src;
+            src = 0;
+        }
+        
+    }
 
 private:
 	std::list<point> _peak_list;

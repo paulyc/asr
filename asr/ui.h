@@ -278,4 +278,30 @@ public:
 	virtual void set_text_field(int id, const char *txt, bool del);
 };
 
+#if MAC
+
+class CocoaUI : public GenericUI
+{
+public:
+    virtual void create() = 0;
+	virtual void destroy() = 0;
+	virtual void main_loop() = 0;
+	virtual bool running() = 0;
+	virtual void do_quit() = 0;
+	virtual void render(int) = 0;
+	virtual void set_track_filename(int t) = 0;
+	virtual void set_position(void *t, double tm, bool invalidate) = 0;
+	virtual void set_clip(int) = 0;
+	virtual bool want_render() = 0;
+	virtual void set_text_field(int id, const char *txt, bool del) = 0;
+};
+
+#endif // MAC
+
+class FileOpenDialog
+{
+public:
+    static bool OpenSingleFile(std::string &filename);
+};
+
 #endif // !defined(UI_H)
