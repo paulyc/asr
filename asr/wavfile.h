@@ -176,7 +176,7 @@ public:
 
 		int len = _riffChunks['MMOC'].ch.len;
 		// check bad sizes because of padding
-		if (len != sizeof(AIFFCommChunk))
+		if (len > sizeof(AIFFCommChunk))
 			printf("chunk len is %d expected %d\n", len, sizeof(AIFFCommChunk));
 		_file->seek(_riffChunks['MMOC'].ofs);
 		_file->read(&comChk.channels, sizeof(comChk.channels), 1);

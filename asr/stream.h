@@ -213,6 +213,45 @@ public:
 };
 
 template <typename T>
+class VectorSource : public T_source<T>
+{
+public:
+    VectorSource<T>(int sz) : _vec(sz), _readIndx(0), _writeIndx(0) {}
+    T *next()
+    {
+        if (_readIndx >= _vec.size())
+        {
+            return zero_source<T>::get()->next();
+        }
+        else
+        {
+            return _vec[_readIndx++];
+        }
+    }
+    void add(T *t)
+    {
+        _vec[_writeIndx++] = t;
+    }
+    void set(int i, T *t)
+    {
+        _vec[i] = t;
+    }
+    T* get(int i)
+    {
+        return _vec[i];
+    }
+
+    int size() const
+    {
+        return _vec.size();
+    }
+private:
+    std::vector<T*> _vec;
+    int _readIndx;
+    int _writeIndx;
+};
+
+template <typename T>
 zero_source<T>* zero_source<T>::_the_src = 0;
 
 template <typename T>

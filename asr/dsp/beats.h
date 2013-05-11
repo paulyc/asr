@@ -2,6 +2,8 @@
 #define _BEATS_H
 
 #include <assert.h>
+#include <dirent.h>
+#include <sys/types.h>
 
 #include "fft.h"
 #include "buffer.h"
@@ -115,10 +117,17 @@ public:
 		_lpf(2048, 44100.0, 100.0),
 		_k(1024),
 		_s1(_lpf, 2048, 1024, 20),
-		_s2(_k, 1024, 512, 20)
+		_s2(_k, 1024, 512, 20),
+        _jobs(NUM_JOBS)
 	{
 		_lpf.init();
 		_k.init();
+#if PARALLEL_PROCESS
+        spin_processor();
+        spin_processor();
+        spin_processor();
+        spin_processor();
+#endif
 	}
 
 	void reset_source(T_source<Chunk_T> *src)
@@ -128,20 +137,25 @@ public:
 		_s1.reset_source(&_my_src);
 		_s2.reset_source(&_rectifier);
 
-		_t = 0.0;
+		reset_stats();
+	}
+    
+    void reset_stats()
+    {
+        _t = 0.0;
 		_pos = true;
 		_start = false;
 		_x_max = 10.0;
 		_chk_ofs = 0;
-
+        
 		_dt_sum = 0.0;
 		_dt_points = 0;
 		_dt_avg = 0.0;
-
+        
 		_peak_list.clear();
 		_beat_list.clear();
 		_beat_avg_list.clear();
-
+        
 		_max_peak = point();
 		_max = point();
 		_maxs.clear();
@@ -149,7 +163,7 @@ public:
         
         _bpm_list.clear();
         _final_bpm_list.clear();
-	}
+    }
 
 	struct point
 	{
@@ -199,7 +213,7 @@ public:
 				if (dt > 1.5*_dt_avg)
 				{
 					last_t += _dt_avg;
-					printf("bpm = %f\n", 60.0/_dt_avg);
+//					printf("bpm = %f\n", 60.0/_dt_avg);
 					_beat_avg_list.push_back(last_t);
 					continue;
 				}
@@ -213,14 +227,14 @@ public:
 					last_t += _dt_avg;
 					double diff = 0.1 * (*i - last_t);
 					last_t += diff;
-					printf("bpm = %f\n", 60.0/(_dt_avg+diff));
+//					printf("bpm = %f\n", 60.0/(_dt_avg+diff));
 					_beat_avg_list.push_back(last_t);
 					i++;
 				}
 			}
 			for (int j=0; j<10; ++j)
 			{
-				printf("bpm = %f\n", 60.0/_dt_avg);
+//				printf("bpm = %f\n", 60.0/_dt_avg);
 				last_t += _dt_avg;
 				_beat_avg_list.push_back(last_t);
 			}
@@ -228,13 +242,13 @@ public:
 		return _beat_avg_list;
 	}
     
-    void analyze()
+    double analyze()
     {
         const double avg = 60.0/_dt_avg;
         const double stddev = avg * 0.1;
-        printf("avg = %f stddev = %f\n", avg, stddev);
+//        printf("avg = %f stddev = %f\n", avg, stddev);
         
-        double bpm = filter(avg, stddev);
+        double bpm = filter(avg, stddev, 1);
         
         double final_sum = 0.0;
         int final_count = 0;
@@ -250,12 +264,14 @@ public:
                 _final_bpm_list.push_back(i->t);
             }
         }
-        printf("final avg %f\n", final_sum / final_count);
-        _dt_avg = 60.0 / (final_sum / final_count);
+        const double final_bpm = final_sum / final_count;
+//        printf("final avg %f\n", final_bpm);
+        _dt_avg = 60.0 / final_bpm;
         beats();
+        return final_bpm;
     }
     
-    double filter(double avg, double stddev)
+    double filter(double avg, double stddev, int count)
     {
         double sum = 0.0;
         double square_sum = 0.0;
@@ -275,19 +291,194 @@ public:
         const double new_avg = sum / valid_count;
         const double square_avg = square_sum / valid_count;
         const double new_stddev = sqrt(square_avg - new_avg*new_avg);
-        printf("filter avg = %f filter stddev = %f\n", new_avg, new_stddev);
-        if (new_stddev < new_avg * 0.05)
+   //     printf("filter avg = %f filter stddev = %f\n", new_avg, new_stddev);
+        if (new_stddev < new_avg * 0.05 || count >= 10)
             return new_avg;
         else
-            return filter(new_avg, new_stddev);
+            return filter(new_avg, new_stddev, count+1);
     }
+    
+    struct job {
+        job() :
+        _done(false),
+        _lpf(2048, 44100.0, 100.0),
+		_k(1024),
+		_s1(_lpf, 2048, 1024, 20),
+		_s2(_k, 1024, 512, 20),
+        _rectifier(&_s1)
+        {
+            _lpf.init();
+            _k.init();
+        }
+        
+        void do_filter()
+        {
+            for (int i=0; i<vecSrc->size(); ++i)
+            {
+                outputs.push_back(_s2.next());
+            }
+        }
+        
+        void init(int n) {
+            lock.acquire();
+            vecSrc = new VectorSource<Chunk_T>(n);
+            lock.release();
+        }
+        
+        void process() {
+            lock.acquire();
+            
+            outputs.clear();
+            _s1.reset_source(vecSrc);
+            _s2.reset_source(&_rectifier);
+            do_filter();
+            
+            delete vecSrc;
+            vecSrc = 0;
+            _done = true;
+            job_done.signal();
+            lock.release();
+        }
+        
+        void wait()
+        {
+            lock.acquire();
+            while (!_done)
+                job_done.wait(lock);
+            lock.release();
+        }
 
-	Chunk_T *next()
-	{
-		Chunk_T *process_chk = _passthrough_sink.next();
-		Chunk_T *passthru_chk = _my_src.get_next();
-		
-		SamplePairf last = {0.0f, 0.0f};
+        bool _done;
+        VectorSource<Chunk_T> *vecSrc;
+        LPFilter _lpf;
+        KaiserWindowFilter _k;
+        STFTStream _s1, _s2;
+        full_wave_rectifier<SamplePairf, Chunk_T> _rectifier;
+        
+        Condition_T job_done;
+        Lock_T lock;
+        std::vector<Chunk_T*> outputs;
+    };
+    const static int NUM_JOBS = 4;
+    
+    Lock_T _proc_lock;
+    Condition_T _do_proc;
+    
+    void spin_processor()
+    {
+        pthread_t thread;
+        pthread_create(&thread, NULL, processor_thread, this);
+    }
+    
+    static void* processor_thread(void* p)
+    {
+        ((BeatDetector<Chunk_T>*)p)->do_processing();
+        return 0;
+    }
+    
+    std::queue<int> _jobs_to_process;
+    
+    void process_job(int indx)
+    {
+        _proc_lock.acquire();
+        _jobs_to_process.push(indx);
+        _do_proc.signal();
+        _proc_lock.release();
+    }
+    
+    void do_processing()
+    {
+        while (true)
+        {
+            int j;
+            _proc_lock.acquire();
+            while (_jobs_to_process.empty())
+                _do_proc.wait(_proc_lock);
+            j = _jobs_to_process.front();
+            _jobs_to_process.pop();
+            _proc_lock.release();
+            this->_jobs[j].process();
+        }
+    }
+    
+    void process_all_from_source(T_source<Chunk_T> *src)
+    {
+        std::vector<Chunk_T*> chunks(40000);
+        
+        reset_source(src);
+        int chks = 0;
+        while (this->len().chunks == -1)
+        {
+            if (chks >= chunks.size())
+                chunks.resize(chunks.size()*2);
+            chunks[chks++] = this->_src->next();
+        }
+        
+        if (chks == this->len().chunks)
+        {
+            // all have been loaded
+            const int chks_to_process = this->len().chunks;
+            const int division_size = chks_to_process / 4;
+            const int division_rem = chks_to_process % 4;
+            _jobs[0].init(division_size);
+            _jobs[1].init(division_size);
+            _jobs[2].init(division_size);
+            _jobs[3].init(division_size+division_rem);
+            int i = 0;
+            for (int indx = 0; indx < 4; ++indx)
+            {
+                for (int chk = 0; chk < _jobs[indx].vecSrc->size(); ++chk)
+                {
+                    _jobs[indx].vecSrc->add(chunks[i++]);
+                }
+                this->process_job(indx);
+            }
+        }
+        else if (chks == 0)
+        {
+            // we know the length and havent loaded them
+            const int chks_to_process = this->len().chunks;
+            const int division_size = chks_to_process / 4;
+            const int division_rem = chks_to_process % 4;
+            _jobs[0].init(division_size);
+            _jobs[1].init(division_size);
+            _jobs[2].init(division_size);
+            _jobs[3].init(division_size+division_rem);
+            for (int indx = 0; indx < 4; ++indx)
+            {
+                _jobs[indx].lock.acquire();
+                for (int chk = 0; chk < _jobs[indx].vecSrc->size(); ++chk)
+                {
+                    _jobs[indx].vecSrc->add(this->_src->next());
+                }
+                _jobs[indx].lock.release();
+                this->process_job(indx);
+            }
+        }
+        else
+        {
+            printf("WTF happened?\n");
+            throw std::exception();
+        }
+        
+        _jobs[0].wait();
+        for (int i=0; i<_jobs[0].outputs.size(); ++i)
+            process_chunk(_jobs[0].outputs[i]);
+        _jobs[1].wait();
+        for (int i=0; i<_jobs[1].outputs.size(); ++i)
+            process_chunk(_jobs[1].outputs[i]);
+        _jobs[2].wait();
+        for (int i=0; i<_jobs[2].outputs.size(); ++i)
+            process_chunk(_jobs[2].outputs[i]);
+        _jobs[3].wait();
+        for (int i=0; i<_jobs[3].outputs.size(); ++i)
+            process_chunk(_jobs[3].outputs[i]);
+        
+        std::cout << analyze() << std::endl;
+    }
+    
+    void process_chunk(Chunk_T *process_chk)
+    {
 		for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
 		{
 			double x = (*smp)[0];
@@ -304,7 +495,7 @@ public:
 			{
 				if (_start)
 				{
-				//	printf("hello\n");
+                    //	printf("hello\n");
 					_start = false;
 					// pick point with highest dx
 					for (typename std::list<point>::iterator i = _peak_list.begin(); i != _peak_list.end(); i++)
@@ -333,7 +524,7 @@ public:
 									_dt_avg = _dt_sum / _dt_points;
 								}
                                 _bpm_list.push_back(new_beat(60.0/dt, _last_beat.t));
-								printf("bpm %f avg %f\n", 60.0/dt, 60.0/_dt_avg);
+                                //								printf("bpm %f avg %f\n", 60.0/dt, 60.0/_dt_avg);
 							}
 							_last_beat = *_maxs.begin();
 							_last_t = _last_beat.t;
@@ -349,7 +540,7 @@ public:
 			{
 				_start = true;
 			}
-
+            
 			if (dx < 0)
 			{
 				if (_pos)
@@ -377,14 +568,23 @@ public:
 			}
 			_t += 1.0 / 44100.0;
 		}
-	//	avg[0] /= Chunk_T::chunk_size;
-	//	avg[1] /= Chunk_T::chunk_size;
-	//	printf("avg values of envelope %f %f\n", avg[0], avg[1]);
-	
-	//	T_allocator<Chunk_T>::free(passthru_chk);
-	//	return process_chk;
-    //    printf("xmax %f\n", _x_max);
+        //	avg[0] /= Chunk_T::chunk_size;
+        //	avg[1] /= Chunk_T::chunk_size;
+        //	printf("avg values of envelope %f %f\n", avg[0], avg[1]);
+        
+        //	T_allocator<Chunk_T>::free(passthru_chk);
+        //	return process_chk;
+        //    printf("xmax %f\n", _x_max);
 		T_allocator<Chunk_T>::free(process_chk);
+    }
+
+	Chunk_T *next()
+	{
+		Chunk_T *process_chk = _passthrough_sink.next();
+		Chunk_T *passthru_chk = _my_src.get_next();
+		
+        process_chunk(process_chk);
+		
 		return passthru_chk;
 	}
     
@@ -393,14 +593,23 @@ public:
         T_source<chunk_t> *src = 0;
         BeatDetector<chunk_t> detector;
         std::string filenamestr;
+        dirent *entry;
         
-        while (FileOpenDialog::OpenSingleFile(filenamestr))
+        char filename[256];
+        
+        const char *dir_name = "/Users/paulyc/Downloads/";
+        
+     //   while (FileOpenDialog::OpenSingleFile(filenamestr))
+        DIR *d = opendir(dir_name);
+        while ((entry = readdir(d)) != NULL)
         {
-             std::cout << filenamestr << std::endl;
-            const char *filename = filenamestr.c_str();
+            strcpy(filename, dir_name);
+            strcat(filename, entry->d_name);
+            
             if (strstr(filename, ".mp3") == filename + strlen(filename) - 4)
             {
                 src = new mp3file_chunker<Chunk_T>(filename);
+                continue;
             }
             else if (strstr(filename, ".wav") == filename + strlen(filename) - 4)
             {
@@ -410,26 +619,40 @@ public:
             else if (strstr(filename, ".flac") == filename + strlen(filename) - 5)
             {
                 src = new flacfile_chunker<Chunk_T>(filename);
+                continue;
             }
-            else
+            else if (strstr(filename, ".aiff") == filename + strlen(filename) - 5)
             {
                 src = new ifffile_chunker<Chunk_T>(filename);
             }
+            else
+            {
+                continue;
+            }
+            
+            std::cout << filename << " ";
+            
+#if PARALLEL_PROCESS
+            detector.process_all_from_source(src);
+#else
+            
             detector.reset_source(src);
             int chks = 0;
             while (detector.len().chunks == -1)
-            {
-                ++chks;
-                T_allocator<chunk_t>::free(detector.next());
+             {
+             ++chks;
+             T_allocator<chunk_t>::free(detector.next());
             }
             while (chks < detector.len().chunks)
             {
-                ++chks;
-                T_allocator<chunk_t>::free(detector.next());
-            }
-            detector.analyze();
+              ++chks;
+              T_allocator<chunk_t>::free(detector.next());
+          }
+            std::cout <<  detector.analyze() << std::endl;
+#endif
             delete src;
             src = 0;
+        //    break;
         }
         
     }
@@ -460,6 +683,8 @@ private:
 	double _last_t;
     std::list<new_beat> _bpm_list;
     std::list<double> _final_bpm_list;
+    
+    std::vector<job> _jobs;
 };
 
 #endif

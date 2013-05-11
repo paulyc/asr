@@ -94,7 +94,7 @@ private:
 class FFTWindowFilter
 {
 public:
-	FFTWindowFilter(int N, double beta=8.0) : _N(N), _beta(beta)
+	FFTWindowFilter(int N, double beta=8.0) : _N(N), _beta(beta), _initd(false)
 	{
 		_coeffs = (double*)fftw_malloc(sizeof(double) * _N);
 		_fftCoeffs = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (_N/2+1));
@@ -124,18 +124,20 @@ public:
 		fill();
 		fftw_execute(p);
 		fftw_destroy_plan(p);
+        _initd = true;
 		
-		/*for (int i=0; i<_N/2+1; ++i)
-		{
-			double mag = sqrt(_fftCoeffs[i][0] * _fftCoeffs[i][0] + _fftCoeffs[i][1] * _fftCoeffs[i][1]);
-			double normalize = 1.0/mag;
+		//for (int i=0; i<_N/2+1; ++i)
+		//{
+		//	double mag = sqrt(_fftCoeffs[i][0] * _fftCoeffs[i][0] + _fftCoeffs[i][1] * _fftCoeffs[i][1]);
+		//	double normalize = 1.0/mag;
 		//	printf("fftCoeff[%d] = %f + j%f (%f)\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1], mag);
 		//	_fftCoeffs[i][0] *= normalize;
 		//	_fftCoeffs[i][1] *= normalize;
-		}*/
+		//}
 	}
 	fftw_complex *get_fft_coeffs() const
 	{
+        if (!_initd) throw string_exception("attempt to use filter without init");
 		return _fftCoeffs;
 	}
 	static const double _windowConstant;
@@ -144,6 +146,7 @@ private:
 	double _beta;
 	double *_coeffs;
 	fftw_complex *_fftCoeffs;
+    bool _initd;
 };
 
 class KaiserWindowFilter : public FFTWindowFilter
@@ -362,6 +365,8 @@ public:
 			y = _outBuf[n][1][0] * coeff1 + _outBuf[n][1][1] * coeff0;
 			_outBuf[n][1][0] = x;
 			_outBuf[n][1][1] = y;
+            
+            
 		}
 		_inversePlan->execute();
 		SamplePaird *smp = (SamplePaird*)_outBuf;
@@ -407,6 +412,7 @@ public:
 			(*ptr)[0] = float((*_readPtr)[0]/* / _windowConstant*/);
 			(*ptr++)[1] = float((*_readPtr++)[1]/* / _windowConstant*/);
 		}
+        
 
 		return chk;
 	}
