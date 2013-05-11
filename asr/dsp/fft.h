@@ -163,6 +163,41 @@ public:
 	double h_n(int n) { return sinc(n); }
 };
 
+// 65536 * 8 = 524kb / filter
+// comb filter 130 => 60/130 * 2 * 44100 = 40707
+//             129 =>                      41023
+inline double bpm_to_frequency_hz(double bpm)
+{
+    return bpm / 60.0;
+}
+
+inline double bpm_to_period_s(double bpm)
+{
+    return 60.0 / bpm;
+}
+
+inline double bpm_to_interval_samples(double bpm, double sampleRate=44100.0)
+{
+    return bpm_to_period_s(bpm) * sampleRate;
+}
+
+class CombFilter : public FFTWindowFilter
+{
+public:
+	CombFilter(int N, int interval) :
+    FFTWindowFilter(N), _interval(interval)
+    {
+    }
+	virtual double h_n(int n)
+	{
+		if (abs(n) % _interval == 0)
+			return 1.0;
+		return 0.0;
+	}
+private:
+	int _interval;
+};
+
 class LPFilter : public FFTWindowFilter
 {
 public:
@@ -298,6 +333,8 @@ private:
 	double _t;
 };
 
+class FilterBank;
+
 class IFilterBankProcessor
 {
 public:
@@ -330,8 +367,6 @@ public:
     {
         for (int n=0; n < _N; ++n)
 		{
-            //	const double wc = mlt(n, _N);
-            //	const double wc = 1.0;
 			const double wc = mlt(n, _N);
 			_windowBuf[n][0] = inp[n][0] * wc;
 			_windowBuf[n][1] = inp[n][1] * wc;
@@ -345,11 +380,22 @@ public:
             (*i)->processFFT(_outBuf);
         }
     }
+    
+    void processOutput(SamplePaird *out)
+    {
+		for (int n=0; n < _N; ++n)
+		{
+			const double wc = mlt(n,_N)/_N;
+            out[n][0] *= wc;
+            out[n][1] *= wc;
+		}
+    }
 
 private:
     int _N;
     int _padding;
     FFTPlan *_fwPlan;
+    FFTPlan *_inversePlan;
     SamplePaird *_windowBuf;
 	ComplexPaird *_outBuf;
     std::list<IFilterBankProcessor*> _processors;
@@ -357,21 +403,29 @@ private:
 
 class STFTStream : public T_sink_source<chunk_t>, public IFilterBankProcessor
 {
+private:
+    FFTWindowFilter * _filt;
+    FilterBank *_filterBank;
 public:
-	const FFTWindowFilter &_filt;
 	// N = FFT size
 	// R = hop size
 	// hops = number of hops >= 0
 	// buffer size = N + hops * R
-	STFTStream(const FFTWindowFilter &filt, int N, int R, int hops, int padding=0) : 
-		T_sink_source<chunk_t>(0), _filt(filt), _N(N), _R(R), _hops(hops), _sourceChk(0), _padding(padding)
+    // takes ownership of filt
+	STFTStream(FFTWindowFilter *filt, int N, int R, int hops, int padding=0, FilterBank *filterBank=0) :
+		T_sink_source<chunk_t>(0), _filt(filt), _N(N), _R(R), _hops(hops), _sourceChk(0), _padding(padding), _filterBank(filterBank)
 	{
-		_inBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N + hops * R));
-		_windowBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N+padding));
-		_synthBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (N + hops * R));
-		_outBuf = (ComplexPaird*)fftw_malloc(sizeof(ComplexPaird) * ((N+padding)/2+1));
+        _filt->init();
+        
+		_inBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (_N + _hops * R));
+		_windowBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (_N+_padding));
+		_synthBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (_N + _hops * _R));
+		_outBuf = (ComplexPaird*)fftw_malloc(sizeof(ComplexPaird) * ((_N+_padding)/2+1));
 		_fwPlan = new Time2FrequencyPlan(N, _windowBuf, _outBuf);
 		_inversePlan = new Frequency2TimePlan(N, _outBuf, (SamplePaird*)_outBuf);
+        
+        if (_filterBank)
+            _filterBank->addProcessor(this);
 	}
 
 	~STFTStream()
@@ -383,6 +437,7 @@ public:
 		fftw_free(_windowBuf);
 		fftw_free(_inBuf);
 		T_allocator<chunk_t>::free(_sourceChk);
+        delete _filt;
 	}
 
 	void reset_source(T_source<chunk_t> *src)
@@ -467,7 +522,7 @@ public:
     
     virtual void processFFT(ComplexPaird * const fftBuffer)
     {
-        fftw_complex *coeffs = _filt.get_fft_coeffs();
+        fftw_complex *coeffs = _filt->get_fft_coeffs();
         
         for (int n=0; n < _N/2+1; ++n)
 		{
@@ -488,8 +543,12 @@ public:
 			_outBuf[n][1][0] = x;
 			_outBuf[n][1][1] = y;
 		}
-		process_output();
-    }
+        _inversePlan->execute();
+        if (_filterBank)
+            _filterBank->processOutput((SamplePaird*)_outBuf);
+        else
+            processOutput();
+    } 
     
     void process_input()
     {
@@ -505,7 +564,7 @@ public:
 		_fwPlan->execute();
     }
     
-    void process_output()
+    void processOutput()
     {
         _inversePlan->execute();
 		SamplePaird *smp = (SamplePaird*)_outBuf;

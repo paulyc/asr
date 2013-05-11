@@ -114,14 +114,10 @@ public:
 		_my_src(0),
 		_rectifier(&_s1),
 		_passthrough_sink(&_s2),
-		_lpf(2048, 44100.0, 100.0),
-		_k(1024),
-		_s1(_lpf, 2048, 1024, 20),
-		_s2(_k, 1024, 512, 20),
+		_s1(new LPFilter(2048, 44100.0, 100.0), 2048, 1024, 20),
+		_s2(new KaiserWindowFilter(1024), 1024, 512, 20),
         _jobs(NUM_JOBS)
 	{
-		_lpf.init();
-		_k.init();
 #if PARALLEL_PROCESS
         spin_processor();
         spin_processor();
@@ -129,8 +125,6 @@ public:
         spin_processor();
 #endif
 	}
-    
-    
 
 	void reset_source(T_source<Chunk_T> *src)
 	{
@@ -314,17 +308,16 @@ public:
     struct job {
         job() :
         _done(false),
-        _lpf(2048, 44100.0, 100.0),
-        _bpf(2048, 44100.0, 20.0,100.0),
-		_k(1024),
-		_s1(_bpf, 2048, 1024, 20),
-		_s2(_k, 1024, 512, 20),
+	//	_s1(new LPFilter(2048, 44100.0, 100.0), 2048, 1024, 20),
+        _s1(new BPFilter(2048, 44100.0, 20.0,200.0), 2048, 1024, 20),
+		_s2(new KaiserWindowFilter(1024), 1024, 512, 20),
         _rectifier(&_s1)
         {
-            _lpf.init();
-            _bpf.init();
-            _k.init();
         }
+        
+        // 65536 * 8 = 524kb / filter
+        // comb filter 130 => 60/130 * 2 * 44100 = 40707
+        //             129 =>                      41023
         
         void do_filter()
         {
@@ -365,9 +358,6 @@ public:
 
         bool _done;
         VectorSource<Chunk_T> *vecSrc;
-        LPFilter _lpf;
-        BPFilter _bpf;
-        KaiserWindowFilter _k;
         STFTStream _s1, _s2;
         full_wave_rectifier<SamplePairf, Chunk_T> _rectifier;
         
@@ -695,8 +685,6 @@ private:
 	std::list<point> _maxs;
 	point _last_beat;
 
-	LPFilter _lpf;
-	KaiserWindowFilter _k;
 	STFTStream _s1, _s2;
 	double _dt_sum;
 	int _dt_points;
