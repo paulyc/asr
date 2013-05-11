@@ -129,6 +129,8 @@ public:
         spin_processor();
 #endif
 	}
+    
+    
 
 	void reset_source(T_source<Chunk_T> *src)
 	{
@@ -244,9 +246,20 @@ public:
     
     double analyze()
     {
+    /*    int max_bin = 0;
+        int max_val = 0;
+        for (int i=0; i<sizeof(_bins); ++i)
+        {
+            if (_bins[i] > max_val)
+            {
+                max_bin = i;
+                max_val = _bins[i];
+            }
+        }
+        const double avg = max_bin * 10 + 5;*/
         const double avg = 60.0/_dt_avg;
         const double stddev = avg * 0.1;
-//        printf("avg = %f stddev = %f\n", avg, stddev);
+        //printf("avg = %f stddev = %f\n", avg, stddev);
         
         double bpm = filter(avg, stddev, 1);
         
@@ -265,7 +278,7 @@ public:
             }
         }
         const double final_bpm = final_sum / final_count;
-//        printf("final avg %f\n", final_bpm);
+        //printf("final avg %f\n", final_bpm);
         _dt_avg = 60.0 / final_bpm;
         beats();
         return final_bpm;
@@ -291,7 +304,7 @@ public:
         const double new_avg = sum / valid_count;
         const double square_avg = square_sum / valid_count;
         const double new_stddev = sqrt(square_avg - new_avg*new_avg);
-   //     printf("filter avg = %f filter stddev = %f\n", new_avg, new_stddev);
+        //printf("filter avg = %f filter stddev = %f\n", new_avg, new_stddev);
         if (new_stddev < new_avg * 0.05 || count >= 10)
             return new_avg;
         else
@@ -477,6 +490,8 @@ public:
         std::cout << analyze() << std::endl;
     }
     
+    
+    
     void process_chunk(Chunk_T *process_chk)
     {
 		for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
@@ -515,16 +530,17 @@ public:
 							}
 							if (_last_beat.valid)
 							{
-								double dt = _maxs.begin()->t - _last_beat.t;
+								const double dt = _maxs.begin()->t - _last_beat.t;
+                                const double bpm = 60.0/dt;
                                 // todo revise this: pick first 5 better
-								if (60.0/dt > 60.0 && 60.0/dt < 180.0 && (_dt_points < 25 || fabs(dt-_dt_avg) / _dt_avg < 0.1))
+								if (bpm > 80.0 && bpm < 180.0 && (_dt_points < 25 || fabs(dt-_dt_avg) / _dt_avg < 0.1))
 								{
 									_dt_sum += dt;
 									++_dt_points;
 									_dt_avg = _dt_sum / _dt_points;
 								}
-                                _bpm_list.push_back(new_beat(60.0/dt, _last_beat.t));
-                                //								printf("bpm %f avg %f\n", 60.0/dt, 60.0/_dt_avg);
+                                _bpm_list.push_back(new_beat(bpm, _last_beat.t));
+                                //printf("bpm %f avg %f\n", bpm, 60.0/_dt_avg);
 							}
 							_last_beat = *_maxs.begin();
 							_last_t = _last_beat.t;
@@ -599,17 +615,19 @@ public:
         
         const char *dir_name = "/Users/paulyc/Downloads/";
         
-     //   while (FileOpenDialog::OpenSingleFile(filenamestr))
+      //  while (FileOpenDialog::OpenSingleFile(filenamestr))
         DIR *d = opendir(dir_name);
         while ((entry = readdir(d)) != NULL)
         {
+            
             strcpy(filename, dir_name);
             strcat(filename, entry->d_name);
+            //strcpy(filename, filenamestr.c_str());
             
             if (strstr(filename, ".mp3") == filename + strlen(filename) - 4)
             {
-                src = new mp3file_chunker<Chunk_T>(filename);
                 continue;
+                src = new mp3file_chunker<Chunk_T>(filename);
             }
             else if (strstr(filename, ".wav") == filename + strlen(filename) - 4)
             {
@@ -618,8 +636,8 @@ public:
             }
             else if (strstr(filename, ".flac") == filename + strlen(filename) - 5)
             {
-                src = new flacfile_chunker<Chunk_T>(filename);
                 continue;
+                src = new flacfile_chunker<Chunk_T>(filename);
             }
             else if (strstr(filename, ".aiff") == filename + strlen(filename) - 5)
             {
@@ -652,7 +670,7 @@ public:
 #endif
             delete src;
             src = 0;
-        //    break;
+            break;
         }
         
     }

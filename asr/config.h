@@ -75,6 +75,6 @@
 
 #define TEST_BEATS 0
 
-#define PARALLEL_PROCESS 0
+#define PARALLEL_PROCESS 1
 
 #endif // !defined(_CONFIG_H)
