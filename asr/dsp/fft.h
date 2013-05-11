@@ -219,6 +219,7 @@ public:
         {
             tmpCoeffs[i][0] = _fftCoeffs[i][0];
             tmpCoeffs[i][1] = _fftCoeffs[i][1];
+            printf("tmpCoeffs[%d] = %f + j%f\n", i, tmpCoeffs[i][0], tmpCoeffs[i][1]);
         }
         t = -1.0;
 		for (int i=0; i<_N; ++i)
@@ -229,11 +230,20 @@ public:
 		fftw_execute(p);
         for (int i=0; i<_N/2+1; ++i)
         {
+            printf("hpCoeffs[%d] = %f + j%f\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1]);
             // real = ac - bd
             _fftCoeffs[i][0] = _fftCoeffs[i][0] * tmpCoeffs[i][0] - _fftCoeffs[i][1] * tmpCoeffs[i][1];
             // imag = ad + bc
             _fftCoeffs[i][1] = _fftCoeffs[i][0] * tmpCoeffs[i][1] + _fftCoeffs[i][1] * tmpCoeffs[i][0];
         }
+        for (int i=0; i<_N/2+1; ++i)
+		{
+			double mag = sqrt(_fftCoeffs[i][0] * _fftCoeffs[i][0] + _fftCoeffs[i][1] * _fftCoeffs[i][1]);
+            //	double normalize = 1.0/mag;
+			printf("fftCoeff[%d] = %f + j%f (%f)\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1], mag);
+            //	_fftCoeffs[i][0] *= normalize;
+            //	_fftCoeffs[i][1] *= normalize;
+		}
 		fftw_destroy_plan(p);
         fftw_free(tmpCoeffs);
         _initd = true;
@@ -250,7 +260,7 @@ public:
         const double _2fc = 2.0 * _f_c_low;
 		if (n == 0)
 			return 1.0 - _2fc;
-		return 1.0 - _2fc*sinc(_2fc*n);
+		return -_2fc*sinc(_2fc*n);
 	}
 	double sinc(double x)
 	{

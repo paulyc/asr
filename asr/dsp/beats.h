@@ -315,12 +315,14 @@ public:
         job() :
         _done(false),
         _lpf(2048, 44100.0, 100.0),
+        _bpf(2048, 44100.0, 20.0,100.0),
 		_k(1024),
-		_s1(_lpf, 2048, 1024, 20),
+		_s1(_bpf, 2048, 1024, 20),
 		_s2(_k, 1024, 512, 20),
         _rectifier(&_s1)
         {
             _lpf.init();
+            _bpf.init();
             _k.init();
         }
         
@@ -364,6 +366,7 @@ public:
         bool _done;
         VectorSource<Chunk_T> *vecSrc;
         LPFilter _lpf;
+        BPFilter _bpf;
         KaiserWindowFilter _k;
         STFTStream _s1, _s2;
         full_wave_rectifier<SamplePairf, Chunk_T> _rectifier;
