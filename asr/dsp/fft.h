@@ -543,9 +543,12 @@ public:
 			_outBuf[n][1][0] = x;
 			_outBuf[n][1][1] = y;
 		}
-        _inversePlan->execute();
+
         if (_filterBank)
+        {
+            _inversePlan->execute();
             _filterBank->processOutput((SamplePaird*)_outBuf);
+        }
         else
             processOutput();
     } 
