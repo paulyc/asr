@@ -284,7 +284,7 @@ public:
             }
         }
         const double final_bpm = final_sum / final_count;
-        printf("final avg %f\n", final_bpm);
+      //  printf("final avg %f\n", final_bpm);
         _dt_avg = 60.0 / final_bpm;
         beats();
         return final_bpm;
@@ -545,7 +545,7 @@ public:
 									_dt_avg = _dt_sum / _dt_points;
 								}
                                 _bpm_list.push_back(new_beat(bpm, _last_beat.t));
-                                printf("bpm %f avg %f\n", bpm, 60.0/_dt_avg);
+                            //    printf("bpm %f avg %f\n", bpm, 60.0/_dt_avg);
 							}
 							_last_beat = *_maxs.begin();
 							_last_t = _last_beat.t;
@@ -620,14 +620,14 @@ public:
         
         const char *dir_name = "/Users/paulyc/Downloads/";
         
-        while (FileOpenDialog::OpenSingleFile(filenamestr))
-      //  DIR *d = opendir(dir_name);
-      //  while ((entry = readdir(d)) != NULL)
+      //  while (FileOpenDialog::OpenSingleFile(filenamestr))
+        DIR *d = opendir(dir_name);
+        while ((entry = readdir(d)) != NULL)
         {
             
-        //    strcpy(filename, dir_name);
-          //  strcat(filename, entry->d_name);
-            strcpy(filename, filenamestr.c_str());
+            strcpy(filename, dir_name);
+            strcat(filename, entry->d_name);
+         //   strcpy(filename, filenamestr.c_str());
             
             if (strstr(filename, ".mp3") == filename + strlen(filename) - 4)
             {
@@ -653,7 +653,7 @@ public:
                 continue;
             }
             
-           std::cout << filename << " ";
+        //   std::cout << filename << " ";
             
 #if PARALLEL_PROCESS
             detector.process_all_from_source(src);
