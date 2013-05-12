@@ -252,11 +252,22 @@ public:
             }
         }
         const double avg = max_bin * 10 + 5;*/
+     /*   double square_sum = 0.0;
+        int square_count = 0;
+        for (typename std::list<new_beat>::iterator i = _bpm_list.begin();
+             i != _bpm_list.end();
+             i++)
+        {
+            square_sum += i->bpm * i->bpm;
+            ++square_count;
+        }*/
         const double avg = 60.0/_dt_avg;
-        const double stddev = avg * 0.1;
-        //printf("avg = %f stddev = %f\n", avg, stddev);
+     //   const double stddev = sqrt(square_sum/square_count - avg*avg);//avg * 0.1;
+     //   printf("avg = %f stddev = %f\n", avg, stddev);
         
-        double bpm = filter(avg, stddev, 1);
+     //   double bpm = filter(avg, stddev, 1);
+        
+        double bpm = avg;
         
         double final_sum = 0.0;
         int final_count = 0;
@@ -265,7 +276,7 @@ public:
              i++)
         {
             const double dt = i->bpm;
-            if (fabs(dt - bpm) / bpm < 0.1)
+            if (fabs(dt - bpm) / bpm < 0.2)
             {
                 final_sum += dt;
                 ++final_count;
@@ -273,7 +284,7 @@ public:
             }
         }
         const double final_bpm = final_sum / final_count;
-        //printf("final avg %f\n", final_bpm);
+        printf("final avg %f\n", final_bpm);
         _dt_avg = 60.0 / final_bpm;
         beats();
         return final_bpm;
@@ -299,7 +310,7 @@ public:
         const double new_avg = sum / valid_count;
         const double square_avg = square_sum / valid_count;
         const double new_stddev = sqrt(square_avg - new_avg*new_avg);
-        //printf("filter avg = %f filter stddev = %f\n", new_avg, new_stddev);
+        printf("filter avg = %f filter stddev = %f\n", new_avg, new_stddev);
         if (new_stddev < new_avg * 0.05 || count >= 10)
             return new_avg;
         else
