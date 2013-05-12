@@ -19,6 +19,10 @@
 #include <windows.h>
 #endif
 
+#if MAC
+#include <unistd.h>
+#endif
+
 #define NATIVE_INT64 0
 #define IEEE754_64FLOAT 1
 
@@ -75,6 +79,6 @@
 
 #define TEST_BEATS 0
 
-#define PARALLEL_PROCESS 0
+#define PARALLEL_PROCESS 1
 
 #endif // !defined(_CONFIG_H)

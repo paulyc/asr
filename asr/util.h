@@ -659,4 +659,11 @@ private:
 };
 #endif
 
+#if MAC
+#include <string>
+#include <CoreFoundation/CoreFoundation.h>
+
+std::string CFStringRefToString(CFStringRef ref);
 #endif
+
+#endif // !defined(_UTIL_H)

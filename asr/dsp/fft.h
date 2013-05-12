@@ -404,19 +404,16 @@ private:
 class STFTStream : public T_sink_source<chunk_t>, public IFilterBankProcessor
 {
 private:
-    FFTWindowFilter * _filt;
+    const FFTWindowFilter &_filt;
     FilterBank *_filterBank;
 public:
 	// N = FFT size
 	// R = hop size
 	// hops = number of hops >= 0
 	// buffer size = N + hops * R
-    // takes ownership of filt
-	STFTStream(FFTWindowFilter *filt, int N, int R, int hops, int padding=0, FilterBank *filterBank=0) :
+	STFTStream(const FFTWindowFilter &filt, int N, int R, int hops, int padding=0, FilterBank *filterBank=0) :
 		T_sink_source<chunk_t>(0), _filt(filt), _N(N), _R(R), _hops(hops), _sourceChk(0), _padding(padding), _filterBank(filterBank)
 	{
-        _filt->init();
-        
 		_inBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (_N + _hops * R));
 		_windowBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (_N+_padding));
 		_synthBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (_N + _hops * _R));
@@ -437,7 +434,6 @@ public:
 		fftw_free(_windowBuf);
 		fftw_free(_inBuf);
 		T_allocator<chunk_t>::free(_sourceChk);
-        delete _filt;
 	}
 
 	void reset_source(T_source<chunk_t> *src)
@@ -522,7 +518,7 @@ public:
     
     virtual void processFFT(ComplexPaird * const fftBuffer)
     {
-        fftw_complex *coeffs = _filt->get_fft_coeffs();
+        fftw_complex *coeffs = _filt.get_fft_coeffs();
         
         for (int n=0; n < _N/2+1; ++n)
 		{

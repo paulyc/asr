@@ -21,6 +21,14 @@
 		5F1F0F40173CA8C700DEA888 /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B363173210A50006871C /* util.cpp */; };
 		5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
 		5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */; };
+		5F9B8E7D173F67DA009F0966 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */; };
+		5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */; };
+		5F9B8E81173F67ED009F0966 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */; };
+		5F9B8E82173F67F8009F0966 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */; };
+		5F9B8E83173F67FE009F0966 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */; };
+		5F9B8E84173F6803009F0966 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */; };
+		5F9B8E85173F6817009F0966 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1F0F28173C9F3100DEA888 /* AppKit.framework */; };
+		5F9B8E86173F6820009F0966 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1F0F28173C9F3100DEA888 /* AppKit.framework */; };
 		5FB2B2AA1732107C0006871C /* mac.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FB2B2A91732107C0006871C /* mac.1 */; };
 		5FB2B369173210A50006871C /* algo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B2173210A50006871C /* algo.cpp */; };
 		5FB2B36C173210A50006871C /* asr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B6173210A50006871C /* asr.cpp */; };
@@ -84,6 +92,9 @@
 		5F1F0F37173C9F3200DEA888 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		5F1F0F38173C9F3200DEA888 /* AppDelegate.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		5F1F0F3B173C9F3200DEA888 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
+		5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		5FB2B2A41732107C0006871C /* mac */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mac; sourceTree = BUILT_PRODUCTS_DIR; };
 		5FB2B2A91732107C0006871C /* mac.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = mac.1; sourceTree = "<group>"; };
 		5FB2B2B2173210A50006871C /* algo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = algo.cpp; sourceTree = "<group>"; };
@@ -284,6 +295,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5F9B8E85173F6817009F0966 /* AppKit.framework in Frameworks */,
+				5F9B8E81173F67ED009F0966 /* CoreFoundation.framework in Frameworks */,
+				5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */,
+				5F9B8E7D173F67DA009F0966 /* CoreMIDI.framework in Frameworks */,
 				5F1F0F26173C9F3100DEA888 /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -292,6 +307,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5F9B8E86173F6820009F0966 /* AppKit.framework in Frameworks */,
+				5F9B8E84173F6803009F0966 /* CoreMIDI.framework in Frameworks */,
+				5F9B8E83173F67FE009F0966 /* CoreAudio.framework in Frameworks */,
+				5F9B8E82173F67F8009F0966 /* CoreFoundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -351,6 +370,9 @@
 		5FB2B29B1732107C0006871C = {
 			isa = PBXGroup;
 			children = (
+				5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */,
+				5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */,
+				5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */,
 				5FB2B2B0173210A50006871C /* asr */,
 				5FB2B2A61732107C0006871C /* mac */,
 				5F0C4F1117360CD60025E149 /* coreaudio */,
@@ -841,16 +863,10 @@
 					"../contrib/fftw-3.3.3/.libs",
 				);
 				OTHER_LDFLAGS = (
-					"-framework",
-					CoreAudio,
-					"-framework",
-					CoreFoundation,
 					"-lmad",
 					"-lFLAC-static",
 					"-lfftw3",
 					"-lfftw3f",
-					"-framework",
-					AppKit,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -875,16 +891,10 @@
 					"../contrib/fftw-3.3.3/.libs",
 				);
 				OTHER_LDFLAGS = (
-					"-framework",
-					CoreAudio,
-					"-framework",
-					CoreFoundation,
 					"-lmad",
 					"-lFLAC-static",
 					"-lfftw3",
 					"-lfftw3f",
-					"-framework",
-					AppKit,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
@@ -966,16 +976,10 @@
 				);
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = (
-					"-framework",
-					CoreAudio,
-					"-framework",
-					CoreFoundation,
 					"-lmad",
 					"-lFLAC-static",
 					"-lfftw3",
 					"-lfftw3f",
-					"-framework",
-					AppKit,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -999,16 +1003,10 @@
 				);
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = (
-					"-framework",
-					CoreAudio,
-					"-framework",
-					CoreFoundation,
 					"-lmad",
 					"-lFLAC-static",
 					"-lfftw3",
 					"-lfftw3f",
-					"-framework",
-					AppKit,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -1033,6 +1031,7 @@
 				5F1F0F3F173C9F3200DEA888 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		5FB2B29F1732107C0006871C /* Build configuration list for PBXProject "mac" */ = {
 			isa = XCConfigurationList;

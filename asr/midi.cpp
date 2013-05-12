@@ -75,9 +75,110 @@ IMIDIDevice* Win32MIDIDeviceFactory::Instantiate(int id, bool input)
 	return 0;
 }
 
-#endif // WINDOWS
+#elif MAC
 
-CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev, IControlListener **listener) : 
+CoreMIDIClient::CoreMIDIClient(CFStringRef name)
+{
+    MIDIClientCreate(name, NULL, this, &_ref);
+}
+
+CoreMIDIClient::~CoreMIDIClient()
+{
+    MIDIClientDispose(&_ref);
+}
+
+CoreMIDIDeviceFactory::CoreMIDIDeviceFactory()
+{
+    ItemCount nDevices = MIDIGetNumberOfDevices();
+    for (ItemCount devIndx = 0; devIndx < nDevices; ++devIndx)
+    {
+        _devices.push_back(new CoreMIDIDeviceDescriptor(MIDIGetDevice(devIndx)));
+    }
+}
+
+CoreMIDIDeviceFactory::~CoreMIDIDeviceFactory()
+{
+    for (size_t i = 0; i < _devices.size(); ++i)
+        delete _devices[i];
+}
+                            
+CoreMIDIEntityDescriptor::CoreMIDIEntityDescriptor(MIDIEntityRef entRef) : _entRef(entRef)
+{
+    ItemCount nSources = MIDIEntityGetNumberOfSources(_entRef);
+    for (ItemCount srcIndx = 0; srcIndx < nSources; ++srcIndx)
+    {
+        _endpoints.push_back(CoreMIDIEndpointDescriptor(MIDIEntityGetSource(entRef, srcIndx), IMIDIEndpointDescriptor::Input));
+    }
+    
+    ItemCount nDests = MIDIEntityGetNumberOfDestinations(_entRef);
+    for (ItemCount dstIndx = 0; dstIndx < nDests; ++dstIndx)
+    {
+        _endpoints.push_back(CoreMIDIEndpointDescriptor(MIDIEntityGetDestination(entRef, dstIndx), IMIDIEndpointDescriptor::Output));
+    }
+    
+    CFStringRef name;
+    MIDIObjectGetStringProperty(_entRef, kMIDIPropertyName, &name);
+    _name = CFStringRefToString(name);
+}
+
+std::vector<const IMIDIEndpointDescriptor*> CoreMIDIEntityDescriptor::GetEndpoints() const
+{
+    std::vector<const IMIDIEndpointDescriptor*> endpoints;
+    for (size_t i=0; i<_endpoints.size(); ++i)
+    {
+        endpoints.push_back(&_endpoints[i]);
+    }
+    return endpoints;
+}
+
+CoreMIDIEndpointDescriptor::CoreMIDIEndpointDescriptor(MIDIEndpointRef endRef, DeviceType type) :
+    _endRef(endRef),
+    _type(type),
+    _listener(0)
+{
+    CFStringRef name;
+    MIDIObjectGetStringProperty(_endRef, kMIDIPropertyName, &name);
+    _name = CFStringRefToString(name);
+}
+
+IMIDIEndpoint* CoreMIDIEndpointDescriptor::GetEndpoint() const
+{
+    return new CoreMIDIEndpoint(*this);
+}
+
+CoreMIDIDeviceDescriptor::CoreMIDIDeviceDescriptor(MIDIDeviceRef devRef) : _devRef(devRef)
+{
+    ItemCount nEntities = MIDIDeviceGetNumberOfEntities(_devRef);
+    for (ItemCount entIndx = 0; entIndx < nEntities; ++entIndx)
+    {
+        _entities.push_back(CoreMIDIEntityDescriptor(MIDIDeviceGetEntity(_devRef, entIndx)));
+    }
+    
+    CFStringRef name;
+    MIDIObjectGetStringProperty(_devRef, kMIDIPropertyName, &name);
+    _name = CFStringRefToString(name);
+}
+
+std::vector<const IMIDIEntityDescriptor*> CoreMIDIDeviceDescriptor::GetEntities() const
+{
+    
+}
+
+std::vector<const IMIDIEndpointDescriptor*> CoreMIDIDeviceDescriptor::GetEndpoints() const
+{
+    
+}
+
+virtual IMIDIDevice* CoreMIDIDeviceDescriptor::Instantiate() const
+{
+    
+}
+
+
+
+#endif // MAC
+
+CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev, IControlListener **listener) :
 	_dev(dev),
 	_listener(listener),
 	_track(0)

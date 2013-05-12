@@ -115,10 +115,17 @@ public:
 		_rectifier(&_s1),
 		_passthrough_sink(&_s2),
         _diff(10),
-		_s1(new LPFilter(2048, 44100.0, 100.0), 2048, 1024, 20),
-		_s2(new KaiserWindowFilter(1024), 1024, 512, 20),
-        _jobs(NUM_JOBS)
+		_s1(_lpf, 2048, 1024, 20),
+		_s2(_kf, 1024, 512, 20),
+        _jobs(NUM_JOBS, job(_lpf, _kf)),
+        _lpf(2048, 44100.0, 100.0),
+        _bpf(2048, 44100.0, 20.0, 200.0),
+        _kf(1024)
 	{
+        _lpf.init();
+        _bpf.init();
+        _kf.init();
+        
 #if PARALLEL_PROCESS
         spin_processor();
         spin_processor();
@@ -305,11 +312,11 @@ public:
     }
     
     struct job {
-        job() :
+        job(const FFTWindowFilter &f1, const FFTWindowFilter &f2) :
         _done(false),
 	//	_s1(new LPFilter(2048, 44100.0, 100.0), 2048, 1024, 20),
-        _s1(new BPFilter(2048, 44100.0, 20.0,200.0), 2048, 1024, 20),
-		_s2(new KaiserWindowFilter(1024), 1024, 512, 20),
+        _s1(f1, 2048, 1024, 20),
+		_s2(f2, 1024, 512, 20),
         _rectifier(&_s1)
         {
         }
@@ -693,6 +700,10 @@ private:
     std::list<double> _final_bpm_list;
     
     std::vector<job> _jobs;
+    
+    LPFilter _lpf;
+    BPFilter _bpf;
+    KaiserWindowFilter _kf;
 };
 
 #endif

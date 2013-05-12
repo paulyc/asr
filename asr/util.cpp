@@ -205,3 +205,23 @@ void buf_copy(char *buf_src, char *buf_dst, int num_items, int item_sz, int stri
 		buf_src += stride;
 	}
 }
+
+#if MAC
+std::string CFStringRefToString(CFStringRef ref)
+{
+    const char *cStr = CFStringGetCStringPtr(ref, kCFStringEncodingUTF8);
+    if (!cStr)
+    {
+        CFIndex len = CFStringGetLength(ref);
+        char *buffer = new char[len+1];
+        CFStringGetCString(ref, buffer, len+1, kCFStringEncodingUTF8);
+        std::string s = std::string(buffer);
+        delete [] buffer;
+        return s;
+    }
+    else
+    {
+        return std::string(cStr);
+    }
+}
+#endif
