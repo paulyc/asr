@@ -114,6 +114,7 @@ public:
 		_my_src(0),
 		_rectifier(&_s1),
 		_passthrough_sink(&_s2),
+        _diff(10),
 		_s1(new LPFilter(2048, 44100.0, 100.0), 2048, 1024, 20),
 		_s2(new KaiserWindowFilter(1024), 1024, 512, 20),
         _jobs(NUM_JOBS)
@@ -533,7 +534,7 @@ public:
 									_dt_avg = _dt_sum / _dt_points;
 								}
                                 _bpm_list.push_back(new_beat(bpm, _last_beat.t));
-                                //printf("bpm %f avg %f\n", bpm, 60.0/_dt_avg);
+                                printf("bpm %f avg %f\n", bpm, 60.0/_dt_avg);
 							}
 							_last_beat = *_maxs.begin();
 							_last_t = _last_beat.t;
@@ -608,14 +609,14 @@ public:
         
         const char *dir_name = "/Users/paulyc/Downloads/";
         
-      //  while (FileOpenDialog::OpenSingleFile(filenamestr))
-        DIR *d = opendir(dir_name);
-        while ((entry = readdir(d)) != NULL)
+        while (FileOpenDialog::OpenSingleFile(filenamestr))
+      //  DIR *d = opendir(dir_name);
+      //  while ((entry = readdir(d)) != NULL)
         {
             
-            strcpy(filename, dir_name);
-            strcat(filename, entry->d_name);
-            //strcpy(filename, filenamestr.c_str());
+        //    strcpy(filename, dir_name);
+          //  strcat(filename, entry->d_name);
+            strcpy(filename, filenamestr.c_str());
             
             if (strstr(filename, ".mp3") == filename + strlen(filename) - 4)
             {
@@ -641,7 +642,7 @@ public:
                 continue;
             }
             
-            std::cout << filename << " ";
+           std::cout << filename << " ";
             
 #if PARALLEL_PROCESS
             detector.process_all_from_source(src);
@@ -663,7 +664,7 @@ public:
 #endif
             delete src;
             src = 0;
-            break;
+         //   break;
         }
         
     }
