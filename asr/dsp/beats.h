@@ -241,17 +241,6 @@ public:
     
     double analyze()
     {
-    /*    int max_bin = 0;
-        int max_val = 0;
-        for (int i=0; i<sizeof(_bins); ++i)
-        {
-            if (_bins[i] > max_val)
-            {
-                max_bin = i;
-                max_val = _bins[i];
-            }
-        }
-        const double avg = max_bin * 10 + 5;*/
      /*   double square_sum = 0.0;
         int square_count = 0;
         for (typename std::list<new_beat>::iterator i = _bpm_list.begin();
