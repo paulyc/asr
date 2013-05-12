@@ -241,17 +241,16 @@ public:
     
     double analyze()
     {
-    /*    int max_bin = 0;
-        int max_val = 0;
-        for (int i=0; i<sizeof(_bins); ++i)
-        {
-            if (_bins[i] > max_val)
-            {
-                max_bin = i;
-                max_val = _bins[i];
-            }
-        }
-        const double avg = max_bin * 10 + 5;*/
+        /*   double square_sum = 0.0;
+                 int square_count = 0;
+                 for (typename std::list<new_beat>::iterator i = _bpm_list.begin();
+                      i != _bpm_list.end();
+                      i++)
+                 {
+                     square_sum += i->bpm * i->bpm;
+                     ++square_count;
+                 }
+         //   const double stddev = sqrt(square_sum/square_count - avg*avg);*/
         const double avg = 60.0/_dt_avg;
         const double stddev = avg * 0.1;
         //printf("avg = %f stddev = %f\n", avg, stddev);
@@ -609,14 +608,14 @@ public:
         
         const char *dir_name = "/Users/paulyc/Downloads/";
         
-    //    while (FileOpenDialog::OpenSingleFile(filenamestr))
-        DIR *d = opendir(dir_name);
-        while ((entry = readdir(d)) != NULL)
+        while (FileOpenDialog::OpenSingleFile(filenamestr))
+    //    DIR *d = opendir(dir_name);
+      //  while ((entry = readdir(d)) != NULL)
         {
             
-            strcpy(filename, dir_name);
-            strcat(filename, entry->d_name);
-          //  strcpy(filename, filenamestr.c_str());
+        //    strcpy(filename, dir_name);
+          //  strcat(filename, entry->d_name);
+            strcpy(filename, filenamestr.c_str());
             
             if (strstr(filename, ".mp3") == filename + strlen(filename) - 4)
             {
