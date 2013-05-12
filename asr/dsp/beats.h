@@ -262,12 +262,10 @@ public:
             ++square_count;
         }*/
         const double avg = 60.0/_dt_avg;
-     //   const double stddev = sqrt(square_sum/square_count - avg*avg);//avg * 0.1;
+        const double stddev = avg * 0.1; //sqrt(square_sum/square_count - avg*avg);//avg * 0.1;
      //   printf("avg = %f stddev = %f\n", avg, stddev);
         
-     //   double bpm = filter(avg, stddev, 1);
-        
-        double bpm = avg;
+        double bpm = filter(avg, stddev, 1);
         
         double final_sum = 0.0;
         int final_count = 0;
