@@ -80,40 +80,42 @@ IMIDIDevice* Win32MIDIDeviceFactory::Instantiate(int id, bool input)
 CoreMIDIClient::CoreMIDIClient(CFStringRef name)
 {
     MIDIClientCreate(name, NULL, this, &_ref);
+    ItemCount nDevices = MIDIGetNumberOfDevices();
+    for (ItemCount devIndx = 0; devIndx < nDevices; ++devIndx)
+    {
+        _devices.push_back(CoreMIDIDeviceDescriptor(MIDIGetDevice(devIndx), *this));
+    }
 }
 
 CoreMIDIClient::~CoreMIDIClient()
 {
-    MIDIClientDispose(&_ref);
+    MIDIClientDispose(_ref);
 }
 
-CoreMIDIDeviceFactory::CoreMIDIDeviceFactory()
+std::vector<const IMIDIDeviceDescriptor*> CoreMIDIClient::Enumerate() const
 {
-    ItemCount nDevices = MIDIGetNumberOfDevices();
-    for (ItemCount devIndx = 0; devIndx < nDevices; ++devIndx)
+    std::vector<const IMIDIDeviceDescriptor*> devices;
+    for (int i=0; i<_devices.size(); ++i)
     {
-        _devices.push_back(new CoreMIDIDeviceDescriptor(MIDIGetDevice(devIndx)));
+        devices.push_back(&_devices[i]);
     }
+    return devices;
 }
-
-CoreMIDIDeviceFactory::~CoreMIDIDeviceFactory()
-{
-    for (size_t i = 0; i < _devices.size(); ++i)
-        delete _devices[i];
-}
-                            
-CoreMIDIEntityDescriptor::CoreMIDIEntityDescriptor(MIDIEntityRef entRef) : _entRef(entRef)
+    
+CoreMIDIEntityDescriptor::CoreMIDIEntityDescriptor(MIDIEntityRef entRef, CoreMIDIDevice &device) :
+    _entRef(entRef),
+    _device(device)
 {
     ItemCount nSources = MIDIEntityGetNumberOfSources(_entRef);
     for (ItemCount srcIndx = 0; srcIndx < nSources; ++srcIndx)
     {
-        _endpoints.push_back(CoreMIDIEndpointDescriptor(MIDIEntityGetSource(entRef, srcIndx), IMIDIEndpointDescriptor::Input));
+        _endpoints.push_back(CoreMIDIEndpointDescriptor(MIDIEntityGetSource(entRef, srcIndx), IMIDIEndpointDescriptor::Input, _device));
     }
     
     ItemCount nDests = MIDIEntityGetNumberOfDestinations(_entRef);
     for (ItemCount dstIndx = 0; dstIndx < nDests; ++dstIndx)
     {
-        _endpoints.push_back(CoreMIDIEndpointDescriptor(MIDIEntityGetDestination(entRef, dstIndx), IMIDIEndpointDescriptor::Output));
+        _endpoints.push_back(CoreMIDIEndpointDescriptor(MIDIEntityGetDestination(entRef, dstIndx), IMIDIEndpointDescriptor::Output, _device));
     }
     
     CFStringRef name;
@@ -131,14 +133,29 @@ std::vector<const IMIDIEndpointDescriptor*> CoreMIDIEntityDescriptor::GetEndpoin
     return endpoints;
 }
 
-CoreMIDIEndpointDescriptor::CoreMIDIEndpointDescriptor(MIDIEndpointRef endRef, DeviceType type) :
+MIDIClientRef CoreMIDIEntityDescriptor::GetClientRef() const
+{
+    return _device.GetClientRef();
+}
+
+const IMIDIDevice *CoreMIDIEntityDescriptor::GetDevice() const
+{
+    return &_device;
+}
+
+CoreMIDIEndpointDescriptor::CoreMIDIEndpointDescriptor(MIDIEndpointRef endRef, DeviceType type, CoreMIDIDevice &device) :
     _endRef(endRef),
     _type(type),
-    _listener(0)
+    _device(device)
 {
     CFStringRef name;
     MIDIObjectGetStringProperty(_endRef, kMIDIPropertyName, &name);
     _name = CFStringRefToString(name);
+}
+
+MIDIClientRef CoreMIDIEndpointDescriptor::GetClientRef() const
+{
+    return _device.GetClientRef();
 }
 
 IMIDIEndpoint* CoreMIDIEndpointDescriptor::GetEndpoint() const
@@ -146,35 +163,71 @@ IMIDIEndpoint* CoreMIDIEndpointDescriptor::GetEndpoint() const
     return new CoreMIDIEndpoint(*this);
 }
 
-CoreMIDIDeviceDescriptor::CoreMIDIDeviceDescriptor(MIDIDeviceRef devRef) : _devRef(devRef)
+void CoreMIDIEndpoint::SetListener(IMIDIListener *listener)
 {
-    ItemCount nEntities = MIDIDeviceGetNumberOfEntities(_devRef);
-    for (ItemCount entIndx = 0; entIndx < nEntities; ++entIndx)
-    {
-        _entities.push_back(CoreMIDIEntityDescriptor(MIDIDeviceGetEntity(_devRef, entIndx)));
-    }
+    _listener = listener;
     
+    MIDIDestinationCreate(_desc.GetClientRef(),
+                          CFStringRef 		name,
+                          MIDIReadProc 		readProc,
+                          void *				refCon,
+                          MIDIEndpointRef *	outDest )
+}
+
+CoreMIDIDeviceDescriptor::CoreMIDIDeviceDescriptor(MIDIDeviceRef devRef, CoreMIDIClient &client) : _devRef(devRef), _client(client)
+{
     CFStringRef name;
     MIDIObjectGetStringProperty(_devRef, kMIDIPropertyName, &name);
     _name = CFStringRefToString(name);
 }
 
-std::vector<const IMIDIEntityDescriptor*> CoreMIDIDeviceDescriptor::GetEntities() const
+CoreMIDIDevice::CoreMIDIDevice(const CoreMIDIDeviceDescriptor &desc) : _desc(desc)
 {
+    ItemCount nEntities = MIDIDeviceGetNumberOfEntities(desc.GetDeviceRef());
+    for (ItemCount entIndx = 0; entIndx < nEntities; ++entIndx)
+    {
+        _entities.push_back(CoreMIDIEntityDescriptor(MIDIDeviceGetEntity(desc.GetDeviceRef(), entIndx), *this));
+    }
     
+    ItemCount nSources = MIDIGetNumberOfSources();
+    for (ItemCount srcIndx = 0; srcIndx < nSources; ++srcIndx)
+    {
+        _endpoints.push_back(CoreMIDIEndpointDescriptor(MIDIGetSource(srcIndx), IMIDIEndpointDescriptor::Input, *this));
+    }
+    
+    ItemCount nDests = MIDIGetNumberOfDestinations();
+    for (ItemCount dstIndx = 0; dstIndx < nDests; ++dstIndx)
+    {
+        _endpoints.push_back(CoreMIDIEndpointDescriptor(MIDIGetDestination(dstIndx), IMIDIEndpointDescriptor::Output, *this));
+    }
 }
 
-std::vector<const IMIDIEndpointDescriptor*> CoreMIDIDeviceDescriptor::GetEndpoints() const
+std::vector<const IMIDIEntityDescriptor*> CoreMIDIDevice::GetEntities() const
 {
-    
+    std::vector<const IMIDIEntityDescriptor*> entities;
+    for (int i=0; i<_entities.size(); ++i)
+    {
+        entities.push_back(&_entities[i]);
+    }
+    return entities;
 }
 
-virtual IMIDIDevice* CoreMIDIDeviceDescriptor::Instantiate() const
+std::vector<const IMIDIEndpointDescriptor*> CoreMIDIDevice::GetEndpoints() const
 {
-    
+    std::vector<const IMIDIEndpointDescriptor*> endpoints;
+    for (int i=0; i<_endpoints.size(); ++i)
+    {
+     //   std::vector<const IMIDIEndpointDescriptor*> entityEndpoints = _entities[i].GetEndpoints();
+     //   endpoints.insert(endpoints.end(), entityEndpoints.begin(), entityEndpoints.end());
+        endpoints.push_back(&_endpoints[i]);
+    }
+    return endpoints;
 }
 
-
+IMIDIDevice* CoreMIDIDeviceDescriptor::Instantiate() const
+{
+    return new CoreMIDIDevice(*this);
+}
 
 #endif // MAC
 

@@ -21,6 +21,7 @@
 		5F1F0F40173CA8C700DEA888 /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B363173210A50006871C /* util.cpp */; };
 		5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
 		5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */; };
+		5F33836817402EF600356397 /* midi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B329173210A50006871C /* midi.cpp */; };
 		5F9B8E7D173F67DA009F0966 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */; };
 		5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */; };
 		5F9B8E81173F67ED009F0966 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */; };
@@ -735,6 +736,7 @@
 				5F1F0F40173CA8C700DEA888 /* util.cpp in Sources */,
 				5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */,
 				5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */,
+				5F33836817402EF600356397 /* midi.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

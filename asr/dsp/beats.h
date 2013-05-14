@@ -415,18 +415,16 @@ public:
     
     void process_all_from_source(T_source<Chunk_T> *src)
     {
-        std::vector<Chunk_T*> chunks(40000);
+        std::vector<Chunk_T*> chunks;
+        chunks.reserve(40000);
         
         reset_source(src);
-        int chks = 0;
         while (this->len().chunks == -1)
         {
-            if (chks >= chunks.size())
-                chunks.resize(chunks.size()*2);
-            chunks[chks++] = this->_src->next();
+            chunks.push_back(this->_src->next());
         }
         
-        if (chks == this->len().chunks)
+        if (chunks.size() == this->len().chunks)
         {
             // all have been loaded
             const int chks_to_process = this->len().chunks;
@@ -446,7 +444,7 @@ public:
                 this->process_job(indx);
             }
         }
-        else if (chks == 0)
+        else if (chunks.size() == 0)
         {
             // we know the length and havent loaded them
             const int chks_to_process = this->len().chunks;

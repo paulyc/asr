@@ -6,53 +6,11 @@
 #include <vector>
 #include <string>
 
-class IMIDIHandler
-{
-public:
-};
-
-class IMIDIDevice
-{
-public:
-	virtual ~IMIDIDevice() {}
-
-	typedef void (*MIDICallback)(uint32_t msg, uint32_t param, float64_t time, void *cbParam);
-
-	virtual float64_t Start() = 0;
-	virtual void Stop() = 0;
-
-	virtual void RegisterCallback(MIDICallback cb, void *param) = 0;
-};
 
 class IMIDIListener
 {
 public:
 };
-
-#if WINDOWS
-#include <windows.h>
-
-class Win32MIDIDevice : IMIDIDevice
-{
-public:
-	Win32MIDIDevice();
-	Win32MIDIDevice(HMIDIIN handle);
-	~Win32MIDIDevice();
-
-	static void CALLBACK Callback(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2);
-	
-	float64_t Start();
-	void Stop();
-
-	void RegisterCallback(MIDICallback cb, void *param) { _cb = cb; _cbParam = param; }
-
-	HMIDIIN* getHandlePtr() { return &_handle; }
-private:
-	HMIDIIN _handle;
-	MIDICallback _cb;
-	void *_cbParam;
-};
-#endif
 
 class IMIDIEndpoint
 {
@@ -82,7 +40,11 @@ public:
     
     virtual std::string GetEntityName() const = 0;
     virtual std::vector<const IMIDIEndpointDescriptor*> GetEndpoints() const = 0;
+    
+    virtual const IMIDIDevice *GetDevice() const = 0;
 };
+
+class IMIDIDevice;
 
 class IMIDIDeviceDescriptor
 {
@@ -90,9 +52,6 @@ public:
     virtual ~IMIDIDeviceDescriptor() {}
     
     virtual std::string GetDeviceName() const = 0;
-    
-    virtual std::vector<const IMIDIEntityDescriptor*> GetEntities() const = 0;
-    virtual std::vector<const IMIDIEndpointDescriptor*> GetEndpoints() const = 0;
     
     virtual IMIDIDevice* Instantiate() const = 0;
 };
@@ -105,30 +64,66 @@ public:
 	virtual std::vector<const IMIDIDeviceDescriptor*> Enumerate() const = 0;
 };
 
-#if WINDOWS
-
-class Win32MIDIDeviceFactory : public IMIDIDeviceFactory
+class IMIDIDevice
 {
 public:
-	virtual std::vector<const IMIDIDeviceDescriptor*> Enumerate() const;
+	virtual ~IMIDIDevice() {}
+    
+    virtual std::vector<const IMIDIEntityDescriptor*> GetEntities() const = 0;
+    virtual std::vector<const IMIDIEndpointDescriptor*> GetEndpoints() const = 0;
+    
+    virtual const IMIDIDeviceDescriptor *GetDesc() const = 0;
+    
+	typedef void (*MIDICallback)(uint32_t msg, uint32_t param, float64_t time, void *cbParam);
+    
+	virtual float64_t Start() = 0;
+	virtual void Stop() = 0;
+    
+	virtual void RegisterCallback(MIDICallback cb, void *param) = 0;
 };
 
-#elif MAC
+#if MAC
 
 #include <CoreMIDI/CoreMIDI.h>
 #include <CoreFoundation/CoreFoundation.h>
 
+class CoreMIDIDeviceDescriptor;
 class CoreMIDIEndpointDescriptor;
+class CoreMIDIEntityDescriptor;
+class CoreMIDIDevice;
+class CoreMIDIClient;
+
+class CoreMIDIDeviceDescriptor : public IMIDIDeviceDescriptor
+{
+public:
+    CoreMIDIDeviceDescriptor(MIDIDeviceRef dev, CoreMIDIClient &client);
+    
+    virtual std::string GetDeviceName() const { return _name; }
+    
+    virtual IMIDIDevice* Instantiate() const;
+    
+    virtual MIDIClientRef GetClientRef() const;
+    virtual MIDIDeviceRef GetDeviceRef() const { return _devRef; }
+private:
+    MIDIDeviceRef _devRef;
+    CoreMIDIClient &_client;
+    std::string _name;
+};
 
 class CoreMIDIEntityDescriptor : public IMIDIEntityDescriptor
 {
 public:
-    CoreMIDIEntityDescriptor(MIDIEntityRef entRef);
+    CoreMIDIEntityDescriptor(MIDIEntityRef entRef, CoreMIDIDevice &device);
     
     std::string GetEntityName() const { return _name; }
     virtual std::vector<const IMIDIEndpointDescriptor*> GetEndpoints() const;
+    
+    virtual MIDIClientRef GetClientRef() const;
+    
+    virtual const IMIDIDevice *GetDevice() const;
 private:
     MIDIEntityRef _entRef;
+    CoreMIDIDevice &_device;
     std::vector<CoreMIDIEndpointDescriptor> _endpoints;
     std::string _name;
 };
@@ -136,75 +131,74 @@ private:
 class CoreMIDIEndpointDescriptor : public IMIDIEndpointDescriptor
 {
 public:
-    CoreMIDIEndpointDescriptor(MIDIEndpointRef endRef, DeviceType type);
+    CoreMIDIEndpointDescriptor(MIDIEndpointRef endRef, DeviceType type, CoreMIDIDevice &device);
     
     virtual DeviceType GetEndpointType() const { return _type; }
     virtual std::string GetEndpointName() const { return _name; }
     
     virtual IMIDIEndpoint* GetEndpoint() const;
+    
+    MIDIClientRef GetClientRef() const;
 private:
     MIDIEndpointRef _endRef;
     DeviceType _type;
+    CoreMIDIDevice &_device;
     std::string _name;
 };
 
 class CoreMIDIEndpoint : public IMIDIEndpoint
 {
 public:
-    CoreMIDIEndpoint(const CoreMIDIEndpointDescriptor &desc) : _desc(desc) {}
+    CoreMIDIEndpoint(const CoreMIDIEndpointDescriptor &desc) : _desc(desc), _listener(0) {}
     
     virtual void SetListener(IMIDIListener *listener);
 private:
+    static void _readProc(const MIDIPacketList *pktlist, void *readProcRefCon, void *srcConnRefCon);
+    
     CoreMIDIEndpointDescriptor _desc;
     IMIDIListener *_listener;
 };
 
-class CoreMIDIDeviceDescriptor : public IMIDIDeviceDescriptor
-{
-public:
-    CoreMIDIDeviceDescriptor(MIDIDeviceRef dev);
-    
-    virtual std::string GetDeviceName() const { return _name; }
-    
-    virtual std::vector<const IMIDIEntityDescriptor*> GetEntities() const;
-    virtual std::vector<const IMIDIEndpointDescriptor*> GetEndpoints() const;
-    
-    virtual IMIDIDevice* Instantiate() const;
-private:
-    MIDIDeviceRef _devRef;
-    std::vector<CoreMIDIEntityDescriptor> _entities;
-    std::string _name;
-};
-
-class CoreMIDIDeviceFactory : public IMIDIDeviceFactory
-{
-public:
-    CoreMIDIDeviceFactory();
-    virtual ~CoreMIDIDeviceFactory();
-    
-    virtual std::vector<const IMIDIDeviceDescriptor*> Enumerate() const;
-private:
-    std::vector<CoreMIDIDeviceDescriptor> _devices;
-};
-
-class CoreMIDIClient
+class CoreMIDIClient : public IMIDIDeviceFactory
 {
 public:
     CoreMIDIClient(CFStringRef name);
     ~CoreMIDIClient();
     
-    MIDIClientRef getRef() const { return _ref; }
+    virtual std::vector<const IMIDIDeviceDescriptor*> Enumerate() const;
+    
+    MIDIClientRef GetRef() const { return _ref; }
 private:
+    static void _notifyProc(const MIDINotification *message, void *refCon);
+    
     MIDIClientRef _ref;
+    std::vector<CoreMIDIDeviceDescriptor> _devices;
 };
 
 class CoreMIDIDevice : public IMIDIDevice
 {
 public:
-    CoreMIDIDevice(const CoreMIDIDeviceDescriptor &desc) : _desc(desc), _midiClient(CFSTR("CoreMIDIDevice Client")) {}
+    CoreMIDIDevice(const CoreMIDIDeviceDescriptor &desc);
+    
+    virtual std::vector<const IMIDIEntityDescriptor*> GetEntities() const;
+    virtual std::vector<const IMIDIEndpointDescriptor*> GetEndpoints() const;
+    
+    virtual const IMIDIDeviceDescriptor *GetDesc() const { return &_desc; }
+    
+    virtual MIDIClientRef GetClientRef() const { return _desc.GetClientRef(); }
+    
 private:
     CoreMIDIDeviceDescriptor _desc;
-    CoreMIDIClient _midiClient;
+    std::vector<CoreMIDIEntityDescriptor> _entities;
+    std::vector<CoreMIDIEndpointDescriptor> _endpoints;
+};
+
+#elif WINDOWS
+
+class Win32MIDIDeviceFactory : public IMIDIDeviceFactory
+{
+public:
+	virtual std::vector<const IMIDIDeviceDescriptor*> Enumerate() const;
 };
 
 #endif
