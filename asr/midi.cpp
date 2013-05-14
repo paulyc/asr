@@ -163,15 +163,45 @@ IMIDIEndpoint* CoreMIDIEndpointDescriptor::GetEndpoint() const
     return new CoreMIDIEndpoint(*this);
 }
 
+CoreMIDIEndpoint::CoreMIDIEndpoint(const CoreMIDIEndpointDescriptor &desc) : _desc(desc), _listener(0), _started(false)
+{
+    _desc.GetDevice().RegisterEndpoint(this);
+    MIDIInputPortCreate(_desc.GetClientRef(), CFSTR("MIDI read port"), _readProc, this, &_port);
+}
+
+CoreMIDIEndpoint::~CoreMIDIEndpoint()
+{
+    if (_started)
+        Stop();
+    MIDIPortDispose(_port);
+}
+
 void CoreMIDIEndpoint::SetListener(IMIDIListener *listener)
 {
     _listener = listener;
+}
+
+void CoreMIDIEndpoint::_readProc(const MIDIPacketList *pktlist, void *readProcRefCon, void *srcConnRefCon)
+{
     
-/*    MIDIDestinationCreate(_desc.GetClientRef(),
-                          CFStringRef 		name,
-                          MIDIReadProc 		readProc,
-                          void *				refCon,
-                          MIDIEndpointRef *	outDest ) */
+}
+
+void CoreMIDIEndpoint::Start()
+{
+    if (!_started && _listener)
+    {
+        MIDIPortConnectSource(_port, _desc.GetEndpointRef(), _listener);
+    }
+    _started = true;
+}
+
+void CoreMIDIEndpoint::Stop()
+{
+    if (_started && _listener)
+    {
+        MIDIPortDisconnectSource(_port, _desc.GetEndpointRef());
+    }
+    _started = false;
 }
 
 CoreMIDIDeviceDescriptor::CoreMIDIDeviceDescriptor(MIDIDeviceRef devRef, CoreMIDIClient &client) : _devRef(devRef), _client(client)
@@ -226,13 +256,25 @@ std::vector<const IMIDIEndpointDescriptor*> CoreMIDIDevice::GetEndpoints() const
 
 IMIDIDevice* CoreMIDIDeviceDescriptor::Instantiate() const
 {
-    return 0;
-    //return new CoreMIDIDevice(*this);
+    return new CoreMIDIDevice(*this);
 }
 
 MIDIClientRef CoreMIDIDeviceDescriptor::GetClientRef() const
 {
     return _client.GetRef();
+}
+
+float64_t CoreMIDIDevice::Start()
+{
+    for (int i=0; i < _endpointRegister.size(); ++i)
+        _endpointRegister[i]->Start();
+    return 0.0;
+}
+
+void CoreMIDIDevice::Stop()
+{
+    for (int i=0; i < _endpointRegister.size(); ++i)
+        _endpointRegister[i]->Stop();
 }
 
 #endif // MAC
@@ -242,7 +284,7 @@ CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev, IControlListener **
 	_listener(listener),
 	_track(0)
 {
-	_dev->RegisterCallback(DeviceCallback, this);
+	//_dev->RegisterCallback(DeviceCallback, this);
 }
 
 CDJ350MIDIController::~CDJ350MIDIController() 

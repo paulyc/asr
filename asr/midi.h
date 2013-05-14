@@ -19,6 +19,9 @@ public:
     virtual ~IMIDIEndpoint() {}
     
     virtual void SetListener(IMIDIListener *listener) = 0;
+    
+    virtual void Start() = 0;
+    virtual void Stop() = 0;
 };
 
 class IMIDIEndpointDescriptor
@@ -44,8 +47,6 @@ public:
     
     virtual const IMIDIDevice *GetDevice() const = 0;
 };
-
-class IMIDIDevice;
 
 class IMIDIDeviceDescriptor
 {
@@ -79,8 +80,6 @@ public:
     
 	virtual float64_t Start() = 0;
 	virtual void Stop() = 0;
-    
-	virtual void RegisterCallback(MIDICallback cb, void *param) = 0;
 };
 
 #if MAC
@@ -140,6 +139,8 @@ public:
     virtual IMIDIEndpoint* GetEndpoint() const;
     
     MIDIClientRef GetClientRef() const;
+    MIDIEndpointRef GetEndpointRef() const { return _endRef; }
+    CoreMIDIDevice &GetDevice() const { return _device; }
 private:
     MIDIEndpointRef _endRef;
     DeviceType _type;
@@ -150,14 +151,20 @@ private:
 class CoreMIDIEndpoint : public IMIDIEndpoint
 {
 public:
-    CoreMIDIEndpoint(const CoreMIDIEndpointDescriptor &desc) : _desc(desc), _listener(0) {}
+    CoreMIDIEndpoint(const CoreMIDIEndpointDescriptor &desc);
+    ~CoreMIDIEndpoint();
     
     virtual void SetListener(IMIDIListener *listener);
+    
+    virtual void Start();
+    virtual void Stop();
 private:
     static void _readProc(const MIDIPacketList *pktlist, void *readProcRefCon, void *srcConnRefCon);
     
     CoreMIDIEndpointDescriptor _desc;
     IMIDIListener *_listener;
+    MIDIPortRef _port;
+    bool _started;
 };
 
 class CoreMIDIClient : public IMIDIDeviceFactory
@@ -186,12 +193,18 @@ public:
     
     virtual const IMIDIDeviceDescriptor *GetDesc() const { return &_desc; }
     
+    virtual float64_t Start();
+	virtual void Stop();
+    
     virtual MIDIClientRef GetClientRef() const { return _desc.GetClientRef(); }
+    
+    virtual void RegisterEndpoint(IMIDIEndpoint *endpoint) { _endpointRegister.push_back(endpoint); }
     
 private:
     CoreMIDIDeviceDescriptor _desc;
     std::vector<CoreMIDIEntityDescriptor> _entities;
     std::vector<CoreMIDIEndpointDescriptor> _endpoints;
+    std::vector<IMIDIEndpoint*> _endpointRegister;
 };
 
 #elif WINDOWS
