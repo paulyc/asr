@@ -167,11 +167,11 @@ void CoreMIDIEndpoint::SetListener(IMIDIListener *listener)
 {
     _listener = listener;
     
-    MIDIDestinationCreate(_desc.GetClientRef(),
+/*    MIDIDestinationCreate(_desc.GetClientRef(),
                           CFStringRef 		name,
                           MIDIReadProc 		readProc,
                           void *				refCon,
-                          MIDIEndpointRef *	outDest )
+                          MIDIEndpointRef *	outDest ) */
 }
 
 CoreMIDIDeviceDescriptor::CoreMIDIDeviceDescriptor(MIDIDeviceRef devRef, CoreMIDIClient &client) : _devRef(devRef), _client(client)
@@ -226,7 +226,13 @@ std::vector<const IMIDIEndpointDescriptor*> CoreMIDIDevice::GetEndpoints() const
 
 IMIDIDevice* CoreMIDIDeviceDescriptor::Instantiate() const
 {
-    return new CoreMIDIDevice(*this);
+    return 0;
+    //return new CoreMIDIDevice(*this);
+}
+
+MIDIClientRef CoreMIDIDeviceDescriptor::GetClientRef() const
+{
+    return _client.GetRef();
 }
 
 #endif // MAC

@@ -23,7 +23,7 @@
 {
     // Insert code here to initialize your application
     
-    BeatDetector<chunk_t>::test_main();
+    //BeatDetector<chunk_t>::test_main();
     /*
     NSOpenPanel* openDlg = [NSOpenPanel openPanel];
     

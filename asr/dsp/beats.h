@@ -112,34 +112,62 @@ public:
 	BeatDetector() : 
 		T_sink_source<Chunk_T>(0),
 		_my_src(0),
-		_rectifier(&_s1),
-		_passthrough_sink(&_s2),
+		_rectifier(_s1),
+		_passthrough_sink(_s2),
         _diff(10),
-		_s1(_lpf, 2048, 1024, 20),
-		_s2(_kf, 1024, 512, 20),
-        _jobs(NUM_JOBS, job(_lpf, _kf)),
         _lpf(2048, 44100.0, 100.0),
         _bpf(2048, 44100.0, 20.0, 200.0),
-        _kf(1024)
+        _kf(1024),
+        _jobs(NUM_JOBS),
+        _running(true)
 	{
         _lpf.init();
         _bpf.init();
         _kf.init();
         
 #if PARALLEL_PROCESS
-        spin_processor();
-        spin_processor();
-        spin_processor();
-        spin_processor();
+        for (int i=0; i<NUM_JOBS; ++i)
+        {
+            _jobs[i] = new job(_lpf, _kf);
+            spin_processor(i);
+        }
+#else
+        _s1 = new STFTStream(_lpf, 2048, 1024, 20);
+		_s2 = new STFTStream(_kf, 1024, 512, 20);
 #endif
 	}
+    
+    ~BeatDetector()
+    {
+#if PARALLEL_PROCESS
+        _proc_lock.acquire();
+        _running = false;
+        for (int i=0; i<NUM_JOBS; ++i)
+        {
+            _do_proc.signal();
+        }
+        _proc_lock.release();
+        
+        void *ret;
+        for (int i=0; i<NUM_JOBS; ++i)
+        {
+            pthread_join(_jobs[i]->thread, &ret);
+            delete _jobs[i];
+        }
+#else
+        delete _s1;
+		delete _s2;
+#endif
+    }
 
 	void reset_source(T_source<Chunk_T> *src)
 	{
 		this->_src = src;
+#if !PARALLEL_PROCESS
 		_my_src.reset_source(this->_src);
 		_s1.reset_source(&_my_src);
 		_s2.reset_source(&_rectifier);
+#endif
 
 		reset_stats();
 	}
@@ -370,16 +398,16 @@ public:
         Condition_T job_done;
         Lock_T lock;
         std::vector<Chunk_T*> outputs;
+        pthread_t thread;
     };
     const static int NUM_JOBS = 4;
     
     Lock_T _proc_lock;
     Condition_T _do_proc;
     
-    void spin_processor()
+    void spin_processor(int j)
     {
-        pthread_t thread;
-        pthread_create(&thread, NULL, processor_thread, this);
+        pthread_create(&_jobs[j]->thread, NULL, processor_thread, this);
     }
     
     static void* processor_thread(void* p)
@@ -404,12 +432,12 @@ public:
         {
             int j;
             _proc_lock.acquire();
-            while (_jobs_to_process.empty())
+            while (_running && _jobs_to_process.empty())
                 _do_proc.wait(_proc_lock);
             j = _jobs_to_process.front();
             _jobs_to_process.pop();
             _proc_lock.release();
-            this->_jobs[j].process();
+            this->_jobs[j]->process();
         }
     }
     
@@ -430,16 +458,16 @@ public:
             const int chks_to_process = this->len().chunks;
             const int division_size = chks_to_process / 4;
             const int division_rem = chks_to_process % 4;
-            _jobs[0].init(division_size);
-            _jobs[1].init(division_size);
-            _jobs[2].init(division_size);
-            _jobs[3].init(division_size+division_rem);
+            _jobs[0]->init(division_size);
+            _jobs[1]->init(division_size);
+            _jobs[2]->init(division_size);
+            _jobs[3]->init(division_size+division_rem);
             int i = 0;
             for (int indx = 0; indx < 4; ++indx)
             {
-                for (int chk = 0; chk < _jobs[indx].vecSrc->size(); ++chk)
+                for (int chk = 0; chk < _jobs[indx]->vecSrc->size(); ++chk)
                 {
-                    _jobs[indx].vecSrc->add(chunks[i++]);
+                    _jobs[indx]->vecSrc->add(chunks[i++]);
                 }
                 this->process_job(indx);
             }
@@ -450,18 +478,18 @@ public:
             const int chks_to_process = this->len().chunks;
             const int division_size = chks_to_process / 4;
             const int division_rem = chks_to_process % 4;
-            _jobs[0].init(division_size);
-            _jobs[1].init(division_size);
-            _jobs[2].init(division_size);
-            _jobs[3].init(division_size+division_rem);
+            _jobs[0]->init(division_size);
+            _jobs[1]->init(division_size);
+            _jobs[2]->init(division_size);
+            _jobs[3]->init(division_size+division_rem);
             for (int indx = 0; indx < 4; ++indx)
             {
-                _jobs[indx].lock.acquire();
-                for (int chk = 0; chk < _jobs[indx].vecSrc->size(); ++chk)
+                _jobs[indx]->lock.acquire();
+                for (int chk = 0; chk < _jobs[indx]->vecSrc->size(); ++chk)
                 {
-                    _jobs[indx].vecSrc->add(this->_src->next());
+                    _jobs[indx]->vecSrc->add(this->_src->next());
                 }
-                _jobs[indx].lock.release();
+                _jobs[indx]->lock.release();
                 this->process_job(indx);
             }
         }
@@ -471,18 +499,18 @@ public:
             throw std::exception();
         }
         
-        _jobs[0].wait();
-        for (int i=0; i<_jobs[0].outputs.size(); ++i)
-            process_chunk(_jobs[0].outputs[i]);
-        _jobs[1].wait();
-        for (int i=0; i<_jobs[1].outputs.size(); ++i)
-            process_chunk(_jobs[1].outputs[i]);
-        _jobs[2].wait();
-        for (int i=0; i<_jobs[2].outputs.size(); ++i)
-            process_chunk(_jobs[2].outputs[i]);
-        _jobs[3].wait();
-        for (int i=0; i<_jobs[3].outputs.size(); ++i)
-            process_chunk(_jobs[3].outputs[i]);
+        _jobs[0]->wait();
+        for (int i=0; i<_jobs[0]->outputs.size(); ++i)
+            process_chunk(_jobs[0]->outputs[i]);
+        _jobs[1]->wait();
+        for (int i=0; i<_jobs[1]->outputs.size(); ++i)
+            process_chunk(_jobs[1]->outputs[i]);
+        _jobs[2]->wait();
+        for (int i=0; i<_jobs[2]->outputs.size(); ++i)
+            process_chunk(_jobs[2]->outputs[i]);
+        _jobs[3]->wait();
+        for (int i=0; i<_jobs[3]->outputs.size(); ++i)
+            process_chunk(_jobs[3]->outputs[i]);
         
         std::cout << analyze() << std::endl;
     }
@@ -689,7 +717,11 @@ private:
 	std::list<point> _maxs;
 	point _last_beat;
 
-	STFTStream _s1, _s2;
+    LPFilter _lpf;
+    BPFilter _bpf;
+    KaiserWindowFilter _kf;
+    
+	STFTStream *_s1, *_s2;
 	double _dt_sum;
 	int _dt_points;
 	double _dt_avg;
@@ -697,11 +729,9 @@ private:
     std::list<new_beat> _bpm_list;
     std::list<double> _final_bpm_list;
     
-    std::vector<job> _jobs;
+    std::vector<job*> _jobs;
+    bool _running;
     
-    LPFilter _lpf;
-    BPFilter _bpf;
-    KaiserWindowFilter _kf;
 };
 
 #endif

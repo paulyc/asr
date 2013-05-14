@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 
+class IMIDIDevice;
 
 class IMIDIListener
 {
