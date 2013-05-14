@@ -34,6 +34,54 @@ void SineAudioOutputProcessor::Process(IAudioBuffer *buffer)
 #if MAC
 #include <CoreAudio/CoreAudio.h>
 
+void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
+{
+    const int stride = buf->GetStride();
+    int to_write = buf->GetBufferSizeFrames(), loop_write, written=0, chunk_left;
+	float32_t * const write = (float32_t* const)buf->GetBuffer();
+    
+	while (to_write > 0)
+	{
+		if (!_chk || _read - _chk->_data >= chunk_t::chunk_size)
+		{
+			T_allocator<chunk_t>::free(_chk);
+			_chk = 0;
+            
+			this->_src_lock.acquire();
+			_chk = _gen->GetNextChunk(_id);
+			this->_src_lock.release();
+			_read = _chk->_data;
+		}
+        chunk_left = chunk_t::chunk_size - (_read - _chk->_data);
+		loop_write = std::min(to_write, chunk_left);
+        for (int i = 0; i < loop_write; ++i)
+        {
+            write[i*stride+_ch1id] = _read[i][0];
+            write[i*stride+_ch2id] = _read[i][1];
+        }
+        
+		_read += loop_write;
+		to_write -= loop_write;
+		written += loop_write;
+	}
+}
+
+CoreAudioOutputProcessor::CoreAudioOutputProcessor(const IAudioStreamDescriptor *streamDesc)
+{
+    _channels = streamDesc->GetNumChannels();
+    _frameSize = _channels * streamDesc->GetSampleWordSizeInBytes();
+}
+
+void CoreAudioOutputProcessor::Process(IAudioBuffer *buffer)
+{
+    for (std::vector<CoreAudioOutput>::iterator out = _outputs.begin();
+         out != _outputs.end();
+         out++)
+    {
+        out->process(dynamic_cast<MultichannelAudioBuffer*>(buffer));
+    }
+}
+
 IAudioDeviceFactory *MacAudioDriverDescriptor::Instantiate() const
 {
     return new CoreAudioDeviceFactory;

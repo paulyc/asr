@@ -15,87 +15,6 @@
 
 #include "track.h"
 
-void ChunkGenerator::AddChunkSource(T_source<chunk_t> *src, int id)
-{
-    _lock.acquire();
-    _streams[id] = stream(src);
-    Worker::do_job(new Worker::generate_chunk_job<T_source<chunk_t>, chunk_t>(src, this, id, 0),
-                   false, true);
-    _lock.release();
-}
-
-chunk_t* ChunkGenerator::GetNextChunk(int streamID)
-{
-    chunk_t *chk = 0;
-    _lock.acquire();
-    chk = _streams[streamID]._nextChk;
-    _streams[streamID]._nextChk = 0;
-    if (!chk)
-        chk = zero_source<chunk_t>::get()->next();
-    else
-    {
-        Worker::do_job(new Worker::generate_chunk_job<T_source<chunk_t>, chunk_t>(_streams[streamID]._src, this, streamID, 0),
-                       false, true);
-    }
-    _lock.release();
-    return chk;
-}
-
-void ChunkGenerator::chunkCb(chunk_t *chunk, int id)
-{
-    _lock.acquire();
-    _streams[id]._nextChk = chunk;
-    _lock.release();
-}
-
-void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
-{
-    const int stride = buf->GetStride();
-    int to_write = buf->GetBufferSizeFrames(), loop_write, written=0, chunk_left;
-	float32_t * const write = (float32_t* const)buf->GetBuffer();
-
-	while (to_write > 0)
-	{
-		if (!_chk || _read - _chk->_data >= chunk_t::chunk_size)
-		{
-			T_allocator<chunk_t>::free(_chk);
-			_chk = 0;
-            
-			this->_src_lock.acquire();
-			_chk = _gen->GetNextChunk(_id);
-			this->_src_lock.release();
-			_read = _chk->_data;
-		}
-        chunk_left = chunk_t::chunk_size - (_read - _chk->_data);
-		loop_write = std::min(to_write, chunk_left);
-        for (int i = 0; i < loop_write; ++i)
-        {
-            write[i*stride+_ch1id] = _read[i][0];
-            write[i*stride+_ch2id] = _read[i][1];
-        }
-        
-		_read += loop_write;
-		to_write -= loop_write;
-		written += loop_write;
-	}
-}
-
-CoreAudioOutputProcessor::CoreAudioOutputProcessor(const IAudioStreamDescriptor *streamDesc)
-{
-    _channels = streamDesc->GetNumChannels();
-    _frameSize = _channels * streamDesc->GetSampleWordSizeInBytes();
-}
-
-void CoreAudioOutputProcessor::Process(IAudioBuffer *buffer)
-{
-    for (std::vector<CoreAudioOutput>::iterator out = _outputs.begin();
-         out != _outputs.end();
-         out++)
-    {
-        out->process(dynamic_cast<MultichannelAudioBuffer*>(buffer));
-    }
-}
-
 ASIOProcessor::ASIOProcessor() :
 	_running(false),
 	_speed(1.0),
@@ -214,8 +133,7 @@ void ASIOProcessor::Init()
 #else
     DummyMIDIDeviceFactory midifac;
 #endif
-	fac.Enumerate();
-	IMIDIDevice *dev = midifac.Instantiate(1, true);
+	IMIDIDevice *dev = 0; //midifac.Instantiate(1, true);
 	if (dev)
 	{
 		printf("Have midi\n");

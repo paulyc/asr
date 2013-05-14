@@ -47,6 +47,9 @@
 		5FB2B380173210A50006871C /* worker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B367173210A50006871C /* worker.cpp */; };
 		5FB2B383173235D90006871C /* CoreAudio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B381173235D90006871C /* CoreAudio.cpp */; };
 		5FB2B386173236400006871C /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
+		5FB4AE5517421C52001A2FF2 /* stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB4AE5417421C52001A2FF2 /* stream.cpp */; };
+		5FB4AE5617421C52001A2FF2 /* stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB4AE5417421C52001A2FF2 /* stream.cpp */; };
+		5FB4AE5717421CB2001A2FF2 /* worker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B367173210A50006871C /* worker.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -282,6 +285,7 @@
 		5FB2B382173235D90006871C /* CoreAudio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CoreAudio.h; sourceTree = "<group>"; };
 		5FB2B384173236400006871C /* AudioDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudioDevice.cpp; sourceTree = "<group>"; };
 		5FB2B385173236400006871C /* AudioDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioDevice.h; sourceTree = "<group>"; };
+		5FB4AE5417421C52001A2FF2 /* stream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = stream.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -488,6 +492,7 @@
 				5FB2B368173210A50006871C /* worker.h */,
 				5FB2B381173235D90006871C /* CoreAudio.cpp */,
 				5FB2B382173235D90006871C /* CoreAudio.h */,
+				5FB4AE5417421C52001A2FF2 /* stream.cpp */,
 			);
 			name = asr;
 			path = ../asr;
@@ -737,6 +742,8 @@
 				5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */,
 				5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */,
 				5F33836817402EF600356397 /* midi.cpp in Sources */,
+				5FB4AE5617421C52001A2FF2 /* stream.cpp in Sources */,
+				5FB4AE5717421CB2001A2FF2 /* worker.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -762,6 +769,7 @@
 				5FB2B386173236400006871C /* AudioDevice.cpp in Sources */,
 				5F0C4F1C1736E5D60025E149 /* ui_cli.cpp in Sources */,
 				5F1F0ED7173C8E8B00DEA888 /* ui_cocoa.mm in Sources */,
+				5FB4AE5517421C52001A2FF2 /* stream.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
