@@ -21,6 +21,7 @@
 #endif
 
 #include "type.h"
+#include "stream.h"
 
 class IAudioDeviceFactory;
 
@@ -144,6 +145,39 @@ private:
     int _bytesPerFrame;
 };
 
+class AudioInput
+{
+public:
+	virtual ~AudioInput() {}
+    
+	virtual void process(int doubleBufferIndex) {}
+};
+
+class AudioOutput : public T_sink_sourceable<chunk_t>
+{
+public:
+    AudioOutput(T_source<chunk_t> *src, int ch1id, int ch2id) :
+    T_sink_sourceable<chunk_t>(src),
+    _ch1id(ch1id),
+    _ch2id(ch2id)
+    {
+        _chk = 0;
+        _read = 0;
+    }
+	virtual ~AudioOutput()
+    {
+        T_allocator<chunk_t>::free(_chk);
+    }
+    
+	virtual void process(MultichannelAudioBuffer *buf) = 0;
+	virtual void switchBuffers(int dbIndex) {}
+protected:
+    int _ch1id;
+    int _ch2id;
+	chunk_t *_chk;
+	typename chunk_t::sample_t *_read;
+};
+
 class IAudioStreamProcessor
 {
 public:
@@ -162,6 +196,47 @@ private:
     float64_t _sampleRate;
     int _frameSize;
 };
+
+#if MAC
+class CoreAudioInput : public AudioInput
+{
+};
+
+class CoreAudioOutput : public AudioOutput
+{
+public:
+    CoreAudioOutput(ChunkGenerator *gen, int id, int ch1ofs, int ch2ofs) : AudioOutput(0, ch1ofs, ch2ofs), _gen(gen), _id(id) {}
+    virtual void process(MultichannelAudioBuffer *buf);
+private:
+    ChunkGenerator *_gen;
+    int _id;
+};
+
+class CoreAudioOutputProcessor : public IAudioStreamProcessor
+{
+public:
+    CoreAudioOutputProcessor(const IAudioStreamDescriptor *streamDesc);
+    
+    void AddOutput(const CoreAudioOutput &out) { _outputs.push_back(out); }
+    virtual void Process(IAudioBuffer *buffer);
+private:
+    int _channels;
+    int _frameSize;
+    std::vector<CoreAudioOutput> _outputs;
+    
+    chunk_t *_chk;
+	typename chunk_t::sample_t *_read;
+};
+
+class CoreAudioInputProcessor : public IAudioStreamProcessor
+{
+public:
+    void AddInput(const CoreAudioInput &in);
+    virtual void Process(IAudioBuffer *buffer);
+};
+#elif WINDOWS
+
+#endif // WINDOWS
 
 class IAudioStream
 {

@@ -209,6 +209,8 @@ void ASIOProcessor::Init()
     
 #if WINDOWS
 	Win32MIDIDeviceFactory midifac;
+#elif MAC
+    CoreMIDIClient client;
 #else
     DummyMIDIDeviceFactory midifac;
 #endif

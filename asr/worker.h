@@ -8,13 +8,7 @@
 //#include "track.h"
 #include "util.h"
 #include "malloc.h"
-
-template <typename T>
-class IChunkGeneratorCallback
-{
-public:
-    virtual void chunkCb(T *chunk, int id) = 0;
-};
+#include "stream.h"
 
 class Worker
 {

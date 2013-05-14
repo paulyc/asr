@@ -284,4 +284,85 @@ public:
 	}
 };
 
+template <typename T>
+class IChunkGeneratorCallback
+{
+public:
+    virtual void chunkCb(T *chunk, int id) = 0;
+};
+
+class ChunkGenerator : public IChunkGeneratorCallback<chunk_t>
+{
+public:
+    void AddChunkSource(T_source<chunk_t> *src, int id);
+    chunk_t* GetNextChunk(int streamID);
+    void chunkCb(chunk_t *chunk, int id);
+private:
+    struct stream {
+        stream() : _src(0), _nextChk(0) {}
+        stream(T_source<chunk_t> *src) : _src(src), _nextChk(0) {}
+        T_source<chunk_t> *_src;
+        chunk_t *_nextChk;
+    };
+    Lock_T _lock;
+    std::unordered_map<int, stream> _streams;
+};
+
+class BlockingChunkStream : public T_source<chunk_t>
+{
+public:
+    BlockingChunkStream(ChunkGenerator *gen, int streamID) : _gen(gen), _streamID(streamID) {}
+    chunk_t *next()
+    {
+        return _gen->GetNextChunk(_streamID);
+    }
+private:
+    ChunkGenerator *_gen;
+    int _streamID;
+};
+
+template <typename Input_Chunk_T, typename Output_Chunk_T>
+class ChunkConverter : public T_source<Output_Chunk_T>, public T_sink<Input_Chunk_T>
+{
+public:
+	ChunkConverter(T_source<Input_Chunk_T> *src) : T_sink<Input_Chunk_T>(src) {}
+	Output_Chunk_T *next() { return 0; }
+};
+
+template <int chunk_size>
+class ChunkConverter<chunk_time_domain_1d<SamplePairf, chunk_size>, chunk_time_domain_1d<SamplePairInt16, chunk_size> >  :
+public T_source<chunk_time_domain_1d<SamplePairInt16, chunk_size> >,
+public T_sink<chunk_time_domain_1d<SamplePairf, chunk_size> >
+{
+	typedef chunk_time_domain_1d<SamplePairf, chunk_size> input_chunk_t;
+	typedef chunk_time_domain_1d<SamplePairInt16, chunk_size> output_chunk_t;
+public:
+	ChunkConverter(T_source<input_chunk_t> *src) : T_sink<chunk_time_domain_1d<SamplePairf, chunk_size> >(src) {}
+	output_chunk_t *next()
+	{
+		input_chunk_t *in_chk = this->_src->next();
+		SamplePairf *in_data = in_chk->_data;
+		float in;
+		output_chunk_t *out_chk = T_allocator<output_chunk_t>::alloc();
+		SamplePairInt16 *out_data = out_chk->_data;
+        
+		for (int i=0; i<chunk_size; ++i)
+		{
+			in = in_data[i][0];
+			if (in < 0.0f)
+				out_data[i][0] = short(fmax(-1.0f, in) * -SHRT_MIN);
+			else
+				out_data[i][0] = short(fmin(1.0f, in) * SHRT_MAX);
+            
+			in = in_data[i][1];
+			if (in < 0.0f)
+				out_data[i][1] = short(fmax(-1.0f, in) * -SHRT_MIN);
+			else
+				out_data[i][1] = short(fmin(1.0f, in) * SHRT_MAX);
+		}
+		T_allocator<input_chunk_t>::free(in_chk);
+		return out_chk;
+	}
+};
+
 #endif // !defined(STREAM_H)
