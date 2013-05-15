@@ -65,7 +65,7 @@ void AudioTrack<Chunk_T>::set_source_file_impl(std::string filename, Lock_T *loc
     _paused = true;
     
     try {
-        BufferedSource<Chunk_T>::create(_io, filename.c_str(), lock);
+        BufferedSource<Chunk_T>::create(filename.c_str(), lock);
     } catch (std::exception &e) {
         printf("Could not set_source_file due to %s\n", e.what());
         _in_config = false;

@@ -275,7 +275,7 @@ UIText::UIText(GenericUI *ui, int i) : _ui(ui), id(i)
 {
 }
 
-void UIText::set_text(const char *txt, bool del=true)
+void UIText::set_text(const char *txt, bool del)
 {
 	_ui->set_text_field(id, txt, del);
 }

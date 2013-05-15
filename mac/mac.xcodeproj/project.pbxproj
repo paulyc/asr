@@ -50,6 +50,10 @@
 		5FB4AE5517421C52001A2FF2 /* stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB4AE5417421C52001A2FF2 /* stream.cpp */; };
 		5FB4AE5617421C52001A2FF2 /* stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB4AE5417421C52001A2FF2 /* stream.cpp */; };
 		5FB4AE5717421CB2001A2FF2 /* worker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B367173210A50006871C /* worker.cpp */; };
+		5FD9E51A17433FAB0052157F /* io.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B31D173210A50006871C /* io.cpp */; };
+		5FD9E51B174340AF0052157F /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
+		5FD9E51C174341440052157F /* ui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B35F173210A50006871C /* ui.cpp */; };
+		5FD9E51D174341680052157F /* controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2C7173210A50006871C /* controller.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -750,6 +754,10 @@
 				5F33836817402EF600356397 /* midi.cpp in Sources */,
 				5FB4AE5617421C52001A2FF2 /* stream.cpp in Sources */,
 				5FB4AE5717421CB2001A2FF2 /* worker.cpp in Sources */,
+				5FD9E51A17433FAB0052157F /* io.cpp in Sources */,
+				5FD9E51B174340AF0052157F /* AudioDevice.cpp in Sources */,
+				5FD9E51C174341440052157F /* ui.cpp in Sources */,
+				5FD9E51D174341680052157F /* controller.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

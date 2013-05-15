@@ -631,13 +631,13 @@ protected:
 	T *_next;
 };
 
-#if 1
-#define CRITICAL_SECTION_GUARD(lock, yield_condition)
+#if !ONE_CPU
+#define CRITICAL_SECTION_GUARD(lock)
 #else
-#define CRITICAL_SECTION_GUARD(lock, yield_condition) if (lock) { \
+#define CRITICAL_SECTION_GUARD(lock) if (lock) { \
 lock->acquire(); \
 lock->release(); \
-if (yield_condition) sched_yield(); }
+sched_yield(); }
 #endif
 
 

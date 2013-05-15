@@ -77,7 +77,7 @@ public:
 			Chunk_T *chk = _src->get_chunk(uchk_ofs);
 		//	if (lock) pthread_mutex_unlock(lock);
 
-			if (lock) lock->acquire();
+			CRITICAL_SECTION_GUARD(lock);
 			for (i = 0; i < 10; ++i)
 			{
 				meta.subband[i].abs_sum[0] = 0.0f;
@@ -122,11 +122,6 @@ public:
 			dBm<Sample_T>::calc(meta.avg_db, meta.avg);
 			dBm<Sample_T>::calc(meta.peak_db, meta.peak);
 			meta.valid = true;
-			if (lock)
-			{
-				lock->release();
-				sched_yield();
-			}
 		}
 		return meta;
 	}

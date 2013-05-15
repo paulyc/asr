@@ -130,7 +130,7 @@ void ASIOProcessor::Init()
 #if WINDOWS
 	Win32MIDIDeviceFactory midifac;
 #elif MAC
-    CoreMIDIClient client;
+    CoreMIDIClient client(CFSTR("The MIDI Client"));
 #else
     DummyMIDIDeviceFactory midifac;
 #endif
@@ -212,7 +212,7 @@ void ASIOProcessor::CreateTracks()
     _gain2 = new gain<T_source<chunk_t> >(_tracks[1]);
     _gain2->set_gain_db(-3.0);
     
-    _gen = new ChunkGenerator(_device->GetBufferSizeFrames());
+    _gen = new ChunkGenerator(_device->GetDescriptor()->GetBufferSizeFrames());
     _gen->AddChunkSource(_gain1, 1);
     _gen->AddChunkSource(_gain2, 2);
     

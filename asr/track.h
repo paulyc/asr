@@ -232,7 +232,7 @@ public:
 
 	virtual void lock() = 0;
 	virtual void unlock() = 0;
-	virtual ASIOProcessor *get_io() const = 0;
+	//virtual ASIOProcessor *get_io() const = 0;
 
 	void create(BufferedStream<Chunk_T> *src)
 	{
@@ -313,7 +313,7 @@ public:
 		if (lock)
 			this->lock();
 		//_display->set_wav_heights(&asio->_io_lock);
-		_display->set_wav_heights(this->get_io());
+		_display->set_wav_heights();
 		if (lock)
 			this->unlock();
 		if (unlock)
@@ -504,7 +504,7 @@ public:
 		this->_display->set_zoom(100.0);
 		this->_display->set_left(0.0);
 		//pthread_mutex_lock(lock);
-		this->_display->set_wav_heights(_io, lock);
+		this->_display->set_wav_heights(lock);
 	//	if (!_display->set_next_height())
 	//	{
 		//	GenericUI *ui;

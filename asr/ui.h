@@ -47,7 +47,7 @@ struct UIButton
 struct UIText
 {
 	UIText(GenericUI *ui, int i);
-	void set_text(const char *txt, bool del);
+	void set_text(const char *txt, bool del=true);
 	void set_text_pct(double v);
 	void set_text_db(double db);
 	GenericUI *_ui;
