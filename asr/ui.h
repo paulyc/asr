@@ -56,14 +56,14 @@ struct UIText
 
 struct UITrack
 {
-	UITrack(ASIOProcessor *io, GenericUI *ui, int tid, int filename_id, int pitch_id, int gain_id);
+	UITrack(GenericUI *ui, int tid, int filename_id, int pitch_id, int gain_id);
 	UIWavform wave;
 	void set_coarse(double v);
 	void set_fine(double v);
 	void update_frequency(double f);
 	double get_pitch();
 	
-	ASIOProcessor *_io;
+    GenericUI *_ui;
 	int id;
 	double coarse_val;
 	double fine_val;
@@ -260,8 +260,8 @@ class CommandlineUI : public GenericUI
 public:
 	CommandlineUI(ASIOProcessor *io) :
         GenericUI(io,
-              UITrack(io, this, 1, 1, 2, 3),
-              UITrack(io, this, 2, 4, 5, 6))
+              UITrack(this, 1, 1, 2, 3),
+              UITrack(this, 2, 4, 5, 6))
     {
     }
     
@@ -283,17 +283,23 @@ public:
 class CocoaUI : public GenericUI
 {
 public:
-    virtual void create() = 0;
-	virtual void destroy() = 0;
-	virtual void main_loop() = 0;
-	virtual bool running() = 0;
-	virtual void do_quit() = 0;
-	virtual void render(int) = 0;
-	virtual void set_track_filename(int t) = 0;
-	virtual void set_position(void *t, double tm, bool invalidate) = 0;
-	virtual void set_clip(int) = 0;
-	virtual bool want_render() = 0;
-	virtual void set_text_field(int id, const char *txt, bool del) = 0;
+    CocoaUI() : GenericUI(0,
+                          UITrack(this, 1, 1, 2, 3),
+                          UITrack(this, 2, 4, 5, 6)) {}
+    virtual void create() {}
+	virtual void destroy() {}
+	virtual void main_loop() { _lock.acquire(); _quit.wait(_lock); _lock.release(); }
+	virtual bool running() { return true; }
+	virtual void do_quit() { _quit.signal(); }
+	virtual void render(int) {}
+	virtual void set_track_filename(int t) {}
+	virtual void set_position(void *t, double tm, bool invalidate) {}
+	virtual void set_clip(int) {}
+	virtual bool want_render() { return false; }
+	virtual void set_text_field(int id, const char *txt, bool del) {}
+private:
+    Lock_T _lock;
+    Condition_T _quit;
 };
 
 #endif // MAC

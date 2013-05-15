@@ -22,6 +22,8 @@
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
     // Insert code here to initialize your application
+    asr = new ASR(new CocoaUI);
+    asr->init();
     
     //BeatDetector<chunk_t>::test_main();
     /*
@@ -41,6 +43,13 @@
             NSLog(@"%@", nsFileName);
         }
     }*/
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
+{
+    asr->finish();
+    delete asr;
+    return NSTerminateNow;
 }
 
 @end

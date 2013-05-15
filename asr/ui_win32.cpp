@@ -407,8 +407,8 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
 
 Win32UI::Win32UI(ASIOProcessor *io) :
 	GenericUI(io, 
-		UITrack(io, this, 1, IDC_EDIT1, IDC_EDIT3, IDC_EDIT5), 
-		UITrack(io, this, 2, IDC_EDIT2, IDC_EDIT4, IDC_EDIT6)),
+		UITrack(this, 1, IDC_EDIT1, IDC_EDIT3, IDC_EDIT5), 
+		UITrack(this, 2, IDC_EDIT2, IDC_EDIT4, IDC_EDIT6)),
 	_want_render(false),
 	_want_quit(false)
 {

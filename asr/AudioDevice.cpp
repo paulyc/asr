@@ -34,6 +34,39 @@ void SineAudioOutputProcessor::Process(IAudioBuffer *buffer)
 #if MAC
 #include <CoreAudio/CoreAudio.h>
 
+CoreAudioInput::~CoreAudioInput()
+{
+    _lock.acquire();
+    while (!_chunkQ.empty())
+    {
+        T_allocator<chunk_t>::free(_chunkQ.front());
+        _chunkQ.pop();
+    }
+    _lock.release();
+}
+
+void CoreAudioInput::process(MultichannelAudioBuffer *buf)
+{
+    
+}
+
+chunk_t *CoreAudioInput::next()
+{
+    chunk_t *chk = 0;
+    _lock.acquire();
+    if (_chunkQ.empty())
+    {
+        chk = zero_source<chunk_t>::get()->next();
+    }
+    else
+    {
+        chk = _chunkQ.front();
+        _chunkQ.pop();
+    }
+    _lock.release();
+    return chk;
+}
+
 void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
 {
     const int stride = buf->GetStride();
@@ -45,11 +78,7 @@ void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
 		if (!_chk || _read - _chk->_data >= chunk_t::chunk_size)
 		{
 			T_allocator<chunk_t>::free(_chk);
-			_chk = 0;
-            
-			this->_src_lock.acquire();
 			_chk = _gen->GetNextChunk(_id);
-			this->_src_lock.release();
 			_read = _chk->_data;
 		}
         chunk_left = chunk_t::chunk_size - (_read - _chk->_data);
@@ -114,9 +143,7 @@ CoreAudioDeviceFactory::CoreAudioDeviceFactory()
                                             &propertySize);
     if (result != 0)
     {
-        // should throw exception really
-        printf("Error finding number of audio devices");
-        throw std::exception();
+        throw string_exception("Error finding number of audio devices");
     }
     
     numDevices = propertySize / sizeof(AudioDeviceID);
@@ -128,7 +155,6 @@ CoreAudioDeviceFactory::CoreAudioDeviceFactory()
                                         NULL,
                                         &propertySize,
                                         deviceList);
-    CFStringRef deviceName;
     for (UInt32 i = 0; i < numDevices; ++i)
     {
         _devices.push_back(CoreAudioDeviceDescriptor(deviceList[i]));

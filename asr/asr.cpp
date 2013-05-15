@@ -43,6 +43,8 @@ ASR::ASR(int argc, char **argv)
 	_ui = new Win32UI(_asio);
 #elif OPENGL_ENABLED
 	_ui = new OpenGLUI(_asio, argc, argv);
+#elif MAC
+    //_ui = new CocoaUI(_asio);
 #else
     _ui = new CommandlineUI(_asio);
 #endif
@@ -61,15 +63,25 @@ ASR::~ASR()
 	delete _asio;
 }
 
-void ASR::execute()
+void ASR::init()
 {
-	_asio->set_ui(_ui);
+    _asio->set_ui(_ui);
 	_ui->create();
-	_ui->main_loop();
-	_ui->destroy();
 }
 
-#if !TEST_BEATS
+void ASR::execute()
+{
+	init();
+	_ui->main_loop();
+	finish();
+}
+
+void ASR::finish()
+{
+    _ui->destroy();
+}
+
+#if !TEST_BEATS && !MAC
 int main(int argc, char **argv)
 {
 #if 0

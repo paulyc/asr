@@ -227,8 +227,8 @@ void GenericUI::drop_file(const char *filename, bool track1)
 	}
 }
 
-UITrack::UITrack(ASIOProcessor *io, GenericUI *ui, int tid, int filename_id, int pitch_id, int gain_id) :
-	_io(io),
+UITrack::UITrack(GenericUI *ui, int tid, int filename_id, int pitch_id, int gain_id) :
+    _ui(ui),
 	id(tid),
 	coarse_val(48000.0),
 	fine_val(0.0),
@@ -255,7 +255,7 @@ void UITrack::set_coarse(double v)
 	coarse_val = 48000.0 / (1.0 + .4 * v -0.2);
 //	printf("coarse_val %f\n", _track2.coarse_val);
 	update_frequency(coarse_val+fine_val);
-	_io->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
+	_ui->_io->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val);
 }
 
 void UITrack::set_fine(double v)
@@ -263,7 +263,7 @@ void UITrack::set_fine(double v)
 	fine_val = 800.0 -  1600.*v;
 //	printf("fine_val %f\n", fine_val);
 	update_frequency(coarse_val+fine_val);
-	_io->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val); 
+	_ui->_io->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val);
 }
 
 double UITrack::get_pitch()

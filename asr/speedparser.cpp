@@ -47,7 +47,7 @@ public:
 			else if (y < 0.0f)
 				return -float(M_PI_2);
 			else
-				return float('NaN');
+				return NAN;
 		}
 	}
 	double Execute(/*float* data=NULL, int smp*/)

@@ -54,6 +54,7 @@
 		5FD9E51B174340AF0052157F /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
 		5FD9E51C174341440052157F /* ui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B35F173210A50006871C /* ui.cpp */; };
 		5FD9E51D174341680052157F /* controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2C7173210A50006871C /* controller.cpp */; };
+		5FD9E51E17434AD80052157F /* asr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B6173210A50006871C /* asr.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -758,6 +759,7 @@
 				5FD9E51B174340AF0052157F /* AudioDevice.cpp in Sources */,
 				5FD9E51C174341440052157F /* ui.cpp in Sources */,
 				5FD9E51D174341680052157F /* controller.cpp in Sources */,
+				5FD9E51E17434AD80052157F /* asr.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

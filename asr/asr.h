@@ -45,7 +45,9 @@ public:
     ASR(GenericUI *ui);
 	~ASR();
 
+    void init();
 	void execute();
+    void finish();
 
 private:
 	ASIOProcessor *_asio;

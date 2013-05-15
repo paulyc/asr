@@ -8,7 +8,12 @@
 
 #import <Cocoa/Cocoa.h>
 
+class ASR;
+
 @interface AppDelegate : NSObject <NSApplicationDelegate>
+{
+    ASR *asr;
+}
 
 @property (assign) IBOutlet NSWindow *window;
 

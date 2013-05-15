@@ -666,4 +666,39 @@ private:
 std::string CFStringRefToString(CFStringRef ref);
 #endif
 
+class Differentiator
+{
+public:
+	Differentiator(int size=3)
+	{
+		_size = size;
+		_buffer = new double[size];
+		_ptr = _buffer;
+		for (int i=0; i<size; ++i)
+			_buffer[i] = 0.0;
+	}
+	~Differentiator()
+	{
+		delete [] _buffer;
+	}
+	double dx()
+	{
+		if (_ptr == _buffer)
+			return *_ptr - *(_ptr + _size -1);
+		else
+			return *_ptr - *(_ptr-1);
+	}
+	void next(double x)
+	{
+		++_ptr;
+		if (_ptr >= _buffer + _size)
+			_ptr = _buffer;
+		*_ptr = x;
+	}
+private:
+	int _size;
+	double *_buffer;
+	double *_ptr;
+};
+
 #endif // !defined(_UTIL_H)

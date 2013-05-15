@@ -155,11 +155,11 @@ public:
     chunk_t *next() = 0;
 };
 
-class AudioOutput : public T_sink_sourceable<chunk_t>
+class AudioOutput : public T_sink_source<chunk_t>
 {
 public:
     AudioOutput(T_source<chunk_t> *src, int ch1id, int ch2id) :
-    T_sink_sourceable<chunk_t>(src),
+    T_sink_source<chunk_t>(src),
     _ch1id(ch1id),
     _ch2id(ch2id)
     {
@@ -203,12 +203,17 @@ private:
 class CoreAudioInput : public AudioInput
 {
 public:
-	virtual ~CoreAudioInput() {}
+    CoreAudioInput(int id, int ch1ofs, int ch2ofs) : _id(id), _ch1ofs(ch1ofs), _ch2ofs(ch2ofs) {}
+	virtual ~CoreAudioInput();
     
 	virtual void process(MultichannelAudioBuffer *buf);
     chunk_t *next();
 private:
+    int _id;
+    int _ch1ofs;
+    int _ch2ofs;
     std::queue<chunk_t*> _chunkQ;
+    Lock_T _lock;
 };
 
 class CoreAudioOutput : public AudioOutput

@@ -241,7 +241,7 @@ public:
         return _vec[i];
     }
 
-    int size() const
+    size_t size() const
     {
         return _vec.size();
     }
