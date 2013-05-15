@@ -197,8 +197,8 @@ void ASIOProcessor::Destroy()
 
 void ASIOProcessor::CreateTracks()
 {
-	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 1, _default_src));
-	_tracks.push_back(new SeekablePitchableFileSource<chunk_t>(this, 2, _default_src));
+	_tracks.push_back(new AudioTrack<chunk_t>(this, 1, _default_src));
+	_tracks.push_back(new AudioTrack<chunk_t>(this, 2, _default_src));
 
 	_filter_controller = new track_t::controller_t(_tracks[0], _tracks[1]);
 

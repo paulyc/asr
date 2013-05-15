@@ -1,3 +1,5 @@
+// Copyright (C) 2013 Paul Ciarlo
+
 #ifndef _TRACK_H
 #define _TRACK_H
 
@@ -340,38 +342,7 @@ public:
 	{
 	}
 
-	void create(ASIOProcessor *io, const char *filename, Lock_T *lock)
-	{
-		T_source<Chunk_T> *src = 0;
-
-		if (strstr(filename, ".mp3") == filename + strlen(filename) - 4)
-		{
-			src = new mp3file_chunker<Chunk_T>(filename, lock);
-		}
-		else if (strstr(filename, ".wav") == filename + strlen(filename) - 4)
-		{
-			src = new wavfile_chunker<Chunk_T>(filename);
-			//src = new ifffile_chunker<Chunk_T>(filename);
-		}
-		else if (strstr(filename, ".flac") == filename + strlen(filename) - 5)
-		{
-			src = new flacfile_chunker<Chunk_T>(filename, lock);
-		}
-		else
-		{
-			src = new ifffile_chunker<Chunk_T>(filename);
-		}
-
-		destroy();
-
-		_src = src;
-
-		_detector.reset_source(_src);
-		_src_buf = new BufferedStream<Chunk_T>(io, &_detector);
-	//	_src_buf->load_complete();
-
-		_filename = filename;
-	}
+	void create(const char *filename, Lock_T *lock);
 
 //	void createZero(ASIOProcessor *io)
 //	{
@@ -414,19 +385,19 @@ protected:
 };
 
 template <typename Chunk_T>
-class SeekablePitchableFileSource : 
+class AudioTrack : 
 	public BufferedSource<Chunk_T>, 
 	public PitchableMixin<Chunk_T>, 
 	public SeekableMixin<Chunk_T>, 
 	public ViewableMixin<Chunk_T>
 {
 public:
-	typedef SeekablePitchableFileSource<Chunk_T> track_t;
+	typedef AudioTrack<Chunk_T> track_t;
 
 	using SeekableMixin<Chunk_T>::goto_cuepoint;
 	using SeekableMixin<Chunk_T>::seek_time;
 
-	SeekablePitchableFileSource(ASIOProcessor *io, int track_id, const char *filename) :
+	AudioTrack(ASIOProcessor *io, int track_id, const char *filename) :
 		_io(io),
 		_in_config(false),
 		_paused(true),
@@ -437,14 +408,11 @@ public:
 	{
 		_future = new FutureExecutor;
 
-	//	int sz = (char*)&_display - (char*)this;
-	//	printf("sz = 0x%x\n", sz);
-
 		if (filename)
 			set_source_file_impl(std::string(filename), &_io->get_lock());
 	}
 
-	virtual ~SeekablePitchableFileSource()
+	virtual ~AudioTrack()
 	{
 		_loading_lock.acquire();
 		while (!_loaded) 
@@ -460,59 +428,8 @@ public:
 		BufferedSource<Chunk_T>::destroy();
 	}
 
-	void set_source_file(std::string filename, Lock_T &lock)
-	{
-		_future->submit(
-			new deferred2<SeekablePitchableFileSource<Chunk_T>, std::string, Lock_T*>(
-				this, 
-				&SeekablePitchableFileSource<Chunk_T>::set_source_file_impl, 
-				filename, 
-				&lock));
-	}
+	void set_source_file(std::string filename, Lock_T &lock);
 
-private:
-	void set_source_file_impl(std::string filename, Lock_T *lock)
-	{
-		_loading_lock.acquire();
-		while (_in_config || !_loaded)
-		{
-			_track_loaded.wait(_loading_lock);
-		}
-		
-		_in_config = true;
-		_loaded = false;
-		_paused = true;
-
-		try {
-			BufferedSource<Chunk_T>::create(_io, filename.c_str(), lock);
-		} catch (std::exception &e) {
-			printf("Could not set_source_file due to %s\n", e.what());
-			_in_config = false;
-			_loaded = true;
-			_paused = true;
-		//	BufferedSource<Chunk_T>::createZero(_io);
-			_loading_lock.release();
-			return;
-		}
-	//	pthread_mutex_unlock(&_loading_lock);
-
-	//	LOCK_IF_SMP(lock);
-		PitchableMixin<Chunk_T>::create(this->_src_buf, this->_src->sample_rate());
-		ViewableMixin<Chunk_T>::create(this->_src_buf);
-		this->_cuepoint = 0.0;
-	//	UNLOCK_IF_SMP(lock);
-
-	//	pthread_mutex_lock(&_loading_lock);
-		_in_config = false;
-		_last_time = 0.0;
-		_filename = filename;
-		_loading_lock.release();
-
-		if (!_loaded)
-			Worker::do_job(new Worker::load_track_job<SeekablePitchableFileSource<Chunk_T> >(this, lock));
-	}
-
-public:
 	Chunk_T* next()
 	{
 		Chunk_T *chk;
@@ -639,7 +556,7 @@ public:
 		if (!_loaded) return;
 	//	pthread_mutex_lock(&_config_lock);
 		ViewableMixin<Chunk_T>::zoom_px(d);
-		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
+		Worker::do_job(new Worker::draw_waveform_job<AudioTrack<Chunk_T> >(this, 0));
     //	pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -649,7 +566,7 @@ public:
 	//	pthread_mutex_lock(&_config_lock);
 		if (!_loaded) return;
 		ViewableMixin<Chunk_T>::move_px(d);
-		Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
+		Worker::do_job(new Worker::draw_waveform_job<AudioTrack<Chunk_T> >(this, 0));
 	//	pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -658,7 +575,7 @@ public:
 	//	printf("track::render\n");
 		update_position();
 		if (_io->get_ui()->want_render())
-			Worker::do_job(new Worker::draw_waveform_job<SeekablePitchableFileSource<Chunk_T> >(this, 0));
+			Worker::do_job(new Worker::draw_waveform_job<AudioTrack<Chunk_T> >(this, 0));
 	}
     
     void update_position()
@@ -731,10 +648,6 @@ public:
 	}
 
 protected:
-	ASIOProcessor *get_io() const
-	{
-		return _io;
-	}
 	ASIOProcessor *_io;
 	bool _in_config;
 	bool _paused;
@@ -749,8 +662,12 @@ protected:
 
 	std::string _filename;
 	bool _pause_monitor;
+private:
+	void set_source_file_impl(std::string filename, Lock_T *lock);
 };
 
-typedef SeekablePitchableFileSource<chunk_t> Track_T;
+typedef AudioTrack<chunk_t> Track_T;
+
+#include "track.cpp"
 
 #endif // !defined(TRACK_H)

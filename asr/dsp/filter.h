@@ -427,4 +427,6 @@ protected:
 	KaiserWindowTable<Precision_T> *_kwt;
 };
 
+#include "filter.cpp"
+
 #endif // !defined(_FILTER_H)

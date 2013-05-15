@@ -286,6 +286,9 @@
 		5FB2B384173236400006871C /* AudioDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudioDevice.cpp; sourceTree = "<group>"; };
 		5FB2B385173236400006871C /* AudioDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioDevice.h; sourceTree = "<group>"; };
 		5FB4AE5417421C52001A2FF2 /* stream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = stream.cpp; sourceTree = "<group>"; };
+		5FD9E5171743304D0052157F /* track.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = track.cpp; sourceTree = "<group>"; };
+		5FD9E5181743322B0052157F /* buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = buffer.cpp; sourceTree = "<group>"; };
+		5FD9E519174335290052157F /* filter.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = filter.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -493,6 +496,8 @@
 				5FB2B381173235D90006871C /* CoreAudio.cpp */,
 				5FB2B382173235D90006871C /* CoreAudio.h */,
 				5FB4AE5417421C52001A2FF2 /* stream.cpp */,
+				5FD9E5171743304D0052157F /* track.cpp */,
+				5FD9E5181743322B0052157F /* buffer.cpp */,
 			);
 			name = asr;
 			path = ../asr;
@@ -581,6 +586,7 @@
 				5FB2B316173210A50006871C /* filter.h */,
 				5FB2B317173210A50006871C /* gain.h */,
 				5FB2B318173210A50006871C /* mixer.h */,
+				5FD9E519174335290052157F /* filter.cpp */,
 			);
 			path = dsp;
 			sourceTree = "<group>";

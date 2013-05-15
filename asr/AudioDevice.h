@@ -145,12 +145,14 @@ private:
     int _bytesPerFrame;
 };
 
-class AudioInput
+class AudioInput : public T_source<chunk_t>
 {
 public:
 	virtual ~AudioInput() {}
     
 	virtual void process(int doubleBufferIndex) {}
+    
+    chunk_t *next() = 0;
 };
 
 class AudioOutput : public T_sink_sourceable<chunk_t>

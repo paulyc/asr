@@ -34,7 +34,7 @@ class ASIOProcessor;
 class GenericUI;
 class IMIDIDevice;
 template <typename T>
-class SeekablePitchableFileSource;
+class AudioTrack;
 
 class ASIOProcessor
 {
@@ -53,7 +53,7 @@ public:
 	void GenerateLoop(pthread_t th);
 	void GenerateOutput();
 
-	typedef SeekablePitchableFileSource<chunk_t> track_t;
+	typedef AudioTrack<chunk_t> track_t;
 	track_t* GetTrack(int t_id) const
 	{
 		return _tracks[t_id-1];

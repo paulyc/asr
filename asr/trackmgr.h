@@ -9,13 +9,13 @@ template <typename Chunk_T>
 class TrackManager
 {
 public:
-	typedef SeekablePitchableFileSource<Chunk_T> track_t;
+	typedef AudioTrack<Chunk_T> track_t;
 	TrackManager() {}
 	~TrackManager() {}
 
 	track_t* createFromFile(const wchar_t *filename, pthread_mutex_t *lock)
 	{
-		track_t *t = new SeekablePitchableFileSource(_tracks.size(), filename, lock);
+		track_t *t = new AudioTrack(_tracks.size(), filename, lock);
 	}
 
 	track_t *get(int indx)
