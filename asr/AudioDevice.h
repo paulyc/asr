@@ -48,6 +48,7 @@ class IAudioDeviceDescriptor
 public:
     virtual std::string GetName() const = 0;
     virtual IAudioDevice *Instantiate() const = 0;
+    virtual uint32_t GetBufferSizeFrames() const = 0;
 };
 
 class IAudioStreamDescriptor
@@ -150,8 +151,7 @@ class AudioInput : public T_source<chunk_t>
 public:
 	virtual ~AudioInput() {}
     
-	virtual void process(int doubleBufferIndex) {}
-    
+	virtual void process(MultichannelAudioBuffer *buf) = 0;
     chunk_t *next() = 0;
 };
 
@@ -202,6 +202,13 @@ private:
 #if MAC
 class CoreAudioInput : public AudioInput
 {
+public:
+	virtual ~CoreAudioInput() {}
+    
+	virtual void process(MultichannelAudioBuffer *buf);
+    chunk_t *next();
+private:
+    std::queue<chunk_t*> _chunkQ;
 };
 
 class CoreAudioOutput : public AudioOutput
@@ -279,20 +286,34 @@ private:
 class CoreAudioDeviceDescriptor : public IAudioDeviceDescriptor
 {
 public:
-    CoreAudioDeviceDescriptor(const char *cStrName, AudioDeviceID devId) :
-        _name(cStrName),
+    CoreAudioDeviceDescriptor(AudioDeviceID devId) :
         _deviceID(devId)
     {
+        CFStringRef deviceName;
+        AudioObjectPropertyAddress propertyAddress;
+        UInt32 propertySize = sizeof(CFStringRef);
+        propertyAddress.mSelector = kAudioObjectPropertyName;
+        propertyAddress.mScope = kAudioObjectPropertyScopeGlobal;
+        propertyAddress.mElement = kAudioObjectPropertyElementMaster;
+        AudioObjectGetPropertyData(_deviceID, &propertyAddress, 0, NULL, &propertySize, &deviceName);
+        
+        _name = CFStringRefToString(deviceName);
+
+        propertySize = sizeof(UInt32);
+        propertyAddress.mSelector = kAudioDevicePropertyBufferFrameSize;
+        AudioObjectGetPropertyData(_deviceID, &propertyAddress, 0, NULL, &propertySize, &_bufferSizeFrames);
     }
     
     virtual std::string GetName() const { return _name; }
     virtual IAudioDevice *Instantiate() const;
     
     AudioDeviceID GetID() const { return _deviceID; }
+    virtual uint32_t GetBufferSizeFrames() const { return _bufferSizeFrames; }
     
 private:
     std::string   _name;
     AudioDeviceID _deviceID;
+    UInt32        _bufferSizeFrames;
 };
 
 class CoreAudioDeviceFactory : public IAudioDeviceFactory

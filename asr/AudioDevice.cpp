@@ -131,19 +131,7 @@ CoreAudioDeviceFactory::CoreAudioDeviceFactory()
     CFStringRef deviceName;
     for (UInt32 i = 0; i < numDevices; ++i)
     {
-        propertySize = sizeof(CFStringRef);
-        propertyAddress.mSelector = kAudioObjectPropertyName;
-        propertyAddress.mScope = kAudioObjectPropertyScopeGlobal;
-        propertyAddress.mElement = kAudioObjectPropertyElementMaster;
-        AudioObjectGetPropertyData(deviceList[i], &propertyAddress, 0, NULL, &propertySize, &deviceName);
-        
-        const char *cStrName = CFStringGetCStringPtr(deviceName, CFStringGetFastestEncoding(deviceName));
-        if (cStrName == 0)
-        {
-            printf("bad c string device name");
-            continue;
-        }
-        _devices.push_back(CoreAudioDeviceDescriptor(cStrName, deviceList[i]));
+        _devices.push_back(CoreAudioDeviceDescriptor(deviceList[i]));
     }
     
     delete [] deviceList;

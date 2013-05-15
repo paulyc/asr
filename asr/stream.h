@@ -294,6 +294,8 @@ public:
 class ChunkGenerator : public IChunkGeneratorCallback<chunk_t>
 {
 public:
+    ChunkGenerator(int bufferSizeFrames) {}
+    
     void AddChunkSource(T_source<chunk_t> *src, int id);
     chunk_t* GetNextChunk(int streamID);
     void chunkCb(chunk_t *chunk, int id);

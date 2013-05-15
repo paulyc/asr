@@ -41,6 +41,7 @@ ASIOProcessor::ASIOProcessor() :
     _outputStream(0),
     _inputStreamProcessor(0),
     _outputStreamProcessor(0),
+    _gen(0),
     _gain1(0), _gain2(0)
 {
 	Init();
@@ -180,6 +181,7 @@ void ASIOProcessor::Destroy()
 	delete _aux;
     
     // probably want to join on worker threads exiting so we dont destroy this while generating
+    delete _gen;
     delete _gain1;
     delete _gain2;
     
@@ -210,8 +212,9 @@ void ASIOProcessor::CreateTracks()
     _gain2 = new gain<T_source<chunk_t> >(_tracks[1]);
     _gain2->set_gain_db(-3.0);
     
-    _gen.AddChunkSource(_gain1, 1);
-    _gen.AddChunkSource(_gain2, 2);
+    _gen = new ChunkGenerator(_device->GetBufferSizeFrames());
+    _gen->AddChunkSource(_gain1, 1);
+    _gen->AddChunkSource(_gain2, 2);
     
     /*
     _master_xfader = new xfader<T_source<chunk_t> >(_tracks[0], _tracks[1]);
@@ -241,8 +244,8 @@ void ASIOProcessor::CreateTracks()
         {
             _outputStream = (*i)->GetStream();
             _outputStreamProcessor = new CoreAudioOutputProcessor(_outputStream->GetDescriptor());
-            _outputStreamProcessor->AddOutput(CoreAudioOutput(&_gen, 1, 0, 1));
-            _outputStreamProcessor->AddOutput(CoreAudioOutput(&_gen, 2, 2, 3));
+            _outputStreamProcessor->AddOutput(CoreAudioOutput(_gen, 1, 0, 1));
+            _outputStreamProcessor->AddOutput(CoreAudioOutput(_gen, 2, 2, 3));
         }
     }
     _outputStream->SetProc(_outputStreamProcessor);

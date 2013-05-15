@@ -228,7 +228,7 @@ public:
 #elif WINDOWS
     
 #endif // WINDOWS
-    ChunkGenerator _gen;
+    ChunkGenerator *_gen;
     gain<T_source<chunk_t> > *_gain1, *_gain2;
 };
 
