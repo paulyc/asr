@@ -294,20 +294,27 @@ public:
 class ChunkGenerator : public IChunkGeneratorCallback<chunk_t>
 {
 public:
-    ChunkGenerator(int bufferSizeFrames) {}
+    ChunkGenerator(int bufferSizeFrames)
+    {
+        _chunksToBuffer = bufferSizeFrames / chunk_t::chunk_size;
+        if (bufferSizeFrames % chunk_t::chunk_size > 0)
+            ++_chunksToBuffer;
+    }
     
     void AddChunkSource(T_source<chunk_t> *src, int id);
     chunk_t* GetNextChunk(int streamID);
+    void GenerateChunk(int streamID);
     void chunkCb(chunk_t *chunk, int id);
 private:
     struct stream {
-        stream() : _src(0), _nextChk(0) {}
-        stream(T_source<chunk_t> *src) : _src(src), _nextChk(0) {}
+        stream() : _src(0) {}
+        stream(T_source<chunk_t> *src) : _src(src) {}
         T_source<chunk_t> *_src;
-        chunk_t *_nextChk;
+        std::queue<chunk_t*> _nextChks;
     };
-    Lock_T _lock;
     std::unordered_map<int, stream> _streams;
+    int _chunksToBuffer;
+    Lock_T _lock;
 };
 
 class BlockingChunkStream : public T_source<chunk_t>
