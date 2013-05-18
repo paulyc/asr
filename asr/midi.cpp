@@ -168,13 +168,12 @@ IMIDIEndpoint* CoreMIDIEndpointDescriptor::GetEndpoint() const
 CoreMIDIEndpoint::CoreMIDIEndpoint(const CoreMIDIEndpointDescriptor &desc) : _desc(desc), _listener(0), _started(false)
 {
     _desc.GetDevice().RegisterEndpoint(this);
-    MIDIInputPortCreate(_desc.GetClientRef(), CFSTR("MIDI read port"), _readProc, this, &_port);
+    OSStatus stat = MIDIInputPortCreate(_desc.GetClientRef(), CFSTR("MIDI read port"), _readProc, this, &_port);
 }
 
 CoreMIDIEndpoint::~CoreMIDIEndpoint()
 {
-    if (_started)
-        Stop();
+    Stop();
     MIDIPortDispose(_port);
 }
 
@@ -185,33 +184,36 @@ void CoreMIDIEndpoint::SetListener(IMIDIListener *listener)
 
 void CoreMIDIEndpoint::_readProc(const MIDIPacketList *pktlist, void *readProcRefCon, void *srcConnRefCon)
 {
+    const MIDIPacket *pkt = &pktlist->packet[0];
     for (UInt32 i = 0; i < pktlist->numPackets; ++i)
     {
-        for (int byte = 0; byte < pktlist->packet[i].length;)
+        for (int byte = 0; byte < pkt->length;)
         {
-            ((IMIDIListener*)srcConnRefCon)->ProcessMsg(pktlist->packet[i].data[byte++],
-                                                        pktlist->packet[i].data[byte++],
-                                                        pktlist->packet[i].data[byte++]);
+            IMIDIListener *listener = (IMIDIListener*)srcConnRefCon;
+            listener->ProcessMsg(pkt->data[byte++],
+                                 pkt->data[byte++],
+                                 pkt->data[byte++]);
         }
+        pkt = MIDIPacketNext(pkt);
     }
 }
 
 void CoreMIDIEndpoint::Start()
 {
-    if (!_started && _listener)
+    if (!_started)
     {
+        _started = true;
         MIDIPortConnectSource(_port, _desc.GetEndpointRef(), _listener);
     }
-    _started = true;
 }
 
 void CoreMIDIEndpoint::Stop()
 {
-    if (_started && _listener)
+    if (_started)
     {
+        _started = false;
         MIDIPortDisconnectSource(_port, _desc.GetEndpointRef());
     }
-    _started = false;
 }
 
 CoreMIDIDeviceDescriptor::CoreMIDIDeviceDescriptor(MIDIDeviceRef devRef, CoreMIDIClient &client) : _devRef(devRef), _client(client)
@@ -257,8 +259,6 @@ std::vector<const IMIDIEndpointDescriptor*> CoreMIDIDevice::GetEndpoints() const
     std::vector<const IMIDIEndpointDescriptor*> endpoints;
     for (int i=0; i<_endpoints.size(); ++i)
     {
-     //   std::vector<const IMIDIEndpointDescriptor*> entityEndpoints = _entities[i].GetEndpoints();
-     //   endpoints.insert(endpoints.end(), entityEndpoints.begin(), entityEndpoints.end());
         endpoints.push_back(&_endpoints[i]);
     }
     return endpoints;
@@ -299,10 +299,11 @@ CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev) :
     for (int i=0; i<endpoints.size(); ++i)
     {
         if (endpoints[i]->GetEndpointType() == IMIDIEndpointDescriptor::Input &&
-            endpoints[i]->GetEndpointName() == std::string(""))
+            endpoints[i]->GetEndpointName() == std::string("PIONEER CDJ-350"))
         {
             _endp = endpoints[i]->GetEndpoint();
             _endp->SetListener(this);
+            break;
         }
     }
 }

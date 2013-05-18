@@ -225,6 +225,7 @@ public:
 #if MAC
     CoreAudioInputProcessor *_inputStreamProcessor;
     CoreAudioOutputProcessor *_outputStreamProcessor;
+    CoreMIDIClient _client;
 #elif WINDOWS
     
 #endif // WINDOWS

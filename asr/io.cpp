@@ -45,6 +45,7 @@ ASIOProcessor::ASIOProcessor() :
     _outputStream(0),
     _inputStreamProcessor(0),
     _outputStreamProcessor(0),
+    _client(CFSTR("The MIDI Client")),
     _gen(0),
     _gain1(0), _gain2(0)
 {
@@ -136,13 +137,14 @@ void ASIOProcessor::Init()
 #if WINDOWS
 	Win32MIDIDeviceFactory midifac;
 #elif MAC
-    CoreMIDIClient client(CFSTR("The MIDI Client"));
-    std::vector<const IMIDIDeviceDescriptor*> midiDevices = client.Enumerate();
-    for (int i=0; i<devices.size(); ++i)
+    std::vector<const IMIDIDeviceDescriptor*> midiDevices = _client.Enumerate();
+    for (int i=0; i<midiDevices.size(); ++i)
     {
-        if (midiDevices[i]->GetDeviceName() == std::string(""))
+        //"Pro24"
+        if (midiDevices[i]->GetDeviceName() == std::string("PIONEER CDJ-350"))
         {
             dev = midiDevices[i]->Instantiate();
+            break;
         }
     }
 #else
