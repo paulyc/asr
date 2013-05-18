@@ -35,11 +35,6 @@
         del.ui->_io->Stop();
 }
 
-- (void)setView:(NSView*)view
-{
-    
-}
-
 - (void)button1Push
 {
     AppDelegate *del = [NSApp delegate];

@@ -131,18 +131,28 @@ void ASIOProcessor::Init()
     
     _need_buffers = true;
     
+    IMIDIDevice *dev = 0; //midifac.Instantiate(1, true);
+    
 #if WINDOWS
 	Win32MIDIDeviceFactory midifac;
 #elif MAC
     CoreMIDIClient client(CFSTR("The MIDI Client"));
+    std::vector<const IMIDIDeviceDescriptor*> midiDevices = client.Enumerate();
+    for (int i=0; i<devices.size(); ++i)
+    {
+        if (midiDevices[i]->GetDeviceName() == std::string(""))
+        {
+            dev = midiDevices[i]->Instantiate();
+        }
+    }
 #else
     DummyMIDIDeviceFactory midifac;
 #endif
-	IMIDIDevice *dev = 0; //midifac.Instantiate(1, true);
+	
 	if (dev)
 	{
 		printf("Have midi\n");
-		_midi_controller = new CDJ350MIDIController(dev, (IControlListener**)&_filter_controller);
+		_midi_controller = new CDJ350MIDIController(dev);
 	}
 }
 
@@ -166,6 +176,8 @@ void ASIOProcessor::Finish()
 
 void ASIOProcessor::Destroy()
 {
+    delete _midi_controller;
+    
     delete _inputStream;
     delete _inputStreamProcessor;
     delete _outputStream;
@@ -207,6 +219,7 @@ void ASIOProcessor::CreateTracks()
 	_tracks.push_back(new AudioTrack<chunk_t>(this, 2, _default_src));
 
 	_filter_controller = new track_t::controller_t(_tracks[0], _tracks[1]);
+    _midi_controller->SetControlListener(_filter_controller);
 
 	//_bp_filter = new bandpass_filter_td<chunk_t>(_tracks[0], 20.0, 200.0, 48000.0, 48000.0);
 	

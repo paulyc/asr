@@ -11,6 +11,7 @@ class IMIDIDevice;
 class IMIDIListener
 {
 public:
+    virtual void ProcessMsg(uint8_t status, uint8_t data1, uint8_t data2) = 0;
 };
 
 class IMIDIEndpoint
@@ -280,7 +281,7 @@ public:
 		NUM_EVENTS
 	};
 
-	virtual void RegisterControlListener(IControlListener **listener) = 0;
+	virtual void SetControlListener(IControlListener *listener) = 0;
 
 	virtual void Start() = 0;
 	virtual void Stop() = 0;
@@ -289,12 +290,13 @@ public:
 class CDJ350MIDIController : public IMIDIController, public IMIDIListener
 {
 public:
-	CDJ350MIDIController(IMIDIDevice *dev, IControlListener **listener);
+	CDJ350MIDIController(IMIDIDevice *dev);
 	~CDJ350MIDIController();
 
-	void RegisterControlListener(IControlListener **listener) { _listener = listener; }
+	void SetControlListener(IControlListener *listener) { _listener = listener; }
 
 	static void DeviceCallback(uint32_t msg, uint32_t param, float64_t time, void *cbParam); // time is MIDI time
+    virtual void ProcessMsg(uint8_t status, uint8_t data1, uint8_t data2);
 
 	void Start();
 	void Stop();
@@ -318,9 +320,10 @@ public:
 
 private:
 	IMIDIDevice *_dev;
+    IMIDIEndpoint *_endp;
 	float64_t _startTime;
 
-	IControlListener **_listener;
+	IControlListener *_listener;
 
 	int _track;
 };

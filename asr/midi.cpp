@@ -183,7 +183,15 @@ void CoreMIDIEndpoint::SetListener(IMIDIListener *listener)
 
 void CoreMIDIEndpoint::_readProc(const MIDIPacketList *pktlist, void *readProcRefCon, void *srcConnRefCon)
 {
-    
+    for (UInt32 i = 0; i < pktlist->numPackets; ++i)
+    {
+        for (int byte = 0; byte < pktlist->packet[i].length;)
+        {
+            ((IMIDIListener*)srcConnRefCon)->ProcessMsg(pktlist->packet[i].data[byte++],
+                                                        pktlist->packet[i].data[byte++],
+                                                        pktlist->packet[i].data[byte++]);
+        }
+    }
 }
 
 void CoreMIDIEndpoint::Start()
@@ -279,16 +287,28 @@ void CoreMIDIDevice::Stop()
 
 #endif // MAC
 
-CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev, IControlListener **listener) :
+CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev) :
 	_dev(dev),
-	_listener(listener),
+    _endp(0),
+	_listener(0),
 	_track(0)
 {
-	//_dev->RegisterCallback(DeviceCallback, this);
+    std::vector<const IMIDIEndpointDescriptor*> endpoints = dev->GetEndpoints();
+    for (int i=0; i<endpoints.size(); ++i)
+    {
+        if (endpoints[i]->GetEndpointType() == IMIDIEndpointDescriptor::Input &&
+            endpoints[i]->GetEndpointName() == std::string(""))
+        {
+            _endp = endpoints[i]->GetEndpoint();
+            _endp->SetListener(this);
+        }
+    }
 }
 
 CDJ350MIDIController::~CDJ350MIDIController() 
 {
+    Stop();
+    delete _endp;
 	delete _dev;
 }
 
@@ -325,63 +345,68 @@ static double GetBend(int code)
 	return dt;
 }
 
+void CDJ350MIDIController::ProcessMsg(uint8_t status, uint8_t data1, uint8_t data2)
+{
+#if WINDOWS
+	float64_t time = timeGetTime() / 1000.0;
+#else
+    float64_t time = 0.0;
+#endif
+	int ch = status & 0xF;
+	MsgType msgType = (MsgType)(data1);
+	int code = data2;
+	switch (msgType)
+	{
+        case JogScratch: // jog scratch
+        case JogSpin: // jog spin
+            //	printf("jog\n");
+            _listener->HandleBendPitch(_track, time/* + control->_startTime*/, GetBend(code));
+            break;
+        case Tempo: // tempo
+            //	printf("tempo\n");
+            _listener->HandleSetPitch(_track, time/* + control->_startTime*/, GetTempo(code));
+            break;
+        case PlayPause: // play/pause
+            if (code)
+            {
+                //		printf("playpause\n");
+                _listener->HandlePlayPause(_track, time/* + control->_startTime*/);
+            }
+            break;
+        case Cue: // play/pause
+            if (code)
+            {
+                //		printf("cue\n");
+                _listener->HandleCue(_track, time/* + control->_startTime*/);
+            }
+            break;
+        case SelectPush:
+            if (code)
+            {
+                _track ^= 1;
+            }
+            break;
+        case SeekTrackBack:
+            if (code)
+            {
+                _listener->HandleSeekTrack(_track, time, true);
+            }
+            break;
+        case SeekTrackForward:
+            if (code)
+            {
+                _listener->HandleSeekTrack(_track, time, false);
+            }
+            break;
+        default:
+            printf("%x %x %x %f\n", status, data1, data2, time+_startTime);
+	}
+}
+
 void CDJ350MIDIController::DeviceCallback(uint32_t msg, uint32_t param, float64_t time, void *cbParam)
 {
 	CDJ350MIDIController *control = static_cast<CDJ350MIDIController*>(cbParam);
-#if WINDOWS
-	time = timeGetTime() / 1000.0;
-#else
-    time = 0.0;
-#endif
-	int ch = param & 0xF;
-	MsgType msgType = (MsgType)((param & 0xFF00) >> 8);
-	int code = (param & 0xFF0000) >> 16;
-	switch (msgType)
-	{
-	case JogScratch: // jog scratch
-	case JogSpin: // jog spin
-	//	printf("jog\n");
-		(*control->_listener)->HandleBendPitch(control->_track, time/* + control->_startTime*/, GetBend(code));
-		break;
-	case Tempo: // tempo
-	//	printf("tempo\n");
-		(*control->_listener)->HandleSetPitch(control->_track, time/* + control->_startTime*/, GetTempo(code));
-		break;
-	case PlayPause: // play/pause
-		if (code)
-		{
-	//		printf("playpause\n");
-			(*control->_listener)->HandlePlayPause(control->_track, time/* + control->_startTime*/);
-		}
-		break;
-	case Cue: // play/pause
-		if (code)
-		{
-	//		printf("cue\n");
-			(*control->_listener)->HandleCue(control->_track, time/* + control->_startTime*/);
-		}
-		break;
-	case SelectPush:
-		if (code)
-		{
-			control->_track ^= 1;
-		}
-		break;
-	case SeekTrackBack:
-		if (code)
-		{
-			(*control->_listener)->HandleSeekTrack(control->_track, time, true);
-		}
-		break;
-	case SeekTrackForward:
-		if (code)
-		{
-			(*control->_listener)->HandleSeekTrack(control->_track, time, false);
-		}
-		break;
-	default:
-		printf("%x %x %f\n", msg, param, time+control->_startTime);
-	}
+    control->ProcessMsg(msg & 0xFF, (msg & 0xFF00) >> 8, (msg & 0xFF0000) >> 16);
 }
 
 #if 0
