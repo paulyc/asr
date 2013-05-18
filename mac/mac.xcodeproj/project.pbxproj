@@ -22,6 +22,8 @@
 		5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
 		5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */; };
 		5F33836817402EF600356397 /* midi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B329173210A50006871C /* midi.cpp */; };
+		5F935E7D17474BAD002ECDD4 /* MainView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E7C17474BAD002ECDD4 /* MainView.m */; };
+		5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E7F17475993002ECDD4 /* MainViewController.mm */; };
 		5F9B8E7D173F67DA009F0966 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */; };
 		5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */; };
 		5F9B8E81173F67ED009F0966 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */; };
@@ -55,6 +57,8 @@
 		5FD9E51C174341440052157F /* ui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B35F173210A50006871C /* ui.cpp */; };
 		5FD9E51D174341680052157F /* controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2C7173210A50006871C /* controller.cpp */; };
 		5FD9E51E17434AD80052157F /* asr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B6173210A50006871C /* asr.cpp */; };
+		5FDC485E1747287E004C2378 /* MyOpenGLView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5FDC485D1747287E004C2378 /* MyOpenGLView.m */; };
+		5FDC486017472939004C2378 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FDC485F17472939004C2378 /* OpenGL.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -101,6 +105,10 @@
 		5F1F0F37173C9F3200DEA888 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		5F1F0F38173C9F3200DEA888 /* AppDelegate.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		5F1F0F3B173C9F3200DEA888 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		5F935E7B17474BAD002ECDD4 /* MainView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainView.h; sourceTree = "<group>"; };
+		5F935E7C17474BAD002ECDD4 /* MainView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MainView.m; sourceTree = "<group>"; };
+		5F935E7E17475993002ECDD4 /* MainViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainViewController.h; sourceTree = "<group>"; };
+		5F935E7F17475993002ECDD4 /* MainViewController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MainViewController.mm; sourceTree = "<group>"; };
 		5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
 		5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -294,6 +302,9 @@
 		5FD9E5171743304D0052157F /* track.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = track.cpp; sourceTree = "<group>"; };
 		5FD9E5181743322B0052157F /* buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = buffer.cpp; sourceTree = "<group>"; };
 		5FD9E519174335290052157F /* filter.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = filter.cpp; sourceTree = "<group>"; };
+		5FDC485C1747287E004C2378 /* MyOpenGLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyOpenGLView.h; sourceTree = "<group>"; };
+		5FDC485D1747287E004C2378 /* MyOpenGLView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyOpenGLView.m; sourceTree = "<group>"; };
+		5FDC485F17472939004C2378 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -308,6 +319,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5FDC486017472939004C2378 /* OpenGL.framework in Frameworks */,
 				5F9B8E85173F6817009F0966 /* AppKit.framework in Frameworks */,
 				5F9B8E81173F67ED009F0966 /* CoreFoundation.framework in Frameworks */,
 				5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */,
@@ -364,6 +376,12 @@
 				5F1F0F38173C9F3200DEA888 /* AppDelegate.mm */,
 				5F1F0F3A173C9F3200DEA888 /* MainMenu.xib */,
 				5F1F0F2C173C9F3200DEA888 /* Supporting Files */,
+				5FDC485C1747287E004C2378 /* MyOpenGLView.h */,
+				5FDC485D1747287E004C2378 /* MyOpenGLView.m */,
+				5F935E7B17474BAD002ECDD4 /* MainView.h */,
+				5F935E7C17474BAD002ECDD4 /* MainView.m */,
+				5F935E7E17475993002ECDD4 /* MainViewController.h */,
+				5F935E7F17475993002ECDD4 /* MainViewController.mm */,
 			);
 			path = ASR;
 			sourceTree = "<group>";
@@ -383,6 +401,7 @@
 		5FB2B29B1732107C0006871C = {
 			isa = PBXGroup;
 			children = (
+				5FDC485F17472939004C2378 /* OpenGL.framework */,
 				5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */,
 				5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */,
 				5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */,
@@ -760,6 +779,9 @@
 				5FD9E51C174341440052157F /* ui.cpp in Sources */,
 				5FD9E51D174341680052157F /* controller.cpp in Sources */,
 				5FD9E51E17434AD80052157F /* asr.cpp in Sources */,
+				5FDC485E1747287E004C2378 /* MyOpenGLView.m in Sources */,
+				5F935E7D17474BAD002ECDD4 /* MainView.m in Sources */,
+				5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

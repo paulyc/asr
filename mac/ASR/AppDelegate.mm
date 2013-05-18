@@ -11,6 +11,7 @@
 #include "asr.h"
 #include "ui.h"
 #include "beats.h"
+#include "ui_cocoa.hpp"
 
 @implementation AppDelegate
 
@@ -21,9 +22,13 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
+   // NSView *view = [_window contentView];
+ //   NSNotificationCenter *ncenter = [NSNotificationCenter defaultCenter];
+ //   [ncenter addObserver:self selector:@selector(evtCallback:) name:nil object:_window];
     // Insert code here to initialize your application
-    asr = new ASR(new CocoaUI);
-    asr->init();
+    _ui = new CocoaUI;
+    _asr = new ASR(_ui);
+    _asr->init();
     
     //BeatDetector<chunk_t>::test_main();
     /*
@@ -47,8 +52,8 @@
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
-    asr->finish();
-    delete asr;
+    _asr->finish();
+    delete _asr;
     return NSTerminateNow;
 }
 

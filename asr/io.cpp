@@ -116,8 +116,8 @@ void ASIOProcessor::Init()
          devIter != devices.end();
          devIter++)
     {
-      //  if ((*devIter)->GetName() == std::string("Built-in Output"))
-        if ((*devIter)->GetName() == std::string("Saffire"))
+        if ((*devIter)->GetName() == std::string("Built-in Output"))
+     //   if ((*devIter)->GetName() == std::string("Saffire"))
         {
             _device = (*devIter)->Instantiate();
         }

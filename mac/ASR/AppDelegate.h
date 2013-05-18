@@ -9,12 +9,12 @@
 #import <Cocoa/Cocoa.h>
 
 class ASR;
+class CocoaUI;
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
-{
-    ASR *asr;
-}
 
+@property ASR *asr;
+@property CocoaUI *ui;
 @property (assign) IBOutlet NSWindow *window;
 
 @end
