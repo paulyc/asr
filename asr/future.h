@@ -73,7 +73,6 @@ private:
 			process_calls();
 			pthread_cond_wait(&_have_deferred, &_deferreds_lock);
 		}
-		pthread_exit(0);
 	}
 
 	pthread_t _deferred_thread;

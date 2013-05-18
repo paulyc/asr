@@ -1,21 +1,41 @@
 #ifndef _MALLOC_H
 #define _MALLOC_H
 
-#include "config.h"
-
 #include <exception>
 #include <queue>
-#if MAC
 #include <unordered_map>
-#else
-#include <hash_map>
-#endif
 
 #ifdef WIN32
 #include <windows.h>
 #endif
 
-#include "util.h"
+#define DEBUG_MALLOC 0
+
+#if DEBUG_MALLOC
+extern bool destructing_hash;
+
+void dump_malloc();
+void *operator new(size_t by, const char *f, int l);
+void *operator new[](size_t by, const char *f, int l);
+void operator delete(void *m);
+void operator delete[](void *m);
+
+#define new new(__FILE__, __LINE__)
+#endif
+
+#if WINDOWS
+typedef std::exception string_exception;
+#else
+class string_exception : public std::exception
+{
+public:
+	string_exception(const char *p) : std::exception(), _p(p) {}
+	const char *what() { return _p; }
+private:
+	const char *_p;
+};
+#endif
+
 
 template <int PageSize=0x1000>
 struct Page {
@@ -152,16 +172,6 @@ public:
 private:
 };
 
-#if DEBUG_MALLOC
-void dump_malloc();
-void *operator new(size_t by, const char *f, int l);
-void *operator new[](size_t by, const char *f, int l);
-void operator delete(void *m);
-void operator delete[](void *m);
-
-#define new new(__FILE__, __LINE__)
-#endif
-
 #include "lock.h"
 
 template <typename T>
@@ -190,6 +200,7 @@ public:
 		gc();
 	}
 
+#if DEBUG_ALLOCATOR
 	static T* alloc_from(const char *file, int line)
 	{
 		//printf("%s %d\n", file, line);
@@ -200,6 +211,7 @@ public:
 		_lock.release();
 		return t;
 	}
+#endif
 
 	static T* alloc(bool lock=true)
 	{
@@ -378,98 +390,5 @@ PthreadLock T_allocator<T>::_lock;
 
 //template <typename T>
 //pthread_mutex_t T_allocator<T>::_lock = 0;
-
-#if DEBUG_MALLOC
-struct alloc_info
-{
-	alloc_info(){}
-	alloc_info(size_t b, const char *f, int l) : 
-		bytes(b), file(f), line(l){}
-	size_t bytes;
-	const char *file;
-	int line;
-};
-
-bool destructing_hash = false;
-
-class my_hash_map : public stdext::hash_map<void*, alloc_info>
-{
-public:
-	~my_hash_map()
-	{
-		destructing_hash = true;
-	}
-};
-
-my_hash_map _malloc_map;
-pthread_mutex_t malloc_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER;
-pthread_once_t once_control = PTHREAD_ONCE_INIT; 
-pthread_mutexattr_t malloc_attr;
-
-void init_lock()
-{
-	pthread_mutexattr_init(&malloc_attr);
-	pthread_mutexattr_settype(&malloc_attr, PTHREAD_MUTEX_RECURSIVE);
-	pthread_mutex_init(&malloc_lock, &malloc_attr);
-}
-
-void *operator new(size_t by, const char *f, int l)
-{
-	pthread_once(&once_control, init_lock);
-	pthread_mutex_lock(&malloc_lock);
-	void *m = malloc(by);
-	_malloc_map[m].bytes = by;
-	_malloc_map[m].file = f;
-	_malloc_map[m].line = l;
-	pthread_mutex_unlock(&malloc_lock);
-	return m;
-}
-
-void *operator new[](size_t by, const char *f, int l)
-{
-	pthread_once(&once_control, init_lock);
-	pthread_mutex_lock(&malloc_lock);
-	void *m = malloc(by);
-	_malloc_map[m].bytes = by;
-	_malloc_map[m].file = f;
-	_malloc_map[m].line = l;
-	pthread_mutex_unlock(&malloc_lock);
-	return m;
-}
-
-void operator delete(void *m)
-{
-	pthread_mutex_lock(&malloc_lock);
-	if (!destructing_hash)
-		_malloc_map.erase(m);
-	free(m);
-	pthread_mutex_unlock(&malloc_lock);
-}
-
-void operator delete[](void *m)
-{
-	pthread_mutex_lock(&malloc_lock);
-	if (!destructing_hash)
-		_malloc_map.erase(m);
-	free(m);
-	pthread_mutex_unlock(&malloc_lock);
-}
-
-void dump_malloc()
-{
-	for (stdext::hash_map<void*, alloc_info>::iterator i = _malloc_map.begin();
-		i != _malloc_map.end(); ++i)
-	{
-		printf("%p allocated %s:%d bytes %d\n", i->first, 
-			i->second.file, 
-			i->second.line,
-			i->second.bytes);
-	}
-}
-#endif
-
-#if DEBUG_MALLOC
-#define new new(__FILE__, __LINE__)
-#endif
 
 #endif // !defined(MALLOC_H)

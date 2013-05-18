@@ -128,6 +128,7 @@ public:
     virtual int GetBufferSizeFrames() = 0;
     virtual void *GetChannelBuffer(int ch) = 0;
     virtual int GetStride() = 0;
+    virtual int GetNumChannels() = 0;
 protected:
     void *_buffer;
     int _bufferSize;
@@ -141,6 +142,7 @@ public:
     virtual int GetBufferSizeFrames() { return _bufferSize / _bytesPerFrame; }
     virtual void *GetChannelBuffer(int ch) { return ((float32_t*)_buffer) + ch; }
     virtual int GetStride() { return _channels; }
+    virtual int GetNumChannels() { return _channels; }
 private:
     int _channels;
     int _bytesPerFrame;

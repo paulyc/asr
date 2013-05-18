@@ -646,6 +646,7 @@ sched_yield(); }
 #define max(x,y) ((x) > (y) ? (x) : (y))
 #endif
 
+#if 0
 #if WINDOWS
 typedef std::exception string_exception;
 #else
@@ -658,6 +659,7 @@ private:
 	const char *_p;
 };
 #endif
+#endif // 0
 
 #if MAC
 #include <string>

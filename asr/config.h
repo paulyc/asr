@@ -58,8 +58,7 @@
 
 #define USE_BUFFER_MGR 1
 
-#define DEBUG_ALLOCATOR 1
-#define DEBUG_MALLOC 0
+#define DEBUG_ALLOCATOR 0
 #define USE_NEW_WAVE 0
 
 #define TRACE 0
@@ -80,5 +79,7 @@
 #define TEST_BEATS 0
 
 #define PARALLEL_PROCESS 1
+
+#include "malloc.h"
 
 #endif // !defined(_CONFIG_H)

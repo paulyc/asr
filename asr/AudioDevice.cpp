@@ -69,6 +69,8 @@ chunk_t *CoreAudioInput::next()
 
 void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
 {
+    if (_ch1id >= buf->GetNumChannels())
+        return;
     const int stride = buf->GetStride();
     int to_write = buf->GetBufferSizeFrames(), loop_write, written=0, chunk_left;
 	float32_t * const write = (float32_t* const)buf->GetBuffer();
@@ -270,6 +272,7 @@ CoreAudioDevice::CoreAudioDevice(const CoreAudioDeviceDescriptor &desc) :
         
         _streams.push_back(CoreAudioStreamDescriptor(myStreams[i], this, streamType, channels, sampleType, sampleSizeBits, sampleWordSizeBytes, sampleAlignment, sampleRate));
     }
+    delete [] myStreams;
 }
 
 std::vector<const IAudioStreamDescriptor*> CoreAudioDevice::GetStreams() const

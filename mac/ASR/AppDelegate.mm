@@ -34,6 +34,9 @@
 {
     _asr->finish();
     delete _asr;
+#if DEBUG_MALLOC
+	dump_malloc();
+#endif
     return NSTerminateNow;
 }
 

@@ -111,6 +111,8 @@ public:
 		void step()
 		{
 			_object->call_deferreds_loop(_thread);
+            delete this;
+            pthread_exit(0);
 		}
 		Obj_T *_object;
 	};

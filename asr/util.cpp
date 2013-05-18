@@ -207,6 +207,8 @@ void buf_copy(char *buf_src, char *buf_dst, int num_items, int item_sz, int stri
 }
 
 #if MAC
+#include <string>
+#include <CoreFoundation/CoreFoundation.h>
 std::string CFStringRefToString(CFStringRef ref)
 {
     const char *cStr = CFStringGetCStringPtr(ref, kCFStringEncodingUTF8);

@@ -24,6 +24,8 @@
 		5F33836817402EF600356397 /* midi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B329173210A50006871C /* midi.cpp */; };
 		5F935E7D17474BAD002ECDD4 /* MainView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E7C17474BAD002ECDD4 /* MainView.m */; };
 		5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E7F17475993002ECDD4 /* MainViewController.mm */; };
+		5F935E81174779A7002ECDD4 /* malloc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B326173210A50006871C /* malloc.cpp */; };
+		5F935E8417477F2A002ECDD4 /* mmalloc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E8217477F29002ECDD4 /* mmalloc.cpp */; };
 		5F9B8E7D173F67DA009F0966 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */; };
 		5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */; };
 		5F9B8E81173F67ED009F0966 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */; };
@@ -109,6 +111,8 @@
 		5F935E7C17474BAD002ECDD4 /* MainView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MainView.m; sourceTree = "<group>"; };
 		5F935E7E17475993002ECDD4 /* MainViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainViewController.h; sourceTree = "<group>"; };
 		5F935E7F17475993002ECDD4 /* MainViewController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MainViewController.mm; sourceTree = "<group>"; };
+		5F935E8217477F29002ECDD4 /* mmalloc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mmalloc.cpp; sourceTree = "<group>"; };
+		5F935E8317477F2A002ECDD4 /* mmalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mmalloc.h; sourceTree = "<group>"; };
 		5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
 		5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -522,6 +526,8 @@
 				5FB4AE5417421C52001A2FF2 /* stream.cpp */,
 				5FD9E5171743304D0052157F /* track.cpp */,
 				5FD9E5181743322B0052157F /* buffer.cpp */,
+				5F935E8217477F29002ECDD4 /* mmalloc.cpp */,
+				5F935E8317477F2A002ECDD4 /* mmalloc.h */,
 			);
 			name = asr;
 			path = ../asr;
@@ -782,6 +788,8 @@
 				5FDC485E1747287E004C2378 /* MyOpenGLView.m in Sources */,
 				5F935E7D17474BAD002ECDD4 /* MainView.m in Sources */,
 				5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */,
+				5F935E81174779A7002ECDD4 /* malloc.cpp in Sources */,
+				5F935E8417477F2A002ECDD4 /* mmalloc.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,3 +1,5 @@
+#include "config.h"
+#include "util.h"
 #include "midi.h"
 
 #if WINDOWS

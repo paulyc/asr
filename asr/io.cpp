@@ -177,6 +177,7 @@ void ASIOProcessor::Finish()
 void ASIOProcessor::Destroy()
 {
     delete _midi_controller;
+    delete _filter_controller;
     
     delete _inputStream;
     delete _inputStreamProcessor;
@@ -219,7 +220,8 @@ void ASIOProcessor::CreateTracks()
 	_tracks.push_back(new AudioTrack<chunk_t>(this, 2, _default_src));
 
 	_filter_controller = new track_t::controller_t(_tracks[0], _tracks[1]);
-    _midi_controller->SetControlListener(_filter_controller);
+    if (_midi_controller)
+        _midi_controller->SetControlListener(_filter_controller);
 
 	//_bp_filter = new bandpass_filter_td<chunk_t>(_tracks[0], 20.0, 200.0, 48000.0, 48000.0);
 	
