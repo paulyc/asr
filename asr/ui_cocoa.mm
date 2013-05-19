@@ -156,7 +156,7 @@ void CocoaUI::mouse_drag(int x, int y, int trackid)
 void CocoaUI::mouse_scroll(int dy, int trackid)
 {
     if (trackid == 1 || trackid == 2)
-        _io->GetTrack(trackid)->zoom_px(dy);
+        _io->GetTrack(trackid)->zoom_px(-dy);
 }
 
 void CocoaUI::set_position(void *t, double p, bool invalidate)
