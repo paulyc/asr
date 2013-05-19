@@ -153,10 +153,13 @@ void CocoaUI::mouse_drag(int x, int y, int trackid)
 	_lasty = y;
 }
 
-void CocoaUI::mouse_scroll(int dy, int trackid)
+void CocoaUI::mouse_scroll(int dy, int x, int trackid)
 {
     if (trackid == 1 || trackid == 2)
+    {
+        _io->GetTrack(trackid)->lock_pos(x);
         _io->GetTrack(trackid)->zoom_px(-dy);
+    }
 }
 
 void CocoaUI::set_position(void *t, double p, bool invalidate)

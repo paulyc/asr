@@ -93,7 +93,8 @@
 - (void)scrollWheel:(NSEvent *)theEvent
 {
     AppDelegate *del = [NSApp delegate];
-    del.ui->mouse_scroll([theEvent deltaY], [self trackID]);
+    NSPoint p = [self windowCoordsToViewCoords:[theEvent locationInWindow]];
+    del.ui->mouse_scroll([theEvent deltaY], p.x, [self trackID]);
 }
 
 static void drawAnObject ()
