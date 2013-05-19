@@ -248,22 +248,16 @@ void CocoaUI::render_impl(int trackid)
 			}
 			else
 			{
-                glColor3f(0.0f, 1.0f, 0.0f);
-                glVertex2d(x, px_avg_top);
-                glVertex2d(x, px_avg_bot);
+                glColor3f(0.0f, 0.7f, 0.0f);
+                glVertex2d(x, 0.5);
+                glVertex2d(x, 0.5-h.peak_top/2);
 			}
 		}
 		else
 		{
-            glColor3f(0.0f, 1.0f, 0.0f);
-            glVertex2d(x, px_avg_top);
-            glVertex2d(x, px_avg_bot);
-            if (h.peak_bot != 0.0)
-            {
-                glColor3f(0.0f, 0.7f, 0.0f);
-                glVertex2d(x, px_avg_bot);
-                glVertex2d(x, px_mn);
-            }
+            glColor3f(0.0f, 0.7f, 0.0f);
+            glVertex2d(x, 0.5);
+            glVertex2d(x, 0.5+fabs(h.peak_bot)/2);
 		}
 		x += unit;
 	}
