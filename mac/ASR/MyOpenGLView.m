@@ -24,6 +24,19 @@
 {
 }
 
+- (NSInteger)tag
+{
+    if ([self.identifier isEqualToString:@"Wave1"])
+        return 'wav1';
+    else
+        return 'wav2';
+}
+
+- (void)renderInto
+{
+    [[self openGLContext] makeCurrentContext];
+}
+
 static void drawAnObject ()
 {
     glColor3f(1.0f, 0.85f, 0.35f);
@@ -38,14 +51,14 @@ static void drawAnObject ()
 
 - (void)drawRect:(NSRect)dirtyRect
 {
-    if ([self.identifier isEqualToString:@"Wave1"])
+  /*  if ([self.identifier isEqualToString:@"Wave1"])
         glClearColor(0, 0, 0, 0);
     else
         glClearColor(1.0, 1.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
     drawAnObject();
     glFlush();
-    glSwapAPPLE();
+    glSwapAPPLE();*/
 }
 
 @end

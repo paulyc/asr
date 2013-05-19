@@ -280,27 +280,7 @@ public:
 
 #if MAC
 
-class CocoaUI : public GenericUI
-{
-public:
-    CocoaUI() : GenericUI(0,
-                          UITrack(this, 1, 1, 2, 3),
-                          UITrack(this, 2, 4, 5, 6)) {}
-    virtual void create() {}
-	virtual void destroy() {}
-	virtual void main_loop() { _lock.acquire(); _quit.wait(_lock); _lock.release(); }
-	virtual bool running() { return true; }
-	virtual void do_quit() { _quit.signal(); }
-	virtual void render(int) {}
-	virtual void set_track_filename(int t) {}
-	virtual void set_position(void *t, double tm, bool invalidate) {}
-	virtual void set_clip(int) {}
-	virtual bool want_render() { return false; }
-	virtual void set_text_field(int id, const char *txt, bool del) {}
-private:
-    Lock_T _lock;
-    Condition_T _quit;
-};
+#include "ui_cocoa.hpp"
 
 #endif // MAC
 

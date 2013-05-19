@@ -13,6 +13,8 @@ class CocoaUI;
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 
+- (void)renderTrack:(NSString*)trackid;
+
 @property ASR *asr;
 @property CocoaUI *ui;
 @property (assign) IBOutlet NSWindow *window;

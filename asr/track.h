@@ -414,13 +414,13 @@ public:
 
 	virtual ~AudioTrack()
 	{
+        delete _future;
+		_future = 0;
+        
 		_loading_lock.acquire();
 		while (!_loaded) 
 			_track_loaded.wait(_loading_lock);
         _loading_lock.release();
-
-		delete _future;
-		_future = 0;
 
 		ViewableMixin<Chunk_T>::destroy();
 		PitchableMixin<Chunk_T>::destroy();

@@ -30,6 +30,14 @@
     _asr->init();
 }
 
+- (void)renderTrack:(NSString*)trackid
+{
+    if ([trackid isEqualToString:@"1"])
+        _ui->render_impl(1);
+    else
+        _ui->render_impl(2);
+}
+
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
     _asr->finish();
