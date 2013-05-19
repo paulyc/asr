@@ -11,5 +11,7 @@
 @interface MyOpenGLView : NSOpenGLView
 
 - (void)renderInto;
+- (int)trackID;
+- (NSPoint)windowCoordsToViewCoords:(NSPoint)p;
 
 @end

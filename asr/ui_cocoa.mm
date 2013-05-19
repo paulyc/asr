@@ -30,6 +30,144 @@ bool FileOpenDialog::OpenSingleFile(std::string &filename)
     return false;
 }
 
+void CocoaUI::mouse_down(MouseButton b, int x, int y, int trackid)
+{
+    switch (b)
+	{
+		case Left:
+		{
+            if (trackid == 1)
+            {
+                _io->GetTrack(trackid)->lock_pos(x);
+                _track1.wave.mousedown = true;
+                _lastx = x;
+                _lasty = y;
+            }
+            else if (trackid == 2)
+            {
+                _io->GetTrack(trackid)->lock_pos(x);
+                _track2.wave.mousedown = false;
+                _lastx = x;
+                _lasty = y;
+            }
+			break;
+		}
+        case Right:
+            break;
+        case Middle:
+            break;
+	}
+}
+
+void CocoaUI::mouse_up(MouseButton b, int x, int y, int trackid)
+{
+    bool inWave1=trackid==1, inWave2=trackid==2;
+	double tm;
+    
+    if (inWave1)
+    {
+        double f = double(x)/_track1.wave.width();
+        if (f >= 0.0 && f <= 1.0)
+		{
+            tm = _io->GetTrack(trackid)->get_display_time(f);
+            if (b == Right)
+            {
+                _io->GetTrack(trackid)->set_cuepoint(tm);
+            }
+        }
+    }
+    else if (inWave2)
+    {
+        double f = double(x)/_track1.wave.width();
+        if (f >= 0.0 && f <= 1.0)
+		{
+            tm = _io->GetTrack(trackid)->get_display_time(f);
+            if (b == Right)
+            {
+                _io->GetTrack(trackid)->set_cuepoint(tm);
+            }
+        }
+    }
+    
+	if (b == Left)
+	{
+        _track1.wave.mousedown = false;
+        _track2.wave.mousedown = false;
+        _io->GetTrack(1)->unlock_pos();
+        _io->GetTrack(2)->unlock_pos();
+    }
+}
+
+void CocoaUI::mouse_dblclick(MouseButton b, int x, int y, int trackid)
+{
+    switch (b)
+	{
+		case Left:
+		{
+			if (trackid == 1)
+			{
+				double f = double(x)/_track1.wave.width();
+				if (f >= 0.0 && f <= 1.0)
+				{
+					printf("%f\n", f);
+					_io->GetTrack(trackid)->seek_time(_io->GetTrack(trackid)->get_display_time(f));
+				}
+			}
+			else if (trackid == 2)
+			{
+				double f = double(x)/_track2.wave.width();
+				if (f >= 0.0 && f <= 1.0)
+				{
+					printf("%f\n", f);
+					_io->GetTrack(trackid)->seek_time(_io->GetTrack(trackid)->get_display_time(f));
+				}
+			}
+			break;
+		}
+        case Right:
+            break;
+        case Middle:
+            break;
+	}
+}
+
+void CocoaUI::mouse_drag(int x, int y, int trackid)
+{
+    if (trackid != 1 && trackid != 2)
+        return;
+    
+    const int dx = x-_lastx;
+	const int dy = _lasty - y;
+    
+	if (dy)
+	{
+        _io->GetTrack(trackid)->zoom_px(dy);
+    }
+    if (dx)
+    {
+        _io->GetTrack(trackid)->move_px(dx);
+        _io->GetTrack(trackid)->lock_pos(x);
+    }
+	
+	_lastx = x;
+	_lasty = y;
+}
+
+void CocoaUI::mouse_scroll(int dy, int trackid)
+{
+    if (trackid == 1 || trackid == 2)
+        _io->GetTrack(trackid)->zoom_px(dy);
+}
+
+void CocoaUI::set_position(void *t, double p, bool invalidate)
+{
+	if (_io)
+	{
+		UITrack *uit = (t == _io->GetTrack(1) ? &_track1 : &_track2);
+        uit->wave.playback_pos = p;
+	}
+}
+
 void CocoaUI::render(int trackid)
 {
     AppDelegate *del = [NSApp delegate];
@@ -68,10 +206,17 @@ void CocoaUI::render_impl(int trackid)
 	{
 		track->set_display_width(width);
 		track->set_wav_heights(false, false);
+        uit->wave.windowr.left = rect.origin.x;
+        uit->wave.windowr.right = rect.origin.x + rect.size.width;
+        uit->wave.windowr.bottom = rect.origin.y;
+        uit->wave.windowr.top = rect.origin.y + rect.size.height;
+        uit->wave.r.left = 0;
+        uit->wave.r.right = rect.size.width;
+        uit->wave.r.bottom = 0;
+        uit->wave.r.top = rect.size.height;
 	}
     
-    
-    
+    glLoadIdentity();
     glOrtho(0.0, 1.0, 1.0, 0.0, 100000, -100000);
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -123,20 +268,21 @@ void CocoaUI::render_impl(int trackid)
 		x += unit;
 	}
     
-    double len = track->len().time;
-	//px = int(playback_pos / len * double(width));
-	if (uit->wave.playback_pos >= 0.0 && uit->wave.playback_pos <= 1.0)
+   // double len = track->len().time;
+    track->update_position();
+	double pos = uit->wave.playback_pos;
+	if (pos >= 0.0 && pos <= 1.0)
 	{
-		uit->wave.px = uit->wave.playback_pos;
+		x = pos;
         glColor3f(1.0f, 1.0f, 0.0f);
-        glVertex2d(uit->wave.px, 0.0);
-        glVertex2d(uit->wave.px, 1.0);
+        glVertex2d(x, 0.0);
+        glVertex2d(x, 1.0);
 	}
     
-	uit->wave.cpx = track->get_cuepoint_pos();
+	x = track->get_cuepoint_pos();
     glColor3f(1.0f, 0.5f, 0.0f);
-    glVertex2d(uit->wave.cpx, 0.0);
-    glVertex2d(uit->wave.cpx, 1.0);
+    glVertex2d(x, 0.0);
+    glVertex2d(x, 1.0);
     glEnd();
     
 #define SHOW_BEATS 0

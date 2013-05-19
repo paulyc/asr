@@ -59,7 +59,7 @@
 		5FD9E51C174341440052157F /* ui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B35F173210A50006871C /* ui.cpp */; };
 		5FD9E51D174341680052157F /* controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2C7173210A50006871C /* controller.cpp */; };
 		5FD9E51E17434AD80052157F /* asr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B6173210A50006871C /* asr.cpp */; };
-		5FDC485E1747287E004C2378 /* MyOpenGLView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5FDC485D1747287E004C2378 /* MyOpenGLView.m */; };
+		5FDC485E1747287E004C2378 /* MyOpenGLView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5FDC485D1747287E004C2378 /* MyOpenGLView.mm */; };
 		5FDC486017472939004C2378 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FDC485F17472939004C2378 /* OpenGL.framework */; };
 /* End PBXBuildFile section */
 
@@ -307,7 +307,7 @@
 		5FD9E5181743322B0052157F /* buffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = buffer.cpp; sourceTree = "<group>"; };
 		5FD9E519174335290052157F /* filter.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = filter.cpp; sourceTree = "<group>"; };
 		5FDC485C1747287E004C2378 /* MyOpenGLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyOpenGLView.h; sourceTree = "<group>"; };
-		5FDC485D1747287E004C2378 /* MyOpenGLView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MyOpenGLView.m; sourceTree = "<group>"; };
+		5FDC485D1747287E004C2378 /* MyOpenGLView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MyOpenGLView.mm; sourceTree = "<group>"; };
 		5FDC485F17472939004C2378 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -381,7 +381,7 @@
 				5F1F0F3A173C9F3200DEA888 /* MainMenu.xib */,
 				5F1F0F2C173C9F3200DEA888 /* Supporting Files */,
 				5FDC485C1747287E004C2378 /* MyOpenGLView.h */,
-				5FDC485D1747287E004C2378 /* MyOpenGLView.m */,
+				5FDC485D1747287E004C2378 /* MyOpenGLView.mm */,
 				5F935E7B17474BAD002ECDD4 /* MainView.h */,
 				5F935E7C17474BAD002ECDD4 /* MainView.m */,
 				5F935E7E17475993002ECDD4 /* MainViewController.h */,
@@ -785,7 +785,7 @@
 				5FD9E51C174341440052157F /* ui.cpp in Sources */,
 				5FD9E51D174341680052157F /* controller.cpp in Sources */,
 				5FD9E51E17434AD80052157F /* asr.cpp in Sources */,
-				5FDC485E1747287E004C2378 /* MyOpenGLView.m in Sources */,
+				5FDC485E1747287E004C2378 /* MyOpenGLView.mm in Sources */,
 				5F935E7D17474BAD002ECDD4 /* MainView.m in Sources */,
 				5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */,
 				5F935E81174779A7002ECDD4 /* malloc.cpp in Sources */,

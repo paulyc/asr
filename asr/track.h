@@ -501,7 +501,7 @@ public:
 
 		this->_meta->load_metadata(lock, _io);
         
-		this->_display->set_zoom(100.0);
+		this->_display->set_zoom(1.0);
 		this->_display->set_left(0.0);
 		//pthread_mutex_lock(lock);
 		this->_display->set_wav_heights(lock);
