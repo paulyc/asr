@@ -9,6 +9,7 @@
 #import "MyOpenGLView.h"
 #import "AppDelegate.h"
 #import "../../asr/ui.h"
+#import "../../asr/track.h"
 
 @implementation MyOpenGLView
 
@@ -94,7 +95,22 @@
 {
     AppDelegate *del = [NSApp delegate];
     NSPoint p = [self windowCoordsToViewCoords:[theEvent locationInWindow]];
-    del.ui->mouse_scroll([theEvent deltaY], p.x, [self trackID]);
+    del.ui->mouse_scroll([theEvent deltaX], [theEvent deltaY], p.x, [self trackID]);
+}
+
+- (void)keyUp:(NSEvent *)theEvent
+{
+    AppDelegate *del = [NSApp delegate];
+    unsigned short keyCode = [theEvent keyCode];
+
+        switch (keyCode)
+        {
+            case 49:
+                del.ui->play_pause([self trackID]);
+                break;
+            default:
+                break;
+        }
 }
 
 static void drawAnObject ()

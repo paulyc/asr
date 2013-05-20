@@ -24,7 +24,8 @@ public:
 	virtual void mouse_up(MouseButton b, int x, int y, int trackid);
 	virtual void mouse_dblclick(MouseButton b, int x, int y, int trackid);
 	virtual void mouse_drag(int x, int y, int trackid);
-    void mouse_scroll(int dy, int x, int trackid);
+    void mouse_scroll(int dx, int dy, int x, int trackid);
+    virtual void play_pause(int trackid);
 private:
     Lock_T _lock;
     Condition_T _quit;

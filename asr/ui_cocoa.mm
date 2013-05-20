@@ -153,12 +153,20 @@ void CocoaUI::mouse_drag(int x, int y, int trackid)
 	_lasty = y;
 }
 
-void CocoaUI::mouse_scroll(int dy, int x, int trackid)
+void CocoaUI::mouse_scroll(int dx, int dy, int x, int trackid)
 {
     if (trackid == 1 || trackid == 2)
     {
-        _io->GetTrack(trackid)->lock_pos(x);
-        _io->GetTrack(trackid)->zoom_px(-dy);
+        if (dy)
+        {
+            _io->GetTrack(trackid)->lock_pos(x);
+            _io->GetTrack(trackid)->zoom_px(-dy);
+            _io->GetTrack(trackid)->unlock_pos();
+        }
+        if (dx)
+        {
+            _io->GetTrack(trackid)->move_px(5*dx);
+        }
     }
 }
 
@@ -169,6 +177,11 @@ void CocoaUI::set_position(void *t, double p, bool invalidate)
 		UITrack *uit = (t == _io->GetTrack(1) ? &_track1 : &_track2);
         uit->wave.playback_pos = p;
 	}
+}
+
+void CocoaUI::play_pause(int trackid)
+{
+    _io->GetTrack(trackid)->play_pause();
 }
 
 void CocoaUI::render(int trackid)

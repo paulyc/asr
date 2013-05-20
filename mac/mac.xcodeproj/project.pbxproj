@@ -22,7 +22,7 @@
 		5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
 		5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */; };
 		5F33836817402EF600356397 /* midi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B329173210A50006871C /* midi.cpp */; };
-		5F935E7D17474BAD002ECDD4 /* MainView.m in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E7C17474BAD002ECDD4 /* MainView.m */; };
+		5F935E7D17474BAD002ECDD4 /* MainView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E7C17474BAD002ECDD4 /* MainView.mm */; };
 		5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E7F17475993002ECDD4 /* MainViewController.mm */; };
 		5F935E81174779A7002ECDD4 /* malloc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B326173210A50006871C /* malloc.cpp */; };
 		5F935E8417477F2A002ECDD4 /* mmalloc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E8217477F29002ECDD4 /* mmalloc.cpp */; };
@@ -108,7 +108,7 @@
 		5F1F0F38173C9F3200DEA888 /* AppDelegate.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		5F1F0F3B173C9F3200DEA888 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		5F935E7B17474BAD002ECDD4 /* MainView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainView.h; sourceTree = "<group>"; };
-		5F935E7C17474BAD002ECDD4 /* MainView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MainView.m; sourceTree = "<group>"; };
+		5F935E7C17474BAD002ECDD4 /* MainView.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = MainView.mm; sourceTree = "<group>"; };
 		5F935E7E17475993002ECDD4 /* MainViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainViewController.h; sourceTree = "<group>"; };
 		5F935E7F17475993002ECDD4 /* MainViewController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MainViewController.mm; sourceTree = "<group>"; };
 		5F935E8217477F29002ECDD4 /* mmalloc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mmalloc.cpp; sourceTree = "<group>"; };
@@ -383,7 +383,7 @@
 				5FDC485C1747287E004C2378 /* MyOpenGLView.h */,
 				5FDC485D1747287E004C2378 /* MyOpenGLView.mm */,
 				5F935E7B17474BAD002ECDD4 /* MainView.h */,
-				5F935E7C17474BAD002ECDD4 /* MainView.m */,
+				5F935E7C17474BAD002ECDD4 /* MainView.mm */,
 				5F935E7E17475993002ECDD4 /* MainViewController.h */,
 				5F935E7F17475993002ECDD4 /* MainViewController.mm */,
 			);
@@ -786,7 +786,7 @@
 				5FD9E51D174341680052157F /* controller.cpp in Sources */,
 				5FD9E51E17434AD80052157F /* asr.cpp in Sources */,
 				5FDC485E1747287E004C2378 /* MyOpenGLView.mm in Sources */,
-				5F935E7D17474BAD002ECDD4 /* MainView.m in Sources */,
+				5F935E7D17474BAD002ECDD4 /* MainView.mm in Sources */,
 				5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */,
 				5F935E81174779A7002ECDD4 /* malloc.cpp in Sources */,
 				5F935E8417477F2A002ECDD4 /* mmalloc.cpp in Sources */,

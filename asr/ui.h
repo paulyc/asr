@@ -158,6 +158,7 @@ public:
 	virtual void drop_file(const char *filename, bool track1);
 	UITrack& get_track(int track_id) { return track_id == 1 ? _track1 : _track2; }
 	double get_track_pitch(int track_id) { return get_track(track_id).get_pitch(); }
+    virtual void play_pause(int trackid) { }
 	//protected:
 	ASIOProcessor *_io;
 	int _lastx, _lasty;
