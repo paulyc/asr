@@ -293,22 +293,27 @@ void CocoaUI::render_impl(int trackid)
     glColor3f(1.0f, 0.5f, 0.0f);
     glVertex2d(x, 0.0);
     glVertex2d(x, 1.0);
-    glEnd();
     
-#define SHOW_BEATS 0
+    
+#define SHOW_BEATS 1
 #if SHOW_BEATS
+    glColor3f(1.0f, 0.0f, 0.5f);
 	const std::vector<double>& beats = track->beats();
 	for (int i = 0; i < beats.size(); ++i)
 	{
 		double pos = track->get_display_pos(beats[i]);
-		if (pos >= 0.0 && pos <= 1.0)
+		if (pos < 0.0)
+            continue;
+        else if (pos > 1.0)
+            break;
+        else
 		{
-            glColor3f(1.0f, 0.0f, 0.5f);
             glVertex2d(pos, 0.0);
             glVertex2d(pos, 1.0);
 		}
 	}
 #endif
+    glEnd();
     
     glFlush();
     glSwapAPPLE();

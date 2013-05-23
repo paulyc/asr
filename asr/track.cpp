@@ -33,8 +33,8 @@ void BufferedSource<Chunk_T>::create(const char *filename, Lock_T *lock)
     
     _src = src;
     
-	//	_detector.reset_source(_src);
-    _src_buf = new BufferedStream<Chunk_T>(_src);
+		_detector.reset_source(_src);
+    _src_buf = new BufferedStream<Chunk_T>(&_detector);
 	//	_src_buf->load_complete();
     
     _filename = filename;

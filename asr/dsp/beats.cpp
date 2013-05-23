@@ -8,19 +8,14 @@ _diff(10),
 _lpf(2048, 44100.0, 100.0),
 _bpf(2048, 44100.0, 20.0, 200.0),
 _kf(1024),
-_jobs(NUM_JOBS),
-_running(true)
+_running(true),
+_thissrc(0)
 {
     _lpf.init();
     _bpf.init();
     _kf.init();
     
 #if PARALLEL_PROCESS
-    for (int i=0; i<NUM_JOBS; ++i)
-    {
-        _jobs[i] = new job(_lpf, _kf);
-        spin_processor(i);
-    }
 #else
     _s1 = new STFTStream(_lpf, 2048, 1024, 20);
     _s2 = new STFTStream(_kf, 1024, 512, 20);
@@ -31,7 +26,7 @@ template <typename Chunk_T>
 BeatDetector<Chunk_T>::~BeatDetector()
 {
 #if PARALLEL_PROCESS
-    _proc_lock.acquire();
+ /*   _proc_lock.acquire();
     _running = false;
     for (int i=0; i<NUM_JOBS; ++i)
     {
@@ -44,7 +39,7 @@ BeatDetector<Chunk_T>::~BeatDetector()
     {
         pthread_join(_jobs[i]->thread, &ret);
         delete _jobs[i];
-    }
+    }*/
 #else
     delete _s1;
     delete _s2;
@@ -121,74 +116,40 @@ double BeatDetector<Chunk_T>::filter(double avg, double stddev, int count)
 template <typename Chunk_T>
 void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src)
 {
-    std::vector<Chunk_T*> chunks;
-    chunks.reserve(40000);
+    delete _thissrc;
+    _thissrc = new LengthFindingSource<Chunk_T>(src);
     
-    reset_source(src);
-    while (this->len().chunks == -1)
-    {
-        chunks.push_back(this->_src->next());
-    }
+    const int chks_to_process = _thissrc->len().chunks;
+    const int division_size = chks_to_process / 4;
+    const int division_rem = chks_to_process % 4;
     
-    if (chunks.size() == this->len().chunks)
-    {
-        // all have been loaded
-        const int chks_to_process = this->len().chunks;
-        const int division_size = chks_to_process / 4;
-        const int division_rem = chks_to_process % 4;
-        _jobs[0]->init(division_size);
-        _jobs[1]->init(division_size);
-        _jobs[2]->init(division_size);
-        _jobs[3]->init(division_size+division_rem);
-        int i = 0;
-        for (int indx = 0; indx < 4; ++indx)
-        {
-            for (int chk = 0; chk < _jobs[indx]->vecSrc->size(); ++chk)
-            {
-                _jobs[indx]->vecSrc->add(chunks[i++]);
-            }
-            this->process_job(indx);
-        }
-    }
-    else if (chunks.size() == 0)
-    {
-        // we know the length and havent loaded them
-        const int chks_to_process = this->len().chunks;
-        const int division_size = chks_to_process / 4;
-        const int division_rem = chks_to_process % 4;
-        _jobs[0]->init(division_size);
-        _jobs[1]->init(division_size);
-        _jobs[2]->init(division_size);
-        _jobs[3]->init(division_size+division_rem);
-        for (int indx = 0; indx < 4; ++indx)
-        {
-            _jobs[indx]->lock.acquire();
-            for (int chk = 0; chk < _jobs[indx]->vecSrc->size(); ++chk)
-            {
-                _jobs[indx]->vecSrc->add(this->_src->next());
-            }
-            _jobs[indx]->lock.release();
-            this->process_job(indx);
-        }
-    }
-    else
-    {
-        printf("WTF happened?\n");
-        throw std::exception();
-    }
+    process_beats_job *j1 = new process_beats_job(_thissrc, division_size, _lpf, _kf);
+    Worker::do_job(j1, false, false, false);
+    process_beats_job *j2 = new process_beats_job(_thissrc, division_size, _lpf, _kf);
+    Worker::do_job(j2, false, false, false);
+    process_beats_job *j3 = new process_beats_job(_thissrc, division_size, _lpf, _kf);
+    Worker::do_job(j3, false, false, false);
+    process_beats_job *j4 = new process_beats_job(_thissrc, division_size+division_rem, _lpf, _kf);
+    Worker::do_job(j4, false, false, false);
     
-    _jobs[0]->wait();
-    for (int i=0; i<_jobs[0]->outputs.size(); ++i)
-        process_chunk(_jobs[0]->outputs[i]);
-    _jobs[1]->wait();
-    for (int i=0; i<_jobs[1]->outputs.size(); ++i)
-        process_chunk(_jobs[1]->outputs[i]);
-    _jobs[2]->wait();
-    for (int i=0; i<_jobs[2]->outputs.size(); ++i)
-        process_chunk(_jobs[2]->outputs[i]);
-    _jobs[3]->wait();
-    for (int i=0; i<_jobs[3]->outputs.size(); ++i)
-        process_chunk(_jobs[3]->outputs[i]);
+    _thissrc->reset_ptr();
+    
+    j1->wait_for();
+    for (int i=0; i<j1->_outputs.size(); ++i)
+        process_chunk(j1->_outputs[i]);
+    delete j1;
+    j2->wait_for();
+    for (int i=0; i<j2->_outputs.size(); ++i)
+        process_chunk(j2->_outputs[i]);
+    delete j2;
+    j3->wait_for();
+    for (int i=0; i<j3->_outputs.size(); ++i)
+        process_chunk(j3->_outputs[i]);
+    delete j3;
+    j4->wait_for();
+    for (int i=0; i<j4->_outputs.size(); ++i)
+        process_chunk(j4->_outputs[i]);
+    delete j4;
     
     std::cout << analyze() << std::endl;
 }

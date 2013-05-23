@@ -371,17 +371,17 @@ public:
 		return _src_buf->len();
 	}
 
-	/*const std::vector<double>& beats()
+	const std::vector<double>& beats()
 	{
 		return _detector.beats();
-	}*/
+	}
 
 protected:
 	T_source<Chunk_T> *_src;
 	BufferedStream<Chunk_T> *_src_buf;
 	const char *_filename;
 
-//	BeatDetector<Chunk_T> _detector;
+	BeatDetector<Chunk_T> _detector;
 };
 
 template <typename Chunk_T>

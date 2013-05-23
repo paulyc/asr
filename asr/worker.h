@@ -34,6 +34,10 @@ public:
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
+        (new Worker)->spin(false);
+		(new Worker)->spin(false);
+        (new Worker)->spin(false);
+		(new Worker)->spin(false);
 	}
 
 	static void destroy()
@@ -190,12 +194,12 @@ public:
 	}
 
 public:
-	static void do_job(job *j, bool sync=false, bool critical=false)
+	static void do_job(job *j, bool sync=false, bool critical=false, bool deleteme=true)
 	{
 		pthread_once(&once_control, init);
 	//	printf("doing job %p (%s) sync %d critical %d\n", j, j->_name, sync, critical);
 		_job_lock.acquire();
-		j->_deleteme = !sync;
+		j->_deleteme = deleteme;
 		if (critical)
 		{
 			_critical_jobs.push(j);

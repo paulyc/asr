@@ -130,7 +130,7 @@ public:
 		{
 			double mag = sqrt(_fftCoeffs[i][0] * _fftCoeffs[i][0] + _fftCoeffs[i][1] * _fftCoeffs[i][1]);
 		//	double normalize = 1.0/mag;
-			printf("fftCoeff[%d] = %f + j%f (%f)\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1], mag);
+		//	printf("fftCoeff[%d] = %f + j%f (%f)\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1], mag);
 		//	_fftCoeffs[i][0] *= normalize;
 		//	_fftCoeffs[i][1] *= normalize;
 		}
@@ -254,7 +254,7 @@ public:
         {
             tmpCoeffs[i][0] = _fftCoeffs[i][0];
             tmpCoeffs[i][1] = _fftCoeffs[i][1];
-            printf("tmpCoeffs[%d] = %f + j%f\n", i, tmpCoeffs[i][0], tmpCoeffs[i][1]);
+       //     printf("tmpCoeffs[%d] = %f + j%f\n", i, tmpCoeffs[i][0], tmpCoeffs[i][1]);
         }
         t = -1.0;
 		for (int i=0; i<_N; ++i)
@@ -265,7 +265,7 @@ public:
 		fftw_execute(p);
         for (int i=0; i<_N/2+1; ++i)
         {
-            printf("hpCoeffs[%d] = %f + j%f\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1]);
+         //   printf("hpCoeffs[%d] = %f + j%f\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1]);
             // real = ac - bd
             _fftCoeffs[i][0] = _fftCoeffs[i][0] * tmpCoeffs[i][0] - _fftCoeffs[i][1] * tmpCoeffs[i][1];
             // imag = ad + bc
@@ -275,7 +275,7 @@ public:
 		{
 			double mag = sqrt(_fftCoeffs[i][0] * _fftCoeffs[i][0] + _fftCoeffs[i][1] * _fftCoeffs[i][1]);
             //	double normalize = 1.0/mag;
-			printf("fftCoeff[%d] = %f + j%f (%f)\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1], mag);
+		//	printf("fftCoeff[%d] = %f + j%f (%f)\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1], mag);
             //	_fftCoeffs[i][0] *= normalize;
             //	_fftCoeffs[i][1] *= normalize;
 		}
