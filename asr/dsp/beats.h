@@ -21,9 +21,7 @@ public:
             _chunks = new std::vector<T*>(chks);
             for (int i=0; i<chks; ++i)
             {
-                T *chk = this->_src->next();
-                chk->add_ref();
-                _chunks->operator[](i) = chk;
+                _chunks->operator[](i) = this->_src->next();
             }
         }
         else
@@ -32,9 +30,7 @@ public:
             _chunks->reserve(40000);
             while (this->_src->len().chunks == -1)
             {
-                T *chk = this->_src->next();
-                chk->add_ref();
-                _chunks->push_back(chk);
+                _chunks->push_back(this->_src->next());
             }
         }
     }
@@ -50,7 +46,9 @@ public:
     
     T *next()
     {
-        return _chunks->operator[](_readIndx++);
+        T *chk = _chunks->operator[](_readIndx++);
+        chk->add_ref();
+        return chk;
     }
     
     void reset_ptr()
@@ -146,6 +144,14 @@ public:
     {
         std::list<double>::iterator i = _final_bpm_list.begin();
         double last_t = *i;
+        
+        while (last_t > 0.0)
+        {
+            last_t -= _dt_avg;
+            _final_bpm_list.push_front(last_t);
+        }
+        i = _final_bpm_list.begin();
+        last_t = *i;
         _beat_avg_list.push_back(last_t);
         i++;
         while (i != _final_bpm_list.end())
@@ -173,7 +179,7 @@ public:
                 i++;
             }
         }
-        for (int j=0; j<10; ++j)
+        for (int j=0; j<50; ++j)
         {
             //				printf("bpm = %f\n", 60.0/_dt_avg);
             last_t += _dt_avg;
