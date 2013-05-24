@@ -141,54 +141,55 @@ public:
 			printf("hello\n");
 		}
 	}
+    
+    void calc_beats()
+    {
+        std::list<double>::iterator i = _final_bpm_list.begin();
+        double last_t = *i;
+        _beat_avg_list.push_back(last_t);
+        i++;
+        while (i != _final_bpm_list.end())
+        {
+            const double dt = *i - last_t;
+            if (dt > 1.5*_dt_avg)
+            {
+                last_t += _dt_avg;
+                //					printf("bpm = %f\n", 60.0/_dt_avg);
+                _beat_avg_list.push_back(last_t);
+                continue;
+            }
+            else if (dt < 0.5*_dt_avg)
+            {
+                i++;
+                continue;
+            }
+            else
+            {
+                last_t += _dt_avg;
+                double diff = 0.1 * (*i - last_t);
+                last_t += diff;
+                //					printf("bpm = %f\n", 60.0/(_dt_avg+diff));
+                _beat_avg_list.push_back(last_t);
+                i++;
+            }
+        }
+        for (int j=0; j<10; ++j)
+        {
+            //				printf("bpm = %f\n", 60.0/_dt_avg);
+            last_t += _dt_avg;
+            _beat_avg_list.push_back(last_t);
+        }
+    }
 
 	const std::vector<double>& beats()
 	{
-		if (_beat_avg_list.empty())
-		{
-			std::list<double>::iterator i = _final_bpm_list.begin();
-			double last_t = *i;
-			_beat_avg_list.push_back(last_t);
-			i++;
-			while (i != _final_bpm_list.end())
-			{
-				const double dt = *i - last_t;
-				if (dt > 1.5*_dt_avg)
-				{
-					last_t += _dt_avg;
-//					printf("bpm = %f\n", 60.0/_dt_avg);
-					_beat_avg_list.push_back(last_t);
-					continue;
-				}
-				else if (dt < 0.5*_dt_avg)
-				{
-					i++;
-					continue;
-				}
-				else
-				{
-					last_t += _dt_avg;
-					double diff = 0.1 * (*i - last_t);
-					last_t += diff;
-//					printf("bpm = %f\n", 60.0/(_dt_avg+diff));
-					_beat_avg_list.push_back(last_t);
-					i++;
-				}
-			}
-			for (int j=0; j<10; ++j)
-			{
-//				printf("bpm = %f\n", 60.0/_dt_avg);
-				last_t += _dt_avg;
-				_beat_avg_list.push_back(last_t);
-			}
-		}
 		return _beat_avg_list;
 	}
     
     double analyze();
     double filter(double avg, double stddev, int count);
     
-    const static int NUM_JOBS = 4;
+    const static int NUM_JOBS = 2;
     
     struct process_beats_job : public Worker::job
     {

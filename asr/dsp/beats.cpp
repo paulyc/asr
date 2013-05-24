@@ -81,7 +81,7 @@ double BeatDetector<Chunk_T>::analyze()
     const double final_bpm = final_sum / final_count;
     //  printf("final avg %f\n", final_bpm);
     _dt_avg = 60.0 / final_bpm;
-    beats();
+    calc_beats();
     return final_bpm;
 }
 
@@ -120,36 +120,28 @@ void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src)
     _thissrc = new LengthFindingSource<Chunk_T>(src);
     
     const int chks_to_process = _thissrc->len().chunks;
-    const int division_size = chks_to_process / 4;
-    const int division_rem = chks_to_process % 4;
+    const int division_size = chks_to_process / NUM_JOBS;
+    const int division_rem = chks_to_process % NUM_JOBS;
     
-    process_beats_job *j1 = new process_beats_job(_thissrc, division_size, _lpf, _kf);
-    Worker::do_job(j1, false, false, false);
-    process_beats_job *j2 = new process_beats_job(_thissrc, division_size, _lpf, _kf);
-    Worker::do_job(j2, false, false, false);
-    process_beats_job *j3 = new process_beats_job(_thissrc, division_size, _lpf, _kf);
-    Worker::do_job(j3, false, false, false);
-    process_beats_job *j4 = new process_beats_job(_thissrc, division_size+division_rem, _lpf, _kf);
-    Worker::do_job(j4, false, false, false);
+    process_beats_job *jobs[NUM_JOBS];
+    
+    for (int j=0; j<NUM_JOBS-1; ++j)
+    {
+        jobs[j] = new process_beats_job(_thissrc, division_size, _lpf, _kf);
+        Worker::do_job(jobs[j], false, false, false);
+    }
+    jobs[NUM_JOBS-1] = new process_beats_job(_thissrc, division_size+division_rem, _lpf, _kf);
+    Worker::do_job(jobs[NUM_JOBS-1], false, false, false);
     
     _thissrc->reset_ptr();
     
-    j1->wait_for();
-    for (int i=0; i<j1->_outputs.size(); ++i)
-        process_chunk(j1->_outputs[i]);
-    delete j1;
-    j2->wait_for();
-    for (int i=0; i<j2->_outputs.size(); ++i)
-        process_chunk(j2->_outputs[i]);
-    delete j2;
-    j3->wait_for();
-    for (int i=0; i<j3->_outputs.size(); ++i)
-        process_chunk(j3->_outputs[i]);
-    delete j3;
-    j4->wait_for();
-    for (int i=0; i<j4->_outputs.size(); ++i)
-        process_chunk(j4->_outputs[i]);
-    delete j4;
+    for (int j=0; j<NUM_JOBS; ++j)
+    {
+        jobs[j]->wait_for();
+        for (int i=0; i<jobs[j]->_outputs.size(); ++i)
+            process_chunk(jobs[j]->_outputs[i]);
+        delete jobs[j];
+    }
     
     std::cout << analyze() << std::endl;
 }
