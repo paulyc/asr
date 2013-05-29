@@ -114,7 +114,7 @@ double BeatDetector<Chunk_T>::filter(double avg, double stddev, int count)
 }
 
 template <typename Chunk_T>
-void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src)
+void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src, Lock_T *lock)
 {
     delete _thissrc;
     _thissrc = new LengthFindingSource<Chunk_T>(src);
@@ -297,7 +297,7 @@ void BeatDetector<Chunk_T>::test_main()
         //   std::cout << filename << " ";
         
 #if PARALLEL_PROCESS
-        detector.process_all_from_source(src);
+        detector.process_all_from_source(src, 0);
 #else
         
         detector.reset_source(src);

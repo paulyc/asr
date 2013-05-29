@@ -12,8 +12,9 @@
 void ChunkGenerator::AddChunkSource(T_source<chunk_t> *src, int id)
 {
     _lock.acquire();
-    _streams[id] = new Worker::generate_chunk_loop<T_source<chunk_t>, chunk_t>();
-    Worker::do_job(_streams[id], false, true);
+    Worker::generate_chunk_loop<T_source<chunk_t>, chunk_t> *job = new Worker::generate_chunk_loop<T_source<chunk_t>, chunk_t>(src, this, id, _chunksToBuffer);
+    _streams[id] = job;
+    Worker::do_job(job, false, true);
     _lock.release();
 }
 
@@ -21,31 +22,25 @@ chunk_t* ChunkGenerator::GetNextChunk(int streamID)
 {
     chunk_t *chk = 0;
     _lock.acquire();
-    if (_streams[streamID]._nextChks.empty())
-        chk = zero_source<chunk_t>::get()->next();
-    else
-    {
-        chk = _streams[streamID]._nextChks.front();
-        _streams[streamID]._nextChks.pop();
-        GenerateChunk(streamID);
-    }
+    chk = _streams[streamID]->get();
     _lock.release();
     return chk;
 }
 
-void ChunkGenerator::GenerateChunk(int streamID)
+void ChunkGenerator::lock(int id)
 {
-    Worker::do_job(new Worker::generate_chunk_job<T_source<chunk_t>, chunk_t>(_streams[streamID]._src, this, streamID, 0),
-                   false, true);
+  //  _lock.acquire();
+  //  if (_lockMask == 0)
+        _ioLock->acquire();
+  //  _lockMask |= 1 << id;
+  //  _lock.release();
 }
 
-void ChunkGenerator::chunkCb(chunk_t *chunk, int id)
+void ChunkGenerator::unlock(int id)
 {
-    _lock.acquire();
-    _streams[id]._nextChks.push(chunk);
-    if (_streams[id]._nextChks.size() < _chunksToBuffer)
-    {
-        GenerateChunk(id);
-    }
-    _lock.release();
+ //   _lock.acquire();
+ //   _lockMask &= 1 << id;
+ //   if (_lockMask == 0)
+        _ioLock->release();
+ //   _lock.release();
 }

@@ -288,13 +288,21 @@ template <typename T>
 class IChunkGeneratorCallback
 {
 public:
-    virtual void chunkCb(T *chunk, int id) = 0;
+    virtual void lock(int id) = 0;
+    virtual void unlock(int id) = 0;
+};
+
+template <typename T>
+class IChunkGeneratorLoop
+{
+public:
+    virtual T *get() = 0;
 };
 
 class ChunkGenerator : public IChunkGeneratorCallback<chunk_t>
 {
 public:
-    ChunkGenerator(int bufferSizeFrames)
+    ChunkGenerator(int bufferSizeFrames, Lock_T *ioLock) : _ioLock(ioLock), _lockMask(0)
     {
         _chunksToBuffer = bufferSizeFrames / chunk_t::chunk_size;
         if (bufferSizeFrames % chunk_t::chunk_size > 0)
@@ -303,18 +311,15 @@ public:
     
     void AddChunkSource(T_source<chunk_t> *src, int id);
     chunk_t* GetNextChunk(int streamID);
-    void GenerateChunk(int streamID);
-    void chunkCb(chunk_t *chunk, int id);
+    virtual void lock(int id);
+    virtual void unlock(int id);
 private:
-    struct stream {
-        stream() : _src(0) {}
-        stream(T_source<chunk_t> *src) : _src(src) {}
-        T_source<chunk_t> *_src;
-        std::queue<chunk_t*> _nextChks;
-    };
-    std::unordered_map<int, stream> _streams;
+
+    std::unordered_map<int, IChunkGeneratorLoop<chunk_t>*> _streams;
     int _chunksToBuffer;
     Lock_T _lock;
+    Lock_T *_ioLock;
+    int _lockMask;
 };
 
 class BlockingChunkStream : public T_source<chunk_t>

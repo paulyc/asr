@@ -75,7 +75,7 @@ public:
 	};
     
     template <typename Source_T, typename Chunk_T>
-	struct generate_chunk_loop : public job
+	struct generate_chunk_loop : public job, public IChunkGeneratorLoop<Chunk_T>
 	{
 		Source_T *src;
         IChunkGeneratorCallback<Chunk_T> *cbObj;
@@ -83,26 +83,45 @@ public:
 		Lock_T *lock;
 		generate_chunk_loop(Source_T *s,
                            IChunkGeneratorCallback<Chunk_T> *cbo, int cid, int chunks_to_buffer) :
-        src(s), cbObj(cbo), chkId(cid), lock(l), running(true), doGenerate(false) {_name="generate chunk";}
+        src(s), cbObj(cbo), chkId(cid), running(true), _chunks_to_buffer(chunks_to_buffer) {_name="generate chunk";}
         
 		void do_it()
 		{
             myLock.acquire();
+            cbObj->lock(chkId);
             while (running)
             {
-                while (!doGenerate)
+                while (nextChks.size() >= _chunks_to_buffer)
                 {
+                    cbObj->unlock(chkId);
                     doGen.wait(myLock);
+                    cbObj->lock(chkId);
                 }
-                cbObj->chunkCb(src->next(), chkId);
-                doGenerate = false;
+                nextChks.push(src->next());
             }
 		}
+        
+        Chunk_T *get()
+        {
+            Chunk_T *chk = 0;
+            myLock.acquire();
+            if (nextChks.empty())
+                chk = zero_source<chunk_t>::get()->next();
+            else
+            {
+                chk = nextChks.front();
+                nextChks.pop();
+                doGen.signal();
+            }
+            myLock.release();
+            return chk;
+        }
         
         Lock_T myLock;
         Condition_T doGen;
         bool running;
-        bool doGenerate;
+        std::queue<Chunk_T*> nextChks;
+        int _chunks_to_buffer;
 	};
 
 	template <typename Obj_T>
@@ -217,7 +236,12 @@ public:
 	void spin(bool critical=false)
 	{
 #if 1
-		if (critical) pthread_create(&_tid, 0, threadproc_cr, (void*)this);
+		if (critical)
+        {
+            sched_param p = {1};
+            pthread_create(&_tid, 0, threadproc_cr, (void*)this);
+            pthread_setschedparam(_tid, SCHED_FIFO, &p);
+        }
 		else pthread_create(&_tid, 0, threadproc_id, (void*)this);
 #else
 		pthread_create(&_tid, 0, threadproc, (void*)this);

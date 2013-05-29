@@ -68,7 +68,7 @@ public:
 	BeatDetector();
     ~BeatDetector();
 
-	void reset_source(T_source<Chunk_T> *src)
+	void reset_source(T_source<Chunk_T> *src, Lock_T *lock)
 	{
 		//this->_src = src;
 #if !PARALLEL_PROCESS
@@ -78,7 +78,7 @@ public:
 #endif
 
 		reset_stats();
-        process_all_from_source(src);
+        process_all_from_source(src, lock);
 	}
     
     void reset_stats()
@@ -248,7 +248,7 @@ public:
         Condition_T _done;
     };
     
-    void process_all_from_source(T_source<Chunk_T> *src);
+    void process_all_from_source(T_source<Chunk_T> *src, Lock_T *lock=0);
     void process_chunk(Chunk_T *process_chk);
 
 	Chunk_T *next()
