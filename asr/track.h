@@ -492,14 +492,9 @@ public:
 
 	bool load_step(Lock_T *lock=0)
 	{
-		while (this->_src_buf->len().chunks == -1)
-		{
-			this->_src_buf->load_next();
-		}
-
-		printf("len %d samples %d chunks\n", this->_src_buf->len().samples, this->_src_buf->len().chunks);
-
 		this->_meta->load_metadata(lock, _io);
+        
+        printf("len %d samples %d chunks\n", this->_src_buf->len().samples, this->_src_buf->len().chunks);
         
 		this->_display->set_zoom(1.0);
 		this->_display->set_left(0.0);

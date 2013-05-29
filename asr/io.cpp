@@ -82,10 +82,21 @@ void ASIOProcessor::Init()
          devIter != devices.end();
          devIter++)
     {
-        //if (dev->GetName() == std::string("Built-in Output"))
         if (dev->GetName() == std::string("Saffire"))
         {
             _device = (*devIter)->Instantiate();
+        }
+    }
+    if (!_device)
+    {
+        for (std::vector<const IAudioDeviceDescriptor*>::iterator devIter = devices.begin();
+             devIter != devices.end();
+             devIter++)
+        {
+            if (dev->GetName() == std::string("Built-in Output"))
+            {
+                _device = (*devIter)->Instantiate();
+            }
         }
     }
     if (!_device)
@@ -117,10 +128,21 @@ void ASIOProcessor::Init()
          devIter != devices.end();
          devIter++)
     {
-        if ((*devIter)->GetName() == std::string("Built-in Output"))
-     //   if ((*devIter)->GetName() == std::string("Saffire"))
+        if ((*devIter)->GetName() == std::string("Saffire"))
         {
             _device = (*devIter)->Instantiate();
+        }
+    }
+    if (!_device)
+    {
+        for (std::vector<const IAudioDeviceDescriptor*>::iterator devIter = devices.begin();
+             devIter != devices.end();
+             devIter++)
+        {
+            if ((*devIter)->GetName() == std::string("Built-in Output"))
+            {
+                _device = (*devIter)->Instantiate();
+            }
         }
     }
     if (!_device)

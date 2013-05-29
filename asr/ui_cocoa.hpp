@@ -17,7 +17,7 @@ public:
 	virtual void set_track_filename(int t) {}
 	virtual void set_position(void *t, double tm, bool invalidate);
 	virtual void set_clip(int) {}
-	virtual bool want_render() { return false; }
+	virtual bool want_render() { return true; }
 	virtual void set_text_field(int id, const char *txt, bool del) {}
     
     virtual void mouse_down(MouseButton b, int x, int y, int trackid);

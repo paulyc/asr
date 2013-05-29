@@ -12,8 +12,8 @@
 void ChunkGenerator::AddChunkSource(T_source<chunk_t> *src, int id)
 {
     _lock.acquire();
-    _streams[id] = stream(src);
-    GenerateChunk(id);
+    _streams[id] = new Worker::generate_chunk_loop<T_source<chunk_t>, chunk_t>();
+    Worker::do_job(_streams[id], false, true);
     _lock.release();
 }
 

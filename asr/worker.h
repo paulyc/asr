@@ -73,6 +73,37 @@ public:
 			cbObj->chunkCb(src->next(), chkId);
 		}
 	};
+    
+    template <typename Source_T, typename Chunk_T>
+	struct generate_chunk_loop : public job
+	{
+		Source_T *src;
+        IChunkGeneratorCallback<Chunk_T> *cbObj;
+        int chkId;
+		Lock_T *lock;
+		generate_chunk_loop(Source_T *s,
+                           IChunkGeneratorCallback<Chunk_T> *cbo, int cid, int chunks_to_buffer) :
+        src(s), cbObj(cbo), chkId(cid), lock(l), running(true), doGenerate(false) {_name="generate chunk";}
+        
+		void do_it()
+		{
+            myLock.acquire();
+            while (running)
+            {
+                while (!doGenerate)
+                {
+                    doGen.wait(myLock);
+                }
+                cbObj->chunkCb(src->next(), chkId);
+                doGenerate = false;
+            }
+		}
+        
+        Lock_T myLock;
+        Condition_T doGen;
+        bool running;
+        bool doGenerate;
+	};
 
 	template <typename Obj_T>
 	struct callback_job : public job
