@@ -363,7 +363,7 @@ public:
     
     void analyze()
     {
-     //   _detector.analyze();
+        _detector.analyze();
     }
 
 	virtual typename T_source<Chunk_T>::pos_info& len()
@@ -505,7 +505,7 @@ public:
 		//	GenericUI *ui;
 	//		pthread_mutex_unlock(lock);
         
-        this->analyze();
+     //   this->_detector.reset_source(this->_src_buf, lock);
 			
 			this->_resample_filter->set_output_scale(1.0f / this->_src->maxval());
 			//_meta->load_metadata(lock);

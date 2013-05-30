@@ -8,14 +8,17 @@ _diff(10),
 _lpf(2048, 44100.0, 100.0),
 _bpf(2048, 44100.0, 20.0, 200.0),
 _kf(1024),
-_running(true),
-_thissrc(0)
+_running(true)
 {
     _lpf.init();
     _bpf.init();
     _kf.init();
     
 #if PARALLEL_PROCESS
+    for (int i=0; i<NUM_JOBS; ++i)
+    {
+        _jobs[i] = new process_beats_job(_lpf, _kf);
+    }
 #else
     _s1 = new STFTStream(_lpf, 2048, 1024, 20);
     _s2 = new STFTStream(_kf, 1024, 512, 20);
@@ -26,20 +29,10 @@ template <typename Chunk_T>
 BeatDetector<Chunk_T>::~BeatDetector()
 {
 #if PARALLEL_PROCESS
- /*   _proc_lock.acquire();
-    _running = false;
     for (int i=0; i<NUM_JOBS; ++i)
     {
-        _do_proc.signal();
-    }
-    _proc_lock.release();
-    
-    void *ret;
-    for (int i=0; i<NUM_JOBS; ++i)
-    {
-        pthread_join(_jobs[i]->thread, &ret);
         delete _jobs[i];
-    }*/
+    }
 #else
     delete _s1;
     delete _s2;
@@ -81,7 +74,8 @@ double BeatDetector<Chunk_T>::analyze()
     const double final_bpm = final_sum / final_count;
     //  printf("final avg %f\n", final_bpm);
     _dt_avg = 60.0 / final_bpm;
-    calc_beats();
+   // calc_beats();
+    std::cout << final_bpm << std::endl;
     return final_bpm;
 }
 
@@ -116,34 +110,33 @@ double BeatDetector<Chunk_T>::filter(double avg, double stddev, int count)
 template <typename Chunk_T>
 void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src, Lock_T *lock)
 {
-    delete _thissrc;
-    _thissrc = new LengthFindingSource<Chunk_T>(src);
+    //delete _thissrc;
+    //_thissrc = new LengthFindingSource<Chunk_T>(src);
     
-    const int chks_to_process = _thissrc->len().chunks;
+    const int chks_to_process = src->len().chunks;
     const int division_size = chks_to_process / NUM_JOBS;
     const int division_rem = chks_to_process % NUM_JOBS;
     
-    process_beats_job *jobs[NUM_JOBS];
-    
     for (int j=0; j<NUM_JOBS-1; ++j)
     {
-        jobs[j] = new process_beats_job(_thissrc, division_size, _lpf, _kf);
-        Worker::do_job(jobs[j], false, false, false);
+        _jobs[j]->reset_source(src, division_size, lock);
+        Worker::do_job(_jobs[j], false, false, false);
     }
-    jobs[NUM_JOBS-1] = new process_beats_job(_thissrc, division_size+division_rem, _lpf, _kf);
-    Worker::do_job(jobs[NUM_JOBS-1], false, false, false);
-    
-    _thissrc->reset_ptr();
+    _jobs[NUM_JOBS-1]->reset_source(src, division_size+division_rem, lock);
+    Worker::do_job(_jobs[NUM_JOBS-1], false, false, false);
     
     for (int j=0; j<NUM_JOBS; ++j)
     {
-        jobs[j]->wait_for();
-        for (int i=0; i<jobs[j]->_outputs.size(); ++i)
-            process_chunk(jobs[j]->_outputs[i]);
-        delete jobs[j];
+        _jobs[j]->wait_for();
+        for (int i=0; i<_jobs[j]->_outputs.size(); ++i)
+        {
+          //  if (i%10==0)
+            //    CRITICAL_SECTION_GUARD(lock);
+            process_chunk(_jobs[j]->_outputs[i]);
+        }
     }
     
-    std::cout << analyze() << std::endl;
+    analyze();
 }
 
 template <typename Chunk_T>

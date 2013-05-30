@@ -216,6 +216,7 @@ template <typename T>
 class VectorSource : public T_source<T>
 {
 public:
+    VectorSource<T>() : _readIndx(0), _writeIndx(0) {}
     VectorSource<T>(int sz) : _vec(sz), _readIndx(0), _writeIndx(0) {}
     T *next()
     {
@@ -244,6 +245,12 @@ public:
     size_t size() const
     {
         return _vec.size();
+    }
+    void resize(size_t sz)
+    {
+        _vec.resize(sz);
+        _readIndx = 0;
+        _writeIndx = 0;
     }
 private:
     std::vector<T*> _vec;

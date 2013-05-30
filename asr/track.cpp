@@ -32,8 +32,6 @@ void BufferedSource<Chunk_T>::create(const char *filename, Lock_T *lock)
     destroy();
     
     _src = src;
-    
-	//	_detector.reset_source(_src, lock);
     _src_buf = new BufferedStream<Chunk_T>(_src);
 	//	_src_buf->load_complete();
     

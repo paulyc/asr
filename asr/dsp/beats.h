@@ -195,36 +195,49 @@ public:
     double analyze();
     double filter(double avg, double stddev, int count);
     
-    const static int NUM_JOBS = 2;
+    const static int NUM_JOBS = 4;
     
     struct process_beats_job : public Worker::job
     {
-        process_beats_job(T_source<Chunk_T> *_src, int nChunks, const FFTWindowFilter &f1, const FFTWindowFilter &f2) :
-            _vecSrc(nChunks),
+        process_beats_job(const FFTWindowFilter &f1, const FFTWindowFilter &f2) :
             _s1(f1, 2048, 1024, 20),
             _s2(f2, 1024, 512, 20),
-            _rectifier(&_s1),
-            _outputs(nChunks)
+            _rectifier(&_s1)
         {
+        }
+        void reset_source(T_source<Chunk_T> *_src, int nChunks, Lock_T *lock)
+        {
+            _vecSrc.resize(nChunks);
+            _outputs.resize(nChunks);
+            _guardLock = lock;
             for (int i=0; i<nChunks; ++i)
             {
-                _vecSrc.add(_src->next());
+                if (i%10==0)
+                {
+                 //   CRITICAL_SECTION_GUARD(_guardLock);
+                }
+                Chunk_T *chk = _src->next();
+                chk->add_ref();
+                _vecSrc.add(chk);
             }
             _s1.reset_source(&_vecSrc);
             _s2.reset_source(&_rectifier);
         }
         void do_it()
         {
-            
             for (int i=0; i<_vecSrc.size(); ++i)
             {
+                if (i%10==0)
+                {
+                 //   CRITICAL_SECTION_GUARD(_guardLock);
+                }
                 _outputs[i] = _s2.next();
             }
             
-            _lock.acquire();
+            _guardLock->acquire();
             done = true;
             _done.signal();
-            _lock.release();
+            _guardLock->release();
         }
         void step()
         {
@@ -232,12 +245,12 @@ public:
         }
         void wait_for()
         {
-            _lock.acquire();
+            _guardLock->acquire();
             while (!done)
             {
-                _done.wait(_lock);
+                _done.wait(*_guardLock);
             }
-            _lock.release();
+            _guardLock->release();
         }
         VectorSource<Chunk_T> _vecSrc;
         STFTStream _s1, _s2;
@@ -246,6 +259,7 @@ public:
         
         Lock_T _lock;
         Condition_T _done;
+        Lock_T *_guardLock;
     };
     
     void process_all_from_source(T_source<Chunk_T> *src, Lock_T *lock=0);
@@ -259,13 +273,14 @@ public:
         process_chunk(process_chk);
 		
 		return passthru_chk;*/
-        return _thissrc->next();
+    //    return _thissrc->next();
+        return 0;
 	}
     
-    virtual typename T_source<Chunk_T>::pos_info& len()
-	{
-		return _thissrc->len();
-	}
+  //  virtual typename T_source<Chunk_T>::pos_info& len()
+//	{
+//		return T_source<Chunk_T>::pos_info();
+//	}
     
     static void test_main();
 
@@ -299,8 +314,7 @@ private:
     std::list<double> _final_bpm_list;
     
     bool _running;
-    LengthFindingSource<Chunk_T> *_thissrc;
-    
+    process_beats_job *_jobs[NUM_JOBS];
 };
 
 #include "beats.cpp"

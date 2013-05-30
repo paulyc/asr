@@ -100,6 +100,8 @@ Chunk_T *BufferedStream<Chunk_T>::next_chunk(smp_ofs_t chk_ofs)
 template <typename Chunk_T>
 Chunk_T *BufferedStream<Chunk_T>::next()
 {
+    return get_chunk(_chk_ofs++);
+    /*
     smp_ofs_t ofs_in_chk;
     Chunk_T *chk = T_allocator<Chunk_T>::alloc(), *buf_chk = get_chunk(_chk_ofs);
     smp_ofs_t to_fill = Chunk_T::chunk_size, loop_fill;
@@ -128,5 +130,5 @@ Chunk_T *BufferedStream<Chunk_T>::next()
         _smp_ofs += loop_fill;
     }
     _data_lock.release();
-    return chk;
+    return chk;*/
 }
