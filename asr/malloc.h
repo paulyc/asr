@@ -206,11 +206,27 @@ public:
 		//printf("%s %d\n", file, line);
 		_lock.acquire();
 		T *t = alloc(false);
+     //   printf("Alloc-ing %p from %s:%d\n", t, file, line);
 		_info_map[t].file = file;
 		_info_map[t].line = line;
 		_lock.release();
 		return t;
 	}
+    static void free_from(T *t, const char *file, int line)
+	{
+		//printf("%s %d\n", file, line);
+		_lock.acquire();
+    //    printf("Free-ing %p from %s:%d\n", t, file, line);
+		free(t, false);
+		_lock.release();
+	}
+    static void add_ref_from(T *t, const char *file, int line)
+    {
+        _lock.acquire();
+     //   printf("Add-ref-ing %p from %s:%d\n", t, file, line);
+        t->add_ref();
+        _lock.release();
+    }
 #endif
 
 	static T* alloc(bool lock=true)
@@ -231,15 +247,22 @@ public:
 			return t;
 		}
 	}
+    
+    static void add_refx(T* t)
+    {
+        _lock.acquire();
+        t->add_ref();
+        _lock.release();
+    }
 
-	static void free(T* t)
+	static void free(T* t, bool lock=true)
 	{
+        if (lock) _lock.acquire();
 		if (t && t->release() == 0)
 		{
-			_lock.acquire();
 			_T_queue.push(t);
-			_lock.release();
 		}
+        if (lock) _lock.release();
 	}
 
 	static void gc()
@@ -250,6 +273,7 @@ public:
 #if DEBUG_ALLOCATOR
 			_info_map.erase(_T_queue.front());
 #endif
+       //     printf("Delete-ing %p\n", _T_queue.front());
 			delete _T_queue.front();
 			_T_queue.pop();
 		}
@@ -271,6 +295,13 @@ public:
 		}
 		_info_map.clear();
 	}
+    static void print_info(T* t)
+    {
+        printf("%p allocated %s:%d count %d\n", t,
+               _info_map[t].file,
+               _info_map[t].line,
+               t->_refs);
+    }
 #else
 	static void dump_leaks()
 	{
@@ -282,6 +313,8 @@ template <typename T>
 typename T_allocator<T>::info_map_t T_allocator<T>::_info_map;
 
 #define alloc() alloc_from(__FILE__, __LINE__)
+#define free(x) free_from((x), __FILE__, __LINE__)
+#define add_refx(x) add_ref_from((x), __FILE__, __LINE__)
 #endif
 
 #if 0

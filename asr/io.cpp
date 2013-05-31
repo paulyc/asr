@@ -431,7 +431,7 @@ void ASIOProcessor::GenerateOutput()
 
 	/*	if (_file_src == _main_src) 
 		{
-			out->add_ref();
+			T_allocator<chunk_t>::add_ref(out);
 			_file_mgr._c = out;
 			T_allocator<chunk_t>::free(chk1);
 			T_allocator<chunk_t>::free(chk2);

@@ -47,7 +47,7 @@ public:
     T *next()
     {
         T *chk = _chunks->operator[](_readIndx++);
-        chk->add_ref();
+        T_allocator<T>::add_ref(chk);
         return chk;
     }
     
@@ -200,6 +200,7 @@ public:
     struct process_beats_job : public Worker::job
     {
         process_beats_job(const FFTWindowFilter &f1, const FFTWindowFilter &f2) :
+            _vecSrc(0),
             _s1(f1, 2048, 1024, 20),
             _s2(f2, 1024, 512, 20),
             _rectifier(&_s1)
@@ -207,37 +208,39 @@ public:
         }
         void reset_source(T_source<Chunk_T> *_src, int nChunks, Lock_T *lock)
         {
-            _vecSrc.resize(nChunks);
+            _lock.acquire();
+            delete _vecSrc;
+            _vecSrc = new VectorSource<Chunk_T>(nChunks);
             _outputs.resize(nChunks);
             _guardLock = lock;
             for (int i=0; i<nChunks; ++i)
             {
                 if (i%10==0)
                 {
-                 //   CRITICAL_SECTION_GUARD(_guardLock);
+                    CRITICAL_SECTION_GUARD(_guardLock);
                 }
                 Chunk_T *chk = _src->next();
-                chk->add_ref();
-                _vecSrc.add(chk);
+                _vecSrc->add(chk);
             }
-            _s1.reset_source(&_vecSrc);
+            _s1.reset_source(_vecSrc);
             _s2.reset_source(&_rectifier);
+            _lock.release();
         }
         void do_it()
         {
-            for (int i=0; i<_vecSrc.size(); ++i)
+            _lock.acquire();
+            for (int i=0; i<_vecSrc->size(); ++i)
             {
                 if (i%10==0)
                 {
-                 //   CRITICAL_SECTION_GUARD(_guardLock);
+                    CRITICAL_SECTION_GUARD(_guardLock);
                 }
                 _outputs[i] = _s2.next();
             }
             
-            _guardLock->acquire();
             done = true;
             _done.signal();
-            _guardLock->release();
+            _lock.release();
         }
         void step()
         {
@@ -245,14 +248,14 @@ public:
         }
         void wait_for()
         {
-            _guardLock->acquire();
+            _lock.acquire();
             while (!done)
             {
-                _done.wait(*_guardLock);
+                _done.wait(_lock);
             }
-            _guardLock->release();
+            _lock.release();
         }
-        VectorSource<Chunk_T> _vecSrc;
+        VectorSource<Chunk_T> *_vecSrc;
         STFTStream _s1, _s2;
         full_wave_rectifier<SamplePairf, Chunk_T> _rectifier;
         std::vector<Chunk_T*> _outputs;

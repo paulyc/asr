@@ -70,7 +70,7 @@ Chunk_T *BufferedStream<Chunk_T>::get_chunk(unsigned int chk_ofs)
     _buffer_lock.release();
     return r;
 }
-
+/*
 template <typename Chunk_T>
 Chunk_T *BufferedStream<Chunk_T>::next_chunk(smp_ofs_t chk_ofs)
 {
@@ -95,7 +95,7 @@ Chunk_T *BufferedStream<Chunk_T>::next_chunk(smp_ofs_t chk_ofs)
     c = _chks[uchk_ofs];
     _buffer_lock.release();
     return c;
-}
+}*/
 
 template <typename Chunk_T>
 Chunk_T *BufferedStream<Chunk_T>::next()

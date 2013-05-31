@@ -24,7 +24,7 @@ void init_lock()
 
 void do_stuff(void *m, size_t by, const char *f, int l);
 
-#define DEBUG_MALLOC 1
+#define DEBUG_MALLOC 0
 #if DEBUG_MALLOC
 
 void *operator new(size_t by, const char *f, int l)

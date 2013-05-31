@@ -219,7 +219,7 @@ public:
 
 	Chunk_T *get_chunk(unsigned int chk_ofs);
 
-	Chunk_T *next_chunk(smp_ofs_t chk_ofs);
+	//Chunk_T *next_chunk(smp_ofs_t chk_ofs);
 
 	Chunk_T *next();
 
@@ -298,7 +298,7 @@ public:
 		return this->_src->len();
 	}
 
-	int load_complete()
+/*	int load_complete()
 	{
 		int chk = 0;
 		for (; !this->_src->eof(); ++chk)
@@ -313,7 +313,7 @@ public:
 		this->_src->len().time = this->_src->len().samples/this->_src->sample_rate();
 		_src_lock.release();
 		return this->_len.chunks;
-	}
+	}*/
 
 	bool load_next()
 	{

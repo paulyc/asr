@@ -155,7 +155,7 @@ public:
 			i != _chks_map.end(); ++i)
 		{
 			i->second.push(chk);
-			chk->add_ref();
+			T_allocator<Chunk_T>::add_refx(chk);
 		}
 		T_allocator<Chunk_T>::free(chk);
 	}

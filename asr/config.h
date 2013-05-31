@@ -80,6 +80,7 @@
 
 #define PARALLEL_PROCESS 1
 
+#include <stdlib.h>
 #include "malloc.h"
 
 #endif // !defined(_CONFIG_H)

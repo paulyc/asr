@@ -216,8 +216,8 @@ template <typename T>
 class VectorSource : public T_source<T>
 {
 public:
-    VectorSource<T>() : _readIndx(0), _writeIndx(0) {}
-    VectorSource<T>(int sz) : _vec(sz), _readIndx(0), _writeIndx(0) {}
+    VectorSource<T>(int sz) : _vec(sz, 0), _readIndx(0), _writeIndx(0) {}
+    ~VectorSource<T>() { for (--_writeIndx; _writeIndx >= 0; --_writeIndx) T_allocator<T>::free(_vec[_writeIndx]); }
     T *next()
     {
         if (_readIndx >= _vec.size())
@@ -226,31 +226,25 @@ public:
         }
         else
         {
+            T_allocator<T>::add_refx(_vec[_readIndx]);
             return _vec[_readIndx++];
         }
     }
     void add(T *t)
     {
+        T_allocator<T>::add_refx(t);
         _vec[_writeIndx++] = t;
     }
-    void set(int i, T *t)
-    {
-        _vec[i] = t;
-    }
+        
     T* get(int i)
     {
+        _vec[i]->add_ref();
         return _vec[i];
     }
 
     size_t size() const
     {
         return _vec.size();
-    }
-    void resize(size_t sz)
-    {
-        _vec.resize(sz);
-        _readIndx = 0;
-        _writeIndx = 0;
     }
 private:
     std::vector<T*> _vec;

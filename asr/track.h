@@ -505,7 +505,7 @@ public:
 		//	GenericUI *ui;
 	//		pthread_mutex_unlock(lock);
         
-     //   this->_detector.reset_source(this->_src_buf, lock);
+        this->_detector.reset_source(this->_src_buf, lock);
 			
 			this->_resample_filter->set_output_scale(1.0f / this->_src->maxval());
 			//_meta->load_metadata(lock);

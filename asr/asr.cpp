@@ -1,8 +1,10 @@
+#include <stdlib.h>
+#include <emmintrin.h>
+
 #include "config.h"
 
 #define _USE_MATH_DEFINES
 #include <cmath>
-#include <cstdlib>
 #include <cstdio>
 #include <cassert>
 #include <string>
@@ -14,7 +16,7 @@ using std::exception;
 #include <pthread.h>
 
 #include <fftw3.h>
-#include <emmintrin.h>
+
 
 #include "io.h"
 

@@ -4,6 +4,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <climits>
+#include <cstdlib>
 
 #include <fftw3.h>
 

@@ -142,6 +142,7 @@ void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src, Lock
 template <typename Chunk_T>
 void BeatDetector<Chunk_T>::process_chunk(Chunk_T *process_chk)
 {
+    //T_allocator<Chunk_T>::print_info(process_chk);
     for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
     {
         double x = (*smp)[0];
