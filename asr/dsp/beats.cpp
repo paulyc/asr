@@ -1,9 +1,46 @@
+template <typename T>
+LengthFindingSource<T>::LengthFindingSource(T_source<T> *src) : T_sink_source<T>(src), _readIndx(0)
+{
+    if (this->_src->len().chunks != -1)
+    {
+        const int chks = this->_src->len().chunks;
+        _chunks = new std::vector<T*>(chks);
+        for (int i=0; i<chks; ++i)
+        {
+            _chunks->operator[](i) = this->_src->next();
+        }
+    }
+    else
+    {
+        _chunks = new std::vector<T*>;
+        _chunks->reserve(40000);
+        while (this->_src->len().chunks == -1)
+        {
+            _chunks->push_back(this->_src->next());
+        }
+    }
+}
+
+template <typename T>
+LengthFindingSource<T>::~LengthFindingSource()
+{
+    for (int i=0; i<_chunks->size(); ++i)
+    {
+        T_allocator<T>::free(_chunks->operator[](i));
+    }
+    delete _chunks;
+}
+
+template <typename T>
+T *LengthFindingSource<T>::next()
+{
+    T *chk = _chunks->operator[](_readIndx++);
+    T_allocator<T>::add_ref(chk);
+    return chk;
+}
+
 template <typename Chunk_T>
 BeatDetector<Chunk_T>::BeatDetector() :
-T_sink_source<Chunk_T>(0),
-_my_src(0),
-_rectifier(_s1),
-_passthrough_sink(_s2),
 _diff(10),
 _lpf(2048, 44100.0, 100.0),
 _bpf(2048, 44100.0, 20.0, 200.0),
@@ -14,46 +51,124 @@ _running(true)
     _bpf.init();
     _kf.init();
     
-#if PARALLEL_PROCESS
     for (int i=0; i<NUM_JOBS; ++i)
     {
         _jobs[i] = new process_beats_job(_lpf, _kf);
     }
-#else
-    _s1 = new STFTStream(_lpf, 2048, 1024, 20);
-    _s2 = new STFTStream(_kf, 1024, 512, 20);
-#endif
 }
 
 template <typename Chunk_T>
 BeatDetector<Chunk_T>::~BeatDetector()
 {
-#if PARALLEL_PROCESS
     for (int i=0; i<NUM_JOBS; ++i)
     {
         delete _jobs[i];
     }
-#else
-    delete _s1;
-    delete _s2;
-#endif
+}
+
+template <typename Chunk_T>
+void BeatDetector<Chunk_T>::reset_source(T_source<Chunk_T> *src, Lock_T *lock)
+{
+    reset_stats();
+    process_all_from_source(src, lock);
+}
+
+template <typename Chunk_T>
+void BeatDetector<Chunk_T>::reset_stats()
+{
+    _t = 0.0;
+    _pos = true;
+    _start = false;
+    _x_max = 10.0;
+    _chk_ofs = 0;
+    
+    _dt_sum = 0.0;
+    _dt_points = 0;
+    _dt_avg = 0.0;
+    
+    _peak_list.clear();
+    _beat_list.clear();
+    _beat_avg_list.clear();
+    
+    _max_peak = point();
+    _max = point();
+    _maxs.clear();
+    _last_beat = point();
+    
+    _bpm_list.clear();
+    _final_bpm_list.clear();
+}
+
+template <typename Chunk_T>
+void BeatDetector<Chunk_T>::seek_chk(int chk_ofs)
+{
+    if (chk_ofs == _chk_ofs)
+    {
+        ++_chk_ofs;
+        if (_chk_ofs % 100 == 0)
+        {
+			//	printf("chk %d\n", _chk_ofs);
+        }
+    }
+    else
+    {
+        printf("hello\n");
+    }
+}
+
+template <typename Chunk_T>
+void BeatDetector<Chunk_T>::calc_beats()
+{
+    std::list<double>::iterator i = _final_bpm_list.begin();
+    double last_t = *i;
+    
+    while (last_t > 0.0)
+    {
+        last_t -= _dt_avg;
+        _final_bpm_list.push_front(last_t);
+    }
+    i = _final_bpm_list.begin();
+    last_t = *i;
+    _beat_avg_list.push_back(last_t);
+    i++;
+    while (i != _final_bpm_list.end())
+    {
+        const double dt = *i - last_t;
+        if (dt > 1.5*_dt_avg)
+        {
+            last_t += _dt_avg;
+            //					printf("bpm = %f\n", 60.0/_dt_avg);
+            _beat_avg_list.push_back(last_t);
+            continue;
+        }
+        else if (dt < 0.5*_dt_avg)
+        {
+            i++;
+            continue;
+        }
+        else
+        {
+            last_t += _dt_avg;
+            double diff = 0.1 * (*i - last_t);
+            last_t += diff;
+            //					printf("bpm = %f\n", 60.0/(_dt_avg+diff));
+            _beat_avg_list.push_back(last_t);
+            i++;
+        }
+    }
+    for (int j=0; j<50; ++j)
+    {
+        //				printf("bpm = %f\n", 60.0/_dt_avg);
+        last_t += _dt_avg;
+        _beat_avg_list.push_back(last_t);
+    }
 }
 
 template <typename Chunk_T>
 double BeatDetector<Chunk_T>::analyze()
 {
-    /*   double square_sum = 0.0;
-     int square_count = 0;
-     for (typename std::list<new_beat>::iterator i = _bpm_list.begin();
-     i != _bpm_list.end();
-     i++)
-     {
-     square_sum += i->bpm * i->bpm;
-     ++square_count;
-     }*/
     const double avg = 60.0/_dt_avg;
-    const double stddev = avg * 0.1; //sqrt(square_sum/square_count - avg*avg);//avg * 0.1;
-    //   printf("avg = %f stddev = %f\n", avg, stddev);
+    const double stddev = avg * 0.1;
     
     double bpm = filter(avg, stddev, 1);
     
@@ -74,7 +189,6 @@ double BeatDetector<Chunk_T>::analyze()
     const double final_bpm = final_sum / final_count;
     //  printf("final avg %f\n", final_bpm);
     _dt_avg = 60.0 / final_bpm;
-   // calc_beats();
     std::cout << final_bpm << std::endl;
     return final_bpm;
 }
@@ -110,9 +224,6 @@ double BeatDetector<Chunk_T>::filter(double avg, double stddev, int count)
 template <typename Chunk_T>
 void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src, Lock_T *lock)
 {
-    //delete _thissrc;
-    //_thissrc = new LengthFindingSource<Chunk_T>(src);
-    
     const int chks_to_process = src->len().chunks;
     const int division_size = chks_to_process / NUM_JOBS;
     const int division_rem = chks_to_process % NUM_JOBS;
@@ -160,7 +271,6 @@ void BeatDetector<Chunk_T>::process_chunk(Chunk_T *process_chk)
         {
             if (_start)
             {
-                //	printf("hello\n");
                 _start = false;
                 // pick point with highest dx
                 for (typename std::list<point>::iterator i = _peak_list.begin(); i != _peak_list.end(); i++)
@@ -242,6 +352,72 @@ void BeatDetector<Chunk_T>::process_chunk(Chunk_T *process_chk)
     //	return process_chk;
     //    printf("xmax %f\n", _x_max);
     T_allocator<Chunk_T>::free(process_chk);
+}
+
+template <typename Chunk_T>
+BeatDetector<Chunk_T>::process_beats_job::process_beats_job(const FFTWindowFilter &f1, const FFTWindowFilter &f2) :
+_vecSrc(0),
+_s1(f1, 2048, 1024, 20),
+_s2(f2, 1024, 512, 20),
+_rectifier(&_s1)
+{
+}
+
+template <typename Chunk_T>
+void BeatDetector<Chunk_T>::process_beats_job::reset_source(T_source<Chunk_T> *_src, int nChunks, Lock_T *lock)
+{
+    _lock.acquire();
+    delete _vecSrc;
+    _vecSrc = new VectorSource<Chunk_T>(nChunks);
+    _outputs.resize(nChunks);
+    _guardLock = lock;
+    for (int i=0; i<nChunks; ++i)
+    {
+        if (i%10==0)
+        {
+            CRITICAL_SECTION_GUARD(_guardLock);
+        }
+        Chunk_T *chk = _src->next();
+        _vecSrc->add(chk);
+    }
+    _s1.reset_source(_vecSrc);
+    _s2.reset_source(&_rectifier);
+    _lock.release();
+}
+
+template <typename Chunk_T>
+void BeatDetector<Chunk_T>::process_beats_job::do_it()
+{
+    _lock.acquire();
+    for (int i=0; i<_vecSrc->size(); ++i)
+    {
+        if (i%10==0)
+        {
+            CRITICAL_SECTION_GUARD(_guardLock);
+        }
+        _outputs[i] = _s2.next();
+    }
+    
+    done = true;
+    _done.signal();
+    _lock.release();
+}
+
+template <typename Chunk_T>
+void BeatDetector<Chunk_T>::process_beats_job::step()
+{
+    do_it();
+}
+
+template <typename Chunk_T>
+void BeatDetector<Chunk_T>::process_beats_job::wait_for()
+{
+    _lock.acquire();
+    while (!done)
+    {
+        _done.wait(_lock);
+    }
+    _lock.release();
 }
 
 template <typename Chunk_T>

@@ -70,65 +70,152 @@ Chunk_T *BufferedStream<Chunk_T>::get_chunk(unsigned int chk_ofs)
     _buffer_lock.release();
     return r;
 }
-/*
-template <typename Chunk_T>
-Chunk_T *BufferedStream<Chunk_T>::next_chunk(smp_ofs_t chk_ofs)
-{
-    Chunk_T *c;
-    _buffer_lock.acquire();
-    if (chk_ofs < 0)
-    {
-        return zero_source<Chunk_T>::get()->next();
-    }
-    uint32_t uchk_ofs = (uint32_t)chk_ofs;
-    if (uchk_ofs >= _chks.size())
-        _chks.resize(uchk_ofs*2, 0);
-    if (!_chks[uchk_ofs])
-    {
-        _buffer_lock.release();
-        _src_lock.acquire();
-        c = this->_src->next();
-        _src_lock.release();
-        _buffer_lock.acquire();
-        _chks[uchk_ofs] = c;
-    }
-    c = _chks[uchk_ofs];
-    _buffer_lock.release();
-    return c;
-}*/
 
 template <typename Chunk_T>
 Chunk_T *BufferedStream<Chunk_T>::next()
 {
     return get_chunk(_chk_ofs++);
-    /*
-    smp_ofs_t ofs_in_chk;
-    Chunk_T *chk = T_allocator<Chunk_T>::alloc(), *buf_chk = get_chunk(_chk_ofs);
-    smp_ofs_t to_fill = Chunk_T::chunk_size, loop_fill;
-    typename Chunk_T::sample_t *to_ptr = chk->_data;
+}
+
+template <typename Chunk_T>
+void BufferedStream<Chunk_T>::seek_smp(smp_ofs_t smp_ofs)
+{
     _data_lock.acquire();
-    while (to_fill > 0)
-    {
-        while (_smp_ofs < 0 && to_fill > 0)
-        {
-            (*to_ptr)[0] = 0.0f;
-            (*to_ptr++)[1] = 0.0f;
-            ++_smp_ofs;
-            //--loop_fill;
-            --to_fill;
-        }
-        if (to_fill == 0)
-            break;
-        ofs_in_chk = _smp_ofs % Chunk_T::chunk_size;
-        loop_fill = std::min(to_fill, Chunk_T::chunk_size - ofs_in_chk);
-        memcpy(to_ptr, buf_chk->_data + ofs_in_chk, loop_fill*sizeof(typename Chunk_T::sample_t));
-        to_fill -= loop_fill;
-        to_ptr += loop_fill;
-        if (ofs_in_chk + loop_fill >= Chunk_T::chunk_size)
-            buf_chk = get_chunk(++_chk_ofs);
-        ofs_in_chk = (ofs_in_chk + loop_fill) % Chunk_T::chunk_size;
-        _smp_ofs += loop_fill;
-    }
+    _smp_ofs = smp_ofs;
+    if (_smp_ofs < 0)
+        _chk_ofs = 0;
+    else
+        _chk_ofs = smp_ofs / Chunk_T::chunk_size;
     _data_lock.release();
-    return chk;*/
+}
+
+template <typename Chunk_T>
+int BufferedStream<Chunk_T>::get_samples(double tm, typename Chunk_T::sample_t *buf, int num)
+{
+    smp_ofs_t ofs = tm * this->_src->sample_rate();
+    return get_samples(ofs, buf, num);
+}
+
+template <typename Chunk_T>
+int BufferedStream<Chunk_T>::get_samples(smp_ofs_t ofs, typename Chunk_T::sample_t *buf, int num)
+{
+    while (ofs < 0 && num > 0)
+    {
+        (*buf)[0] = 0.0;
+        (*buf)[1] = 0.0;
+        ++ofs;
+        --num;
+        ++buf;
+    }
+    usmp_ofs_t chk_ofs = (usmp_ofs_t)ofs / Chunk_T::chunk_size,
+    smp_ofs = (usmp_ofs_t)ofs % Chunk_T::chunk_size;
+    int chk_left, to_cpy, written=0;
+    do
+    {
+        chk_left = Chunk_T::chunk_size - smp_ofs;
+        to_cpy = std::min(chk_left, num);
+        _buffer_lock.acquire();
+        if (chk_ofs >= _chks.size())
+            _chks.resize(chk_ofs*2, 0);
+        if (!_chks[chk_ofs])
+        {
+            _buffer_lock.release();
+            _src_lock.acquire();
+            Chunk_T *c = 0;
+            if (this->_src->len().chunks != -1 && usmp_ofs_t(this->_src->len().chunks) <= chk_ofs)
+                c = zero_source<Chunk_T>::get()->next();
+            else
+            {
+                this->_src->seek_chk(chk_ofs);
+                c = this->_src->next();
+            }
+            _src_lock.release();
+            _buffer_lock.acquire();
+            _chks[chk_ofs] = c;
+        }
+        
+        // copy bits
+        memcpy(buf, _chks[chk_ofs]->_data + smp_ofs, sizeof(typename Chunk_T::sample_t)*to_cpy);
+        _buffer_lock.release();
+        
+        if (to_cpy == chk_left)
+        {
+            ++chk_ofs;
+            smp_ofs = 0;
+        }
+        buf += to_cpy;
+        num -= to_cpy;
+        written += to_cpy;
+    } while (num > 0);
+    
+    return written;
+}
+
+template <typename Chunk_T>
+typename T_source<Chunk_T>::pos_info& BufferedStream<Chunk_T>::len()
+{
+    return this->_src->len();
+}
+
+template <typename Chunk_T>
+bool BufferedStream<Chunk_T>::load_next()
+{
+    if (this->_src->eof())
+    {
+        this->_len.chunks = _chk_ofs_loading-1;
+        _src_lock.acquire();
+        this->_src->len().chunks = _chk_ofs_loading-1;
+        this->_src->len().samples = this->_src->len().chunks*Chunk_T::chunk_size;
+        this->_src->len().smp_ofs_in_chk = this->_src->len().samples % this->_src->len().chunks;
+        this->_src->len().time = this->_src->len().samples/this->_src->sample_rate();
+        _src_lock.release();
+        return false;
+    }
+    next_chunk(_chk_ofs_loading++);
+    return true;
+}
+
+template <typename Chunk_T>
+typename BufferedStream<Chunk_T>::Sample_T* BufferedStream<Chunk_T>::load(double tm)
+{
+    this->_src->get_samples(tm, _buffer, BufSz);
+    _buffer_tm = tm;
+    _buffer_p = _buffer;
+    return _buffer_p;
+}
+
+template <typename Chunk_T>
+typename BufferedStream<Chunk_T>::Sample_T* BufferedStream<Chunk_T>::get_at(double tm, int num_samples)
+{
+    if (_buffer_p)
+    {
+        double tm_diff = tm-_buffer_tm;
+        if (tm_diff < 0.0)
+        {
+            return load(tm);
+        }
+        else
+        {
+            smp_ofs_t ofs = tm_diff * this->_src->sample_rate();
+            if (ofs+num_samples >= BufSz)
+            {
+                return load(tm);
+            }
+            else
+            {
+                return _buffer_p + ofs;
+            }
+        }
+    }
+    else
+    {
+        return load(tm);
+    }
+}
+
+template <typename Chunk_T>
+typename BufferedStream<Chunk_T>::Sample_T* BufferedStream<Chunk_T>::get_at_ofs(smp_ofs_t ofs, int n)
+{
+    get_samples(ofs, _buffer, n);
+    return _buffer;
 }

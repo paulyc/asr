@@ -19,7 +19,7 @@ template <typename Chunk_T>
 class PitchableMixin : public ITrackController
 {
 public:
-	PitchableMixin() : _resample_filter(0), _pitchpoint(48000.0)
+	PitchableMixin(double sampleRateOut=48000.0) : _resample_filter(0), _pitchpoint(sampleRateOut), _sampleRateOut(sampleRateOut)
 	{
 	}
 
@@ -34,7 +34,7 @@ public:
 	void create(BufferedStream<Chunk_T> *src, double sample_rate)
 	{
 		destroy();
-		_resample_filter = new filter_t(src, sample_rate, 48000.0);
+		_resample_filter = new filter_t(src, sample_rate, _sampleRateOut);
 	//	_resample_filter->fill_coeff_tbl();
 		_pitch = 1.0;
 	}
@@ -55,7 +55,7 @@ public:
 		lock();
 		if (loaded() && _resample_filter)
 		{
-			printf("output mod %f\n", 48000.0/f);
+			printf("output mod %f\n", _sampleRateOut/f);
 			_resample_filter->set_output_sampling_frequency(f);
 		}
 		unlock();
@@ -70,20 +70,20 @@ public:
 	{
 		lock();
 		_pitch = mod;
-		set_output_sampling_frequency(48000.0/mod);
+		set_output_sampling_frequency(_sampleRateOut/mod);
 		unlock();
 	}
 
 	void bend_pitch(double dp)
 	{
 		lock();
-		set_output_sampling_frequency(48000.0/(_pitch+dp));
+		set_output_sampling_frequency(_sampleRateOut/(_pitch+dp));
 		unlock();
 	}
 
 	double get_pitch()
 	{
-		return 48000.0/_resample_filter->get_output_sampling_frequency();
+		return _sampleRateOut/_resample_filter->get_output_sampling_frequency();
 	}
 
 	void nudge_pitch(double dp)
@@ -123,7 +123,7 @@ protected:
 	double _pitchpoint;
 
 	double _pitch;
-	//double _dPitch;
+	double _sampleRateOut;
 };
 
 template <typename Chunk_T>
@@ -397,69 +397,12 @@ public:
 	using SeekableMixin<Chunk_T>::goto_cuepoint;
 	using SeekableMixin<Chunk_T>::seek_time;
 
-	AudioTrack(ASIOProcessor *io, int track_id, const char *filename) :
-		_io(io),
-		_in_config(false),
-		_paused(true),
-		_loaded(true),
-		_track_id(track_id),
-		_last_time(0.0),
-		_pause_monitor(false)
-	{
-		_future = new FutureExecutor;
-
-		if (filename)
-			set_source_file_impl(std::string(filename), &_io->get_lock());
-	}
-
-	virtual ~AudioTrack()
-	{
-        delete _future;
-		_future = 0;
-        
-		_loading_lock.acquire();
-		while (!_loaded) 
-			_track_loaded.wait(_loading_lock);
-        _loading_lock.release();
-
-		ViewableMixin<Chunk_T>::destroy();
-		PitchableMixin<Chunk_T>::destroy();
-		
-		BufferedSource<Chunk_T>::destroy();
-	}
+	AudioTrack(ASIOProcessor *io, int track_id, const char *filename);
+	virtual ~AudioTrack();
 
 	void set_source_file(std::string filename, Lock_T &lock);
-
-	Chunk_T* next()
-	{
-		Chunk_T *chk;
-
-		_loading_lock.acquire();
-		if (!_loaded || (_paused && !_pause_monitor))
-		{
-			_loading_lock.release();
-			chk = zero_source<Chunk_T>::get()->next();
-		}
-		else
-		{
-			if (_paused && _pause_monitor)
-			{
-				double t = this->_resample_filter->get_time();
-				chk = this->_resample_filter->next();
-				this->_resample_filter->seek_time(t);
-			}
-			else
-			{
-				chk = this->_resample_filter->next();
-				if (true && this->_resample_filter->get_time() >= len().time)
-					this->_resample_filter->seek_time(0.0);
-			}
-			_loading_lock.release();
-			render();
-		}
-		
-		return chk;
-	}
+	Chunk_T* next();
+    bool load_step(Lock_T *lock=0);
 
 	bool play_pause(bool pause_monitor=false)
 	{
@@ -488,43 +431,6 @@ public:
 	{
 		if (!_loaded && !_in_config)
             load_step();
-	}
-
-	bool load_step(Lock_T *lock=0)
-	{
-		this->_meta->load_metadata(lock, _io);
-        
-        printf("len %d samples %d chunks\n", this->_src_buf->len().samples, this->_src_buf->len().chunks);
-        
-		this->_display->set_zoom(1.0);
-		this->_display->set_left(0.0);
-		//pthread_mutex_lock(lock);
-		this->_display->set_wav_heights(lock);
-	//	if (!_display->set_next_height())
-	//	{
-		//	GenericUI *ui;
-	//		pthread_mutex_unlock(lock);
-        
-        this->_detector.reset_source(this->_src_buf, lock);
-			
-			this->_resample_filter->set_output_scale(1.0f / this->_src->maxval());
-			//_meta->load_metadata(lock);
-			_loading_lock.acquire();
-			_loaded = true;
-
-			if (_io && _io->get_ui())
-            {
-				_io->get_ui()->render(_track_id);
-            }
-
-			_track_loaded.signal();
-			_loading_lock.release();
-
-			_io->get_ui()->get_track(_track_id).filename.set_text(_filename.c_str(), false);
-			
-			return false;
-	//	}
-		//pthread_mutex_unlock(lock);
 	}
 
 	void draw_if_loaded()
@@ -619,17 +525,6 @@ public:
 		return PitchableMixin<Chunk_T>::get_source();
 	}
 
-	/*void have_position(const typename ASIOProcessor::pos_info &pos)
-	{
-		if (!_loaded || _paused)
-		{
-			return;
-		}
-		filter_t *src = get_root_source();
-		if (src)
-			src->have_position(pos);
-	}*/
-
 	virtual bool is_paused() const { return _paused; }
 
 	void goto_cuepoint(bool x)
@@ -657,6 +552,7 @@ protected:
 
 	std::string _filename;
 	bool _pause_monitor;
+    
 private:
 	void set_source_file_impl(std::string filename, Lock_T *lock);
 };

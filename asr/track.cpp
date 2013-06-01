@@ -39,6 +39,39 @@ void BufferedSource<Chunk_T>::create(const char *filename, Lock_T *lock)
 }
 
 template <typename Chunk_T>
+AudioTrack<Chunk_T>::AudioTrack(ASIOProcessor *io, int track_id, const char *filename) :
+_io(io),
+_in_config(false),
+_paused(true),
+_loaded(true),
+_track_id(track_id),
+_last_time(0.0),
+_pause_monitor(false)
+{
+    _future = new FutureExecutor;
+    
+    if (filename)
+        set_source_file_impl(std::string(filename), &_io->get_lock());
+}
+
+template <typename Chunk_T>
+AudioTrack<Chunk_T>::~AudioTrack()
+{
+    delete _future;
+    _future = 0;
+    
+    _loading_lock.acquire();
+    while (!_loaded)
+        _track_loaded.wait(_loading_lock);
+    _loading_lock.release();
+    
+    ViewableMixin<Chunk_T>::destroy();
+    PitchableMixin<Chunk_T>::destroy();
+    
+    BufferedSource<Chunk_T>::destroy();
+}
+
+template <typename Chunk_T>
 void AudioTrack<Chunk_T>::set_source_file(std::string filename, Lock_T &lock)
 {
     _future->submit(
@@ -89,4 +122,74 @@ void AudioTrack<Chunk_T>::set_source_file_impl(std::string filename, Lock_T *loc
     
     if (!_loaded)
         Worker::do_job(new Worker::load_track_job<AudioTrack<Chunk_T> >(this, lock));
+}
+
+template <typename Chunk_T>
+Chunk_T* AudioTrack<Chunk_T>::next()
+{
+    Chunk_T *chk;
+    
+    _loading_lock.acquire();
+    if (!_loaded || (_paused && !_pause_monitor))
+    {
+        _loading_lock.release();
+        chk = zero_source<Chunk_T>::get()->next();
+    }
+    else
+    {
+        if (_paused && _pause_monitor)
+        {
+            double t = this->_resample_filter->get_time();
+            chk = this->_resample_filter->next();
+            this->_resample_filter->seek_time(t);
+        }
+        else
+        {
+            chk = this->_resample_filter->next();
+            if (true && this->_resample_filter->get_time() >= len().time)
+                this->_resample_filter->seek_time(0.0);
+        }
+        _loading_lock.release();
+        render();
+    }
+    
+    return chk;
+}
+
+template <typename Chunk_T>
+bool AudioTrack<Chunk_T>::load_step(Lock_T *lock)
+{
+    this->_meta->load_metadata(lock, _io);
+    
+    printf("len %d samples %d chunks\n", this->_src_buf->len().samples, this->_src_buf->len().chunks);
+    
+    this->_display->set_zoom(1.0);
+    this->_display->set_left(0.0);
+    //pthread_mutex_lock(lock);
+    this->_display->set_wav_heights(lock);
+	//	if (!_display->set_next_height())
+	//	{
+    //	GenericUI *ui;
+	//		pthread_mutex_unlock(lock);
+    
+    this->_detector.reset_source(this->_src_buf, lock);
+    
+    this->_resample_filter->set_output_scale(1.0f / this->_src->maxval());
+    //_meta->load_metadata(lock);
+    _loading_lock.acquire();
+    _loaded = true;
+    
+    if (_io && _io->get_ui())
+    {
+        _io->get_ui()->render(_track_id);
+    }
+    
+    _track_loaded.signal();
+    _loading_lock.release();
+    
+    _io->get_ui()->get_track(_track_id).filename.set_text(_filename.c_str(), false);
+    
+    return false;
+	//	}
+    //pthread_mutex_unlock(lock);
 }
