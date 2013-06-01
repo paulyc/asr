@@ -36,6 +36,33 @@ class IMIDIDevice;
 template <typename T>
 class AudioTrack;
 
+class chunk_file_writer : public Worker::job
+{
+public:
+    chunk_file_writer(CoreAudioInput *src, const char *filename) : _src(src)
+    {
+        _f = fopen(filename, "wb");
+    }
+    virtual ~chunk_file_writer()
+    {
+        fclose(_f);
+    }
+    virtual void do_it()
+    {
+        chunk_t *chk = 0;
+        while ((chk = _src->next()) != 0)
+        {
+            fwrite(chk->_data, sizeof(typename chunk_t::sample_t), chunk_t::chunk_size, _f);
+        }
+        done = true;
+    }
+    virtual void step(){ do_it(); }
+    void stop() { _src->stop(); delete _src; }
+private:
+    CoreAudioInput *_src;
+    FILE *_f;
+};
+
 class ASIOProcessor
 {
 public:
@@ -211,6 +238,7 @@ public: // was protected
     bool _need_buffers;
 
     IAudioDevice *_device;
+    IAudioDevice *_inputDevice;
 	bool _sync_cue;
 
 	bool _waiting;
@@ -223,6 +251,7 @@ public:
     IAudioStream *_outputStream;
     
 #if MAC
+    CoreAudioInput *_input;
     CoreAudioInputProcessor *_inputStreamProcessor;
     CoreAudioOutputProcessor *_outputStreamProcessor;
     CoreMIDIClient _client;
@@ -231,6 +260,7 @@ public:
 #endif // WINDOWS
     ChunkGenerator *_gen;
     gain<T_source<chunk_t> > *_gain1, *_gain2;
+    chunk_file_writer *_fileWriter;
 };
 
 #endif // !defined(_IO_H)

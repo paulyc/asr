@@ -39,15 +39,18 @@ ASIOProcessor::ASIOProcessor() :
 	_ui(0),
 	_finishing(false),
 	_device(0),
+    _inputDevice(0),
 	_sync_cue(false),
 	_midi_controller(0),
+    _input(0),
     _inputStream(0),
     _outputStream(0),
     _inputStreamProcessor(0),
     _outputStreamProcessor(0),
     _client(CFSTR("The MIDI Client")),
     _gen(0),
-    _gain1(0), _gain2(0)
+    _gain1(0), _gain2(0),
+    _fileWriter(0)
 {
 	Init();
 }
@@ -143,6 +146,10 @@ void ASIOProcessor::Init()
             {
                 _device = (*devIter)->Instantiate();
             }
+            if ((*devIter)->GetName() == std::string("Built-in Microphone"))
+            {
+                _inputDevice = (*devIter)->Instantiate();
+            }
         }
     }
     if (!_device)
@@ -203,11 +210,14 @@ void ASIOProcessor::Destroy()
     delete _midi_controller;
     delete _filter_controller;
     
+    if (_fileWriter) _fileWriter->stop(); // deletes _fileWriter and _input
+    
     delete _inputStream;
     delete _inputStreamProcessor;
     delete _outputStream;
     delete _outputStreamProcessor;
     delete _device;
+    delete _inputDevice;
     
 #if WINDOWS
 	CoUninitialize();
@@ -281,7 +291,7 @@ void ASIOProcessor::CreateTracks()
     {
         if ((*i)->GetStreamType() == IAudioStreamDescriptor::Input)
         {
-            //_inputStream = (*i)->GetStream();
+            _inputStream = (*i)->GetStream();
         }
         else
         {
@@ -291,6 +301,32 @@ void ASIOProcessor::CreateTracks()
             _outputStreamProcessor->AddOutput(CoreAudioOutput(_gen, 2, 2, 3));
         }
     }
+#if CARE_ABOUT_INPUT
+    if (!_inputStream && _inputDevice)
+    {
+        streams = _inputDevice->GetStreams();
+        for (std::vector<const IAudioStreamDescriptor*>::iterator i = streams.begin();
+             i != streams.end();
+             i++)
+        {
+            if ((*i)->GetStreamType() == IAudioStreamDescriptor::Input)
+            {
+                _inputStream = (*i)->GetStream();
+            }
+        }
+        
+        if (_inputStream)
+        {
+            _inputStreamProcessor = new CoreAudioInputProcessor(_inputStream->GetDescriptor());
+            _input = new CoreAudioInput(1, 0, 1);
+            _fileWriter = new chunk_file_writer(_input, "output.raw");
+            _inputStreamProcessor->AddInput(_input);
+            Worker::do_job(_fileWriter, false, false);
+            _inputStream->SetProc(_inputStreamProcessor);
+        }
+    }
+#endif
+    
     _outputStream->SetProc(_outputStreamProcessor);
 
 	/*asio_sink<chunk_t, chunk_buffer, int32_t> *main_out = new asio_sink<chunk_t, chunk_buffer, int32_t>(
@@ -361,6 +397,7 @@ void ASIOProcessor::Start()
 	if (_midi_controller)
 		_midi_controller->Start();
 	_device->Start();
+    if (_inputDevice) _inputDevice->Start();
 }
 
 void ASIOProcessor::Stop()
@@ -370,6 +407,7 @@ void ASIOProcessor::Stop()
 	if (_midi_controller)
 		_midi_controller->Stop();
     _device->Stop();
+    if (_inputDevice) _inputDevice->Stop();
 }
 
 void ASIOProcessor::BufferSwitch(long doubleBufferIndex)

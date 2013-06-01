@@ -185,7 +185,8 @@ protected:
 class IAudioStreamProcessor
 {
 public:
-    virtual void Process(IAudioBuffer *buffer) = 0;
+    virtual void ProcessInput(IAudioBuffer *buffer) = 0;
+    virtual void ProcessOutput(IAudioBuffer *buffer) = 0;
 };
 
 class SineAudioOutputProcessor : public IAudioStreamProcessor
@@ -193,7 +194,8 @@ class SineAudioOutputProcessor : public IAudioStreamProcessor
 public:
     SineAudioOutputProcessor(float32_t frequency, const IAudioStreamDescriptor *streamDesc);
     
-    virtual void Process(IAudioBuffer *buffer);
+    virtual void ProcessOutput(IAudioBuffer *buffer);
+    virtual void ProcessInput(IAudioBuffer *buffer) {}
 private:
     float32_t _frequency;
     float64_t _time;
@@ -201,21 +203,46 @@ private:
     int _frameSize;
 };
 
+class IChunkHandler
+{
+public:
+    virtual void process(chunk_t *chk) = 0;
+};
+
 #if MAC
 class CoreAudioInput : public AudioInput
 {
 public:
-    CoreAudioInput(int id, int ch1ofs, int ch2ofs) : _id(id), _ch1ofs(ch1ofs), _ch2ofs(ch2ofs) {}
+    CoreAudioInput(int id, int ch1ofs, int ch2ofs);
 	virtual ~CoreAudioInput();
     
 	virtual void process(MultichannelAudioBuffer *buf);
     chunk_t *next();
+    void stop();
 private:
     int _id;
     int _ch1ofs;
     int _ch2ofs;
     std::queue<chunk_t*> _chunkQ;
     Lock_T _lock;
+    Condition_T _chunkAvailable;
+    chunk_t *_nextChunk;
+    typename chunk_t::sample_t *_writePtr;
+};
+
+// can be combined with CoreAudioOutputProcessor
+class CoreAudioInputProcessor : public IAudioStreamProcessor
+{
+public:
+    CoreAudioInputProcessor(const IAudioStreamDescriptor *streamDesc);
+    
+    void AddInput(CoreAudioInput *in) { _inputs.push_back(in); }
+    virtual void ProcessInput(IAudioBuffer *buffer);
+    virtual void ProcessOutput(IAudioBuffer *buffer) {}
+private:
+    int _channels;
+    int _frameSize;
+    std::vector<CoreAudioInput*> _inputs;
 };
 
 class CoreAudioOutput : public AudioOutput
@@ -234,22 +261,14 @@ public:
     CoreAudioOutputProcessor(const IAudioStreamDescriptor *streamDesc);
     
     void AddOutput(const CoreAudioOutput &out) { _outputs.push_back(out); }
-    virtual void Process(IAudioBuffer *buffer);
+    virtual void ProcessOutput(IAudioBuffer *buffer);
+    virtual void ProcessInput(IAudioBuffer *buffer) {}
 private:
     int _channels;
     int _frameSize;
     std::vector<CoreAudioOutput> _outputs;
-    
-    chunk_t *_chk;
-	typename chunk_t::sample_t *_read;
 };
 
-class CoreAudioInputProcessor : public IAudioStreamProcessor
-{
-public:
-    void AddInput(const CoreAudioInput &in);
-    virtual void Process(IAudioBuffer *buffer);
-};
 #elif WINDOWS
 
 #endif // WINDOWS

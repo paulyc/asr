@@ -18,7 +18,7 @@ SineAudioOutputProcessor::SineAudioOutputProcessor(float32_t frequency, const IA
     _frameSize = streamDesc->GetNumChannels() * streamDesc->GetSampleWordSizeInBytes();
 }
     
-void SineAudioOutputProcessor::Process(IAudioBuffer *buffer)
+void SineAudioOutputProcessor::ProcessOutput(IAudioBuffer *buffer)
 {
     float32_t *sample = (float32_t*)buffer->GetBuffer();
     int bufferSizeFrames = buffer->GetBufferSize() / _frameSize;
@@ -34,8 +34,20 @@ void SineAudioOutputProcessor::Process(IAudioBuffer *buffer)
 #if MAC
 #include <CoreAudio/CoreAudio.h>
 
+
+CoreAudioInput::CoreAudioInput(int id, int ch1ofs, int ch2ofs) :
+_id(id),
+_ch1ofs(ch1ofs),
+_ch2ofs(ch2ofs),
+_nextChunk(0)
+{
+    _nextChunk = T_allocator<chunk_t>::alloc();
+    _writePtr = _nextChunk->_data;
+}
+
 CoreAudioInput::~CoreAudioInput()
 {
+    T_allocator<chunk_t>::free(_nextChunk);
     _lock.acquire();
     while (!_chunkQ.empty())
     {
@@ -47,24 +59,73 @@ CoreAudioInput::~CoreAudioInput()
 
 void CoreAudioInput::process(MultichannelAudioBuffer *buf)
 {
+    if (_ch1ofs >= buf->GetNumChannels())
+        return;
+    const int stride = buf->GetStride();
+    int to_read = buf->GetBufferSizeFrames(), loop_read, bytes_read=0, chunk_left;
+	float32_t * const read = (float32_t* const)buf->GetBuffer();
     
+	while (to_read > 0)
+	{
+		if (_writePtr - _nextChunk->_data >= chunk_t::chunk_size)
+		{
+			_lock.acquire();
+            _chunkQ.push(_nextChunk);
+            _chunkAvailable.signal();
+            _lock.release();
+            _nextChunk = T_allocator<chunk_t>::alloc();
+			_writePtr = _nextChunk->_data;
+		}
+        chunk_left = chunk_t::chunk_size - (_writePtr - _nextChunk->_data);
+		loop_read = std::min(to_read, chunk_left);
+        for (int i = 0; i < loop_read; ++i)
+        {
+            _writePtr[i][0] = read[i*stride+_ch1ofs];
+            _writePtr[i][1] = read[i*stride+_ch2ofs];
+        }
+        
+		_writePtr += loop_read;
+		to_read -= loop_read;
+		bytes_read += loop_read;
+	}
 }
 
 chunk_t *CoreAudioInput::next()
 {
     chunk_t *chk = 0;
     _lock.acquire();
-    if (_chunkQ.empty())
+    while (_chunkQ.empty())
     {
-        chk = zero_source<chunk_t>::get()->next();
+        _chunkAvailable.wait(_lock);
     }
-    else
-    {
-        chk = _chunkQ.front();
-        _chunkQ.pop();
-    }
+    chk = _chunkQ.front();
+    _chunkQ.pop();
     _lock.release();
     return chk;
+}
+
+void CoreAudioInput::stop()
+{
+    _lock.acquire();
+    _chunkQ.push(0);
+    _chunkAvailable.signal();
+    _lock.release();
+}
+
+CoreAudioInputProcessor::CoreAudioInputProcessor(const IAudioStreamDescriptor *streamDesc)
+{
+    _channels = streamDesc->GetNumChannels();
+    _frameSize = _channels * streamDesc->GetSampleWordSizeInBytes();
+}
+
+void CoreAudioInputProcessor::ProcessInput(IAudioBuffer *buffer)
+{
+    for (std::vector<CoreAudioInput*>::iterator in = _inputs.begin();
+         in != _inputs.end();
+         in++)
+    {
+        (*in)->process(dynamic_cast<MultichannelAudioBuffer*>(buffer));
+    }
 }
 
 void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
@@ -103,7 +164,7 @@ CoreAudioOutputProcessor::CoreAudioOutputProcessor(const IAudioStreamDescriptor 
     _frameSize = _channels * streamDesc->GetSampleWordSizeInBytes();
 }
 
-void CoreAudioOutputProcessor::Process(IAudioBuffer *buffer)
+void CoreAudioOutputProcessor::ProcessOutput(IAudioBuffer *buffer)
 {
     for (std::vector<CoreAudioOutput>::iterator out = _outputs.begin();
          out != _outputs.end();
@@ -365,7 +426,14 @@ OSStatus CoreAudioStream::_audioCB(AudioObjectID           inDevice,
     {
         buf.SetBuffer(outOutputData->mBuffers[i].mData);
         buf.SetBufferSize(outOutputData->mBuffers[i].mDataByteSize);
-        stream->_proc->Process(&buf);
+        stream->_proc->ProcessOutput(&buf);
+    }
+    numBuffers = inInputData->mNumberBuffers;
+    for (UInt32 i = 0; i < numBuffers; ++i)
+    {
+        buf.SetBuffer(inInputData->mBuffers[i].mData);
+        buf.SetBufferSize(inInputData->mBuffers[i].mDataByteSize);
+        stream->_proc->ProcessInput(&buf);
     }
     return 0;
 }
