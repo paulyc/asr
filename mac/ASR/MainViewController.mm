@@ -55,4 +55,10 @@
     }
 }
 
+- (void)playTrack1
+{
+    AppDelegate *del = [NSApp delegate];
+    del.ui->play_pause(1);
+}
+
 @end

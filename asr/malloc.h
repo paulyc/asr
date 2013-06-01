@@ -274,8 +274,12 @@ public:
 			_info_map.erase(_T_queue.front());
 #endif
        //     printf("Delete-ing %p\n", _T_queue.front());
-			delete _T_queue.front();
+			T* t = _T_queue.front();
 			_T_queue.pop();
+            _lock.release();
+            delete t;
+            sched_yield();
+            _lock.acquire();
 		}
 		_lock.release();
 	}

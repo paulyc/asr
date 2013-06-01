@@ -125,6 +125,7 @@ void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src, Lock
     _jobs[NUM_JOBS-1]->reset_source(src, division_size+division_rem, lock);
     Worker::do_job(_jobs[NUM_JOBS-1], false, false, false);
     
+    
     for (int j=0; j<NUM_JOBS; ++j)
     {
         _jobs[j]->wait_for();
