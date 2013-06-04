@@ -894,9 +894,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "ASR/ASR-Prefix.pch";
 				HEADER_SEARCH_PATHS = (
-					"../fftw-3.3.3",
-					"../libmad-0.15.1b",
-					"../flac-1.2.1/include",
+					"../contrib/fftw-3.3.3/api",
+					"../contrib/libmad-0.15.1b",
+					../contrib/flac/include,
 				);
 				INFOPLIST_FILE = "ASR/ASR-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
@@ -922,9 +922,9 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "ASR/ASR-Prefix.pch";
 				HEADER_SEARCH_PATHS = (
-					"../fftw-3.3.3",
-					"../libmad-0.15.1b",
-					"../flac-1.2.1/include",
+					"../contrib/fftw-3.3.3/api",
+					"../contrib/libmad-0.15.1b",
+					../contrib/flac/include,
 				);
 				INFOPLIST_FILE = "ASR/ASR-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
