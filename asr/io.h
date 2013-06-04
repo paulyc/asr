@@ -71,9 +71,10 @@ public:
             fwrite(chk->_data, sizeof(typename chunk_t::sample_t), chunk_t::chunk_size, _f);
         }
         done = true;
+        delete _src;
     }
     virtual void step(){ do_it(); }
-    void stop() { _src->stop(); delete _src; }
+    void stop() { _src->stop(); }
 private:
     CoreAudioInput *_src;
     FILE *_f;

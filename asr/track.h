@@ -537,6 +537,12 @@ public:
 	{
 		SeekableMixin<Chunk_T>::seek_time(d);
 	}
+    
+    void quitting()
+    {
+        delete _future;
+        _future = 0;
+    }
 
 protected:
 	ASIOProcessor *_io;

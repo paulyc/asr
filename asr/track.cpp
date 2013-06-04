@@ -65,9 +65,6 @@ _pause_monitor(false)
 template <typename Chunk_T>
 AudioTrack<Chunk_T>::~AudioTrack()
 {
-    delete _future;
-    _future = 0;
-    
     _loading_lock.acquire();
     while (!_loaded)
         _track_loaded.wait(_loading_lock);

@@ -52,3 +52,14 @@ void ChunkGenerator::unlock(int id)
         _ioLock->release();
  //   _lock.release();
 }
+
+void ChunkGenerator::kill()
+{
+    _lock.acquire();
+    for (std::unordered_map<int, IChunkGeneratorLoop<chunk_t>*>::iterator i = _streams.begin();
+         i != _streams.end();
+         i++)
+    {
+        i->second->kill();
+    }
+}

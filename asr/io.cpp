@@ -247,7 +247,12 @@ void ASIOProcessor::Destroy()
 	delete _master_xfader;
 	delete _aux;
     
-    // probably want to join on worker threads exiting so we dont destroy this while generating
+    _gen->kill();
+    _tracks[0]->quitting();
+    _tracks[1]->quitting();
+    
+    Worker::destroy();
+    
     delete _gen;
     delete _gain1;
     delete _gain2;

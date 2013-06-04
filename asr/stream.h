@@ -309,6 +309,7 @@ class IChunkGeneratorLoop
 {
 public:
     virtual T *get() = 0;
+    virtual void kill() = 0;
 };
 
 class ChunkGenerator : public IChunkGeneratorCallback<chunk_t>
@@ -325,8 +326,8 @@ public:
     chunk_t* GetNextChunk(int streamID);
     virtual void lock(int id);
     virtual void unlock(int id);
+    void kill();
 private:
-
     std::unordered_map<int, IChunkGeneratorLoop<chunk_t>*> _streams;
     int _chunksToBuffer;
     Lock_T _lock;

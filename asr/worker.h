@@ -28,9 +28,7 @@
 
 class Worker
 {
-	//friend class Track;
 public:
-	static Worker *_instance;
 	Worker() :
 		_blockOnCritical(true)
 	{
@@ -58,6 +56,27 @@ public:
 
 	static void destroy()
 	{
+        _job_lock.acquire();
+        _running = false;
+        for (int i=0; i<_tids.size(); ++i)
+        {
+            _job_rdy.signal();
+        }
+        for (int i=0; i<_cr_tids.size(); ++i)
+        {
+            _cr_job_rdy.signal();
+        }
+        _job_lock.release();
+        for (int i=0; i<_tids.size(); ++i)
+        {
+            void *res;
+            pthread_join(_tids[i], &res);
+        }
+        for (int i=0; i<_cr_tids.size(); ++i)
+        {
+            void *res;
+            pthread_join(_cr_tids[i], &res);
+        }
 	}
 
 	pthread_t _tid;
@@ -107,14 +126,16 @@ public:
             cbObj->lock(chkId);
             while (running)
             {
-                while (nextChks.size() >= _chunks_to_buffer)
+                if (nextChks.size() >= _chunks_to_buffer)
                 {
                     cbObj->unlock(chkId);
                     doGen.wait(myLock);
                     cbObj->lock(chkId);
+                    continue;
                 }
                 nextChks.push(src->next());
             }
+            cbObj->unlock(chkId);
 		}
         
         Chunk_T *get()
@@ -131,6 +152,14 @@ public:
             }
             myLock.release();
             return chk;
+        }
+        
+        void kill()
+        {
+            myLock.acquire();
+            running = false;
+            doGen.signal();
+            myLock.release();
         }
         
         Lock_T myLock;
@@ -246,17 +275,26 @@ public:
 	static std::queue<job*> _idle_jobs;
 	static pthread_once_t once_control; 
 	bool _blockOnCritical;
+    static std::vector<pthread_t> _tids;
+    static std::vector<pthread_t> _cr_tids;
 
 	void spin(bool critical=false)
 	{
 #if 1
+        _job_lock.acquire();
 		if (critical)
         {
             sched_param p = {1};
             pthread_create(&_tid, 0, threadproc_cr, (void*)this);
             pthread_setschedparam(_tid, SCHED_FIFO, &p);
+            _cr_tids.push_back(_tid);
         }
-		else pthread_create(&_tid, 0, threadproc_id, (void*)this);
+		else
+        {
+            pthread_create(&_tid, 0, threadproc_id, (void*)this);
+            _tids.push_back(_tid);
+        }
+        _job_lock.release();
 #else
 		pthread_create(&_tid, 0, threadproc, (void*)this);
 #endif
@@ -284,14 +322,14 @@ public:
 			{
 				printf("waiting on %p\n", j);
 				_job_done.wait(_job_lock);
-				printf("done %p\n", j);
 			}
+            printf("done %p\n", j);
 			delete j;
 		}
 		_job_lock.release();
 	}
 
-protected:
+private:
 	static void* threadproc(void *arg)
 	{
 		static_cast<Worker*>(arg)->thread();
@@ -313,12 +351,13 @@ protected:
 	void critical_thread()
 	{
 		job *cr_j=0;
-		while (true)
+        _job_lock.acquire();
+		while (_running)
 		{
-			_job_lock.acquire();
-			while (_critical_jobs.empty())
+			if (_critical_jobs.empty())
 			{
 				_cr_job_rdy.wait(_job_lock);
+                continue;
 			}
 
 			cr_j = _critical_jobs.front();
@@ -330,18 +369,22 @@ protected:
 			if (cr_j->_deleteme)
 				delete cr_j;
 			cr_j = 0;
+            _job_lock.acquire();
 			_job_done.signal();
 		}
+        _job_lock.release();
 		delete this;
 	}
 
 	void idle_thread()
 	{
 		job *id_j=0;
-		while (true)
+        _job_lock.acquire();
+		while (_running)
 		{
 			if (id_j)
 			{
+                _job_lock.release();
 				id_j->step();
 				if (id_j->done)
 				{
@@ -351,29 +394,30 @@ protected:
 					id_j = 0;
 					_job_done.signal();
 				}
+                _job_lock.acquire();
 			}
 			else 
 			{
-				_job_lock.acquire();
-				while (_idle_jobs.empty())
+				if (_idle_jobs.empty())
 				{
 					_job_rdy.wait(_job_lock);
+                    continue;
 				}
 				id_j = _idle_jobs.front();
 				_idle_jobs.pop();
 				id_j->_thread = _tid;
-				_job_lock.release();
 			}
 		}
+        _job_lock.release();
 		delete this;
 	}
 
 	void thread()
 	{
 		job *id_j=0, *cr_j=0;
-		while (true)
+        _job_lock.acquire();
+		while (_running)
 		{
-			_job_lock.acquire();
 			while (!_critical_jobs.empty())
 			{
 				cr_j = _critical_jobs.front();
@@ -406,6 +450,7 @@ protected:
 					id_j = 0;
 					_job_done.signal();
 				}
+                _job_lock.acquire();
 			}
 			else 
 			{
@@ -413,19 +458,23 @@ protected:
 				{
 					id_j = _idle_jobs.front();
 					_idle_jobs.pop();
-					_job_lock.release();
 					id_j->_thread = _tid;
 				}
 				else
 				{
-					while (_critical_jobs.empty() && _idle_jobs.empty())
+					if (_critical_jobs.empty() && _idle_jobs.empty())
+                    {
 						_job_rdy.wait(_job_lock);
-					_job_lock.release();
+                        continue;
+                    }
 				}
 			}
 		}
+        _job_lock.release();
 		delete this;
 	}
+
+    static bool _running;
 };
 
 #endif // !defined(LOADER_H)
