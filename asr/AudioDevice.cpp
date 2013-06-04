@@ -158,6 +158,12 @@ void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
         {
             write[i*stride+_ch1id] = _read[i][0];
             write[i*stride+_ch2id] = _read[i][1];
+            
+            if (!_clip && (_read[i][0] > 1.0f || _read[i][1] > 1.0f))
+            {
+                _clip = true;
+                printf("clip\n");
+            }
         }
         
 		_read += loop_write;
