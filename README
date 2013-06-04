@@ -1,0 +1,8 @@
+ASR is a digital audio processing application for live DJ performance.
+
+Previously developed for Win32 / ASIO and ported to Mac.
+
+Only Mac build is currently working, open mac/mac.xcodeproj and build.
+
+Developed for use with a Saffire Pro 24 FireWire audio interface
+and CDJ-350 MIDI controller. Can use other hardware with some work.
