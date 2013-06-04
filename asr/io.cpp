@@ -1,3 +1,19 @@
+// ASR - Digital Signal Processor
+// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #include "config.h"
 #include "io.h"
 #include "tracer.h"
@@ -261,9 +277,9 @@ void ASIOProcessor::CreateTracks()
 	
     //const double gain =
     _gain1 = new gain<T_source<chunk_t> >(_tracks[0]);
-    _gain1->set_gain_db(-3.0);
+    _gain1->set_gain_db(-1.0);
     _gain2 = new gain<T_source<chunk_t> >(_tracks[1]);
-    _gain2->set_gain_db(-3.0);
+    _gain2->set_gain_db(-1.0);
     
     _gen = new ChunkGenerator(_device->GetDescriptor()->GetBufferSizeFrames(), &_io_lock);
     _gen->AddChunkSource(_gain1, 1);
@@ -314,16 +330,16 @@ void ASIOProcessor::CreateTracks()
                 _inputStream = (*i)->GetStream();
             }
         }
-        
-        if (_inputStream)
-        {
-            _inputStreamProcessor = new CoreAudioInputProcessor(_inputStream->GetDescriptor());
-            _input = new CoreAudioInput(1, 0, 1);
-            _fileWriter = new chunk_file_writer(_input, "output.raw");
-            _inputStreamProcessor->AddInput(_input);
-            Worker::do_job(_fileWriter, false, false);
-            _inputStream->SetProc(_inputStreamProcessor);
-        }
+    }
+    
+    if (_inputStream)
+    {
+        _inputStreamProcessor = new CoreAudioInputProcessor(_inputStream->GetDescriptor());
+        _input = new CoreAudioInput(1, _inputDevice ? 0 : 2, _inputDevice ? 1 : 3);
+        _fileWriter = new chunk_file_writer(_input, "output.raw");
+        _inputStreamProcessor->AddInput(_input);
+        Worker::do_job(_fileWriter, false, false);
+        _inputStream->SetProc(_inputStreamProcessor);
     }
 #endif
     

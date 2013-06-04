@@ -1,3 +1,19 @@
+// ASR - Digital Signal Processor
+// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #ifndef _FILTER_H
 #define _FILTER_H
 
@@ -87,13 +103,8 @@ protected:
 	Precision_T _rho;
 	Precision_T _impulse_response_scale;
 
-	Precision_T _output_scale;
-
-	//int _stride;
-	//int _channels;
 	int _rows;
 	int _cols;
-	//bool _row_ly;
 
 	KaiserWindowTable<Precision_T> *_kwt;
 	
@@ -109,7 +120,6 @@ public:
 		T_sink<Chunk_T>(src),
 		_input_sampling_rate(input_rate),
         _output_time(Precision_T(0.0)),
-		_output_scale(Precision_T(1.0)),
 		_buffered_stream(src)
 	{
 		_kwt = KaiserWindowTable<Precision_T>::get();
@@ -144,14 +154,7 @@ public:
 
 	Precision_T filter_h(Precision_T t, Precision_T t_diff) 
 	{
-		return _output_scale*_impulse_response_scale * _h(t) * _kwt->get(t/t_diff);
-	}
-
-	void set_output_scale(Precision_T s)
-	{
-		_output_scale = s;
-		_impulse_response_scale = fmin(Precision_T(1.0), _rho);
-	//	fill_coeff_tbl(_input_sampling_period);
+		return _impulse_response_scale * _h(t) * _kwt->get(t/t_diff);
 	}
 
 	void seek_time(Precision_T t)
@@ -202,7 +205,7 @@ public:
 			for (Sample_T *conv_end = conv_ptr + (_sample_precision*2); conv_ptr != conv_end; ++conv_ptr)
 			{
 #if 1 //direct calculation instead of table. slower but more accurate
-				mul = _output_scale*_impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
+				mul = _impulse_response_scale * _h(t_input-_output_time) * _kwt->get((t_input-_output_time)/t_diff);
 #else
 				
 			//	int indx = _default_tbl_size/2+int((_default_tbl_size/2)*(t_input-_output_time)/t_diff);

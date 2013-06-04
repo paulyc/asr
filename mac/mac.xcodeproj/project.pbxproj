@@ -35,7 +35,6 @@
 		5F9B8E85173F6817009F0966 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1F0F28173C9F3100DEA888 /* AppKit.framework */; };
 		5F9B8E86173F6820009F0966 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1F0F28173C9F3100DEA888 /* AppKit.framework */; };
 		5FB2B2AA1732107C0006871C /* mac.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FB2B2A91732107C0006871C /* mac.1 */; };
-		5FB2B369173210A50006871C /* algo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B2173210A50006871C /* algo.cpp */; };
 		5FB2B36C173210A50006871C /* asr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B6173210A50006871C /* asr.cpp */; };
 		5FB2B36D173210A50006871C /* controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2C7173210A50006871C /* controller.cpp */; };
 		5FB2B36E173210A50006871C /* decoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B30D173210A50006871C /* decoder.cpp */; };
@@ -118,7 +117,6 @@
 		5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		5FB2B2A41732107C0006871C /* mac */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mac; sourceTree = BUILT_PRODUCTS_DIR; };
 		5FB2B2A91732107C0006871C /* mac.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = mac.1; sourceTree = "<group>"; };
-		5FB2B2B2173210A50006871C /* algo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = algo.cpp; sourceTree = "<group>"; };
 		5FB2B2B3173210A50006871C /* asio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asio.cpp; sourceTree = "<group>"; };
 		5FB2B2B4173210A50006871C /* asiodrv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asiodrv.cpp; sourceTree = "<group>"; };
 		5FB2B2B5173210A50006871C /* asiodrv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asiodrv.h; sourceTree = "<group>"; };
@@ -134,7 +132,6 @@
 		5FB2B2BF173210A50006871C /* asrnew2.vcxproj.filters */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = asrnew2.vcxproj.filters; sourceTree = "<group>"; };
 		5FB2B2C0173210A50006871C /* asrnew2.vcxproj.user */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = asrnew2.vcxproj.user; sourceTree = "<group>"; };
 		5FB2B2C1173210A50006871C /* buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buffer.h; sourceTree = "<group>"; };
-		5FB2B2C2173210A50006871C /* bus.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bus.h; sourceTree = "<group>"; };
 		5FB2B2C3173210A50006871C /* chunk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = chunk.h; sourceTree = "<group>"; };
 		5FB2B2C4173210A50006871C /* clip.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = clip.wav; sourceTree = "<group>"; };
 		5FB2B2C5173210A50006871C /* compressor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = compressor.h; sourceTree = "<group>"; };
@@ -142,7 +139,6 @@
 		5FB2B2C7173210A50006871C /* controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = controller.cpp; sourceTree = "<group>"; };
 		5FB2B2C8173210A50006871C /* controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = controller.h; sourceTree = "<group>"; };
 		5FB2B2C9173210A50006871C /* copyright.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = copyright.txt; sourceTree = "<group>"; };
-		5FB2B2CA173210A50006871C /* database.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = database.h; sourceTree = "<group>"; };
 		5FB2B2CC173210A50006871C /* asr.Build.CppClean.log */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = asr.Build.CppClean.log; sourceTree = "<group>"; };
 		5FB2B2CD173210A50006871C /* asr.exe.embed.manifest */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = asr.exe.embed.manifest; sourceTree = "<group>"; };
 		5FB2B2CE173210A50006871C /* asr.exe.embed.manifest.res */ = {isa = PBXFileReference; lastKnownFileType = file; path = asr.exe.embed.manifest.res; sourceTree = "<group>"; };
@@ -227,8 +223,6 @@
 		5FB2B31E173210A50006871C /* io.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = io.h; sourceTree = "<group>"; };
 		5FB2B31F173210A50006871C /* iomgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = iomgr.cpp; sourceTree = "<group>"; };
 		5FB2B320173210A50006871C /* iomgr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iomgr.h; sourceTree = "<group>"; };
-		5FB2B321173210A50006871C /* iTunesCOMInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iTunesCOMInterface.h; sourceTree = "<group>"; };
-		5FB2B322173210A50006871C /* iTunesCOMInterface_i.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = iTunesCOMInterface_i.c; sourceTree = "<group>"; };
 		5FB2B323173210A50006871C /* lock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lock.h; sourceTree = "<group>"; };
 		5FB2B324173210A50006871C /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		5FB2B325173210A50006871C /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
@@ -286,7 +280,6 @@
 		5FB2B35A173210A50006871C /* tracer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tracer.h; sourceTree = "<group>"; };
 		5FB2B35B173210A50006871C /* track.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = track.h; sourceTree = "<group>"; };
 		5FB2B35C173210A50006871C /* trackmgr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = trackmgr.h; sourceTree = "<group>"; };
-		5FB2B35D173210A50006871C /* transform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = transform.h; sourceTree = "<group>"; };
 		5FB2B35E173210A50006871C /* type.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = type.h; sourceTree = "<group>"; };
 		5FB2B35F173210A50006871C /* ui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ui.cpp; sourceTree = "<group>"; };
 		5FB2B360173210A50006871C /* ui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ui.h; sourceTree = "<group>"; };
@@ -446,7 +439,6 @@
 				5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */,
 				5FB2B384173236400006871C /* AudioDevice.cpp */,
 				5FB2B385173236400006871C /* AudioDevice.h */,
-				5FB2B2B2173210A50006871C /* algo.cpp */,
 				5FB2B2B3173210A50006871C /* asio.cpp */,
 				5FB2B2B4173210A50006871C /* asiodrv.cpp */,
 				5FB2B2B5173210A50006871C /* asiodrv.h */,
@@ -462,7 +454,6 @@
 				5FB2B2BF173210A50006871C /* asrnew2.vcxproj.filters */,
 				5FB2B2C0173210A50006871C /* asrnew2.vcxproj.user */,
 				5FB2B2C1173210A50006871C /* buffer.h */,
-				5FB2B2C2173210A50006871C /* bus.h */,
 				5FB2B2C3173210A50006871C /* chunk.h */,
 				5FB2B2C4173210A50006871C /* clip.wav */,
 				5FB2B2C5173210A50006871C /* compressor.h */,
@@ -470,7 +461,6 @@
 				5FB2B2C7173210A50006871C /* controller.cpp */,
 				5FB2B2C8173210A50006871C /* controller.h */,
 				5FB2B2C9173210A50006871C /* copyright.txt */,
-				5FB2B2CA173210A50006871C /* database.h */,
 				5FB2B2CB173210A50006871C /* Debug */,
 				5FB2B30D173210A50006871C /* decoder.cpp */,
 				5FB2B30E173210A50006871C /* decoder.h */,
@@ -484,8 +474,6 @@
 				5FB2B31E173210A50006871C /* io.h */,
 				5FB2B31F173210A50006871C /* iomgr.cpp */,
 				5FB2B320173210A50006871C /* iomgr.h */,
-				5FB2B321173210A50006871C /* iTunesCOMInterface.h */,
-				5FB2B322173210A50006871C /* iTunesCOMInterface_i.c */,
 				5FB2B323173210A50006871C /* lock.h */,
 				5FB2B324173210A50006871C /* main.cpp */,
 				5FB2B325173210A50006871C /* Makefile */,
@@ -509,7 +497,6 @@
 				5FB2B35A173210A50006871C /* tracer.h */,
 				5FB2B35B173210A50006871C /* track.h */,
 				5FB2B35C173210A50006871C /* trackmgr.h */,
-				5FB2B35D173210A50006871C /* transform.h */,
 				5FB2B35E173210A50006871C /* type.h */,
 				5FB2B35F173210A50006871C /* ui.cpp */,
 				5FB2B360173210A50006871C /* ui.h */,
@@ -797,7 +784,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5FB2B369173210A50006871C /* algo.cpp in Sources */,
 				5FB2B36C173210A50006871C /* asr.cpp in Sources */,
 				5FB2B36D173210A50006871C /* controller.cpp in Sources */,
 				5FB2B36E173210A50006871C /* decoder.cpp in Sources */,

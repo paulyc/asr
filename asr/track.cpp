@@ -1,10 +1,18 @@
+// ASR - Digital Signal Processor
+// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
 //
-//  track.cpp
-//  mac
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//  Created by Paul Ciarlo on 5/14/13.
-//  Copyright (c) 2013 Paul Ciarlo. All rights reserved.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 template <typename Chunk_T>
 void BufferedSource<Chunk_T>::create(const char *filename, Lock_T *lock)
@@ -120,8 +128,9 @@ void AudioTrack<Chunk_T>::set_source_file_impl(std::string filename, Lock_T *loc
     _filename = filename;
     _loading_lock.release();
     
-    if (!_loaded)
-        Worker::do_job(new Worker::load_track_job<AudioTrack<Chunk_T> >(this, lock));
+    //Worker::do_job(new Worker::load_track_job<AudioTrack<Chunk_T> >(this, lock));
+    this->load(lock);
+    //T_allocator<chunk_t>::gc();
 }
 
 template <typename Chunk_T>
@@ -157,7 +166,7 @@ Chunk_T* AudioTrack<Chunk_T>::next()
 }
 
 template <typename Chunk_T>
-bool AudioTrack<Chunk_T>::load_step(Lock_T *lock)
+void AudioTrack<Chunk_T>::load(Lock_T *lock)
 {
     this->_meta->load_metadata(lock, _io);
     
@@ -165,17 +174,10 @@ bool AudioTrack<Chunk_T>::load_step(Lock_T *lock)
     
     this->_display->set_zoom(1.0);
     this->_display->set_left(0.0);
-    //pthread_mutex_lock(lock);
     this->_display->set_wav_heights(lock);
-	//	if (!_display->set_next_height())
-	//	{
-    //	GenericUI *ui;
-	//		pthread_mutex_unlock(lock);
     
-    this->_detector.reset_source(this->_src_buf, lock);
+ //   this->_detector.reset_source(this->_src_buf, lock);
     
-    this->_resample_filter->set_output_scale(1.0f / this->_src->maxval());
-    //_meta->load_metadata(lock);
     _loading_lock.acquire();
     _loaded = true;
     
@@ -188,8 +190,4 @@ bool AudioTrack<Chunk_T>::load_step(Lock_T *lock)
     _loading_lock.release();
     
     _io->get_ui()->get_track(_track_id).filename.set_text(_filename.c_str(), false);
-    
-    return false;
-	//	}
-    //pthread_mutex_unlock(lock);
 }

@@ -1,3 +1,19 @@
+// ASR - Digital Signal Processor
+// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #ifndef _WAVFILE_H
 #define _WAVFILE_H
 
@@ -486,7 +502,6 @@ public:
 		file_chunker(filename),
 		_smp_read(0),
 		_eof(false),
-		_max(0.0f),
 		_sample_rate(44100.0),
 		_lock(lock)
 	{
@@ -520,11 +535,6 @@ public:
 					(*smp_out)[1] = (float)mad_f_todouble(_synth.pcm.samples[1][_smp_read]);
 				else
 					(*smp_out)[1] = (*smp_out)[0];
-
-				if (fabs((*smp_out)[0]) > _max)
-					_max = fabs((*smp_out)[0]);
-				if (fabs((*smp_out)[1]) > _max)
-					_max = fabs((*smp_out)[1]);
 			}
 		}
 		if (smp_out == smp_end)
@@ -595,11 +605,6 @@ public:
 					(*smp_out)[1] = (float)mad_f_todouble(_synth.pcm.samples[1][_smp_read]);
 				else
 					(*smp_out)[1] = (*smp_out)[0];
-				
-				if (fabs((*smp_out)[0]) > _max)
-					_max = fabs((*smp_out)[0]);
-				if (fabs((*smp_out)[1]) > _max)
-					_max = fabs((*smp_out)[1]);
 
 				++n;
 			}
@@ -613,10 +618,6 @@ public:
 	bool eof()
 	{
 		return _eof;
-	}
-	float maxval()
-	{
-		return _max;
 	}
 	virtual double sample_rate()
 	{
@@ -640,7 +641,6 @@ private:
 
 	bool _eof;
 
-	float _max;
 	double _sample_rate;
 	Lock_T *_lock;
 };

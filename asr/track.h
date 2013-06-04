@@ -1,4 +1,18 @@
-// Copyright (C) 2013 Paul Ciarlo
+// ASR - Digital Signal Processor
+// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _TRACK_H
 #define _TRACK_H
@@ -111,11 +125,6 @@ public:
 	{
 		return _resample_filter;
 	}
-
-	/*void use_decoder(peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size> *decoder)
-	{
-		_resample_filter->pos_stream(this);
-	}*/
 
 protected:
 	filter_t *_resample_filter;
@@ -402,7 +411,7 @@ public:
 
 	void set_source_file(std::string filename, Lock_T &lock);
 	Chunk_T* next();
-    bool load_step(Lock_T *lock=0);
+    void load(Lock_T *lock=0);
 
 	bool play_pause(bool pause_monitor=false)
 	{
@@ -427,12 +436,6 @@ public:
 		//unlock();
 	}
 
-	void load_step_if()
-	{
-		if (!_loaded && !_in_config)
-            load_step();
-	}
-
 	void draw_if_loaded()
 	{
 		if (loaded())
@@ -443,8 +446,6 @@ public:
 			_loading_lock.release();
 		}
 	}
-
-	//using ViewableMixin<Chunk_T>::get_display_pos;
 
 	double get_display_pos(double tm)
 	{
