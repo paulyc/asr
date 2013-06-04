@@ -7,11 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5F0C4F1517360CD60025E149 /* coreaudio.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5F0C4F1417360CD60025E149 /* coreaudio.1 */; };
-		5F0C4F1917360CE10025E149 /* CoreAudio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B381173235D90006871C /* CoreAudio.cpp */; };
-		5F0C4F1A17360CE90025E149 /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
-		5F0C4F1C1736E5D60025E149 /* ui_cli.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */; };
-		5F1F0ED7173C8E8B00DEA888 /* ui_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */; };
 		5F1F0F26173C9F3100DEA888 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1F0F25173C9F3100DEA888 /* Cocoa.framework */; };
 		5F1F0F30173C9F3200DEA888 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5F1F0F2E173C9F3200DEA888 /* InfoPlist.strings */; };
 		5F1F0F32173C9F3200DEA888 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0F31173C9F3200DEA888 /* main.m */; };
@@ -29,28 +24,7 @@
 		5F9B8E7D173F67DA009F0966 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */; };
 		5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */; };
 		5F9B8E81173F67ED009F0966 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */; };
-		5F9B8E82173F67F8009F0966 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */; };
-		5F9B8E83173F67FE009F0966 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */; };
-		5F9B8E84173F6803009F0966 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */; };
 		5F9B8E85173F6817009F0966 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1F0F28173C9F3100DEA888 /* AppKit.framework */; };
-		5F9B8E86173F6820009F0966 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1F0F28173C9F3100DEA888 /* AppKit.framework */; };
-		5FB2B2AA1732107C0006871C /* mac.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 5FB2B2A91732107C0006871C /* mac.1 */; };
-		5FB2B36C173210A50006871C /* asr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2B6173210A50006871C /* asr.cpp */; };
-		5FB2B36D173210A50006871C /* controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B2C7173210A50006871C /* controller.cpp */; };
-		5FB2B36E173210A50006871C /* decoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B30D173210A50006871C /* decoder.cpp */; };
-		5FB2B370173210A50006871C /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
-		5FB2B372173210A50006871C /* io.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B31D173210A50006871C /* io.cpp */; };
-		5FB2B376173210A50006871C /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B325173210A50006871C /* Makefile */; };
-		5FB2B377173210A50006871C /* malloc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B326173210A50006871C /* malloc.cpp */; };
-		5FB2B378173210A50006871C /* midi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B329173210A50006871C /* midi.cpp */; };
-		5FB2B37C173210A50006871C /* ui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B35F173210A50006871C /* ui.cpp */; };
-		5FB2B37D173210A50006871C /* ui_gl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B361173210A50006871C /* ui_gl.cpp */; };
-		5FB2B37E173210A50006871C /* ui_win32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B362173210A50006871C /* ui_win32.cpp */; };
-		5FB2B37F173210A50006871C /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B363173210A50006871C /* util.cpp */; };
-		5FB2B380173210A50006871C /* worker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B367173210A50006871C /* worker.cpp */; };
-		5FB2B383173235D90006871C /* CoreAudio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B381173235D90006871C /* CoreAudio.cpp */; };
-		5FB2B386173236400006871C /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
-		5FB4AE5517421C52001A2FF2 /* stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB4AE5417421C52001A2FF2 /* stream.cpp */; };
 		5FB4AE5617421C52001A2FF2 /* stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB4AE5417421C52001A2FF2 /* stream.cpp */; };
 		5FB4AE5717421CB2001A2FF2 /* worker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B367173210A50006871C /* worker.cpp */; };
 		5FD9E51A17433FAB0052157F /* io.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B31D173210A50006871C /* io.cpp */; };
@@ -62,31 +36,7 @@
 		5FDC486017472939004C2378 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FDC485F17472939004C2378 /* OpenGL.framework */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		5F0C4F0E17360CD60025E149 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-				5F0C4F1517360CD60025E149 /* coreaudio.1 in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-		5FB2B2A21732107C0006871C /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-				5FB2B2AA1732107C0006871C /* mac.1 in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
-		5F0C4F1017360CD60025E149 /* coreaudio */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = coreaudio; sourceTree = BUILT_PRODUCTS_DIR; };
 		5F0C4F1417360CD60025E149 /* coreaudio.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = coreaudio.1; sourceTree = "<group>"; };
 		5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ui_cli.cpp; sourceTree = "<group>"; };
 		5F0C4F1D1738D6770025E149 /* task.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = task.cpp; sourceTree = "<group>"; };
@@ -115,7 +65,6 @@
 		5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
 		5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		5FB2B2A41732107C0006871C /* mac */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = mac; sourceTree = BUILT_PRODUCTS_DIR; };
 		5FB2B2A91732107C0006871C /* mac.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = mac.1; sourceTree = "<group>"; };
 		5FB2B2B3173210A50006871C /* asio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asio.cpp; sourceTree = "<group>"; };
 		5FB2B2B4173210A50006871C /* asiodrv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asiodrv.cpp; sourceTree = "<group>"; };
@@ -305,13 +254,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		5F0C4F0D17360CD60025E149 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		5F1F0F20173C9F3100DEA888 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -322,17 +264,6 @@
 				5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */,
 				5F9B8E7D173F67DA009F0966 /* CoreMIDI.framework in Frameworks */,
 				5F1F0F26173C9F3100DEA888 /* Cocoa.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		5FB2B2A11732107C0006871C /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				5F9B8E86173F6820009F0966 /* AppKit.framework in Frameworks */,
-				5F9B8E84173F6803009F0966 /* CoreMIDI.framework in Frameworks */,
-				5F9B8E83173F67FE009F0966 /* CoreAudio.framework in Frameworks */,
-				5F9B8E82173F67F8009F0966 /* CoreFoundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -414,8 +345,6 @@
 		5FB2B2A51732107C0006871C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5FB2B2A41732107C0006871C /* mac */,
-				5F0C4F1017360CD60025E149 /* coreaudio */,
 				5F1F0F23173C9F3100DEA888 /* ASR.app */,
 			);
 			name = Products;
@@ -653,23 +582,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		5F0C4F0F17360CD60025E149 /* coreaudio */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 5F0C4F1617360CD60025E149 /* Build configuration list for PBXNativeTarget "coreaudio" */;
-			buildPhases = (
-				5F0C4F0C17360CD60025E149 /* Sources */,
-				5F0C4F0D17360CD60025E149 /* Frameworks */,
-				5F0C4F0E17360CD60025E149 /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = coreaudio;
-			productName = coreaudio;
-			productReference = 5F0C4F1017360CD60025E149 /* coreaudio */;
-			productType = "com.apple.product-type.tool";
-		};
 		5F1F0F22173C9F3100DEA888 /* ASR */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5F1F0F3D173C9F3200DEA888 /* Build configuration list for PBXNativeTarget "ASR" */;
@@ -686,23 +598,6 @@
 			productName = ASR;
 			productReference = 5F1F0F23173C9F3100DEA888 /* ASR.app */;
 			productType = "com.apple.product-type.application";
-		};
-		5FB2B2A31732107C0006871C /* mac */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 5FB2B2AD1732107C0006871C /* Build configuration list for PBXNativeTarget "mac" */;
-			buildPhases = (
-				5FB2B2A01732107C0006871C /* Sources */,
-				5FB2B2A11732107C0006871C /* Frameworks */,
-				5FB2B2A21732107C0006871C /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = mac;
-			productName = mac;
-			productReference = 5FB2B2A41732107C0006871C /* mac */;
-			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
@@ -725,8 +620,6 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5FB2B2A31732107C0006871C /* mac */,
-				5F0C4F0F17360CD60025E149 /* coreaudio */,
 				5F1F0F22173C9F3100DEA888 /* ASR */,
 			);
 		};
@@ -746,15 +639,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		5F0C4F0C17360CD60025E149 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				5F0C4F1917360CE10025E149 /* CoreAudio.cpp in Sources */,
-				5F0C4F1A17360CE90025E149 /* AudioDevice.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		5F1F0F1F173C9F3100DEA888 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -777,31 +661,6 @@
 				5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */,
 				5F935E81174779A7002ECDD4 /* malloc.cpp in Sources */,
 				5F935E8417477F2A002ECDD4 /* mmalloc.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		5FB2B2A01732107C0006871C /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				5FB2B36C173210A50006871C /* asr.cpp in Sources */,
-				5FB2B36D173210A50006871C /* controller.cpp in Sources */,
-				5FB2B36E173210A50006871C /* decoder.cpp in Sources */,
-				5FB2B370173210A50006871C /* fft.cpp in Sources */,
-				5FB2B372173210A50006871C /* io.cpp in Sources */,
-				5FB2B376173210A50006871C /* Makefile in Sources */,
-				5FB2B377173210A50006871C /* malloc.cpp in Sources */,
-				5FB2B378173210A50006871C /* midi.cpp in Sources */,
-				5FB2B37C173210A50006871C /* ui.cpp in Sources */,
-				5FB2B37D173210A50006871C /* ui_gl.cpp in Sources */,
-				5FB2B37E173210A50006871C /* ui_win32.cpp in Sources */,
-				5FB2B37F173210A50006871C /* util.cpp in Sources */,
-				5FB2B380173210A50006871C /* worker.cpp in Sources */,
-				5FB2B383173235D90006871C /* CoreAudio.cpp in Sources */,
-				5FB2B386173236400006871C /* AudioDevice.cpp in Sources */,
-				5F0C4F1C1736E5D60025E149 /* ui_cli.cpp in Sources */,
-				5F1F0ED7173C8E8B00DEA888 /* ui_cocoa.mm in Sources */,
-				5FB4AE5517421C52001A2FF2 /* stream.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -835,58 +694,6 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		5F0C4F1717360CD60025E149 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ADDITIONAL_SDKS = "";
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				FRAMEWORK_SEARCH_PATHS = "";
-				HEADER_SEARCH_PATHS = (
-					"../fftw-3.3.3",
-					"../libmad-0.15.1b",
-				);
-				OTHER_LDFLAGS = (
-					"-framework",
-					CoreAudio,
-					"-framework",
-					CoreFoundation,
-					"-lmad",
-					"-lFLAC-static",
-					"-lfftw3",
-					"-lfftw3f",
-					"-framework",
-					AppKit,
-				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		5F0C4F1817360CD60025E149 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ADDITIONAL_SDKS = "";
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				FRAMEWORK_SEARCH_PATHS = "";
-				HEADER_SEARCH_PATHS = (
-					"../fftw-3.3.3",
-					"../libmad-0.15.1b",
-				);
-				OTHER_LDFLAGS = (
-					"-framework",
-					CoreAudio,
-					"-framework",
-					CoreFoundation,
-					"-lmad",
-					"-lFLAC-static",
-					"-lfftw3",
-					"-lfftw3f",
-					"-framework",
-					AppKit,
-				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
 		5F1F0F3E173C9F3200DEA888 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1000,72 +807,9 @@
 			};
 			name = Release;
 		};
-		5FB2B2AE1732107C0006871C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ADDITIONAL_SDKS = "";
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				FRAMEWORK_SEARCH_PATHS = "";
-				HEADER_SEARCH_PATHS = (
-					"../fftw-3.3.3",
-					"../libmad-0.15.1b",
-					"../flac-1.2.1/include",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"../contrib/libmad-0.15.1b/.libs",
-					../contrib/flac/src/libFLAC/.libs,
-					"../contrib/fftw-3.3.3/.libs",
-				);
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = (
-					"-lmad",
-					"-lFLAC-static",
-					"-lfftw3",
-					"-lfftw3f",
-				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		5FB2B2AF1732107C0006871C /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ADDITIONAL_SDKS = "";
-				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
-				FRAMEWORK_SEARCH_PATHS = "";
-				HEADER_SEARCH_PATHS = (
-					"../fftw-3.3.3",
-					"../libmad-0.15.1b",
-					"../flac-1.2.1/include",
-				);
-				LIBRARY_SEARCH_PATHS = (
-					"../contrib/libmad-0.15.1b/.libs",
-					../contrib/flac/src/libFLAC/.libs,
-					"../contrib/fftw-3.3.3/.libs",
-				);
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = (
-					"-lmad",
-					"-lFLAC-static",
-					"-lfftw3",
-					"-lfftw3f",
-				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		5F0C4F1617360CD60025E149 /* Build configuration list for PBXNativeTarget "coreaudio" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				5F0C4F1717360CD60025E149 /* Debug */,
-				5F0C4F1817360CD60025E149 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		5F1F0F3D173C9F3200DEA888 /* Build configuration list for PBXNativeTarget "ASR" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1080,15 +824,6 @@
 			buildConfigurations = (
 				5FB2B2AB1732107C0006871C /* Debug */,
 				5FB2B2AC1732107C0006871C /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		5FB2B2AD1732107C0006871C /* Build configuration list for PBXNativeTarget "mac" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				5FB2B2AE1732107C0006871C /* Debug */,
-				5FB2B2AF1732107C0006871C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
