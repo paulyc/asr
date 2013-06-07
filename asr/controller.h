@@ -128,6 +128,11 @@ public:
 		if (backward)
 			_tracks[channel]->seek_time(0.0);
 	}
+    
+    virtual void HandleSwitchTrack(int track)
+    {
+        printf("track is %d\n", track);
+    }
 
 	struct ControlEvent
 	{

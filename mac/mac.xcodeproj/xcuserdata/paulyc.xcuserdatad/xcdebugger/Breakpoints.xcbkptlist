@@ -291,7 +291,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "27"
          endingLineNumber = "27"
-         landmarkName = "-applicationDidFinishLaunching:"
+         landmarkName = "-dealloc"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -512,8 +512,8 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "21"
          endingLineNumber = "21"
-         landmarkName = "-initWithNibName:bundle:"
-         landmarkType = "5">
+         landmarkName = "@interface MainViewController()"
+         landmarkType = "2">
       </FileBreakpoint>
       <FileBreakpoint
          shouldBeEnabled = "No"
@@ -525,7 +525,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "28"
          endingLineNumber = "28"
-         landmarkName = "-applicationDidFinishLaunching:"
+         landmarkName = "-dealloc"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -538,8 +538,8 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "37"
          endingLineNumber = "37"
-         landmarkName = "@implementation MainViewController"
-         landmarkType = "3">
+         landmarkName = "-setStart:"
+         landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
          shouldBeEnabled = "No"
@@ -551,8 +551,8 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "359"
          endingLineNumber = "359"
-         landmarkName = "CDJ350MIDIController::ProcessMsg(uint8_t status, uint8_t data1, uint8_t data2)"
-         landmarkType = "5">
+         landmarkName = "GetBend(int code)"
+         landmarkType = "7">
       </FileBreakpoint>
       <FileBreakpoint
          shouldBeEnabled = "No"
@@ -681,8 +681,8 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "362"
          endingLineNumber = "362"
-         landmarkName = "CDJ350MIDIController::ProcessMsg(uint8_t status, uint8_t data1, uint8_t data2)"
-         landmarkType = "5">
+         landmarkName = "GetBend(int code)"
+         landmarkType = "7">
       </FileBreakpoint>
       <FileBreakpoint
          shouldBeEnabled = "No"
@@ -694,7 +694,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "321"
          endingLineNumber = "321"
-         landmarkName = "CDJ350MIDIController::Start()"
+         landmarkName = "CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -707,7 +707,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "194"
          endingLineNumber = "194"
-         landmarkName = "CoreMIDIEndpoint::_readProc(const MIDIPacketList *pktlist, void *readProcRefCon, void *srcConnRefCon)"
+         landmarkName = "CoreMIDIEndpoint::~CoreMIDIEndpoint()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -719,9 +719,7 @@
          startingColumnNumber = "9223372036854775807"
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "189"
-         endingLineNumber = "189"
-         landmarkName = "CoreMIDIEndpoint::_readProc(const MIDIPacketList *pktlist, void *readProcRefCon, void *srcConnRefCon)"
-         landmarkType = "5">
+         endingLineNumber = "189">
       </FileBreakpoint>
       <FileBreakpoint
          shouldBeEnabled = "No"
@@ -733,7 +731,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "208"
          endingLineNumber = "208"
-         landmarkName = "CoreMIDIEndpoint::Start()"
+         landmarkName = "CoreMIDIEndpoint::_readProc(const MIDIPacketList *pktlist, void *readProcRefCon, void *srcConnRefCon)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -746,7 +744,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "170"
          endingLineNumber = "170"
-         landmarkName = "CoreMIDIEndpoint::CoreMIDIEndpoint(const CoreMIDIEndpointDescriptor &amp;desc)"
+         landmarkName = "CoreMIDIEndpointDescriptor::CoreMIDIEndpointDescriptor(MIDIEndpointRef endRef, DeviceType type, CoreMIDIDevice &amp;device)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -759,7 +757,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "188"
          endingLineNumber = "188"
-         landmarkName = "CoreMIDIEndpoint::_readProc(const MIDIPacketList *pktlist, void *readProcRefCon, void *srcConnRefCon)"
+         landmarkName = "CoreMIDIEndpoint::CoreMIDIEndpoint(const CoreMIDIEndpointDescriptor &amp;desc)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -772,7 +770,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "304"
          endingLineNumber = "304"
-         landmarkName = "CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev)"
+         landmarkName = "CoreMIDIDevice::Stop()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -785,7 +783,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "301"
          endingLineNumber = "301"
-         landmarkName = "CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev)"
+         landmarkName = "CoreMIDIDevice::Stop()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -797,9 +795,7 @@
          startingColumnNumber = "9223372036854775807"
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "299"
-         endingLineNumber = "299"
-         landmarkName = "CDJ350MIDIController::CDJ350MIDIController(IMIDIDevice *dev)"
-         landmarkType = "5">
+         endingLineNumber = "299">
       </FileBreakpoint>
       <FileBreakpoint
          shouldBeEnabled = "No"
@@ -811,7 +807,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "228"
          endingLineNumber = "228"
-         landmarkName = "CoreMIDIDevice::CoreMIDIDevice(const CoreMIDIDeviceDescriptor &amp;desc)"
+         landmarkName = "CoreMIDIEndpoint::Stop()"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -824,7 +820,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "240"
          endingLineNumber = "240"
-         landmarkName = "CoreMIDIDevice::CoreMIDIDevice(const CoreMIDIDeviceDescriptor &amp;desc)"
+         landmarkName = "CoreMIDIDeviceDescriptor::CoreMIDIDeviceDescriptor(MIDIDeviceRef devRef, CoreMIDIClient &amp;client)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -837,7 +833,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "191"
          endingLineNumber = "191"
-         landmarkName = "CocoaUI::render(int trackid)"
+         landmarkName = "CocoaUI::set_position(void *t, double p, bool invalidate)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -850,7 +846,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "190"
          endingLineNumber = "190"
-         landmarkName = "CocoaUI::render(int trackid)"
+         landmarkName = "CocoaUI::set_position(void *t, double p, bool invalidate)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -863,7 +859,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "207"
          endingLineNumber = "207"
-         landmarkName = "CocoaUI::render_impl(int trackid)"
+         landmarkName = "CocoaUI::render(int trackid)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -889,7 +885,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "205"
          endingLineNumber = "205"
-         landmarkName = "CocoaUI::render_impl(int trackid)"
+         landmarkName = "CocoaUI::render(int trackid)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -936,12 +932,12 @@
          ignoreCount = "0"
          continueAfterRunningActions = "No"
          filePath = "ASR/MyOpenGLView.mm"
-         timestampString = "390655588.383336"
+         timestampString = "392181870.783499"
          startingColumnNumber = "9223372036854775807"
          endingColumnNumber = "9223372036854775807"
-         startingLineNumber = "64"
-         endingLineNumber = "64"
-         landmarkName = "-mouseDown:"
+         startingLineNumber = "65"
+         endingLineNumber = "65"
+         landmarkName = "-mouseDragged:"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -949,12 +945,12 @@
          ignoreCount = "0"
          continueAfterRunningActions = "No"
          filePath = "ASR/MyOpenGLView.mm"
-         timestampString = "390655588.383336"
+         timestampString = "392181870.783499"
          startingColumnNumber = "9223372036854775807"
          endingColumnNumber = "9223372036854775807"
-         startingLineNumber = "78"
-         endingLineNumber = "78"
-         landmarkName = "-mouseUp:"
+         startingLineNumber = "79"
+         endingLineNumber = "79"
+         landmarkName = "-rightMouseDown:"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -980,7 +976,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "165"
          endingLineNumber = "165"
-         landmarkName = "CocoaUI::mouse_scroll(int dx, int dy, int x, int trackid)"
+         landmarkName = "CocoaUI::mouse_drag(int x, int y, int trackid)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1006,7 +1002,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "136"
          endingLineNumber = "136"
-         landmarkName = "CocoaUI::mouse_drag(int x, int y, int trackid)"
+         landmarkName = "CocoaUI::mouse_dblclick(MouseButton b, int x, int y, int trackid)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1019,7 +1015,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "148"
          endingLineNumber = "148"
-         landmarkName = "CocoaUI::mouse_drag(int x, int y, int trackid)"
+         landmarkName = "CocoaUI::mouse_dblclick(MouseButton b, int x, int y, int trackid)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1032,7 +1028,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "144"
          endingLineNumber = "144"
-         landmarkName = "CocoaUI::mouse_drag(int x, int y, int trackid)"
+         landmarkName = "CocoaUI::mouse_dblclick(MouseButton b, int x, int y, int trackid)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1149,7 +1145,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "75"
          endingLineNumber = "75"
-         landmarkName = "CocoaUI::mouse_up(MouseButton b, int x, int y, int trackid)"
+         landmarkName = "CocoaUI::mouse_down(MouseButton b, int x, int y, int trackid)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1162,7 +1158,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "178"
          endingLineNumber = "178"
-         landmarkName = "CocoaUI::set_position(void *t, double p, bool invalidate)"
+         landmarkName = "CocoaUI::mouse_scroll(int dx, int dy, int x, int trackid)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1222,11 +1218,11 @@
          ignoreCount = "0"
          continueAfterRunningActions = "No"
          filePath = "ASR/MyOpenGLView.mm"
-         timestampString = "390657024.791024"
+         timestampString = "392181870.783499"
          startingColumnNumber = "9223372036854775807"
          endingColumnNumber = "9223372036854775807"
-         startingLineNumber = "109"
-         endingLineNumber = "109"
+         startingLineNumber = "110"
+         endingLineNumber = "110"
          landmarkName = "-keyUp:"
          landmarkType = "5">
       </FileBreakpoint>
@@ -1235,12 +1231,12 @@
          ignoreCount = "0"
          continueAfterRunningActions = "No"
          filePath = "ASR/MyOpenGLView.mm"
-         timestampString = "390657309.009063"
+         timestampString = "392181870.783499"
          startingColumnNumber = "9223372036854775807"
          endingColumnNumber = "9223372036854775807"
-         startingLineNumber = "103"
-         endingLineNumber = "103"
-         landmarkName = "-keyUp:"
+         startingLineNumber = "104"
+         endingLineNumber = "104"
+         landmarkName = "-scrollWheel:"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1396,7 +1392,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "238"
          endingLineNumber = "238"
-         landmarkName = "alloc(bool lock=true)"
+         landmarkName = "free_from(T *t, const char *file, int line)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1409,7 +1405,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "237"
          endingLineNumber = "237"
-         landmarkName = "alloc(bool lock=true)"
+         landmarkName = "free_from(T *t, const char *file, int line)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1422,7 +1418,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "270"
          endingLineNumber = "270"
-         landmarkName = "gc()"
+         landmarkName = "add_refx(T* t)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1435,7 +1431,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "263"
          endingLineNumber = "263"
-         landmarkName = "free(T* t, bool lock=true)"
+         landmarkName = "alloc(bool lock=true)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1690,6 +1686,58 @@
          startingLineNumber = "95"
          endingLineNumber = "95"
          landmarkName = "CoreAudioInput::process(MultichannelAudioBuffer *buf)"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "ASR/MyOpenGLView.mm"
+         timestampString = "392181870.783499"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "26"
+         endingLineNumber = "26"
+         landmarkName = "-initWithFrame:"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "ASR/AppDelegate.mm"
+         timestampString = "392181831.222352"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "38"
+         endingLineNumber = "38"
+         landmarkName = "-applicationDidFinishLaunching:"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "ASR/MyOpenGLView.mm"
+         timestampString = "392181870.783499"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "151"
+         endingLineNumber = "151"
+         landmarkName = "-performDragOperation:"
+         landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "No"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "ASR/MyOpenGLView.mm"
+         timestampString = "392181913.620489"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "45"
+         endingLineNumber = "45"
+         landmarkName = "-renderInto"
          landmarkType = "5">
       </FileBreakpoint>
    </FileBreakpoints>

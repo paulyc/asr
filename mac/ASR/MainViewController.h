@@ -23,5 +23,6 @@
 - (void)setStart:(BOOL)start;
 - (void)button1Push;
 - (void)button2Push;
+- (BOOL)track1Active;
 
 @end

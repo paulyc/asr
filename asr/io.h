@@ -69,6 +69,7 @@ public:
         while ((chk = _src->next()) != 0)
         {
             fwrite(chk->_data, sizeof(typename chunk_t::sample_t), chunk_t::chunk_size, _f);
+            T_allocator<chunk_t>::free(chk);
         }
         done = true;
         delete _src;

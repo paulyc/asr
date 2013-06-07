@@ -69,4 +69,9 @@
     del.ui->play_pause(1);
 }
 
+- (BOOL)track1Active
+{
+    return YES;
+}
+
 @end

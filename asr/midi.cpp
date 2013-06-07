@@ -403,6 +403,7 @@ void CDJ350MIDIController::ProcessMsg(uint8_t status, uint8_t data1, uint8_t dat
             if (code)
             {
                 _track ^= 1;
+                _listener->HandleSwitchTrack(_track);
             }
             break;
         case SeekTrackBack:

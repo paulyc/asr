@@ -42,6 +42,7 @@
 - (void)renderInto
 {
     [[self openGLContext] makeCurrentContext];
+    //[self registerForDraggedTypes:[NSArray arrayWithObjects:NSURLPboardType, nil]];
 }
 
 - (int)trackID
@@ -143,6 +144,29 @@ static void drawAnObject ()
     drawAnObject();
     glFlush();
     glSwapAPPLE();*/
+}
+
+- (BOOL) performDragOperation:(id<NSDraggingInfo>)sender
+{
+    NSPasteboard *pboard = [sender draggingPasteboard];
+    AppDelegate *del = [NSApp delegate];
+    
+    if ( [[pboard types] containsObject:NSURLPboardType] ) {
+        NSURL *fileURL = [NSURL URLFromPasteboard:pboard];
+        NSView *target = [self hitTest:[sender draggingLocation]];
+        if ([target isKindOfClass:[MyOpenGLView class]])
+        {
+            if ([self tag] == 'wav1')
+            {
+                del.ui->drop_file([[fileURL path] UTF8String], true);
+            }
+            else if ([self tag] == 'wav2')
+            {
+                del.ui->drop_file([[fileURL path] UTF8String], true);
+            }
+        }
+    }
+    return YES;
 }
 
 @end

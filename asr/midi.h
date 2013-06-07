@@ -281,6 +281,7 @@ public:
 	virtual void HandleSetPitch(int channel, float64_t time, float64_t pitch) {}
 	virtual void HandleBendPitch(int channel, float64_t time, float64_t dpitch) {}
 	virtual void HandleSeekTrack(int channel, float64_t time, bool backward) {}
+    virtual void HandleSwitchTrack(int track) {}
 };
 
 class IMIDIController
