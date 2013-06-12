@@ -69,6 +69,12 @@
     del.ui->play_pause(1);
 }
 
+- (void)playTrack2
+{
+    AppDelegate *del = [NSApp delegate];
+    del.ui->play_pause(2);
+}
+
 - (BOOL)track1Active
 {
     return YES;

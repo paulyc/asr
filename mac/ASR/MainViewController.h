@@ -24,5 +24,7 @@
 - (void)button1Push;
 - (void)button2Push;
 - (BOOL)track1Active;
+- (void)playTrack1;
+- (void)playTrack2;
 
 @end
