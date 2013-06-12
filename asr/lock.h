@@ -202,6 +202,36 @@ private:
     volatile int _ownFlag;
 };
 
+class FastUserCondition
+{
+public:
+    FastUserCondition() : _waiters(0) {sem_init(&_sem, 0, 0);}
+    void wait(FastUserSpinLock &lock)
+    {
+        while (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters+1))
+            ; // this space intentionally left blank
+        sem_wait(&_sem);
+        while (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters-1))
+            ; // this space intentionally left blank
+    }
+    void signal()
+    {
+        while (true)
+        {
+            if (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters))
+                continue;
+            if (_waiters > 0)
+            {
+                sem_post(&_sem);
+                break;
+            }
+        }
+    }
+private:
+    int _waiters;
+    sem_t _sem;
+};
+
 class CriticalSectionGuard
 {
 public:
