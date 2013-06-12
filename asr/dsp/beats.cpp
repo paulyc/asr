@@ -258,8 +258,8 @@ void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src, Crit
         _jobs[j]->wait_for();
         for (int i=0; i<_jobs[j]->_outputs.size(); ++i)
         {
-          //  if (i%10==0)
-            //    CRITICAL_SECTION_GUARD(lock);
+         //   if (i%10==0)
+                CRITICAL_SECTION_GUARD(lock);
             process_chunk(_jobs[j]->_outputs[i]);
         }
     }
@@ -273,6 +273,7 @@ void BeatDetector<Chunk_T>::process_chunk(Chunk_T *process_chk)
     //T_allocator<Chunk_T>::print_info(process_chk);
     for (SamplePairf *smp = process_chk->_data, *end = smp + Chunk_T::chunk_size; smp != end; ++smp)
     {
+        
         double x = (*smp)[0];
         _diff.next(x);
         double dx = _diff.dx();
@@ -389,7 +390,7 @@ void BeatDetector<Chunk_T>::process_beats_job::reset_source(T_source<Chunk_T> *_
     _guardLock = lock;
     for (int i=0; i<nChunks; ++i)
     {
-        if (i%10==0)
+        //if (i%10==0)
         {
             CRITICAL_SECTION_GUARD(_guardLock);
         }
@@ -407,7 +408,7 @@ void BeatDetector<Chunk_T>::process_beats_job::do_it()
     _lock.acquire();
     for (int i=0; i<_vecSrc->size(); ++i)
     {
-        if (i%10==0)
+       // if (i%10==0)
         {
             CRITICAL_SECTION_GUARD(_guardLock);
         }
