@@ -63,7 +63,7 @@ public:
 		return _src->len();
 	}
 
-	void load_metadata(Lock_T *lock, ASIOProcessor *io)
+	void load_metadata(CriticalSectionGuard *lock, ASIOProcessor *io)
 	{
 		for (int chk_ofs=0; chk_ofs < _src->len().chunks; ++chk_ofs)
 		{
@@ -72,7 +72,7 @@ public:
 		}
 	}
 
-	const ChunkMetadata& get_metadata(smp_ofs_t chk_ofs, Lock_T *lock=0)
+	const ChunkMetadata& get_metadata(smp_ofs_t chk_ofs, CriticalSectionGuard *lock=0)
 	{
 		int i, indx;
 		if (chk_ofs < 0)

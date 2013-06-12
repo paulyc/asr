@@ -85,7 +85,7 @@ public:
   void do_mid_zoom() {}
   
   // fix file not expected length!!
-  virtual void set_wav_heights(Lock_T *lock=0)
+  virtual void set_wav_heights(CriticalSectionGuard *lock=0)
   {
 	//  printf("display::set_wav_heights\n");
 	  CRITICAL_SECTION_GUARD(lock);

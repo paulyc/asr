@@ -83,7 +83,7 @@ BeatDetector<Chunk_T>::~BeatDetector()
 }
 
 template <typename Chunk_T>
-void BeatDetector<Chunk_T>::reset_source(T_source<Chunk_T> *src, Lock_T *lock)
+void BeatDetector<Chunk_T>::reset_source(T_source<Chunk_T> *src, CriticalSectionGuard *lock)
 {
     reset_stats();
     process_all_from_source(src, lock);
@@ -238,7 +238,7 @@ double BeatDetector<Chunk_T>::filter(double avg, double stddev, int count)
 }
 
 template <typename Chunk_T>
-void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src, Lock_T *lock)
+void BeatDetector<Chunk_T>::process_all_from_source(T_source<Chunk_T> *src, CriticalSectionGuard *lock)
 {
     const int chks_to_process = src->len().chunks;
     const int division_size = chks_to_process / NUM_JOBS;
@@ -380,7 +380,7 @@ _rectifier(&_s1)
 }
 
 template <typename Chunk_T>
-void BeatDetector<Chunk_T>::process_beats_job::reset_source(T_source<Chunk_T> *_src, int nChunks, Lock_T *lock)
+void BeatDetector<Chunk_T>::process_beats_job::reset_source(T_source<Chunk_T> *_src, int nChunks, CriticalSectionGuard *lock)
 {
     _lock.acquire();
     delete _vecSrc;

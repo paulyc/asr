@@ -100,7 +100,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "167"
          endingLineNumber = "167"
-         landmarkName = "parse_chunks()"
+         landmarkName = "load_header(const char * filename)"
          landmarkType = "7">
       </FileBreakpoint>
       <FileBreakpoint
@@ -989,7 +989,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "228"
          endingLineNumber = "228"
-         landmarkName = "set_zoom(double z)"
+         landmarkName = "set_ctr(double c)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1249,7 +1249,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "66"
          endingLineNumber = "66"
-         landmarkName = "~BeatDetector()"
+         landmarkName = "_running(true)"
          landmarkType = "7">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1288,7 +1288,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "34"
          endingLineNumber = "34"
-         landmarkName = "create(const char *filename, Lock_T *lock)"
+         landmarkName = "create(const char *filename, CriticalSectionGuard *lock)"
          landmarkType = "7">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1327,7 +1327,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "233"
          endingLineNumber = "233"
-         landmarkName = "process_all_from_source(T_source&lt;Chunk_T&gt; *src, Lock_T *lock)"
+         landmarkName = "filter(double avg, double stddev, int count)"
          landmarkType = "7">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1340,7 +1340,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "77"
          endingLineNumber = "77"
-         landmarkName = "get_metadata(smp_ofs_t chk_ofs, Lock_T *lock=0)"
+         landmarkName = "get_metadata(smp_ofs_t chk_ofs, CriticalSectionGuard *lock=0)"
          landmarkType = "5">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1365,9 +1365,7 @@
          startingColumnNumber = "9223372036854775807"
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "278"
-         endingLineNumber = "278"
-         landmarkName = "next()"
-         landmarkType = "7">
+         endingLineNumber = "278">
       </FileBreakpoint>
       <FileBreakpoint
          shouldBeEnabled = "No"
@@ -1379,7 +1377,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "267"
          endingLineNumber = "267"
-         landmarkName = "next()"
+         landmarkName = "print_chunks()"
          landmarkType = "7">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1739,6 +1737,32 @@
          endingLineNumber = "45"
          landmarkName = "-renderInto"
          landmarkType = "5">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "Yes"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "../asr/track.cpp"
+         timestampString = "392697373.757896"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "106"
+         endingLineNumber = "106"
+         landmarkName = "set_source_file_impl(std::string filename, CriticalSectionGuard *lock)"
+         landmarkType = "7">
+      </FileBreakpoint>
+      <FileBreakpoint
+         shouldBeEnabled = "Yes"
+         ignoreCount = "0"
+         continueAfterRunningActions = "No"
+         filePath = "../asr/track.cpp"
+         timestampString = "392697529.18131"
+         startingColumnNumber = "9223372036854775807"
+         endingColumnNumber = "9223372036854775807"
+         startingLineNumber = "37"
+         endingLineNumber = "37"
+         landmarkName = "create(const char *filename, CriticalSectionGuard *lock)"
+         landmarkType = "7">
       </FileBreakpoint>
    </FileBreakpoints>
    <SymbolicBreakpoints>

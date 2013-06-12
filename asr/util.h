@@ -648,13 +648,17 @@ protected:
 	T *_next;
 };
 
+#if 0
 #if !ONE_CPU
 #define CRITICAL_SECTION_GUARD(lock)
 #else
 #define CRITICAL_SECTION_GUARD(lock) if (lock) { \
-lock->acquire(); \
-lock->release(); \
+(lock)->acquire(); \
+(lock)->release(); \
 sched_yield(); }
+#endif
+#else
+#define CRITICAL_SECTION_GUARD(lock) if (lock) (lock)->yield();
 #endif
 
 

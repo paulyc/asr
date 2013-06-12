@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 template <typename Chunk_T>
-void BufferedSource<Chunk_T>::create(const char *filename, Lock_T *lock)
+void BufferedSource<Chunk_T>::create(const char *filename, CriticalSectionGuard *lock)
 {
     T_source<Chunk_T> *src = 0;
     
@@ -77,10 +77,10 @@ AudioTrack<Chunk_T>::~AudioTrack()
 }
 
 template <typename Chunk_T>
-void AudioTrack<Chunk_T>::set_source_file(std::string filename, Lock_T &lock)
+void AudioTrack<Chunk_T>::set_source_file(std::string filename, CriticalSectionGuard &lock)
 {
     _future->submit(
-                    new deferred2<AudioTrack<Chunk_T>, std::string, Lock_T*>(
+                    new deferred2<AudioTrack<Chunk_T>, std::string, CriticalSectionGuard*>(
                                                                              this,
                                                                              &AudioTrack<Chunk_T>::set_source_file_impl, 
                                                                              filename, 
@@ -88,7 +88,7 @@ void AudioTrack<Chunk_T>::set_source_file(std::string filename, Lock_T &lock)
 }
 
 template <typename Chunk_T>
-void AudioTrack<Chunk_T>::set_source_file_impl(std::string filename, Lock_T *lock)
+void AudioTrack<Chunk_T>::set_source_file_impl(std::string filename, CriticalSectionGuard *lock)
 {
     _loading_lock.acquire();
     while (_in_config || !_loaded)
@@ -163,7 +163,7 @@ Chunk_T* AudioTrack<Chunk_T>::next()
 }
 
 template <typename Chunk_T>
-void AudioTrack<Chunk_T>::load(Lock_T *lock)
+void AudioTrack<Chunk_T>::load(CriticalSectionGuard *lock)
 {
     this->_meta->load_metadata(lock, _io);
     
