@@ -173,7 +173,7 @@ void AudioTrack<Chunk_T>::load(CriticalSectionGuard *lock)
     this->_display->set_left(0.0);
     this->_display->set_wav_heights(lock);
     
-    this->_detector.reset_source(this->_src_buf, lock);
+    //this->_detector.reset_source(this->_src_buf, lock);
     
     _loading_lock.acquire();
     _loaded = true;
