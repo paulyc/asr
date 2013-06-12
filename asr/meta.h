@@ -89,9 +89,7 @@ public:
 		Sample_T dabs;
 		if (!meta.valid)
 		{
-		//	if (lock) pthread_mutex_lock(lock);
 			Chunk_T *chk = _src->get_chunk(uchk_ofs);
-		//	if (lock) pthread_mutex_unlock(lock);
 
 			CRITICAL_SECTION_GUARD(lock);
 			for (i = 0; i < 10; ++i)

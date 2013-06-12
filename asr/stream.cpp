@@ -37,28 +37,12 @@ chunk_t* ChunkGenerator::GetNextChunk(int streamID)
 
 void ChunkGenerator::lock(int id)
 {
-  //  _lock.acquire();
-  //  if (_lockMask == 0)
-#if 0
-        _ioLock->acquire();
-#else
     _ioLock->enter();
-#endif
-  //  _lockMask |= 1 << id;
-  //  _lock.release();
 }
 
 void ChunkGenerator::unlock(int id)
 {
- //   _lock.acquire();
- //   _lockMask &= 1 << id;
- //   if (_lockMask == 0)
-#if 0
-        _ioLock->release();
-#else
     _ioLock->leave();
-#endif
- //   _lock.release();
 }
 
 void ChunkGenerator::kill()

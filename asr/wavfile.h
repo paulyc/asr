@@ -519,7 +519,7 @@ public:
 	Chunk_T* next()
 	{
         CRITICAL_SECTION_GUARD(_lock);
-		//if (_lock) _lock->acquire();
+        
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		unsigned n = 0;
 		size_t rd;
@@ -540,7 +540,6 @@ public:
 		}
 		if (smp_out == smp_end)
 		{
-			//if (_lock) _lock->release();
 			return chk;
 		}
 
@@ -558,18 +557,14 @@ public:
 				{
 					_inputBufferFilled = 0;
 				}
-				/*if (_lock)
-				{
-					_lock->release();
-					sched_yield();
-				}*/
+                
                 CRITICAL_SECTION_GUARD(_lock);
+                
 				rd = _file->read((char*)_inputBuffer+_inputBufferFilled, 1, INPUT_BUFFER_SIZE-_inputBufferFilled);
 				if (_file->eof())
 				{
 					_eof = true;
 				}
-				//if (_lock) _lock->acquire();
 				_inputBufferFilled += rd;
 
 				if (_eof)
@@ -613,7 +608,6 @@ public:
 		} while (n == 0 || smp_out < smp_end);
 		for (; smp_out < smp_end; ++smp_out)
 			Zero<typename Chunk_T::sample_t>::set(*smp_out);
-		//if (_lock) _lock->release();
 		return chk;
 	}
 
@@ -774,7 +768,6 @@ public:
 
 	Chunk_T* next()
 	{
-		//if (_lock) _lock->acquire();
         CRITICAL_SECTION_GUARD(_lock);
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		typename Chunk_T::sample_t *smp = chk->_data, *end = smp + Chunk_T::chunk_size;
@@ -797,17 +790,10 @@ public:
 			}
 			if (_ofs == _blocksize)
 			{
-				/*if (_lock)
-				{
-					_lock->release();
-					sched_yield();
-				}*/
                 CRITICAL_SECTION_GUARD(_lock);
 				load_frame();
-			//	if (_lock) _lock->acquire();
 			}
 		}
-	//	if (_lock) _lock->release();
 		return chk;
 	}
 

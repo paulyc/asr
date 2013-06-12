@@ -1262,7 +1262,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "250"
          endingLineNumber = "250"
-         landmarkName = "process_all_from_source(T_source&lt;Chunk_T&gt; *src, Lock_T *lock)"
+         landmarkName = "process_all_from_source(T_source&lt;Chunk_T&gt; *src, CriticalSectionGuard *lock)"
          landmarkType = "7">
       </FileBreakpoint>
       <FileBreakpoint
@@ -1314,7 +1314,7 @@
          endingColumnNumber = "9223372036854775807"
          startingLineNumber = "242"
          endingLineNumber = "242"
-         landmarkName = "process_all_from_source(T_source&lt;Chunk_T&gt; *src, Lock_T *lock)"
+         landmarkName = "process_all_from_source(T_source&lt;Chunk_T&gt; *src, CriticalSectionGuard *lock)"
          landmarkType = "7">
       </FileBreakpoint>
       <FileBreakpoint
