@@ -210,21 +210,29 @@ public:
     {
         while (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters+1))
             ; // this space intentionally left blank
+        lock.release();
         sem_wait(&_sem);
-        while (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters-1))
-            ; // this space intentionally left blank
+        lock.acquire();
     }
     void signal()
     {
         while (true)
         {
-            if (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters))
-                continue;
             if (_waiters > 0)
             {
+                if (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters-1))
+                    continue;
                 sem_post(&_sem);
-                break;
             }
+        }
+    }
+    void signal_all()
+    {
+        while (_waiters > 0)
+        {
+            if (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters-1))
+                continue;
+            sem_post(&_sem);
         }
     }
 private:
@@ -260,8 +268,8 @@ public:
     }
 private:
     int _criticalCount;
-    PthreadLock _lock;
-    PthreadCondition _wait;
+    FastUserSpinLock _lock;
+    FastUserCondition _wait;
 };
 
 #if WINDOWS
