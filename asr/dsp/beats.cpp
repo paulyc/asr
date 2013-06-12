@@ -392,7 +392,7 @@ void BeatDetector<Chunk_T>::process_beats_job::reset_source(T_source<Chunk_T> *_
     {
         //if (i%10==0)
         {
-            CRITICAL_SECTION_GUARD(_guardLock);
+        //    CRITICAL_SECTION_GUARD(_guardLock);
         }
         Chunk_T *chk = _src->next();
         _vecSrc->add(chk);
@@ -410,7 +410,7 @@ void BeatDetector<Chunk_T>::process_beats_job::do_it()
     {
        // if (i%10==0)
         {
-            CRITICAL_SECTION_GUARD(_guardLock);
+         //   CRITICAL_SECTION_GUARD(_guardLock);
         }
         _outputs[i] = _s2.next();
     }

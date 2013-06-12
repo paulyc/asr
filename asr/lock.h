@@ -270,6 +270,8 @@ private:
     int _criticalCount;
     FastUserSpinLock _lock;
     FastUserCondition _wait;
+  //  PthreadLock _lock;
+  //  PthreadCondition _wait;
 };
 
 #if WINDOWS
