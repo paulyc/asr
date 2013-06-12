@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sched.h>
+#include <emmintrin.h>
 
 #include "config.h"
 
@@ -144,7 +145,10 @@ public:
 	}
 	void signal() {
 		pthread_cond_signal(&_cond);
-	}
+    }
+    void signal_all() {
+        pthread_cond_broadcast(&_cond);
+    }
 protected:
 	pthread_cond_t _cond;
 };
@@ -176,6 +180,58 @@ protected:
 	int _own_flag;
 	int *_p_own_flag;
 	pthread_t _owner;
+};
+
+class FastUserSpinLock
+{
+public:
+    FastUserSpinLock() : _ownFlag(0) {}
+    void acquire()
+    {
+        while(!__sync_bool_compare_and_swap(&_ownFlag, 0, 1))
+        {
+            while(_ownFlag) _mm_pause();
+        }
+    }
+    void release()
+    {
+        asm volatile (""); // acts as a memory barrier.
+        _ownFlag = 0;
+    }
+private:
+    volatile int _ownFlag;
+};
+
+class CriticalSectionGuard
+{
+public:
+    CriticalSectionGuard() : _criticalCount(0) {}
+    void enter()
+    {
+        _lock.acquire();
+        ++_criticalCount;
+        _lock.release();
+    }
+    void leave()
+    {
+        _lock.acquire();
+        if (--_criticalCount == 0)
+        {
+            _wait.signal_all();
+        }
+        _lock.release();
+    }
+    void yield()
+    {
+        _lock.acquire();
+        while (_criticalCount > 0)
+            _wait.wait(_lock);
+        _lock.release();
+    }
+private:
+    int _criticalCount;
+    PthreadLock _lock;
+    PthreadCondition _wait;
 };
 
 #if WINDOWS
