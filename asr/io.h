@@ -133,7 +133,9 @@ public:
 
 	void set_source(Output o, Source s)
 	{
-		_io_lock.acquire();
+#if 1
+	//	_io_lock.acquire();
+        _io_lock.enter();
 		if (o==Main)
 		{
 			switch (s)
@@ -169,7 +171,11 @@ public:
 					break;
 			}
 		}
-		_io_lock.release();
+        _io_lock.leave();
+	//	_io_lock.release();
+#else
+        throw std::exception();
+#endif
 	}
 
 	int get_track_id_for_filter(void *filt) const;
@@ -188,7 +194,7 @@ public:
 	//	pthread_mutex_unlock(&_io_lock);
 	}
 
-	Lock_T& get_lock()
+	CriticalSectionGuard& get_lock()
 	{
 		return _io_lock;
 	}
@@ -248,7 +254,8 @@ public: // was protected
 
 	GenericUI *_ui;
 
-	Lock_T _io_lock;
+	//Lock_T _io_lock;
+    CriticalSectionGuard _io_lock;
 	Condition_T _do_gen;
 	Condition_T _gen_done;
 	bool _finishing;

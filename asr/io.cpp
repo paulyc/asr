@@ -467,7 +467,7 @@ void ASIOProcessor::BufferSwitch(long doubleBufferIndex)
 #endif
 
 	_io_lock.release();
-#endif
+#endif // 0
 }
 
 void ASIOProcessor::GenerateOutput()
@@ -520,6 +520,7 @@ void ASIOProcessor::GenerateOutput()
 
 void ASIOProcessor::GenerateLoop(pthread_t th)
 {
+#if 0
 #ifdef WIN32
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 #endif
@@ -536,6 +537,7 @@ void ASIOProcessor::GenerateLoop(pthread_t th)
 	}
 	_io_lock.release();
 	pthread_exit(0);
+#endif // 0
 }
 
 int ASIOProcessor::get_track_id_for_filter(void *filt) const

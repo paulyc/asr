@@ -51,13 +51,13 @@ public:
 	BeatDetector();
     ~BeatDetector();
 
-	void reset_source(T_source<Chunk_T> *src, Lock_T *lock);
+	void reset_source(T_source<Chunk_T> *src, CriticalSectionGuard *lock);
     void reset_stats();
     virtual void seek_chk(int chk_ofs);
     void calc_beats();
     double analyze();
     double filter(double avg, double stddev, int count);
-    void process_all_from_source(T_source<Chunk_T> *src, Lock_T *lock=0);
+    void process_all_from_source(T_source<Chunk_T> *src, CriticalSectionGuard *lock=0);
     void process_chunk(Chunk_T *process_chk);
     
 	Chunk_T *next()
@@ -93,7 +93,7 @@ public:
     {
     public:
         process_beats_job(const FFTWindowFilter &f1, const FFTWindowFilter &f2);
-        void reset_source(T_source<Chunk_T> *_src, int nChunks, Lock_T *lock);
+        void reset_source(T_source<Chunk_T> *_src, int nChunks, CriticalSectionGuard *lock);
         void do_it();
         void step();
         void wait_for();
@@ -107,7 +107,7 @@ public:
         
         Lock_T _lock;
         Condition_T _done;
-        Lock_T *_guardLock;
+        CriticalSectionGuard *_guardLock;
     };
     
     static void test_main();

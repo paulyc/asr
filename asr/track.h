@@ -351,7 +351,7 @@ public:
 	{
 	}
 
-	void create(const char *filename, Lock_T *lock);
+	void create(const char *filename, CriticalSectionGuard *lock);
 
 //	void createZero(ASIOProcessor *io)
 //	{
@@ -409,9 +409,9 @@ public:
 	AudioTrack(ASIOProcessor *io, int track_id, const char *filename);
 	virtual ~AudioTrack();
 
-	void set_source_file(std::string filename, Lock_T &lock);
+	void set_source_file(std::string filename, CriticalSectionGuard &lock);
 	Chunk_T* next();
-    void load(Lock_T *lock=0);
+    void load(CriticalSectionGuard *lock=0);
 
 	bool play_pause(bool pause_monitor=false)
 	{
@@ -561,7 +561,7 @@ protected:
 	bool _pause_monitor;
     
 private:
-	void set_source_file_impl(std::string filename, Lock_T *lock);
+	void set_source_file_impl(std::string filename, CriticalSectionGuard *lock);
 };
 
 typedef AudioTrack<chunk_t> Track_T;

@@ -315,7 +315,7 @@ public:
 class ChunkGenerator : public IChunkGeneratorCallback<chunk_t>
 {
 public:
-    ChunkGenerator(int bufferSizeFrames, Lock_T *ioLock) : _ioLock(ioLock), _lockMask(0)
+    ChunkGenerator(int bufferSizeFrames, CriticalSectionGuard *ioLock) : _ioLock(ioLock), _lockMask(0)
     {
         _chunksToBuffer = bufferSizeFrames / chunk_t::chunk_size;
         if (bufferSizeFrames % chunk_t::chunk_size > 0)
@@ -331,7 +331,7 @@ private:
     std::unordered_map<int, IChunkGeneratorLoop<chunk_t>*> _streams;
     int _chunksToBuffer;
     Lock_T _lock;
-    Lock_T *_ioLock;
+    CriticalSectionGuard *_ioLock;
     int _lockMask;
 };
 
