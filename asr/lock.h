@@ -222,6 +222,7 @@ public:
                 if (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters-1))
                     continue;
                 sem_post(&_sem);
+                break;
             }
         }
     }

@@ -648,6 +648,9 @@ protected:
 	T *_next;
 };
 
+#if 1
+#define CRITICAL_SECTION_GUARD(lock)
+#else
 #if 0
 #if !ONE_CPU
 #define CRITICAL_SECTION_GUARD(lock)
@@ -659,6 +662,7 @@ sched_yield(); }
 #endif
 #else
 #define CRITICAL_SECTION_GUARD(lock) if (lock) (lock)->yield();
+#endif
 #endif
 
 

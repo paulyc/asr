@@ -147,7 +147,7 @@ public:
                 {
                     cbObj->unlock(chkId);
                     doGen.wait(myLock);
-                    cbObj->lock(chkId);
+                    //cbObj->lock(chkId);
                     continue;
                 }
                 nextChks.push(src->next());
@@ -165,7 +165,9 @@ public:
             {
                 chk = nextChks.front();
                 nextChks.pop();
+                cbObj->lock(chkId);
                 doGen.signal();
+                
             }
             myLock.release();
             return chk;
@@ -300,9 +302,19 @@ public:
         _job_lock.acquire();
 		if (critical)
         {
-            sched_param p = {1};
+            //sched_param p = {1};
             pthread_create(&_tid, 0, threadproc_cr, (void*)this);
-            pthread_setschedparam(_tid, SCHED_FIFO, &p);
+            //pthread_setschedparam(_tid, SCHED_FIFO, &p);
+            struct thread_time_constraint_policy ttcpolicy;
+            ttcpolicy.period=3000000/100; // HZ/160
+            ttcpolicy.computation=30000000/100; // HZ/3300;
+            ttcpolicy.constraint=3000000/320; // HZ/2200;
+            ttcpolicy.preemptible=0;
+            if (thread_policy_set(pthread_mach_thread_np(_tid), THREAD_TIME_CONSTRAINT_POLICY, (thread_policy_t)&ttcpolicy,
+                              THREAD_TIME_CONSTRAINT_POLICY_COUNT))
+            {
+                printf("set realtime failed\n");
+            }
             _cr_workers.push_back(this);
         }
 		else
