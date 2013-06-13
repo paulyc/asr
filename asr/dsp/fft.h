@@ -153,7 +153,7 @@ public:
 	}
 	fftw_complex *get_fft_coeffs() const
 	{
-        if (!_initd) throw string_exception("attempt to use filter without init");
+        if (!_initd) throw std::runtime_error("attempt to use filter without init");
 		return _fftCoeffs;
 	}
 	static const double _windowConstant;

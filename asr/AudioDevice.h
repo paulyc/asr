@@ -22,11 +22,7 @@
 
 #include "config.h"
 
-#if MAC
 #include <CoreAudio/CoreAudio.h>
-#elif WINDOWS
-#include <asio.h>
-#endif
 
 #include "type.h"
 #include "stream.h"
@@ -217,7 +213,6 @@ public:
     virtual void process(chunk_t *chk) = 0;
 };
 
-#if MAC
 class CoreAudioInput : public AudioInput
 {
 public:
@@ -278,10 +273,6 @@ private:
     std::vector<CoreAudioOutput> _outputs;
 };
 
-#elif WINDOWS
-
-#endif // WINDOWS
-
 class IAudioStream
 {
 public:
@@ -294,7 +285,6 @@ public:
     virtual void Stop() = 0;
 };
 
-#if MAC
 class IAudioDeviceFactory;
 
 class MacAudioDriverDescriptor : public IAudioDriverDescriptor
@@ -456,135 +446,5 @@ private:
     AudioDeviceIOProcID _procID;
     CoreAudioDevice *_device;
 };
-
-#elif WINDOWS
-
-class ASIODriverDescriptor : public IAudioDriverDescriptor
-{
-public:
-    virtual std::string GetName() const { return std::string("ASIO"); }
-    virtual IAudioDeviceFactory *Instantiate() const;
-};
-
-class WindowsDriverFactory : public IAudioDriverFactory
-{
-public:
-    WindowsDriverFactory();
-    virtual ~WindowsDriverFactory();
-    
-    virtual std::vector<const IAudioDriverDescriptor*> Enumerate() const { return _drivers; }
-private:
-    std::vector<const IAudioDriverDescriptor*> _drivers;
-};
-
-class ASIODeviceDescriptor : public IAudioDeviceDescriptor
-{
-public:
-    ASIODeviceDescriptor(const char *name, const char *clsid) : _name(name), _clsID(clsid) {}
-    
-    virtual std::string GetName() const { return _name; }
-    virtual IAudioDevice *Instantiate() const;
-private:
-    std::string _name;
-    const char *_clsID;
-};
-
-class DummyASIODeviceDescriptor : public IAudioDeviceDescriptor
-{
-public:
-    virtual std::string GetName() const { return std::string("Dummy ASIO"); }
-    virtual IAudioDevice *Instantiate() const;
-}
-
-class ASIODeviceFactory : public IAudioDeviceFactory
-{
-public:
-    ASIODeviceFactory();
-    virtual ~ASIODeviceFactory();
-    
-    virtual std::vector<const IAudioDeviceDescriptor*> Enumerate() const { return _devices; }
-private:
-    std::vector<const IAudioDeviceDescriptor*> _devices;
-};
-
-class ASIODevice;
-
-class ASIOStreamDescriptor : public IAudioStreamDescriptor
-{
-public:
-    ASIOStreamDescriptor(int             id,
-                         ASIODevice*     device,
-                         StreamType      type,
-                         int             channels,
-                         SampleType      sampleType,
-                         int             sampleSizeBits,
-                         int             sampleWordSizeBytes,
-                         SampleAlignment alignment,
-                         float64_t       sampleRate) :
-    _id(id),
-    _device(device),
-    _type(type),
-    _nChannels(channels),
-    _sampleType(sampleType),
-    _sampleSizeBits(sampleSizeBits),
-    _sampleWordSizeBytes(sampleWordSizeBytes),
-    _alignment(alignment),
-    _sampleRate(sampleRate)
-    {
-    }
-    
-    virtual StreamType      GetStreamType() const { return _type; }
-    virtual int             GetNumChannels() const { return _nChannels; }
-    virtual SampleType      GetSampleType() const { return _sampleType; }
-    virtual int             GetSampleSizeInBits() const { return _sampleSizeBits; }
-    virtual int             GetSampleWordSizeInBytes() const { return _sampleWordSizeBytes; }
-    virtual SampleAlignment GetSampleAlignment() const { return _alignment; }
-    virtual float64_t       GetSampleRate() const { return _sampleRate; }
-    
-    virtual IAudioStream *GetStream() const;
-    
-private:
-    int             _id;
-    ASIODevice*     _device;
-    StreamType      _type;
-    int             _nChannels;
-    SampleType      _sampleType;
-    int             _sampleSizeBits;
-    int             _sampleWordSizeBytes;
-    SampleAlignment _alignment;
-    float64_t       _sampleRate;
-};
-
-class ASIODevice : public IAudioDevice
-{
-public:
-    ASIODevice(const ASIODeviceDescriptor &desc, IASIO *asio);
-    virtual ~ASIODevice() {}
-    
-    virtual const IAudioDeviceDescriptor *GetDescriptor() const { return &_desc; }
-    virtual std::vector<const IAudioStreamDescriptor*> GetStreams() const;
-    virtual void RegisterStream(IAudioStream *stream);
-    
-    virtual void Start() { ASIOStart(); }
-    virtual void Stop() { ASIOStop(); }
-private:
-    ASIODeviceDescriptor _desc;
-    IASIO *_asio;
-    std::vector<ASIOStreamDescriptor> _streams;
-};
-
-class ASIOStream
-{
-public:
-    virtual ~ASIOStream() {}
-    
-    virtual const IAudioStreamDescriptor *GetDescriptor() const;
-    virtual void SetProc(IAudioStreamProcessor *proc);
-    
-    virtual void Start();
-    virtual void Stop();
-};
-
-#endif // WINDOWS
 
 #endif /* defined(__mac__AudioDevice__) */

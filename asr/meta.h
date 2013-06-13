@@ -77,7 +77,7 @@ public:
 		int i, indx;
 		if (chk_ofs < 0)
 		{
-			throw string_exception("cant handle chunk ofs < 0");
+			throw std::runtime_error("cant handle chunk ofs < 0");
 		}
 
 		usmp_ofs_t uchk_ofs = (usmp_ofs_t)chk_ofs;

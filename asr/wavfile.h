@@ -73,16 +73,6 @@ struct AIFFCommChunk
 	float80 sampleRate; // 80-bit floating point
 };
 
-#if WINDOWS
-inline const char * cwcs_to_ccs(const wchar_t *str)
-{
-	size_t nChar;
-	static char buf[1024];
-	wcstombs_s(&nChar, buf, sizeof(buf), str, sizeof(buf));
-	return buf;
-}
-#endif
-
 class file_chunker
 {
 public:
@@ -149,7 +139,7 @@ public:
 		}
 		else if (_riffHdr.riff == 'MROF' && _riffHdr.fileid == 'CFIA')
 		{
-			throw string_exception("can't handle AIFF-C!");
+			throw std::runtime_error("can't handle AIFF-C!");
 		}
 
 		while (true)
@@ -176,7 +166,7 @@ public:
 		else if (_type == WAV)
 			parse_wav();
 		else
-			throw string_exception("Unknown IFF file type");
+			throw std::runtime_error("Unknown IFF file type");
 
 		_file->seek(_dataOfs);
 
@@ -216,7 +206,7 @@ public:
 		_nChannels = comChk.channels;
 		_bytesPerSample = comChk.bitsPerSample / 8;
 		if (_riffChunks.find('DNSS') == _riffChunks.end())
-			throw string_exception("no data chunk found in AIFF");
+			throw std::runtime_error("no data chunk found in AIFF");
 
 		_dataOfs = _riffChunks['DNSS'].ofs;
 		_dataBytes = _riffChunks['DNSS'].ch.len;
@@ -238,13 +228,13 @@ public:
 		}
 		else
 		{
-			throw string_exception("no format chunk in WAV");
+			throw std::runtime_error("no format chunk in WAV");
 		}
 
 		if (fmtChk.bitsPerSample & 0x7)
 		{
 			_bytesPerSample = (fmtChk.bitsPerSample >> 3) + 1;
-			throw string_exception("Can't handle bits per sample not a multiple of 8");
+			throw std::runtime_error("Can't handle bits per sample not a multiple of 8");
 		}
 		else
 		{
@@ -255,7 +245,7 @@ public:
 		_sampleRate = (double) fmtChk.sampleRate;
 
 		if (_riffChunks.find('atad') == _riffChunks.end())
-			throw string_exception("no data chunk found in WAV");
+			throw std::runtime_error("no data chunk found in WAV");
 		_dataOfs = _riffChunks['atad'].ofs;
 		_dataBytes = _riffChunks['atad'].ch.len;
 	}
@@ -362,7 +352,7 @@ public:
 		{
 			delete _file;
 			_file = 0;
-			throw string_exception((std::string(filename) + " is not a valid WAVE file").c_str());
+			throw std::runtime_error((std::string(filename) + " is not a valid WAVE file").c_str());
 		}
 
 		RIFFChunkHeader ch;
@@ -371,14 +361,14 @@ public:
 		{
 			delete _file;
 			_file = 0;
-			throw string_exception((std::string(filename) + " is not a valid WAVE file: format chunk not found").c_str());
+			throw std::runtime_error((std::string(filename) + " is not a valid WAVE file: format chunk not found").c_str());
 		}
 
 		if (ch.len > sizeof(WAVFormatChunk))
 		{
 			delete _file;
 			_file = 0;
-			throw string_exception("Can't handle this type of WAVE file");
+			throw std::runtime_error("Can't handle this type of WAVE file");
 		}
 
 		_file->read(&_fmtChk, ch.len, 1);
@@ -386,13 +376,13 @@ public:
 		{
 			delete _file;
 			_file = 0;
-			throw string_exception("Can't handle this type of WAVE file");
+			throw std::runtime_error("Can't handle this type of WAVE file");
 		}
 
 		if (_fmtChk.bitsPerSample & 0x7)
 		{
 			_bytesPerSample = (_fmtChk.bitsPerSample >> 3) + 1;
-			throw string_exception("Can't handle bits per sample not a multiple of 8");
+			throw std::runtime_error("Can't handle bits per sample not a multiple of 8");
 		}
 		else
 		{
@@ -411,7 +401,7 @@ public:
 		{
 			delete _file;
 			_file = 0;
-			throw string_exception((std::string(filename) + " is not a valid WAVE file: data chunk not found").c_str());
+			throw std::runtime_error((std::string(filename) + " is not a valid WAVE file: data chunk not found").c_str());
 		}
 		_dataOfs = _file->tell();
 		_dataBytes = ch.len;
@@ -586,7 +576,7 @@ public:
 					if (_stream.error == MAD_ERROR_BUFLEN)
 						continue;
 					else
-						throw string_exception("fatal error during MPEG decoding");
+						throw std::runtime_error("fatal error during MPEG decoding");
 			}
 
 			_sample_rate = (double)_frame.header.samplerate;
@@ -660,14 +650,14 @@ public:
 		_lock(lock)
 	{
 		if((_decoder = FLAC__stream_decoder_new()) == NULL) {
-			throw string_exception("ERROR: allocating decoder");
+			throw std::runtime_error("ERROR: allocating decoder");
 		}
 
 		if(FLAC__stream_decoder_init_file(_decoder, 
 			filename, write_callback, metadata_callback, 
 			error_callback, (void*)this) != FLAC__STREAM_DECODER_INIT_STATUS_OK)
 		{
-			throw string_exception("ERROR: initializing decoder");
+			throw std::runtime_error("ERROR: initializing decoder");
 		}
 
 		FLAC__stream_decoder_process_until_end_of_metadata(_decoder);

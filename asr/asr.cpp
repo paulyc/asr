@@ -43,10 +43,6 @@ using std::exception;
 #include "dsp/filter.h"
 #include "display.h"
 
-#if WINDOWS
-#include "asiodrv.cpp"
-#endif
-
 #include "speedparser.h"
 #include "ui.h"
 #include "tracer.h"
@@ -57,9 +53,7 @@ typable(double)
 ASR::ASR(int argc, char **argv)
 {
 	_asio = new ASIOProcessor;
-#if WINDOWS
-	_ui = new Win32UI(_asio);
-#elif OPENGL_ENABLED
+#if OPENGL_ENABLED
 	_ui = new OpenGLUI(_asio, argc, argv);
 #elif MAC
     //_ui = new CocoaUI(_asio);

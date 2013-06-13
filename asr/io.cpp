@@ -24,11 +24,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#include "asio.cpp"
-#include "iomgr.cpp"
-
 #include "compressor.h"
-
 #include "track.h"
 
 ASIOProcessor::ASIOProcessor() :
@@ -78,54 +74,6 @@ ASIOProcessor::~ASIOProcessor()
 
 void ASIOProcessor::Init()
 {
-#if WINDOWS
-	CoInitialize(0);
-    WindowsDriverFactory fac;
-    IAudioDeviceFactory *deviceFac = 0;
-    std::vector<const IAudioDriverDescriptor*> drivers = fac.Enumerate();
-    for (std::vector<const IAudioDriverDescriptor*>::iterator i = drivers.begin();
-         i != drivers.end();
-         i++)
-    {
-        if ((*i)->GetName() == std::string("ASIO"))
-            deviceFac = (*i)->Instantiate();
-    }
-    
-    if (!deviceFac)
-    {
-        throw string_exception("Failed to create ASIO device factory");
-    }
-    
-    std::vector<const IAudioDeviceDescriptor*> devices = deviceFac->Enumerate();
-    for (std::vector<const IAudioDeviceDescriptor*>::iterator devIter = devices.begin();
-         devIter != devices.end();
-         devIter++)
-    {
-        if (dev->GetName() == std::string("Saffire"))
-        {
-            _device = (*devIter)->Instantiate();
-        }
-    }
-    if (!_device)
-    {
-        for (std::vector<const IAudioDeviceDescriptor*>::iterator devIter = devices.begin();
-             devIter != devices.end();
-             devIter++)
-        {
-            if (dev->GetName() == std::string("Built-in Output"))
-            {
-                _device = (*devIter)->Instantiate();
-            }
-        }
-    }
-    if (!_device)
-    {
-        throw string_exception("Failed to create audio device");
-    }
-    delete deviceFac;
-	
-    _iomgr->createBuffers(this);
-#elif MAC
     MacAudioDriverFactory fac;
     IAudioDeviceFactory *deviceFac = 0;
     std::vector<const IAudioDriverDescriptor*> drivers = fac.Enumerate();
@@ -139,7 +87,7 @@ void ASIOProcessor::Init()
     
     if (!deviceFac)
     {
-        throw string_exception("Failed to create CoreAudio device factory");
+        throw std::runtime_error("Failed to create CoreAudio device factory");
     }
     
     std::vector<const IAudioDeviceDescriptor*> devices = deviceFac->Enumerate();
@@ -170,18 +118,14 @@ void ASIOProcessor::Init()
     }
     if (!_device)
     {
-        throw string_exception("Failed to create audio device");
+        throw std::runtime_error("Failed to create audio device");
     }
     delete deviceFac;
-#endif
     
     _need_buffers = true;
     
     IMIDIDevice *dev = 0; //midifac.Instantiate(1, true);
     
-#if WINDOWS
-	Win32MIDIDeviceFactory midifac;
-#elif MAC
     std::vector<const IMIDIDeviceDescriptor*> midiDevices = _client.Enumerate();
     for (int i=0; i<midiDevices.size(); ++i)
     {
@@ -192,9 +136,6 @@ void ASIOProcessor::Init()
             break;
         }
     }
-#else
-    DummyMIDIDeviceFactory midifac;
-#endif
 	
 	if (dev)
 	{
@@ -235,10 +176,6 @@ void ASIOProcessor::Destroy()
     delete _device;
     delete _inputDevice;
     
-#if WINDOWS
-	CoUninitialize();
-#endif
-    
 	delete _my_pk_det;
     //	delete _my_gain;
 	
@@ -264,7 +201,7 @@ void ASIOProcessor::Destroy()
 	T_allocator<chunk_t>::gc();
 	T_allocator<chunk_t>::dump_leaks();
     
-#if WINDOWS
+#if 0
 	Tracer::printTrace();
 #endif
 }
@@ -429,115 +366,6 @@ void ASIOProcessor::Stop()
 		_midi_controller->Stop();
     _device->Stop();
     if (_inputDevice) _inputDevice->Stop();
-}
-
-void ASIOProcessor::BufferSwitch(long doubleBufferIndex)
-{
-#if 0
-	_waiting = true;
-	_io_lock.acquire();
-	_waiting = false;
-	_doubleBufferIndex = doubleBufferIndex;
-
-#define BROKEN 1
-#if CARE_ABOUT_INPUT && !BROKEN
-	_iomgr->processInputs(_doubleBufferIndex);
-	while (_file_out && _iomgr->_my_source2->chunk_ready())
-	{
-		_file_out->process();
-	}
-#endif	
-
-#if DO_OUTPUT
-	
-    while (_need_buffers)
-    {
-		_gen_done.wait(_io_lock);
-    }
-	_iomgr->switchBuffers(doubleBufferIndex);
-    _need_buffers = true;
-
-	_do_gen.signal();
-#endif
-
-#if ECHO_INPUT
-	// copy input
-	memcpy(_buffer_infos[2].buffers[doubleBufferIndex], _buffer_infos[0].buffers[doubleBufferIndex], BUFFERSIZE*sizeof(short));
-	memcpy(_buffer_infos[3].buffers[doubleBufferIndex], _buffer_infos[1].buffers[doubleBufferIndex], BUFFERSIZE*sizeof(short));
-#endif
-
-	_io_lock.release();
-#endif // 0
-}
-
-void ASIOProcessor::GenerateOutput()
-{
-	if (!_main_mgr._c) {
-		chunk_t *chk1 = _tracks[0]->next();
-		chunk_t *chk2 = _tracks[1]->next();
-
-		// just replace this with output gain
-		chunk_t *out = _main_src->next(chk1, chk2);
-	//	NormalizingCompressor<chunk_t>::process(out);
-
-		if (_main_src->_clip)
-			_tracks[0]->set_clip(_main_src==_master_xfader?1:2);
-		_main_mgr._c = out;
-
-		out = _cue->next(chk1, chk2);
-	//	NormalizingCompressor<chunk_t>::process(out);
-		_2_mgr._c = out;
-
-	/*	if (_file_src == _main_src) 
-		{
-			T_allocator<chunk_t>::add_ref(out);
-			_file_mgr._c = out;
-			T_allocator<chunk_t>::free(chk1);
-			T_allocator<chunk_t>::free(chk2);
-		}
-		else if (_file_src)
-		{
-			_file_mgr._c = _file_src->next(chk1, chk2);
-			if (_file_src->_clip)
-				_tracks[0]->set_clip(_file_src==_master_xfader?1:2);
-		}
-		else
-	*/	{
-			T_allocator<chunk_t>::free(chk1);
-			T_allocator<chunk_t>::free(chk2);
-		}
-	}
-
-    //_iomgr->processOutputs();
-    _need_buffers = false;
-	_gen_done.signal();
-    
-    if (_file_out && _file_src && _file_mgr._c)
-	{
-		_file_out->process();
-	}
-}
-
-void ASIOProcessor::GenerateLoop(pthread_t th)
-{
-#if 0
-#ifdef WIN32
-	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-#endif
-	_io_lock.acquire();
-	_gen_th = th;
-	while (!_finishing)
-	{
-		while (_need_buffers)
-		{
-			GenerateOutput();
-			_gen_done.signal();
-		}
-		_do_gen.wait(_io_lock);
-	}
-	_io_lock.release();
-	pthread_exit(0);
-#endif // 0
 }
 
 int ASIOProcessor::get_track_id_for_filter(void *filt) const

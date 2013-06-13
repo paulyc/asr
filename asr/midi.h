@@ -99,8 +99,6 @@ public:
 	virtual void Stop() = 0;
 };
 
-#if MAC
-
 #include <CoreMIDI/CoreMIDI.h>
 #include <CoreFoundation/CoreFoundation.h>
 
@@ -223,16 +221,6 @@ private:
     std::vector<CoreMIDIEndpointDescriptor> _endpoints;
     std::vector<IMIDIEndpoint*> _endpointRegister;
 };
-
-#elif WINDOWS
-
-class Win32MIDIDeviceFactory : public IMIDIDeviceFactory
-{
-public:
-	virtual std::vector<const IMIDIDeviceDescriptor*> Enumerate() const;
-};
-
-#endif
 
 class DummyMIDIDeviceFactory : public IMIDIDeviceFactory
 {

@@ -31,10 +31,6 @@
 #define OPENGL_ENABLED 0
 #endif
 
-#if WINDOWS
-#include <windows.h>
-#endif
-
 #if MAC
 #include <unistd.h>
 #endif

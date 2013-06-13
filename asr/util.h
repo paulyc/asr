@@ -27,13 +27,6 @@
 #include "type.h"
 #include "lock.h"
 
-#if WINDOWS
-#include <asio.h>
-
-const char* asio_error_str(ASIOError e);
-const char* asio_sampletype_str(ASIOSampleType t);
-#endif // WINDOWS
-
 template <typename T>
 class Zero
 {
@@ -664,27 +657,6 @@ sched_yield(); }
 #define CRITICAL_SECTION_GUARD(lock) if (lock) (lock)->yield();
 #endif
 #endif
-
-
-#if 0
-#define min(x,y) ((x) < (y) ? (x) : (y))
-#define max(x,y) ((x) > (y) ? (x) : (y))
-#endif
-
-#if 0
-#if WINDOWS
-typedef std::exception string_exception;
-#else
-class string_exception : public std::exception
-{
-public:
-	string_exception(const char *p) : std::exception(), _p(p) {}
-	const char *what() { return _p; }
-private:
-	const char *_p;
-};
-#endif
-#endif // 0
 
 #if MAC
 #include <string>

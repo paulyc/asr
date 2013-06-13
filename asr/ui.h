@@ -184,56 +184,6 @@ public:
 	FutureExecutor _future;
 };
 
-#if WINDOWS
-class Win32UI : public GenericUI
-{
-public:
-	Win32UI(ASIOProcessor *io);
-	virtual void create();
-	virtual void destroy();
-	virtual void main_loop();
-	virtual void render(int);
-	virtual void set_track_filename(int t){}
-	virtual void set_position(void *t, double tm, bool invalidate);
-	virtual void set_clip(int);
-	virtual bool want_render(){ bool r = _want_render; _want_render = false; return r; }
-	virtual void set_text_field(int id, const wchar_t *txt, bool del);
-	virtual void do_quit(){_want_quit=true;}
-	virtual bool running(){return !_want_quit;}
-	virtual void load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam);
-
-	static INT_PTR CALLBACK MyDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-	static LONG WINAPI top_level_exception_filter(struct _EXCEPTION_POINTERS *ExceptionInfo);
-
-	bool _want_render;
-	bool _want_quit;
-	HACCEL  _accelTable;
-
-private:
-	void set_text_field_impl(int id, const wchar_t *txt, bool del);
-	void set_clip_impl(int t_id);
-	void render_impl(int t_id);
-};
-
-struct Win32UISlider : public UISlider
-{
-	virtual void set_pos(double p);
-};
-
-#include <commctrl.h>
-#include "resource.h"
-
-extern HWND g_dlg;
-
-INT_PTR CALLBACK MyDialogProc(HWND hwndDlg,
-    UINT uMsg,
-    WPARAM wParam,
-    LPARAM lParam
-);
-
-#endif // WINDOWS
-
 #if OPENGL_ENABLED
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>

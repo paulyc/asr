@@ -27,24 +27,17 @@
 #include <unordered_map>
 #include <semaphore.h>
 
-#ifdef WIN32
-#include <objbase.h>
-#include <asio.h>
-#endif
-
-#include "iomgr.h"
-
 #include "asr.h"
 #include "type.h"
 #include "dsp/filter.h"
 #include "dsp/gain.h"
 #include "buffer.h"
 #include "decoder.h"
-#include "asiodrv.h"
 #include "controller.h"
 #include "speedparser.h"
 #include "wavformdisplay.h"
 #include "worker.h"
+#include "AudioDevice.h"
 
 class ASIOProcessor;
 class GenericUI;
@@ -84,8 +77,6 @@ private:
 class ASIOProcessor
 {
 public:
-	chunk_buffer _main_mgr, /*_file_mgr,*/ _2_mgr;
-	chunk_buffer_t<chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> > _file_mgr;
 	
 	ASIOProcessor();
 	virtual ~ASIOProcessor();
@@ -93,10 +84,6 @@ public:
 public:
 	void Start();
 	void Stop();
-
-	void BufferSwitch(long doubleBufferIndex);
-	void GenerateLoop(pthread_t th);
-	void GenerateOutput();
 
 	typedef AudioTrack<chunk_t> track_t;
 	track_t* GetTrack(int t_id) const
@@ -275,14 +262,11 @@ public:
     IAudioStream *_inputStream;
     IAudioStream *_outputStream;
     
-#if MAC
     CoreAudioInput *_input;
     CoreAudioInputProcessor *_inputStreamProcessor;
     CoreAudioOutputProcessor *_outputStreamProcessor;
     CoreMIDIClient _client;
-#elif WINDOWS
     
-#endif // WINDOWS
     ChunkGenerator *_gen;
     gain<T_source<chunk_t> > *_gain1, *_gain2;
     chunk_file_writer *_fileWriter;

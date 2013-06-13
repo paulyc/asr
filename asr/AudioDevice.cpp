@@ -17,6 +17,7 @@
 #include "AudioDevice.h"
 
 #include <math.h>
+#include <CoreAudio/CoreAudio.h>
 
 SineAudioOutputProcessor::SineAudioOutputProcessor(float32_t frequency, const IAudioStreamDescriptor *streamDesc) :
     _frequency(frequency),
@@ -38,10 +39,6 @@ void SineAudioOutputProcessor::ProcessOutput(IAudioBuffer *buffer)
         _time += 1.0 / _sampleRate;
     }
 }
-
-#if MAC
-#include <CoreAudio/CoreAudio.h>
-
 
 CoreAudioInput::CoreAudioInput(int id, int ch1ofs, int ch2ofs) :
 _id(id),
@@ -220,7 +217,7 @@ CoreAudioDeviceFactory::CoreAudioDeviceFactory()
                                             &propertySize);
     if (result != 0)
     {
-        throw string_exception("Error finding number of audio devices");
+        throw std::runtime_error("Error finding number of audio devices");
     }
     
     numDevices = propertySize / sizeof(AudioDeviceID);
@@ -451,179 +448,3 @@ OSStatus CoreAudioStream::_audioCB(AudioObjectID           inDevice,
     }
     return 0;
 }
-
-#elif WINDOWS
-
-WindowsDriverFactory::WindowsDriverFactory()
-{
-    _drivers.push_back(new ASIODriverDescriptor);
-}
-
-WindowsDriverFactory::~WindowsDriverFactory()
-{
-    for (std::vector<const IAudioDriverDescriptor*>::iterator i = _drivers.begin();
-         i != _drivers.end();
-         i++)
-    {
-        delete *i;
-    }
-}
-
-IAudioDeviceFactory *ASIODriverDescriptor::Instantiate() const
-{
-    return new ASIODeviceFactory;
-}
-
-ASIODeviceFactory::ASIODeviceFactory
-{
-    _devices.push_back(new ASIODeviceDescriptor("Saffire Pro", "{23638883-0B8C-4324-BBD5-35C3CF1B73BF}"));
-    _devices.push_back(new ASIODeviceDescriptor("Parallels ASIO4ALL", "{232685C6-6548-49D8-846D-4141A3EF7560}"));
-    _devices.push_back(new DummyASIODeviceDescriptor);
-}
-
-ASIODeviceFactory::~ASIODeviceFactory()
-{
-    for (std::vector<const IAudioDeviceDescriptor*>::iterator i = _devices.begin();
-         i != _devices.end();
-         i++)
-    {
-        delete *i;
-    }
-}
-
-IAudioDevice *ASIODeviceDescriptor::Instantiate() const
-{
-#define ASIODRV_DESC		L"description"
-#define INPROC_SERVER		L"InprocServer32"
-#define ASIO_PATH			L"software\\asio"
-#define COM_CLSID			L"clsid"
-#define MAXPATHLEN			512
-#define MAXDRVNAMELEN		128
-    
-	CLSID clsid;// = {0x835F8B5B, 0xF546, 0x4881, 0xB4, 0xA3, 0xB6, 0xB5, 0xE8, 0xE3, 0x35, 0xEF};
-#if 0
-	HKEY hkEnum, hkSub;
-	TCHAR keyname[MAXDRVNAMELEN];
-	DWORD index = 0;
-    
-	cr = RegOpenKey(HKEY_LOCAL_MACHINE, ASIO_PATH, &hkEnum);
-	while (cr == ERROR_SUCCESS) {
-		if ((cr = RegEnumKey(hkEnum, index++, keyname, MAXDRVNAMELEN))== ERROR_SUCCESS) {
-            //	lpdrvlist = newDrvStruct (hkEnum,keyname,0,lpdrvlist);
-			if ((cr = RegOpenKeyEx(hkEnum, keyname, 0, KEY_READ, &hkEnum)) == ERROR_SUCCESS) {
-				atatype = REG_SZ; datasize = 256;
-				cr = RegQueryValueEx(hkSub, COM_CLSID, 0, &datatype,(LPBYTE)databuf,&datasize);
-				if (cr == ERROR_SUCCESS) {
-					MultiByteToWideChar(CP_ACP,0,(LPCSTR)databuf,-1,(LPWSTR)wData,100);
-					if ((cr = CLSIDFromString((LPOLESTR)wData,(LPCLSID)&clsid)) == S_OK) {
-						memcpy(&lpdrv->clsid,&clsid,sizeof(CLSID));
-					}
-                    
-					datatype = REG_SZ; datasize = 256;
-					cr = RegQueryValueEx(hkSub,ASIODRV_DESC,0,&datatype,(LPBYTE)databuf,&datasize);
-					if (cr == ERROR_SUCCESS) {
-						strcpy(lpdrv->drvname,databuf);
-					}
-					else strcpy(lpdrv->drvname,keyname);
-				}
-				RegCloseKey(hksub);
-			}
-		}
-		else fin = TRUE;
-	}
-	if (hkEnum) RegCloseKey(hkEnum);
-#else
-	// Firebox {835F8B5B-F546-4881-B4A3-B6B5E8E335EF}
-	// Creative ASIO {48653F81-8A2E-11D3-9EF0-00C0F02DD390}
-	// SB Audigy 2 ZS ASIO {4C46559D-03A7-467A-8C58-2ABC5B749A1E}
-	// SB Audigy 2 ZS ASIO 24/96 {98B6A52A-4FF7-4147-B224-CC256C3C4C64}
-    // Saffire Pro {23638883-0B8C-4324-BBD5-35C3CF1B73BF}
-    // Parallels ASIO4ALL {232685C6-6548-49D8-846D-4141A3EF7560}
-	//const char * drvdll = "d:\\program files\\presonus\\1394audiodriver_firebox\\ps_asio.dll";
-	CLSIDFromString(OLESTR(_clsID), &clsid);
-#endif
-    
-	HRESULT rc = CoCreateInstance(clsid, 0, CLSCTX_INPROC_SERVER, clsid, (LPVOID *)&asiodrv);
-    IASIO *asiodrv;
-    
-	if (rc == S_OK) { // programmers making design decisions = $$$?
-		printf("i got this %p\n", asiodrv);
-	} else {
-		abort();
-	}
-    
-	//return new ASIOManager<chunk_t>(asiodrv);
-    return new ASIODevice(*this, asiodrv);
-}
-
-IAudioDevice *DummyASIODeviceDescriptor::Instantiate() const
-{
-    return new ASIODevice(ASIODeviceDescriptor("Dummy ASIO", "Dummy"), new DummyASIO);
-}
-
-ASIODevice::ASIODevice(const ASIODeviceDescriptor &desc, IASIO *asio) :
-    _desc(desc),
-    _asio(asio)
-{
-    /*
-     ASIOGetChannels();
-     ASIOGetBufferSize();
-     ASIOCanSampleRate();
-     ASIOGetSampleRate();
-     ASIOGetClockSources();
-     ASIOGetChannelInfo();
-     ASIOSetSampleRate();
-     ASIOSetClockSource();
-     ASIOGetLatencies();
-     ASIOFuture();
-     */
-    
-	ASIOError e;
-	long minSize, maxSize, preferredSize, granularity, numInputChannels, numOutputChannels;
-    ASIOChannelInfo channel_info;
-    ASIODriverInfo drv_info;
-    
-    drv_info.asioVersion = 2;
-	drv_info.sysRef = 0;
-	ASIO_ASSERT_NO_ERROR(ASIOInit(&drv_info));
-    
-    const double sampleRate = 48000.0;
-    //ASIOGetSampleRate(&sampleRate);
-    ASIOSetSampleRate(sampleRate);
-    
-    IAudioStreamDescriptor::SampleType sampleType = IAudioStreamDescriptor::SignedInt;
-    IAudioStreamDescriptor::SampleAlignment alignment;// = IAudioStreamDescriptor::LeastSignificant;
-    int sampleSizeBits;
-    int sampleWordSizeBytes;
-	
-	ASIO_ASSERT_NO_ERROR(ASIOGetBufferSize(&minSize, &maxSize, &preferredSize, &granularity));
-	ASIO_ASSERT_NO_ERROR(ASIOGetChannels(&numInputChannels, &numOutputChannels));
-    
-	for (long ch = 0; ch < numInputChannels; ++ch)
-	{
-		channel_info.channel = ch;
-		channel_info.isInput = ASIOTrue;
-		ASIO_ASSERT_NO_ERROR(ASIOGetChannelInfo(&channel_info));
-		printf("Input Channel %d\nName: %s\nSample Type: %d\n\n", ch, channel_info.name, channel_info.type);
-        
-        switch (channel_info.type)
-        {
-            case 1:
-                break;
-            default:
-                break;
-        }
-        
-        _streams.push_back(ASIOStreamDescriptor(ch, this, IAudioStreamDescriptor::Input, 1, sampleType, sampleSizeBits, sampleWordSizeBytes, alignment, sampleRate));
-	}
-    
-	for (long ch = 0; ch < numOutputChannels; ++ch)
-	{
-		channel_info.channel = ch;
-		channel_info.isInput = ASIOFalse;
-		ASIO_ASSERT_NO_ERROR(ASIOGetChannelInfo(&channel_info));
-		printf("Output Channel %d\nName: %s\nSample Type: %d\n\n", ch, channel_info.name, channel_info.type);
-	}
-}
-
-#endif // WINDOWS

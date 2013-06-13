@@ -25,7 +25,7 @@ public:
                           UITrack(this, 2, 4, 5, 6)) {}
     virtual void create() {}
 	virtual void destroy() {}
-	virtual void main_loop() { throw string_exception("Not implemented. Use AppKit loop"); }
+	virtual void main_loop() { throw std::runtime_error("Not implemented. Use AppKit loop"); }
 	virtual bool running() { return true; }
 	virtual void do_quit() { _quit.signal(); }
 	virtual void render(int trackid);

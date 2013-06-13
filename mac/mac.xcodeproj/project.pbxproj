@@ -66,9 +66,6 @@
 		5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		5FB2B2A91732107C0006871C /* mac.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = mac.1; sourceTree = "<group>"; };
-		5FB2B2B3173210A50006871C /* asio.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asio.cpp; sourceTree = "<group>"; };
-		5FB2B2B4173210A50006871C /* asiodrv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asiodrv.cpp; sourceTree = "<group>"; };
-		5FB2B2B5173210A50006871C /* asiodrv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asiodrv.h; sourceTree = "<group>"; };
 		5FB2B2B6173210A50006871C /* asr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asr.cpp; sourceTree = "<group>"; };
 		5FB2B2B7173210A50006871C /* asr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asr.h; sourceTree = "<group>"; };
 		5FB2B2B8173210A50006871C /* asr.rc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = asr.rc; sourceTree = "<group>"; };
@@ -170,8 +167,6 @@
 		5FB2B31C173210A50006871C /* future.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = future.h; sourceTree = "<group>"; };
 		5FB2B31D173210A50006871C /* io.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = io.cpp; sourceTree = "<group>"; };
 		5FB2B31E173210A50006871C /* io.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = io.h; sourceTree = "<group>"; };
-		5FB2B31F173210A50006871C /* iomgr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = iomgr.cpp; sourceTree = "<group>"; };
-		5FB2B320173210A50006871C /* iomgr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iomgr.h; sourceTree = "<group>"; };
 		5FB2B323173210A50006871C /* lock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lock.h; sourceTree = "<group>"; };
 		5FB2B324173210A50006871C /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		5FB2B325173210A50006871C /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
@@ -181,7 +176,6 @@
 		5FB2B329173210A50006871C /* midi.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = midi.cpp; sourceTree = "<group>"; };
 		5FB2B32A173210A50006871C /* midi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = midi.h; sourceTree = "<group>"; };
 		5FB2B32B173210A50006871C /* mpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mpeg.h; sourceTree = "<group>"; };
-		5FB2B32C173210A50006871C /* myasio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = myasio.h; sourceTree = "<group>"; };
 		5FB2B32D173210A50006871C /* mylog.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mylog.txt; sourceTree = "<group>"; };
 		5FB2B32E173210A50006871C /* out */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = out; sourceTree = "<group>"; };
 		5FB2B32F173210A50006871C /* peaks.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = peaks.txt; sourceTree = "<group>"; };
@@ -368,9 +362,6 @@
 				5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */,
 				5FB2B384173236400006871C /* AudioDevice.cpp */,
 				5FB2B385173236400006871C /* AudioDevice.h */,
-				5FB2B2B3173210A50006871C /* asio.cpp */,
-				5FB2B2B4173210A50006871C /* asiodrv.cpp */,
-				5FB2B2B5173210A50006871C /* asiodrv.h */,
 				5FB2B2B6173210A50006871C /* asr.cpp */,
 				5FB2B2B7173210A50006871C /* asr.h */,
 				5FB2B2B8173210A50006871C /* asr.rc */,
@@ -401,8 +392,6 @@
 				5FB2B31C173210A50006871C /* future.h */,
 				5FB2B31D173210A50006871C /* io.cpp */,
 				5FB2B31E173210A50006871C /* io.h */,
-				5FB2B31F173210A50006871C /* iomgr.cpp */,
-				5FB2B320173210A50006871C /* iomgr.h */,
 				5FB2B323173210A50006871C /* lock.h */,
 				5FB2B324173210A50006871C /* main.cpp */,
 				5FB2B325173210A50006871C /* Makefile */,
@@ -412,7 +401,6 @@
 				5FB2B329173210A50006871C /* midi.cpp */,
 				5FB2B32A173210A50006871C /* midi.h */,
 				5FB2B32B173210A50006871C /* mpeg.h */,
-				5FB2B32C173210A50006871C /* myasio.h */,
 				5FB2B32D173210A50006871C /* mylog.txt */,
 				5FB2B32E173210A50006871C /* out */,
 				5FB2B32F173210A50006871C /* peaks.txt */,

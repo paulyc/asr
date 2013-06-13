@@ -39,20 +39,6 @@ void operator delete[](void *m);
 #define new new(__FILE__, __LINE__)
 #endif
 
-#if WINDOWS
-typedef std::exception string_exception;
-#else
-class string_exception : public std::exception
-{
-public:
-	string_exception(const char *p) : std::exception(), _p(p) {}
-	const char *what() { return _p; }
-private:
-	const char *_p;
-};
-#endif
-
-
 template <int PageSize=0x1000>
 struct Page {
 	Page(void *ptr) : p(ptr) {}
@@ -94,7 +80,7 @@ public:
 	}
 	void* alloc(int n) {
 		if (n > Page<>::size - sizeof(PageListNode<>))
-			throw string_exception("StackAllocator size too large");
+			throw std::runtime_error("StackAllocator size too large");
 		if (_top + n >= (char*)_last->page.p + Page<>::size)
 		{
 			Page<> new_page = PageAllocator<>::alloc();
@@ -203,11 +189,7 @@ protected:
 		const char *file;
 		int line;
 	};
-#if WINDOWS
-	typedef stdext::hash_map<T*, t_info> info_map_t;
-#else
 	typedef typename std::unordered_map<T*, typename T_allocator<T>::t_info> info_map_t;
-#endif
 	static info_map_t _info_map;
 #endif
 public:

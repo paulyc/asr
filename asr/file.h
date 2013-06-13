@@ -75,7 +75,7 @@ public:
 	{
 		_File = fopen(filename, mode);
 		if (_File == 0)
-			throw string_exception("file open failed");
+			throw std::runtime_error("file open failed");
 	}
 	~DiskFile()
 	{
