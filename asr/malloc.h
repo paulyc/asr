@@ -196,7 +196,7 @@ class T_allocator
 protected:
 	T_allocator(){}
 	static std::queue<T*> _T_queue;
-	static PthreadLock _lock;
+	static FastUserSpinLock _lock;
 #if DEBUG_ALLOCATOR
 	struct t_info
 	{
@@ -215,6 +215,16 @@ public:
 	{
 		gc();
 	}
+    
+    static void lock()
+    {
+        _lock.acquire();
+    }
+    
+    static void unlock()
+    {
+        _lock.release();
+    }
 
 #if DEBUG_ALLOCATOR
 	static T* alloc_from(const char *file, int line)
@@ -436,7 +446,7 @@ template <typename T>
 std::queue<T*> T_allocator<T>::_T_queue;
 
 template <typename T>
-PthreadLock T_allocator<T>::_lock;
+FastUserSpinLock T_allocator<T>::_lock;
 
 //template <typename T>
 //std::queue<T*> T_allocator<T>::_T_queue;

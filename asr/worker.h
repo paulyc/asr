@@ -20,16 +20,24 @@
 #include <queue>
 
 #include <pthread.h>
+#include <mach/mach.h>
+#include <mach/thread_status.h>
 
 //#include "track.h"
 #include "util.h"
 #include "malloc.h"
 #include "stream.h"
 
+#define FLAG_NONE 0
+#define FLAG_SUSPENDABLE 1
+#define FLAG_SUSPENDED 2
+#define FLAG_SUSPENDABLE_AND_SUSPENDED (FLAG_SUSPENDABLE | FLAG_SUSPENDED)
+
 class Worker
 {
 public:
 	Worker() :
+        _flags(0),
 		_blockOnCritical(true)
 	{
 		
@@ -58,28 +66,29 @@ public:
 	{
         _job_lock.acquire();
         _running = false;
-        for (int i=0; i<_tids.size(); ++i)
+        for (int i=0; i<_workers.size(); ++i)
         {
             _job_rdy.signal();
         }
-        for (int i=0; i<_cr_tids.size(); ++i)
+        for (int i=0; i<_cr_workers.size(); ++i)
         {
             _cr_job_rdy.signal();
         }
         _job_lock.release();
-        for (int i=0; i<_tids.size(); ++i)
+        for (int i=0; i<_workers.size(); ++i)
         {
             void *res;
-            pthread_join(_tids[i], &res);
+            pthread_join(_workers[i]->_tid, &res);
         }
-        for (int i=0; i<_cr_tids.size(); ++i)
+        for (int i=0; i<_cr_workers.size(); ++i)
         {
             void *res;
-            pthread_join(_cr_tids[i], &res);
+            pthread_join(_cr_workers[i]->_tid, &res);
         }
 	}
 
 	pthread_t _tid;
+    volatile int _flags;
 
 	struct job
 	{
@@ -89,7 +98,15 @@ public:
 		const char *_name;
 		virtual void do_it(){}
 		virtual void step(){}
-		pthread_t _thread;
+		volatile Worker *_worker;
+        void suspendable()
+        {
+            __sync_bool_compare_and_swap(&_worker->_flags, FLAG_NONE, FLAG_SUSPENDABLE);
+        }
+        void unsuspendable()
+        {
+            __sync_bool_compare_and_swap(&_worker->_flags, FLAG_SUSPENDABLE, FLAG_NONE);
+        }
 	};
 
 	template <typename Source_T, typename Chunk_T>
@@ -187,7 +204,7 @@ public:
 		callback_th_job(functor1<Obj_T, pthread_t> f) : func(f) {}
 		void do_it()
 		{
-			func(_thread);
+			func(_worker->_tid);
 		}
 	};
 
@@ -209,7 +226,7 @@ public:
 		call_deferreds_job(Obj_T *obj) : _object(obj) {}
 		void step()
 		{
-			_object->call_deferreds_loop(_thread);
+			_object->call_deferreds_loop(_worker->_tid);
             delete this;
             pthread_exit(0);
 		}
@@ -275,30 +292,70 @@ public:
 	static std::queue<job*> _idle_jobs;
 	static pthread_once_t once_control; 
 	bool _blockOnCritical;
-    static std::vector<pthread_t> _tids;
-    static std::vector<pthread_t> _cr_tids;
+    static std::vector<Worker*> _workers;
+    static std::vector<Worker*> _cr_workers;
 
 	void spin(bool critical=false)
 	{
-#if 1
         _job_lock.acquire();
 		if (critical)
         {
             sched_param p = {1};
             pthread_create(&_tid, 0, threadproc_cr, (void*)this);
             pthread_setschedparam(_tid, SCHED_FIFO, &p);
-            _cr_tids.push_back(_tid);
+            _cr_workers.push_back(this);
         }
 		else
         {
             pthread_create(&_tid, 0, threadproc_id, (void*)this);
-            _tids.push_back(_tid);
+            _workers.push_back(this);
         }
         _job_lock.release();
-#else
-		pthread_create(&_tid, 0, threadproc, (void*)this);
-#endif
 	}
+    
+    volatile static int _suspend_count;
+    
+    static void suspend_all()
+    {
+        while (!__sync_bool_compare_and_swap(&_suspend_count, _suspend_count, _suspend_count+1))
+            _mm_pause();
+        if (_suspend_count == 1)
+        {
+            for (auto w: _workers)
+            {
+                w->suspend_if_suspendable();
+            }
+        }
+    }
+    
+    static void unsuspend_all()
+    {
+        while (!__sync_bool_compare_and_swap(&_suspend_count, _suspend_count, _suspend_count-1))
+            _mm_pause();
+        if (_suspend_count == 0)
+        {
+            for (auto w: _workers)
+            {
+                w->unsuspend_if_suspended();
+            }
+        }
+    }
+    
+    void suspend_if_suspendable()
+    {
+        if (__sync_bool_compare_and_swap(&_flags, FLAG_SUSPENDABLE, FLAG_SUSPENDABLE_AND_SUSPENDED))
+        {
+            thread_suspend(pthread_mach_thread_np(_tid));
+        }
+    }
+    
+    void unsuspend_if_suspended()
+    {
+        if (__sync_bool_compare_and_swap(&_flags, FLAG_SUSPENDABLE_AND_SUSPENDED, FLAG_SUSPENDABLE))
+        {
+            thread_resume(pthread_mach_thread_np(_tid));
+        }
+    }
 
 public:
 	static void do_job(job *j, bool sync=false, bool critical=false, bool deleteme=true)
@@ -330,12 +387,6 @@ public:
 	}
 
 private:
-	static void* threadproc(void *arg)
-	{
-		static_cast<Worker*>(arg)->thread();
-		return 0;
-	}
-
 	static void* threadproc_id(void *arg)
 	{
 		static_cast<Worker*>(arg)->idle_thread();
@@ -363,7 +414,7 @@ private:
 			cr_j = _critical_jobs.front();
 			_critical_jobs.pop();
 			_job_lock.release();
-			cr_j->_thread = _tid;
+			cr_j->_worker = this;
 			cr_j->do_it();
 			cr_j->done = true;
 			if (cr_j->_deleteme)
@@ -405,69 +456,7 @@ private:
 				}
 				id_j = _idle_jobs.front();
 				_idle_jobs.pop();
-				id_j->_thread = _tid;
-			}
-		}
-        _job_lock.release();
-		delete this;
-	}
-
-	void thread()
-	{
-		job *id_j=0, *cr_j=0;
-        _job_lock.acquire();
-		while (_running)
-		{
-			while (!_critical_jobs.empty())
-			{
-				cr_j = _critical_jobs.front();
-				_critical_jobs.pop();
-			//	if (!_blockOnCritical)
-			//		pthread_mutex_unlock(&_job_lock);
-				_job_lock.release();
-				cr_j->_thread = _tid;
-				cr_j->do_it();
-				cr_j->done = true;
-				if (cr_j->_deleteme)
-					delete cr_j;
-			//	printf("signal %p\n", cr_j);
-				cr_j = 0;
-				_job_done.signal();
-			//	if (!_blockOnCritical)
-			//		pthread_mutex_lock(&_job_lock);
-				_job_lock.acquire();
-			}
-			
-			if (id_j)
-			{
-				_job_lock.release();
-				id_j->step();
-				if (id_j->done)
-				{
-					if (id_j->_deleteme)
-						delete id_j;
-				//	printf("signal %p\n", id_j);
-					id_j = 0;
-					_job_done.signal();
-				}
-                _job_lock.acquire();
-			}
-			else 
-			{
-				if (!_idle_jobs.empty())
-				{
-					id_j = _idle_jobs.front();
-					_idle_jobs.pop();
-					id_j->_thread = _tid;
-				}
-				else
-				{
-					if (_critical_jobs.empty() && _idle_jobs.empty())
-                    {
-						_job_rdy.wait(_job_lock);
-                        continue;
-                    }
-				}
+				id_j->_worker = this;
 			}
 		}
         _job_lock.release();

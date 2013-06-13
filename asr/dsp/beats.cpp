@@ -405,6 +405,7 @@ void BeatDetector<Chunk_T>::process_beats_job::reset_source(T_source<Chunk_T> *_
 template <typename Chunk_T>
 void BeatDetector<Chunk_T>::process_beats_job::do_it()
 {
+    this->suspendable();
     _lock.acquire();
     for (int i=0; i<_vecSrc->size(); ++i)
     {
@@ -418,6 +419,7 @@ void BeatDetector<Chunk_T>::process_beats_job::do_it()
     done = true;
     _done.signal();
     _lock.release();
+    this->unsuspendable();
 }
 
 template <typename Chunk_T>

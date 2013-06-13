@@ -195,8 +195,7 @@ public:
     }
     void release()
     {
-        asm volatile (""); // acts as a memory barrier.
-        _ownFlag = 0;
+        __sync_lock_release(&_ownFlag);
     }
 private:
     volatile int _ownFlag;
