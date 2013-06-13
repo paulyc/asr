@@ -317,9 +317,13 @@ public:
     
     static void suspend_all()
     {
-        while (!__sync_bool_compare_and_swap(&_suspend_count, _suspend_count, _suspend_count+1))
+        int count_before = _suspend_count;
+        while (!__sync_bool_compare_and_swap(&_suspend_count, count_before, count_before+1))
+        {
             _mm_pause();
-        if (_suspend_count == 1)
+            count_before = _suspend_count;
+        }
+        if (count_before == 0)
         {
             for (auto w: _workers)
             {
@@ -330,9 +334,13 @@ public:
     
     static void unsuspend_all()
     {
-        while (!__sync_bool_compare_and_swap(&_suspend_count, _suspend_count, _suspend_count-1))
+        int count_before = _suspend_count;
+        while (!__sync_bool_compare_and_swap(&_suspend_count, count_before, count_before-1))
+        {
             _mm_pause();
-        if (_suspend_count == 0)
+            count_before = _suspend_count;
+        }
+        if (count_before == 1)
         {
             for (auto w: _workers)
             {
