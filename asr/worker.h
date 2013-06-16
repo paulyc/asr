@@ -22,6 +22,7 @@
 #include <pthread.h>
 #include <mach/mach.h>
 #include <mach/thread_status.h>
+#include <mach/mach_time.h>
 
 //#include "track.h"
 #include "util.h"
@@ -139,15 +140,20 @@ public:
         
 		void do_it()
 		{
+            uint64_t t_begin, t_end;
             myLock.acquire();
+            t_begin = mach_absolute_time();
             cbObj->lock(chkId);
             while (running)
             {
                 if (nextChks.size() >= _chunks_to_buffer)
                 {
                     cbObj->unlock(chkId);
+                    t_end = mach_absolute_time();
+                    //printf("time is %lld\n", t_end - t_begin);
                     doGen.wait(myLock);
-                    //cbObj->lock(chkId);
+                    t_begin = mach_absolute_time();
+                    cbObj->lock(chkId);
                     continue;
                 }
                 nextChks.push(src->next());
@@ -306,14 +312,18 @@ public:
             pthread_create(&_tid, 0, threadproc_cr, (void*)this);
             //pthread_setschedparam(_tid, SCHED_FIFO, &p);
             struct thread_time_constraint_policy ttcpolicy;
-            ttcpolicy.period=3000000/100; // HZ/160
-            ttcpolicy.computation=30000000/100; // HZ/3300;
-            ttcpolicy.constraint=3000000/320; // HZ/2200;
+            kern_return_t ret;
+            //struct mach_timebase_info tb_info;
+            //mach_timebase_info(&tb_info);
+            //printf("numer = %d denom = %d\n", tb_info.numer, tb_info.denom);
+            ttcpolicy.period=21333333; // 48000 / 1024 , real time of one calculated chunk 21.3ms
+            ttcpolicy.computation=3000000; // empirically measured max chunk calculation time, 3ms on my 2.6 GHz Intel Core i5
+            ttcpolicy.constraint=3000000;
             ttcpolicy.preemptible=0;
-            if (thread_policy_set(pthread_mach_thread_np(_tid), THREAD_TIME_CONSTRAINT_POLICY, (thread_policy_t)&ttcpolicy,
-                              THREAD_TIME_CONSTRAINT_POLICY_COUNT))
+            if ((ret=thread_policy_set(pthread_mach_thread_np(pthread_self()), THREAD_TIME_CONSTRAINT_POLICY, (thread_policy_t)&ttcpolicy,
+                              THREAD_TIME_CONSTRAINT_POLICY_COUNT)) != KERN_SUCCESS)
             {
-                printf("set realtime failed\n");
+                printf("set realtime failed %d\n", ret);
             }
             _cr_workers.push_back(this);
         }

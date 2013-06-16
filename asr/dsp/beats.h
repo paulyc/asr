@@ -87,7 +87,7 @@ public:
         double t;
     };
     
-    const static int NUM_JOBS = 2;
+    const static int NUM_JOBS = 4;
     
     class process_beats_job : public Worker::job
     {
