@@ -148,12 +148,12 @@ public:
             {
                 if (nextChks.size() >= _chunks_to_buffer)
                 {
-                    cbObj->unlock(chkId);
+                 //   cbObj->unlock(chkId);
                     t_end = mach_absolute_time();
                     //printf("time is %lld\n", t_end - t_begin);
                     doGen.wait(myLock);
                     t_begin = mach_absolute_time();
-                    cbObj->lock(chkId);
+                 //   cbObj->lock(chkId);
                     continue;
                 }
                 nextChks.push(src->next());
