@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 template <typename Source_T, int channels=2>
 class mixer : public T_source<typename Source_T::chunk_t>
@@ -24,7 +24,7 @@ class mixer<Source_T, 2> : public T_source<typename Source_T::chunk_t>
 {
 public:
 	mixer(Source_T *src1, Source_T *src2) :
-	    _clip(false),
+		_clip(false),
 		_src1(src1),
 		_src2(src2),
 		_src1_mul(1.0),

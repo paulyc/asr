@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _UI_H
 #define _UI_H
@@ -26,10 +26,10 @@ class GenericUI;
 
 #ifndef WIN32
 struct RECT {
-	int    left;
-    int    top;
-    int    right;
-    int    bottom;
+	int	   left;
+	int	   top;
+	int	   right;
+	int	   bottom;
 };
 #endif
 
@@ -46,7 +46,7 @@ struct UIWavform
 	int height(){return r.bottom - r.top;}
 
 	bool isover(int x, int y) {
-		return  y >= windowr.top && y < windowr.bottom &&
+		return	y >= windowr.top && y < windowr.bottom &&
 				x >= windowr.left && x < windowr.right;
 	}
 
@@ -79,7 +79,7 @@ struct UITrack
 	void update_frequency(double f);
 	double get_pitch();
 	
-    GenericUI *_ui;
+	GenericUI *_ui;
 	int id;
 	double coarse_val;
 	double fine_val;
@@ -87,7 +87,7 @@ struct UITrack
 	UIText pitch;
 	UIText gain;
 	bool clip;
-    bool dirty;
+	bool dirty;
 	bool vinyl_control;
 	bool sync_time;
 	bool add_pitch;
@@ -102,7 +102,7 @@ class GenericUI
 {
 public:
 	GenericUI(ASIOProcessor *io, UITrack t1, UITrack t2);
-    virtual ~GenericUI() {}
+	virtual ~GenericUI() {}
 
 	virtual void create() = 0;
 	virtual void destroy() = 0;
@@ -110,7 +110,7 @@ public:
 	virtual bool running() = 0;
 	virtual void do_quit() = 0;
 	virtual void render(int) = 0;
-    virtual void render_dirty();
+	virtual void render_dirty();
 	virtual void set_track_filename(int t) = 0;
 	virtual void set_position(void *t, double tm, bool invalidate) = 0;
 	virtual void set_clip(int) = 0;
@@ -125,13 +125,13 @@ public:
 	virtual void slider_move(double pos, SliderType t, int x);
 	virtual void set_text_field(int id, const char *txt, bool del) = 0;
 	virtual void set_main_mix(double pos){}
-    virtual void set_dirty(int track_id)
-    {
-        if (track_id == 1) 
-            _track1.dirty = true; 
-        else 
-            _track2.dirty = true; 
-    }
+	virtual void set_dirty(int track_id)
+	{
+		if (track_id == 1) 
+			_track1.dirty = true; 
+		else 
+			_track2.dirty = true; 
+	}
 	virtual void do_magic()
 	{
 		_magic.do_magic();
@@ -174,7 +174,7 @@ public:
 	virtual void drop_file(const char *filename, bool track1);
 	UITrack& get_track(int track_id) { return track_id == 1 ? _track1 : _track2; }
 	double get_track_pitch(int track_id) { return get_track(track_id).get_pitch(); }
-    virtual void play_pause(int trackid) { }
+	virtual void play_pause(int trackid) { }
 	//protected:
 	ASIOProcessor *_io;
 	int _lastx, _lasty;
@@ -212,7 +212,7 @@ public:
 
 	bool _want_render;
 	bool _want_quit;
-//	HACCEL  _accelTable;
+//	HACCEL	_accelTable;
 
 private:
 	static ASIOProcessor *_io;
@@ -226,18 +226,18 @@ class CommandlineUI : public GenericUI
 {
 public:
 	CommandlineUI(ASIOProcessor *io) :
-        GenericUI(io,
-              UITrack(this, 1, 1, 2, 3),
-              UITrack(this, 2, 4, 5, 6))
-    {
-    }
-    
+		GenericUI(io,
+			  UITrack(this, 1, 1, 2, 3),
+			  UITrack(this, 2, 4, 5, 6))
+	{
+	}
+	
 	virtual void create() {}
 	virtual void destroy() {}
 	virtual void main_loop();
 	virtual bool running() { return true; }
 	virtual void do_quit() {}
-    virtual void render(int) {}
+	virtual void render(int) {}
 	virtual void set_track_filename(int t) {}
 	virtual void set_position(void *t, double tm, bool invalidate);
 	virtual void set_clip(int t);
@@ -254,7 +254,7 @@ public:
 class FileOpenDialog
 {
 public:
-    static bool OpenSingleFile(std::string &filename);
+	static bool OpenSingleFile(std::string &filename);
 };
 
 #endif // !defined(UI_H)

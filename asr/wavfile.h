@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _WAVFILE_H
 #define _WAVFILE_H
@@ -425,7 +425,7 @@ public:
 		seek_smp(smp_ofs);
 	}
 
-    typename T_source<Chunk_T>::pos_info& len()
+	typename T_source<Chunk_T>::pos_info& len()
 	{
 		return this->_len;
 	}
@@ -508,8 +508,8 @@ public:
 	}
 	Chunk_T* next()
 	{
-        CRITICAL_SECTION_GUARD(_lock);
-        
+		CRITICAL_SECTION_GUARD(_lock);
+		
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		unsigned n = 0;
 		size_t rd;
@@ -547,9 +547,9 @@ public:
 				{
 					_inputBufferFilled = 0;
 				}
-                
-                CRITICAL_SECTION_GUARD(_lock);
-                
+				
+				CRITICAL_SECTION_GUARD(_lock);
+				
 				rd = _file->read((char*)_inputBuffer+_inputBufferFilled, 1, INPUT_BUFFER_SIZE-_inputBufferFilled);
 				if (_file->eof())
 				{
@@ -693,7 +693,7 @@ public:
 		flacfile_chunker<Chunk_T>* _this = static_cast<flacfile_chunker<Chunk_T>*>(client_data);
 		switch (metadata->type)
 		{
-			case FLAC__METADATA_TYPE_STREAMINFO: // 	STREAMINFO block
+			case FLAC__METADATA_TYPE_STREAMINFO: //		STREAMINFO block
 				memcpy(&_this->_stream_info, &metadata->data.stream_info, sizeof(FLAC__StreamMetadata_StreamInfo));
 				_this->_sample_rate = _this->_stream_info.sample_rate ? (double)_this->_stream_info.sample_rate : 44100.;
 			// this doesn't work, not sure why. purpose is to save memory for high sample rate files
@@ -711,13 +711,13 @@ public:
 					_this->_len.time = _this->_len.samples / (double)_this->_sample_rate;
 				}
 				break;
-			case FLAC__METADATA_TYPE_PADDING: // 	PADDING block
-			case FLAC__METADATA_TYPE_APPLICATION: // 	APPLICATION block
-			case FLAC__METADATA_TYPE_SEEKTABLE: // 	SEEKTABLE block
-			case FLAC__METADATA_TYPE_VORBIS_COMMENT: // 	VORBISCOMMENT block (a.k.a. FLAC tags)
-			case FLAC__METADATA_TYPE_CUESHEET: // 	CUESHEET block
-			case FLAC__METADATA_TYPE_PICTURE: // 	PICTURE block
-			case FLAC__METADATA_TYPE_UNDEFINED: // 	marker to denote beginning of undefined type range; this number will increase as new metadata types are added 
+			case FLAC__METADATA_TYPE_PADDING: //	PADDING block
+			case FLAC__METADATA_TYPE_APPLICATION: //	APPLICATION block
+			case FLAC__METADATA_TYPE_SEEKTABLE: //	SEEKTABLE block
+			case FLAC__METADATA_TYPE_VORBIS_COMMENT: //		VORBISCOMMENT block (a.k.a. FLAC tags)
+			case FLAC__METADATA_TYPE_CUESHEET: //	CUESHEET block
+			case FLAC__METADATA_TYPE_PICTURE: //	PICTURE block
+			case FLAC__METADATA_TYPE_UNDEFINED: //	marker to denote beginning of undefined type range; this number will increase as new metadata types are added 
 				break;
 		}
 	}
@@ -758,7 +758,7 @@ public:
 
 	Chunk_T* next()
 	{
-        CRITICAL_SECTION_GUARD(_lock);
+		CRITICAL_SECTION_GUARD(_lock);
 		Chunk_T* chk = T_allocator<Chunk_T>::alloc();
 		typename Chunk_T::sample_t *smp = chk->_data, *end = smp + Chunk_T::chunk_size;
 		for (; smp != end; )
@@ -780,7 +780,7 @@ public:
 			}
 			if (_ofs == _blocksize)
 			{
-                CRITICAL_SECTION_GUARD(_lock);
+				CRITICAL_SECTION_GUARD(_lock);
 				load_frame();
 			}
 		}

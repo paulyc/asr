@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _MALLOC_H
 #define _MALLOC_H
@@ -197,16 +197,16 @@ public:
 	{
 		gc();
 	}
-    
-    static void lock()
-    {
-        _lock.acquire();
-    }
-    
-    static void unlock()
-    {
-        _lock.release();
-    }
+	
+	static void lock()
+	{
+		_lock.acquire();
+	}
+	
+	static void unlock()
+	{
+		_lock.release();
+	}
 
 #if DEBUG_ALLOCATOR
 	static T* alloc_from(const char *file, int line)
@@ -214,27 +214,27 @@ public:
 		//printf("%s %d\n", file, line);
 		_lock.acquire();
 		T *t = alloc(false);
-     //   printf("Alloc-ing %p from %s:%d\n", t, file, line);
+	 //	  printf("Alloc-ing %p from %s:%d\n", t, file, line);
 		_info_map[t].file = file;
 		_info_map[t].line = line;
 		_lock.release();
 		return t;
 	}
-    static void free_from(T *t, const char *file, int line)
+	static void free_from(T *t, const char *file, int line)
 	{
 		//printf("%s %d\n", file, line);
 		_lock.acquire();
-    //    printf("Free-ing %p from %s:%d\n", t, file, line);
+	//	  printf("Free-ing %p from %s:%d\n", t, file, line);
 		free(t, false);
 		_lock.release();
 	}
-    static void add_ref_from(T *t, const char *file, int line)
-    {
-        _lock.acquire();
-     //   printf("Add-ref-ing %p from %s:%d\n", t, file, line);
-        t->add_ref();
-        _lock.release();
-    }
+	static void add_ref_from(T *t, const char *file, int line)
+	{
+		_lock.acquire();
+	 //	  printf("Add-ref-ing %p from %s:%d\n", t, file, line);
+		t->add_ref();
+		_lock.release();
+	}
 #endif
 
 	static T* alloc(bool lock=true)
@@ -255,22 +255,22 @@ public:
 			return t;
 		}
 	}
-    
-    static void add_refx(T* t)
-    {
-        _lock.acquire();
-        t->add_ref();
-        _lock.release();
-    }
+	
+	static void add_refx(T* t)
+	{
+		_lock.acquire();
+		t->add_ref();
+		_lock.release();
+	}
 
 	static void free(T* t, bool lock=true)
 	{
-        if (lock) _lock.acquire();
+		if (lock) _lock.acquire();
 		if (t && t->release() == 0)
 		{
 			_T_queue.push(t);
 		}
-        if (lock) _lock.release();
+		if (lock) _lock.release();
 	}
 
 	static void gc()
@@ -281,13 +281,13 @@ public:
 #if DEBUG_ALLOCATOR
 			_info_map.erase(_T_queue.front());
 #endif
-       //     printf("Delete-ing %p\n", _T_queue.front());
+	   //	  printf("Delete-ing %p\n", _T_queue.front());
 			T* t = _T_queue.front();
 			_T_queue.pop();
-            _lock.release();
-            delete t;
-            sched_yield();
-            _lock.acquire();
+			_lock.release();
+			delete t;
+			sched_yield();
+			_lock.acquire();
 		}
 		_lock.release();
 	}
@@ -307,13 +307,13 @@ public:
 		}
 		_info_map.clear();
 	}
-    static void print_info(T* t)
-    {
-        printf("%p allocated %s:%d count %d\n", t,
-               _info_map[t].file,
-               _info_map[t].line,
-               t->_refs);
-    }
+	static void print_info(T* t)
+	{
+		printf("%p allocated %s:%d count %d\n", t,
+			   _info_map[t].file,
+			   _info_map[t].line,
+			   t->_refs);
+	}
 #else
 	static void dump_leaks()
 	{

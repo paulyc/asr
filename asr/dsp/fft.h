@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _FFT_H
 #define _FFT_H
@@ -133,14 +133,14 @@ public:
 			t += dt;
 		}
 	}
-    virtual void init()
+	virtual void init()
 	{
 		fftw_plan p = fftw_plan_dft_r2c_1d(_N, _coeffs, _fftCoeffs, FFTW_MEASURE);
 		//fftw_plan p = fftw_plan_dft_1d(_N, 
 		fill();
 		fftw_execute(p);
 		fftw_destroy_plan(p);
-        _initd = true;
+		_initd = true;
 		
 		for (int i=0; i<_N/2+1; ++i)
 		{
@@ -153,7 +153,7 @@ public:
 	}
 	fftw_complex *get_fft_coeffs() const
 	{
-        if (!_initd) throw std::runtime_error("attempt to use filter without init");
+		if (!_initd) throw std::runtime_error("attempt to use filter without init");
 		return _fftCoeffs;
 	}
 	static const double _windowConstant;
@@ -162,7 +162,7 @@ protected:
 	double _beta;
 	double *_coeffs;
 	fftw_complex *_fftCoeffs;
-    bool _initd;
+	bool _initd;
 };
 
 class KaiserWindowFilter : public FFTWindowFilter
@@ -181,29 +181,29 @@ public:
 
 // 65536 * 8 = 524kb / filter
 // comb filter 130 => 60/130 * 2 * 44100 = 40707
-//             129 =>                      41023
+//			   129 =>					   41023
 inline double bpm_to_frequency_hz(double bpm)
 {
-    return bpm / 60.0;
+	return bpm / 60.0;
 }
 
 inline double bpm_to_period_s(double bpm)
 {
-    return 60.0 / bpm;
+	return 60.0 / bpm;
 }
 
 inline double bpm_to_interval_samples(double bpm, double sampleRate=44100.0)
 {
-    return bpm_to_period_s(bpm) * sampleRate;
+	return bpm_to_period_s(bpm) * sampleRate;
 }
 
 class CombFilter : public FFTWindowFilter
 {
 public:
 	CombFilter(int N, int interval) :
-    FFTWindowFilter(N), _interval(interval)
-    {
-    }
+	FFTWindowFilter(N), _interval(interval)
+	{
+	}
 	virtual double h_n(int n)
 	{
 		if (abs(n) % _interval == 0)
@@ -247,18 +247,18 @@ class BPFilter : public FFTWindowFilter
 {
 public:
 	BPFilter(int N, double sampleRate, double cutoffLow, double cutoffHigh) :
-    FFTWindowFilter(N), _sampleRate(sampleRate), _cutoffLow(cutoffLow), _cutoffHigh(cutoffHigh)
-    {
-        _f_c_low = _cutoffLow / _sampleRate;
-        _f_c_high = _cutoffHigh / _sampleRate;
-    }
-    double h_n(int n) { return 0.0; } // dont use this
-    virtual void init()
-    {
-        fftw_complex *tmpCoeffs = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (_N/2+1));
-        fftw_plan p = fftw_plan_dft_r2c_1d(_N, _coeffs, _fftCoeffs, FFTW_MEASURE);
-        
-        const double dt = 2.0 / _N;
+	FFTWindowFilter(N), _sampleRate(sampleRate), _cutoffLow(cutoffLow), _cutoffHigh(cutoffHigh)
+	{
+		_f_c_low = _cutoffLow / _sampleRate;
+		_f_c_high = _cutoffHigh / _sampleRate;
+	}
+	double h_n(int n) { return 0.0; } // dont use this
+	virtual void init()
+	{
+		fftw_complex *tmpCoeffs = (fftw_complex*)fftw_malloc(sizeof(fftw_complex) * (_N/2+1));
+		fftw_plan p = fftw_plan_dft_r2c_1d(_N, _coeffs, _fftCoeffs, FFTW_MEASURE);
+		
+		const double dt = 2.0 / _N;
 		double t = -1.0;
 		for (int i=0; i<_N; ++i)
 		{
@@ -266,66 +266,66 @@ public:
 			t += dt;
 		}
 		fftw_execute(p);
-        for (int i=0; i<_N/2+1; ++i)
-        {
-            tmpCoeffs[i][0] = _fftCoeffs[i][0];
-            tmpCoeffs[i][1] = _fftCoeffs[i][1];
-       //     printf("tmpCoeffs[%d] = %f + j%f\n", i, tmpCoeffs[i][0], tmpCoeffs[i][1]);
-        }
-        t = -1.0;
+		for (int i=0; i<_N/2+1; ++i)
+		{
+			tmpCoeffs[i][0] = _fftCoeffs[i][0];
+			tmpCoeffs[i][1] = _fftCoeffs[i][1];
+	   //	  printf("tmpCoeffs[%d] = %f + j%f\n", i, tmpCoeffs[i][0], tmpCoeffs[i][1]);
+		}
+		t = -1.0;
 		for (int i=0; i<_N; ++i)
 		{
 			_coeffs[i] = h_highpass(i-_N/2) * kaiser(t, _beta);
 			t += dt;
 		}
 		fftw_execute(p);
-        for (int i=0; i<_N/2+1; ++i)
-        {
-         //   printf("hpCoeffs[%d] = %f + j%f\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1]);
-            // real = ac - bd
-            _fftCoeffs[i][0] = _fftCoeffs[i][0] * tmpCoeffs[i][0] - _fftCoeffs[i][1] * tmpCoeffs[i][1];
-            // imag = ad + bc
-            _fftCoeffs[i][1] = _fftCoeffs[i][0] * tmpCoeffs[i][1] + _fftCoeffs[i][1] * tmpCoeffs[i][0];
-        }
-        for (int i=0; i<_N/2+1; ++i)
+		for (int i=0; i<_N/2+1; ++i)
+		{
+		 //	  printf("hpCoeffs[%d] = %f + j%f\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1]);
+			// real = ac - bd
+			_fftCoeffs[i][0] = _fftCoeffs[i][0] * tmpCoeffs[i][0] - _fftCoeffs[i][1] * tmpCoeffs[i][1];
+			// imag = ad + bc
+			_fftCoeffs[i][1] = _fftCoeffs[i][0] * tmpCoeffs[i][1] + _fftCoeffs[i][1] * tmpCoeffs[i][0];
+		}
+		for (int i=0; i<_N/2+1; ++i)
 		{
 			double mag = sqrt(_fftCoeffs[i][0] * _fftCoeffs[i][0] + _fftCoeffs[i][1] * _fftCoeffs[i][1]);
-            //	double normalize = 1.0/mag;
+			//	double normalize = 1.0/mag;
 		//	printf("fftCoeff[%d] = %f + j%f (%f)\n", i, _fftCoeffs[i][0], _fftCoeffs[i][1], mag);
-            //	_fftCoeffs[i][0] *= normalize;
-            //	_fftCoeffs[i][1] *= normalize;
+			//	_fftCoeffs[i][0] *= normalize;
+			//	_fftCoeffs[i][1] *= normalize;
 		}
 		fftw_destroy_plan(p);
-        fftw_free(tmpCoeffs);
-        _initd = true;
-    }
+		fftw_free(tmpCoeffs);
+		_initd = true;
+	}
 	double h_lowpass(int n) // lowpass filter at high frequency
 	{
-        const double _2fc = 2.0 * _f_c_high;
+		const double _2fc = 2.0 * _f_c_high;
 		if (n == 0)
 			return _2fc;
 		return _2fc*sinc(_2fc*n);
 	}
-    double h_highpass(int n) // highpass filter at low frequency
+	double h_highpass(int n) // highpass filter at low frequency
 	{
-        const double _2fc = 2.0 * _f_c_low;
+		const double _2fc = 2.0 * _f_c_low;
 		if (n == 0)
 			return 1.0 - _2fc;
 		return -_2fc*sinc(_2fc*n);
 	}
 	double sinc(double x)
 	{
-        if (x == 0.0)
-            return 1.0;
-        else
-            return sin(M_PI*x)/(M_PI*x);
-    }
+		if (x == 0.0)
+			return 1.0;
+		else
+			return sin(M_PI*x)/(M_PI*x);
+	}
 private:
 	double _sampleRate;
 	double _cutoffLow;
-    double _cutoffHigh;
+	double _cutoffHigh;
 	double _f_c_low;
-    double _f_c_high;
+	double _f_c_high;
 };
 
 class TestSource : public T_source<chunk_t>
@@ -354,74 +354,74 @@ class FilterBank;
 class IFilterBankProcessor
 {
 public:
-    virtual void processFFT(ComplexPaird * const fftBuffer) = 0;
+	virtual void processFFT(ComplexPaird * const fftBuffer) = 0;
 };
 
 class FilterBank
 {
 public:
-    FilterBank(int N, int padding=0) : _N(N), _padding(padding)
-    {
-        _windowBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (_N+_padding));
-        _outBuf = (ComplexPaird*)fftw_malloc(sizeof(ComplexPaird) * ((_N+_padding)/2+1));
-        _fwPlan = new Time2FrequencyPlan(_N, _windowBuf, _outBuf);
-    }
-    
-    virtual ~FilterBank()
-    {
-        delete _fwPlan;
-        fftw_free(_outBuf);
+	FilterBank(int N, int padding=0) : _N(N), _padding(padding)
+	{
+		_windowBuf = (SamplePaird*)fftw_malloc(sizeof(SamplePaird) * (_N+_padding));
+		_outBuf = (ComplexPaird*)fftw_malloc(sizeof(ComplexPaird) * ((_N+_padding)/2+1));
+		_fwPlan = new Time2FrequencyPlan(_N, _windowBuf, _outBuf);
+	}
+	
+	virtual ~FilterBank()
+	{
+		delete _fwPlan;
+		fftw_free(_outBuf);
 		fftw_free(_windowBuf);
-    }
-    
-    void addProcessor(IFilterBankProcessor *proc)
-    {
-        _processors.push_back(proc);
-    }
-    
-    void processInput(SamplePaird *inp)
-    {
-        for (int n=0; n < _N; ++n)
+	}
+	
+	void addProcessor(IFilterBankProcessor *proc)
+	{
+		_processors.push_back(proc);
+	}
+	
+	void processInput(SamplePaird *inp)
+	{
+		for (int n=0; n < _N; ++n)
 		{
 			const double wc = mlt(n, _N);
 			_windowBuf[n][0] = inp[n][0] * wc;
 			_windowBuf[n][1] = inp[n][1] * wc;
 		}
 		_fwPlan->execute();
-        
-        for (std::list<IFilterBankProcessor*>::iterator i = _processors.begin();
-             i != _processors.end();
-             i++)
-        {
-            (*i)->processFFT(_outBuf);
-        }
-    }
-    
-    void processOutput(SamplePaird *out)
-    {
+		
+		for (std::list<IFilterBankProcessor*>::iterator i = _processors.begin();
+			 i != _processors.end();
+			 i++)
+		{
+			(*i)->processFFT(_outBuf);
+		}
+	}
+	
+	void processOutput(SamplePaird *out)
+	{
 		for (int n=0; n < _N; ++n)
 		{
 			const double wc = mlt(n,_N)/_N;
-            out[n][0] *= wc;
-            out[n][1] *= wc;
+			out[n][0] *= wc;
+			out[n][1] *= wc;
 		}
-    }
+	}
 
 private:
-    int _N;
-    int _padding;
-    FFTPlan *_fwPlan;
-    FFTPlan *_inversePlan;
-    SamplePaird *_windowBuf;
+	int _N;
+	int _padding;
+	FFTPlan *_fwPlan;
+	FFTPlan *_inversePlan;
+	SamplePaird *_windowBuf;
 	ComplexPaird *_outBuf;
-    std::list<IFilterBankProcessor*> _processors;
+	std::list<IFilterBankProcessor*> _processors;
 };
 
 class STFTStream : public T_sink_source<chunk_t>, public IFilterBankProcessor
 {
 private:
-    const FFTWindowFilter &_filt;
-    FilterBank *_filterBank;
+	const FFTWindowFilter &_filt;
+	FilterBank *_filterBank;
 public:
 	// N = FFT size
 	// R = hop size
@@ -436,9 +436,9 @@ public:
 		_outBuf = (ComplexPaird*)fftw_malloc(sizeof(ComplexPaird) * ((_N+_padding)/2+1));
 		_fwPlan = new Time2FrequencyPlan(N, _windowBuf, _outBuf);
 		_inversePlan = new Frequency2TimePlan(N, _outBuf, (SamplePaird*)_outBuf);
-        
-        if (_filterBank)
-            _filterBank->addProcessor(this);
+		
+		if (_filterBank)
+			_filterBank->addProcessor(this);
 	}
 
 	~STFTStream()
@@ -531,69 +531,69 @@ public:
 			_p = 0;
 		}
 	}
-    
-    virtual void processFFT(ComplexPaird * const fftBuffer)
-    {
-        fftw_complex *coeffs = _filt.get_fft_coeffs();
-        
-        for (int n=0; n < _N/2+1; ++n)
+	
+	virtual void processFFT(ComplexPaird * const fftBuffer)
+	{
+		fftw_complex *coeffs = _filt.get_fft_coeffs();
+		
+		for (int n=0; n < _N/2+1; ++n)
 		{
-            //	const double coeff0 = 1.0;
-            //	const double coeff1 = 0.0;
+			//	const double coeff0 = 1.0;
+			//	const double coeff1 = 0.0;
 			const double coeff0 = coeffs[n][0];
 			const double coeff1 = coeffs[n][1];
-            //	printf("L %f + j%f R %f + j%f\n", _outBuf[n][0][0], _outBuf[n][0][1], _outBuf[n][1][0], _outBuf[n][1][1]);
+			//	printf("L %f + j%f R %f + j%f\n", _outBuf[n][0][0], _outBuf[n][0][1], _outBuf[n][1][0], _outBuf[n][1][1]);
 			// real = ac - bd
 			double x = _outBuf[n][0][0] * coeff0 - _outBuf[n][0][1] * coeff1;
 			// imag = ad + bc
 			double y = _outBuf[n][0][0] * coeff1 + _outBuf[n][0][1] * coeff0;
 			_outBuf[n][0][0] = x;
 			_outBuf[n][0][1] = y;
-            
+			
 			x = _outBuf[n][1][0] * coeff0 - _outBuf[n][1][1] * coeff1;
 			y = _outBuf[n][1][0] * coeff1 + _outBuf[n][1][1] * coeff0;
 			_outBuf[n][1][0] = x;
 			_outBuf[n][1][1] = y;
 		}
 
-        if (_filterBank)
-        {
-            _inversePlan->execute();
-            _filterBank->processOutput((SamplePaird*)_outBuf);
-        }
-        else
-            processOutput();
-    } 
-    
-    void process_input()
-    {
-        SamplePaird *inp = _inBuf + _p * _R;
+		if (_filterBank)
+		{
+			_inversePlan->execute();
+			_filterBank->processOutput((SamplePaird*)_outBuf);
+		}
+		else
+			processOutput();
+	} 
+	
+	void process_input()
+	{
+		SamplePaird *inp = _inBuf + _p * _R;
 		for (int n=0; n < _N; ++n)
 		{
-            //	const double wc = mlt(n, _N);
-            //	const double wc = 1.0;
+			//	const double wc = mlt(n, _N);
+			//	const double wc = 1.0;
 			const double wc = mlt(n, _N);
 			_windowBuf[n][0] = inp[n][0] * wc;
 			_windowBuf[n][1] = inp[n][1] * wc;
 		}
 		_fwPlan->execute();
-    }
-    
-    void processOutput()
-    {
-        _inversePlan->execute();
+	}
+	
+	void processOutput()
+	{
+		_inversePlan->execute();
 		SamplePaird *smp = (SamplePaird*)_outBuf;
 		for (int n=0; n < _N; ++n)
 		{
 			const double wc = mlt(n,_N)/_N;
 			_synthPtr[n][0] += smp[n][0] * wc;
 			_synthPtr[n][1] += smp[n][1] * wc;
-            //	printf("%f %f\n", _synthPtr[n][0], _synthPtr[n][1]);
+			//	printf("%f %f\n", _synthPtr[n][0], _synthPtr[n][1]);
 		}
 		_synthPtr += _R;
 		++_p;
-    }
-    
+	}
+	
 	// do not call this unless everything finished in the buffer is read out
 	// ie readPtr == synthPtr
 	void synth_step()
@@ -635,7 +635,7 @@ public:
 			(*ptr)[0] = float((*_readPtr)[0]/* / _windowConstant*/);
 			(*ptr++)[1] = float((*_readPtr++)[1]/* / _windowConstant*/);
 		}
-        
+		
 
 		return chk;
 	}

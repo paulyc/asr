@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #include "config.h"
 #include "ui.h"
@@ -40,9 +40,9 @@ HPEN pen_oran;
 double last_time;
 
 INT_PTR CALLBACK Win32UI::MyDialogProc(HWND hwndDlg,
-    UINT uMsg,
-    WPARAM wParam,
-    LPARAM lParam
+	UINT uMsg,
+	WPARAM wParam,
+	LPARAM lParam
 )
 {
 	ASIOProcessor *asio = _io;
@@ -148,8 +148,8 @@ INT_PTR CALLBACK Win32UI::MyDialogProc(HWND hwndDlg,
 			break;
 		}
 		case WM_COMMAND: 
-            switch (LOWORD(wParam)) 
-            { 
+			switch (LOWORD(wParam)) 
+			{ 
 			/*	case IDC_CHECK1:
 					if (SendMessage((HWND)lParam, BM_GETCHECK, 0, 0) == BST_CHECKED)
 						asio->_bus_matrix->map(asio->GetTrack(1), asio->_master_bus);
@@ -345,35 +345,35 @@ void Win32UI::load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam)
 	TCHAR filepath[512] = {0};
 	TCHAR filetitle[512];
 	OPENFILENAME ofn = { //typedef struct tagOFNW {
-		sizeof(ofn), // DWORD        lStructSize;
-		hwndDlg, //   HWND         hwndOwner;
-		NULL, //   HINSTANCE    hInstance;
+		sizeof(ofn), // DWORD		 lStructSize;
+		hwndDlg, //	  HWND		   hwndOwner;
+		NULL, //   HINSTANCE	hInstance;
 		TEXT("Sound Files\0*.WAV;*.WAVE;*.MP3;*.FLAC;*.AAC;*.MP4;*.AC3;*.AIFF;*.AIF\0"
-		TEXT("All Files\0*.*")), //   LPCWSTR      lpstrFilter;
-		NULL, //LPWSTR       lpstrCustomFilter;
-		0, //   DWORD        nMaxCustFilter;
-		1, //   DWORD        nFilterIndex;
-		filepath, //   LPWSTR       lpstrFile;
-		sizeof(filepath), //   DWORD        nMaxFile;
-		filetitle, //   LPWSTR       lpstrFileTitle;
-		sizeof(filetitle), //   DWORD        nMaxFileTitle;
-		NULL, //   LPCWSTR      lpstrInitialDir;
-		NULL, //   LPCWSTR      lpstrTitle;
-		LOWORD(wParam)!=IDC_BUTTON25?OFN_FILEMUSTEXIST:NULL, //   DWORD        Flags;
-		0, //   WORD         nFileOffset;
-		0, //   WORD         nFileExtension;
-		NULL, //   LPCWSTR      lpstrDefExt;
-		NULL, //   LPARAM       lCustData;
+		TEXT("All Files\0*.*")), //	  LPCWSTR	   lpstrFilter;
+		NULL, //LPWSTR		 lpstrCustomFilter;
+		0, //	DWORD		 nMaxCustFilter;
+		1, //	DWORD		 nFilterIndex;
+		filepath, //   LPWSTR		lpstrFile;
+		sizeof(filepath), //   DWORD		nMaxFile;
+		filetitle, //	LPWSTR		 lpstrFileTitle;
+		sizeof(filetitle), //	DWORD		 nMaxFileTitle;
+		NULL, //   LPCWSTR		lpstrInitialDir;
+		NULL, //   LPCWSTR		lpstrTitle;
+		LOWORD(wParam)!=IDC_BUTTON25?OFN_FILEMUSTEXIST:NULL, //	  DWORD		   Flags;
+		0, //	WORD		 nFileOffset;
+		0, //	WORD		 nFileExtension;
+		NULL, //   LPCWSTR		lpstrDefExt;
+		NULL, //   LPARAM		lCustData;
 		NULL, //   LPOFNHOOKPROC lpfnHook;
-		NULL, //   LPCWSTR      lpTemplateName;
+		NULL, //   LPCWSTR		lpTemplateName;
 		//#ifdef _MAC
-		//   LPEDITMENU   lpEditInfo;
-		//   LPCSTR       lpstrPrompt;
+		//	 LPEDITMENU	  lpEditInfo;
+		//	 LPCSTR		  lpstrPrompt;
 		//#endif
 		//#if (_WIN32_WINNT >= 0x0500)
-		NULL, //   void *        pvReserved;
-		0, //   DWORD        dwReserved;
-		0, //   DWORD        FlagsEx;
+		NULL, //   void *		 pvReserved;
+		0, //	DWORD		 dwReserved;
+		0, //	DWORD		 FlagsEx;
 		//#endif // (_WIN32_WINNT >= 0x0500)
 	};
 	//memset(&ofn, 0, sizeof(ofn));
@@ -392,9 +392,9 @@ void Win32UI::load_track(HWND hwndDlg,WPARAM wParam,LPARAM lParam)
 }
 
 LRESULT CALLBACK CustomWndProc(HWND hwnd,
-    UINT uMsg,
-    WPARAM wParam,
-    LPARAM lParam
+	UINT uMsg,
+	WPARAM wParam,
+	LPARAM lParam
 )
 {
 	RECT r;
@@ -459,15 +459,15 @@ void Win32UI::create()
 	g_newwnd = CreateWindowEx(WS_EX_OVERLAPPEDWINDOW|WS_EX_COMPOSITED,
    (LPCWSTR)a,
    L"Hello",
-    WS_OVERLAPPEDWINDOW,
-    0,
-    0,
-    600,
-    600,
-    0,
-    0,
-    ::GetModuleHandle(NULL),
-    0);
+	WS_OVERLAPPEDWINDOW,
+	0,
+	0,
+	600,
+	600,
+	0,
+	0,
+	::GetModuleHandle(NULL),
+	0);
 	int e = GetLastError();
 	ShowWindow(g_newwnd, SW_SHOW);
 	UpdateWindow(g_newwnd);
@@ -675,7 +675,7 @@ void Win32UI::set_position(void *t, double p, bool invalidate)
 		//{
 			uit->wave.playback_pos = p;
 		//}
-		//double len =  asio->_track1->len().time;
+		//double len =	asio->_track1->len().time;
 		int new_px = int(p*uit->wave.width());
 		//if (asio)repaint();
 		if ((new_px != uit->wave.px && new_px >=0 && new_px < uit->wave.width()) || invalidate)

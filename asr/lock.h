@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _LOCK_H
 #define _LOCK_H
@@ -39,24 +39,24 @@ __asm lock cmpxchg dword ptr[edx], ebx \
 
 #define ACQUIRE_USERLOCK(var) __asm { \
 spin__LINE__: \
-__asm 	push ecx \
+__asm	push ecx \
 } \
  \
 		YIELD_IF_1CPU \
  \
 __asm { \
-__asm 			pop ecx \
+__asm			pop ecx \
 after_yield__LINE__: \
-__asm 			lea edx, dword ptr[ecx+var] \
-__asm 			mov eax, dword ptr[edx] \
-__asm 			test eax, eax \
-__asm 			jnz spin \
+__asm			lea edx, dword ptr[ecx+var] \
+__asm			mov eax, dword ptr[edx] \
+__asm			test eax, eax \
+__asm			jnz spin \
  \
-__asm 			mov ebx, 1 \
-__asm 			lock cmpxchg dword ptr[edx], ebx \
+__asm			mov ebx, 1 \
+__asm			lock cmpxchg dword ptr[edx], ebx \
  \
-__asm 			test eax, eax \
-__asm 			jnz spin \
+__asm			test eax, eax \
+__asm			jnz spin \
 }
 
 template <typename T>
@@ -145,10 +145,10 @@ public:
 	}
 	void signal() {
 		pthread_cond_signal(&_cond);
-    }
-    void signal_all() {
-        pthread_cond_broadcast(&_cond);
-    }
+	}
+	void signal_all() {
+		pthread_cond_broadcast(&_cond);
+	}
 protected:
 	pthread_cond_t _cond;
 };
@@ -185,91 +185,91 @@ protected:
 class FastUserSpinLock
 {
 public:
-    FastUserSpinLock() : _ownFlag(0) {}
-    void acquire()
-    {
-        while(!__sync_bool_compare_and_swap(&_ownFlag, 0, 1))
-        {
-            while(_ownFlag) _mm_pause();
-        }
-    }
-    void release()
-    {
-        __sync_lock_release(&_ownFlag);
-    }
+	FastUserSpinLock() : _ownFlag(0) {}
+	void acquire()
+	{
+		while(!__sync_bool_compare_and_swap(&_ownFlag, 0, 1))
+		{
+			while(_ownFlag) _mm_pause();
+		}
+	}
+	void release()
+	{
+		__sync_lock_release(&_ownFlag);
+	}
 private:
-    volatile int _ownFlag;
+	volatile int _ownFlag;
 };
 
 class FastUserCondition
 {
 public:
-    FastUserCondition() : _waiters(0) {sem_init(&_sem, 0, 0);}
-    void wait(FastUserSpinLock &lock)
-    {
-        while (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters+1))
-            ; // this space intentionally left blank
-        lock.release();
-        sem_wait(&_sem);
-        lock.acquire();
-    }
-    void signal()
-    {
-        while (true)
-        {
-            if (_waiters > 0)
-            {
-                if (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters-1))
-                    continue;
-                sem_post(&_sem);
-                break;
-            }
-        }
-    }
-    void signal_all()
-    {
-        while (_waiters > 0)
-        {
-            if (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters-1))
-                continue;
-            sem_post(&_sem);
-        }
-    }
+	FastUserCondition() : _waiters(0) {sem_init(&_sem, 0, 0);}
+	void wait(FastUserSpinLock &lock)
+	{
+		while (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters+1))
+			; // this space intentionally left blank
+		lock.release();
+		sem_wait(&_sem);
+		lock.acquire();
+	}
+	void signal()
+	{
+		while (true)
+		{
+			if (_waiters > 0)
+			{
+				if (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters-1))
+					continue;
+				sem_post(&_sem);
+				break;
+			}
+		}
+	}
+	void signal_all()
+	{
+		while (_waiters > 0)
+		{
+			if (!__sync_bool_compare_and_swap(&_waiters, _waiters, _waiters-1))
+				continue;
+			sem_post(&_sem);
+		}
+	}
 private:
-    int _waiters;
-    sem_t _sem;
+	int _waiters;
+	sem_t _sem;
 };
 
 class CriticalSectionGuard
 {
 public:
-    CriticalSectionGuard() : _criticalCount(0) {}
-    void enter()
-    {
-        _lock.acquire();
-        ++_criticalCount;
-        _lock.release();
-    }
-    void leave()
-    {
-        _lock.acquire();
-        if (--_criticalCount == 0)
-        {
-            _wait.signal_all();
-        }
-        _lock.release();
-    }
-    void yield()
-    {
-        _lock.acquire();
-        while (_criticalCount > 0)
-            _wait.wait(_lock);
-        _lock.release();
-    }
+	CriticalSectionGuard() : _criticalCount(0) {}
+	void enter()
+	{
+		_lock.acquire();
+		++_criticalCount;
+		_lock.release();
+	}
+	void leave()
+	{
+		_lock.acquire();
+		if (--_criticalCount == 0)
+		{
+			_wait.signal_all();
+		}
+		_lock.release();
+	}
+	void yield()
+	{
+		_lock.acquire();
+		while (_criticalCount > 0)
+			_wait.wait(_lock);
+		_lock.release();
+	}
 private:
-    int _criticalCount;
-    FastUserSpinLock _lock;
-    FastUserCondition _wait;
+	int _criticalCount;
+	FastUserSpinLock _lock;
+	FastUserCondition _wait;
   //  PthreadLock _lock;
   //  PthreadCondition _wait;
 };

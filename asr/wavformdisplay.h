@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _WAVFORMDISPLAY_H
 #define _WAVFORMDISPLAY_H
@@ -60,7 +60,7 @@ public:
 		  double peak_top;
 		  double avg_top;
 		  double peak_bot;
-		//  double avg_bot;
+		//	double avg_bot;
 	  };
 
   void set_width(int width)
@@ -87,7 +87,7 @@ public:
   // fix file not expected length!!
   virtual void set_wav_heights(CriticalSectionGuard *lock=0)
   {
-	//  printf("display::set_wav_heights\n");
+	//	printf("display::set_wav_heights\n");
 	  CRITICAL_SECTION_GUARD(lock);
 	  int chunks_total = _src->len().chunks;
 	  int left_chunk = (int)(_left * chunks_total);
@@ -95,17 +95,17 @@ public:
 	  int chunks = right_chunk-left_chunk;
 	  //chunk_t *chk = _src->get_chunk(0);
 	 // int chunks_per_pixel = (right_chunk-left_chunk) / _width;
-	//  int chunks_per_pixel = chunks / _width;
+	//	int chunks_per_pixel = chunks / _width;
 	  double chunks_per_pixel_d = double(chunks) / _width;
 	  int chunks_per_pixel = max(1, int(chunks_per_pixel_d));
-	//  printf("cpp %f\n", chunks_per_pixel_d);
+	//	printf("cpp %f\n", chunks_per_pixel_d);
 	  if (chunks_per_pixel_d < 1.0 && chunks_per_pixel_d >= 0.1)
 	  {
 		  for (int p = 0; p < _width; ++p)
 		  {
 			  CRITICAL_SECTION_GUARD(lock);
 			  int chk = int(double(left_chunk) + p*chunks_per_pixel_d);
-			    const typename Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
+				const typename Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				  double ofs_d = p*chunks_per_pixel_d - floor(p*chunks_per_pixel_d);
 				  int sub = int(ofs_d*10);
 				  _wav_heights[p].peak_top = max(meta.subband[sub].peak[0], meta.subband[sub].peak[1]);
@@ -118,7 +118,7 @@ public:
 	  {
 			for (int p = 0; p < _width; ++p)
 		  {
-              CRITICAL_SECTION_GUARD(lock);
+			  CRITICAL_SECTION_GUARD(lock);
 			  int chk = int(double(left_chunk) + p*chunks_per_pixel_d);
 			  _wav_heights[p].peak_top = 0.0;
 			  _wav_heights[p].avg_top = 0.0;
@@ -151,7 +151,7 @@ public:
 		 //int chk, 
 		 for (int p = 0; p < _width; ++p)
 		  {
-              CRITICAL_SECTION_GUARD(lock);
+			  CRITICAL_SECTION_GUARD(lock);
 			  double smp_l = left_sample + p*samples_per_pixel_d;
 			  chk = int(smp_l) / Source_T::chunk_t::chunk_size;
 			  ofs = int(smp_l) % Source_T::chunk_t::chunk_size;
@@ -171,7 +171,7 @@ public:
 					  {
 						  if (the_chk->_data[ofs][0] > 0.0f)
 						  {
-                              _wav_heights[p].peak_top = fmax(the_chk->_data[ofs][0], _wav_heights[p].peak_top);
+							  _wav_heights[p].peak_top = fmax(the_chk->_data[ofs][0], _wav_heights[p].peak_top);
 							_wav_heights[p].peak_bot = 0.0f;
 						  }
 						  else
@@ -185,7 +185,7 @@ public:
 						  _wav_heights[p].peak_top = fmax(the_chk->_data[ofs][0], _wav_heights[p].peak_top);
 						  _wav_heights[p].peak_bot = fmin(the_chk->_data[ofs][0], _wav_heights[p].peak_bot);
 					  }
-					//  assert(chk < chunks);
+					//	assert(chk < chunks);
 				//	const Source_T::ChunkMetadata &meta = _src->get_metadata(chk);
 				//	SetMax<double>::calc(_wav_heights[p].peak_top, max(meta.peak[0], meta.peak[1]));
 				//	Sum<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, max(meta.avg[0], meta.avg[1]));
@@ -198,7 +198,7 @@ public:
 			  }
 			 // Quotient<double>::calc(_wav_heights[p].avg_top, _wav_heights[p].avg_top, chunks_per_pixel);
 			  _wav_heights[p].avg_top /= smp;
-			//  if (repeat)
+			//	if (repeat)
 			//	  --chk;
 		  }
 	  }
@@ -251,7 +251,7 @@ public:
 		  double oldp = (_right - _left) * (double(_lock_px)/_width);
 		  double oldpz = oldp * oldz;
 		  double oldpzw = oldpz /_zoom;
-		//  double newwidth = 1.0/_zoom;
+		//	double newwidth = 1.0/_zoom;
 		  double newleft = _left + oldp - oldpzw;
 		  double newright = newleft + 1.0/_zoom;
 		  _center = newleft + 0.5/_zoom;
@@ -260,7 +260,7 @@ public:
 	  _indx = 0;
 		_left = _center - 0.5/_zoom;
 		_right = _center + 0.5/_zoom;
-	//  printf("z %f\n",_zoom);
+	//	printf("z %f\n",_zoom);
 	  _level = (int)(fmin(log(_zoom) / log(2.0), 8));
   }
 

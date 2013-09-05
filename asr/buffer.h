@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _BUFFER_H
 #define _BUFFER_H
@@ -165,21 +165,21 @@ class FilterSourceImpl : public FilterSource<chunk_t>
 {
 public:
 	FilterSourceImpl(T_source<chunk_t> *src)
-    : FilterSource<chunk_t>(src),
-    _ringBuffer(100000)
+	: FilterSource<chunk_t>(src),
+	_ringBuffer(100000)
 	{
-        //	chunk_t *chk = _src->next();
+		//	chunk_t *chk = _src->next();
 		_bufferReadOfs = -10000;
 		SamplePairf values[10000] = {{0.0,0.0}};
 		_ringBuffer.write(values, 10000);
-        //	_ringBuffer.write(chk->_data, chunk_t::chunk_size);
+		//	_ringBuffer.write(chk->_data, chunk_t::chunk_size);
 		
 	}
-    
+	
 	virtual ~FilterSourceImpl()
 	{
 	}
-    
+	
 	void seek_smp(smp_ofs_t smp_ofs)
 	{
 		printf("do not call\n");
@@ -191,20 +191,20 @@ public:
 	}
 	virtual void seek_chk(int chk_ofs)
 	{
-        //	_src->seek_chk(chk_ofs);
+		//	_src->seek_chk(chk_ofs);
 	}
-    
+	
 	SamplePairf *get_at_ofs(smp_ofs_t ofs, int n)
 	{
 		_ringBuffer.ignore(ofs - _bufferReadOfs);
 		_bufferReadOfs += ofs - _bufferReadOfs;
 		while (ofs + n > _bufferReadOfs + _ringBuffer.count())
 		{
-            //	int skip = _ringBuffer.count() - (n+100) ;
-            //	if (skip <= 0) fprintf(stderr, "this is not supposed to happen!\n");
-            //	_ringBuffer.ignore(skip);
-            //	_bufferReadOfs += skip;
-            
+			//	int skip = _ringBuffer.count() - (n+100) ;
+			//	if (skip <= 0) fprintf(stderr, "this is not supposed to happen!\n");
+			//	_ringBuffer.ignore(skip);
+			//	_bufferReadOfs += skip;
+			
 			chunk_t *chk = _src->next();
 			_ringBuffer.write(chk->_data, chunk_t::chunk_size);
 			T_allocator<chunk_t>::free(chk);
@@ -226,9 +226,9 @@ public:
 	const static int BufSz = 0x3000;
 
 	BufferedStream(T_source<Chunk_T> *src, double smp_rate=44100.0, bool preload=true);
-    ~BufferedStream();
-    
-    typedef typename Chunk_T::sample_t Sample_T;
+	~BufferedStream();
+	
+	typedef typename Chunk_T::sample_t Sample_T;
 
 	Chunk_T *get_chunk(unsigned int chk_ofs);
 	Chunk_T *next();

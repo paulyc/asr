@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include <emmintrin.h>
@@ -56,16 +56,16 @@ ASR::ASR(int argc, char **argv)
 #if OPENGL_ENABLED
 	_ui = new OpenGLUI(_asio, argc, argv);
 #elif MAC
-    //_ui = new CocoaUI(_asio);
+	//_ui = new CocoaUI(_asio);
 #else
-    _ui = new CommandlineUI(_asio);
+	_ui = new CommandlineUI(_asio);
 #endif
 }
 
 ASR::ASR(GenericUI *ui) : _ui(ui)
 {
-    _asio = new ASIOProcessor;
-    _ui->_io = _asio;
+	_asio = new ASIOProcessor;
+	_ui->_io = _asio;
 }
 
 ASR::~ASR()
@@ -77,7 +77,7 @@ ASR::~ASR()
 
 void ASR::init()
 {
-    _asio->set_ui(_ui);
+	_asio->set_ui(_ui);
 	_ui->create();
 }
 
@@ -90,7 +90,7 @@ void ASR::execute()
 
 void ASR::finish()
 {
-    _ui->destroy();
+	_ui->destroy();
 }
 
 #if !TEST_BEATS && !MAC

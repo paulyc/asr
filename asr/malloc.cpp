@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #include <pthread.h>
 #include <unordered_map>
@@ -48,7 +48,7 @@ void *operator new(size_t by, const char *f, int l)
 	pthread_once(&once_control, init_lock);
 	pthread_mutex_lock(&malloc_lock);
 	void *m = malloc(by);
-    do_stuff(m, by, f, l);
+	do_stuff(m, by, f, l);
 	pthread_mutex_unlock(&malloc_lock);
 	return m;
 }
@@ -79,13 +79,13 @@ void operator delete[](void *m)
 	pthread_mutex_lock(&malloc_lock);
 	if (!destructing_hash)
 		_malloc_map.erase(m);
-        free(m);
-        pthread_mutex_unlock(&malloc_lock);
+		free(m);
+		pthread_mutex_unlock(&malloc_lock);
 }
 
 void dump_malloc()
 {
-    _malloc_map.dump();
+	_malloc_map.dump();
 }
 
 #endif // DEBUG_MALLOC

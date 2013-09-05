@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #include "config.h"
 #include "ui.h"
@@ -213,10 +213,10 @@ void GenericUI::slider_move(double pos, SliderType t, int x)
 
 void GenericUI::render_dirty()
 {
-    if (_track1.dirty)
+	if (_track1.dirty)
 		_io->GetTrack(1)->draw_if_loaded();
-    if (_track2.dirty)
-        _io->GetTrack(2)->draw_if_loaded();
+	if (_track2.dirty)
+		_io->GetTrack(2)->draw_if_loaded();
 }
 
 void GenericUI::set_filters_frequency(void *filt, double freq)
@@ -244,7 +244,7 @@ void GenericUI::drop_file(const char *filename, bool track1)
 }
 
 UITrack::UITrack(GenericUI *ui, int tid, int filename_id, int pitch_id, int gain_id) :
-    _ui(ui),
+	_ui(ui),
 	id(tid),
 	coarse_val(48000.0),
 	fine_val(0.0),
@@ -252,7 +252,7 @@ UITrack::UITrack(GenericUI *ui, int tid, int filename_id, int pitch_id, int gain
 	pitch(ui, pitch_id),
 	gain(ui, gain_id),
 	clip(false),
-    dirty(false),
+	dirty(false),
 	vinyl_control(false),
 	sync_time(false),
 	add_pitch(false)
@@ -276,7 +276,7 @@ void UITrack::set_coarse(double v)
 
 void UITrack::set_fine(double v)
 {
-	fine_val = 800.0 -  1600.*v;
+	fine_val = 800.0 -	1600.*v;
 //	printf("fine_val %f\n", fine_val);
 	update_frequency(coarse_val+fine_val);
 	_ui->_io->GetTrack(id)->set_output_sampling_frequency(coarse_val+fine_val);

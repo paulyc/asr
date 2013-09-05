@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _LOADER_H
 #define _LOADER_H
@@ -38,7 +38,7 @@ class Worker
 {
 public:
 	Worker() :
-        _flags(0),
+		_flags(0),
 		_blockOnCritical(true)
 	{
 		
@@ -51,45 +51,45 @@ public:
 	static void init()
 	{
 		(new Worker)->spin(true);
-        (new Worker)->spin(true);
+		(new Worker)->spin(true);
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
 		(new Worker)->spin(false);
-        (new Worker)->spin(false);
 		(new Worker)->spin(false);
-        (new Worker)->spin(false);
+		(new Worker)->spin(false);
+		(new Worker)->spin(false);
 		(new Worker)->spin(false);
 	}
 
 	static void destroy()
 	{
-        _job_lock.acquire();
-        _running = false;
-        for (int i=0; i<_workers.size(); ++i)
-        {
-            _job_rdy.signal();
-        }
-        for (int i=0; i<_cr_workers.size(); ++i)
-        {
-            _cr_job_rdy.signal();
-        }
-        _job_lock.release();
-        for (int i=0; i<_workers.size(); ++i)
-        {
-            void *res;
-            pthread_join(_workers[i]->_tid, &res);
-        }
-        for (int i=0; i<_cr_workers.size(); ++i)
-        {
-            void *res;
-            pthread_join(_cr_workers[i]->_tid, &res);
-        }
+		_job_lock.acquire();
+		_running = false;
+		for (int i=0; i<_workers.size(); ++i)
+		{
+			_job_rdy.signal();
+		}
+		for (int i=0; i<_cr_workers.size(); ++i)
+		{
+			_cr_job_rdy.signal();
+		}
+		_job_lock.release();
+		for (int i=0; i<_workers.size(); ++i)
+		{
+			void *res;
+			pthread_join(_workers[i]->_tid, &res);
+		}
+		for (int i=0; i<_cr_workers.size(); ++i)
+		{
+			void *res;
+			pthread_join(_cr_workers[i]->_tid, &res);
+		}
 	}
 
 	pthread_t _tid;
-    volatile int _flags;
+	volatile int _flags;
 
 	struct job
 	{
@@ -100,22 +100,22 @@ public:
 		virtual void do_it(){}
 		virtual void step(){}
 		volatile Worker *_worker;
-        void suspendable()
-        {
-            __sync_bool_compare_and_swap(&_worker->_flags, FLAG_NONE, FLAG_SUSPENDABLE);
-        }
-        void unsuspendable()
-        {
-            __sync_bool_compare_and_swap(&_worker->_flags, FLAG_SUSPENDABLE, FLAG_NONE);
-        }
+		void suspendable()
+		{
+			__sync_bool_compare_and_swap(&_worker->_flags, FLAG_NONE, FLAG_SUSPENDABLE);
+		}
+		void unsuspendable()
+		{
+			__sync_bool_compare_and_swap(&_worker->_flags, FLAG_SUSPENDABLE, FLAG_NONE);
+		}
 	};
 
 	template <typename Source_T, typename Chunk_T>
 	struct generate_chunk_job : public job
 	{
 		Source_T *src;
-        IChunkGeneratorCallback<Chunk_T> *cbObj;
-        int chkId;
+		IChunkGeneratorCallback<Chunk_T> *cbObj;
+		int chkId;
 		Lock_T *lock;
 		generate_chunk_job(Source_T *s, 
 			IChunkGeneratorCallback<Chunk_T> *cbo, int cid, Lock_T *l) :
@@ -126,72 +126,72 @@ public:
 			cbObj->chunkCb(src->next(), chkId);
 		}
 	};
-    
-    template <typename Source_T, typename Chunk_T>
+	
+	template <typename Source_T, typename Chunk_T>
 	struct generate_chunk_loop : public job, public IChunkGeneratorLoop<Chunk_T>
 	{
 		Source_T *src;
-        IChunkGeneratorCallback<Chunk_T> *cbObj;
-        int chkId;
+		IChunkGeneratorCallback<Chunk_T> *cbObj;
+		int chkId;
 		Lock_T *lock;
 		generate_chunk_loop(Source_T *s,
-                           IChunkGeneratorCallback<Chunk_T> *cbo, int cid, int chunks_to_buffer) :
-        src(s), cbObj(cbo), chkId(cid), running(true), _chunks_to_buffer(chunks_to_buffer) {_name="generate chunk";}
-        
+						   IChunkGeneratorCallback<Chunk_T> *cbo, int cid, int chunks_to_buffer) :
+		src(s), cbObj(cbo), chkId(cid), running(true), _chunks_to_buffer(chunks_to_buffer) {_name="generate chunk";}
+		
 		void do_it()
 		{
-            uint64_t t_begin, t_end;
-            myLock.acquire();
-            t_begin = mach_absolute_time();
-            cbObj->lock(chkId);
-            while (running)
-            {
-                if (nextChks.size() >= _chunks_to_buffer)
-                {
-                 //   cbObj->unlock(chkId);
-                    t_end = mach_absolute_time();
-                    //printf("time is %lld\n", t_end - t_begin);
-                    doGen.wait(myLock);
-                    t_begin = mach_absolute_time();
-                 //   cbObj->lock(chkId);
-                    continue;
-                }
-                nextChks.push(src->next());
-            }
-            cbObj->unlock(chkId);
+			uint64_t t_begin, t_end;
+			myLock.acquire();
+			t_begin = mach_absolute_time();
+			cbObj->lock(chkId);
+			while (running)
+			{
+				if (nextChks.size() >= _chunks_to_buffer)
+				{
+				 //	  cbObj->unlock(chkId);
+					t_end = mach_absolute_time();
+					//printf("time is %lld\n", t_end - t_begin);
+					doGen.wait(myLock);
+					t_begin = mach_absolute_time();
+				 //	  cbObj->lock(chkId);
+					continue;
+				}
+				nextChks.push(src->next());
+			}
+			cbObj->unlock(chkId);
 		}
-        
-        Chunk_T *get()
-        {
-            Chunk_T *chk = 0;
-            myLock.acquire();
-            if (nextChks.empty())
-                chk = zero_source<chunk_t>::get()->next();
-            else
-            {
-                chk = nextChks.front();
-                nextChks.pop();
-                cbObj->lock(chkId);
-                doGen.signal();
-                
-            }
-            myLock.release();
-            return chk;
-        }
-        
-        void kill()
-        {
-            myLock.acquire();
-            running = false;
-            doGen.signal();
-            myLock.release();
-        }
-        
-        Lock_T myLock;
-        Condition_T doGen;
-        bool running;
-        std::queue<Chunk_T*> nextChks;
-        int _chunks_to_buffer;
+		
+		Chunk_T *get()
+		{
+			Chunk_T *chk = 0;
+			myLock.acquire();
+			if (nextChks.empty())
+				chk = zero_source<chunk_t>::get()->next();
+			else
+			{
+				chk = nextChks.front();
+				nextChks.pop();
+				cbObj->lock(chkId);
+				doGen.signal();
+				
+			}
+			myLock.release();
+			return chk;
+		}
+		
+		void kill()
+		{
+			myLock.acquire();
+			running = false;
+			doGen.signal();
+			myLock.release();
+		}
+		
+		Lock_T myLock;
+		Condition_T doGen;
+		bool running;
+		std::queue<Chunk_T*> nextChks;
+		int _chunks_to_buffer;
 	};
 
 	template <typename Obj_T>
@@ -235,8 +235,8 @@ public:
 		void step()
 		{
 			_object->call_deferreds_loop(_worker->_tid);
-            delete this;
-            pthread_exit(0);
+			delete this;
+			pthread_exit(0);
 		}
 		Obj_T *_object;
 	};
@@ -262,8 +262,8 @@ public:
 		{
 			track->load(_lock);
 			T_allocator<typename Track_T::chunk_t>::gc();
-            done = true;
-            printf("job done %p\n", this);
+			done = true;
+			printf("job done %p\n", this);
 		}
 	};
 
@@ -300,92 +300,92 @@ public:
 	static std::queue<job*> _idle_jobs;
 	static pthread_once_t once_control; 
 	bool _blockOnCritical;
-    static std::vector<Worker*> _workers;
-    static std::vector<Worker*> _cr_workers;
+	static std::vector<Worker*> _workers;
+	static std::vector<Worker*> _cr_workers;
 
 	void spin(bool critical=false)
 	{
-        _job_lock.acquire();
+		_job_lock.acquire();
 		if (critical)
-        {
-            //sched_param p = {1};
-            pthread_create(&_tid, 0, threadproc_cr, (void*)this);
-            //pthread_setschedparam(_tid, SCHED_FIFO, &p);
-            struct thread_time_constraint_policy ttcpolicy;
-            kern_return_t ret;
-            //struct mach_timebase_info tb_info;
-            //mach_timebase_info(&tb_info);
-            //printf("numer = %d denom = %d\n", tb_info.numer, tb_info.denom);
-            ttcpolicy.period=21333333; // 48000 / 1024 , real time of one calculated chunk 21.3ms
-            ttcpolicy.computation=3000000; // empirically measured max chunk calculation time, 3ms on my 2.6 GHz Intel Core i5
-            ttcpolicy.constraint=3000000;
-            ttcpolicy.preemptible=0;
-            if ((ret=thread_policy_set(pthread_mach_thread_np(pthread_self()), THREAD_TIME_CONSTRAINT_POLICY, (thread_policy_t)&ttcpolicy,
-                              THREAD_TIME_CONSTRAINT_POLICY_COUNT)) != KERN_SUCCESS)
-            {
-                printf("set realtime failed %d\n", ret);
-            }
-            _cr_workers.push_back(this);
-        }
+		{
+			//sched_param p = {1};
+			pthread_create(&_tid, 0, threadproc_cr, (void*)this);
+			//pthread_setschedparam(_tid, SCHED_FIFO, &p);
+			struct thread_time_constraint_policy ttcpolicy;
+			kern_return_t ret;
+			//struct mach_timebase_info tb_info;
+			//mach_timebase_info(&tb_info);
+			//printf("numer = %d denom = %d\n", tb_info.numer, tb_info.denom);
+			ttcpolicy.period=21333333; // 48000 / 1024 , real time of one calculated chunk 21.3ms
+			ttcpolicy.computation=3000000; // empirically measured max chunk calculation time, 3ms on my 2.6 GHz Intel Core i5
+			ttcpolicy.constraint=3000000;
+			ttcpolicy.preemptible=0;
+			if ((ret=thread_policy_set(pthread_mach_thread_np(pthread_self()), THREAD_TIME_CONSTRAINT_POLICY, (thread_policy_t)&ttcpolicy,
+							  THREAD_TIME_CONSTRAINT_POLICY_COUNT)) != KERN_SUCCESS)
+			{
+				printf("set realtime failed %d\n", ret);
+			}
+			_cr_workers.push_back(this);
+		}
 		else
-        {
-            pthread_create(&_tid, 0, threadproc_id, (void*)this);
-            _workers.push_back(this);
-        }
-        _job_lock.release();
+		{
+			pthread_create(&_tid, 0, threadproc_id, (void*)this);
+			_workers.push_back(this);
+		}
+		_job_lock.release();
 	}
-    
-    volatile static int _suspend_count;
-    
-    static void suspend_all()
-    {
-        int count_before = _suspend_count;
-        while (!__sync_bool_compare_and_swap(&_suspend_count, count_before, count_before+1))
-        {
-            _mm_pause();
-            count_before = _suspend_count;
-        }
-        if (count_before == 0)
-        {
-            for (auto w: _workers)
-            {
-                w->suspend_if_suspendable();
-            }
-        }
-    }
-    
-    static void unsuspend_all()
-    {
-        int count_before = _suspend_count;
-        while (!__sync_bool_compare_and_swap(&_suspend_count, count_before, count_before-1))
-        {
-            _mm_pause();
-            count_before = _suspend_count;
-        }
-        if (count_before == 1)
-        {
-            for (auto w: _workers)
-            {
-                w->unsuspend_if_suspended();
-            }
-        }
-    }
-    
-    void suspend_if_suspendable()
-    {
-        if (__sync_bool_compare_and_swap(&_flags, FLAG_SUSPENDABLE, FLAG_SUSPENDABLE_AND_SUSPENDED))
-        {
-            thread_suspend(pthread_mach_thread_np(_tid));
-        }
-    }
-    
-    void unsuspend_if_suspended()
-    {
-        if (__sync_bool_compare_and_swap(&_flags, FLAG_SUSPENDABLE_AND_SUSPENDED, FLAG_SUSPENDABLE))
-        {
-            thread_resume(pthread_mach_thread_np(_tid));
-        }
-    }
+	
+	volatile static int _suspend_count;
+	
+	static void suspend_all()
+	{
+		int count_before = _suspend_count;
+		while (!__sync_bool_compare_and_swap(&_suspend_count, count_before, count_before+1))
+		{
+			_mm_pause();
+			count_before = _suspend_count;
+		}
+		if (count_before == 0)
+		{
+			for (auto w: _workers)
+			{
+				w->suspend_if_suspendable();
+			}
+		}
+	}
+	
+	static void unsuspend_all()
+	{
+		int count_before = _suspend_count;
+		while (!__sync_bool_compare_and_swap(&_suspend_count, count_before, count_before-1))
+		{
+			_mm_pause();
+			count_before = _suspend_count;
+		}
+		if (count_before == 1)
+		{
+			for (auto w: _workers)
+			{
+				w->unsuspend_if_suspended();
+			}
+		}
+	}
+	
+	void suspend_if_suspendable()
+	{
+		if (__sync_bool_compare_and_swap(&_flags, FLAG_SUSPENDABLE, FLAG_SUSPENDABLE_AND_SUSPENDED))
+		{
+			thread_suspend(pthread_mach_thread_np(_tid));
+		}
+	}
+	
+	void unsuspend_if_suspended()
+	{
+		if (__sync_bool_compare_and_swap(&_flags, FLAG_SUSPENDABLE_AND_SUSPENDED, FLAG_SUSPENDABLE))
+		{
+			thread_resume(pthread_mach_thread_np(_tid));
+		}
+	}
 
 public:
 	static void do_job(job *j, bool sync=false, bool critical=false, bool deleteme=true)
@@ -410,7 +410,7 @@ public:
 				printf("waiting on %p\n", j);
 				_job_done.wait(_job_lock);
 			}
-            printf("done %p\n", j);
+			printf("done %p\n", j);
 			delete j;
 		}
 		_job_lock.release();
@@ -432,13 +432,13 @@ private:
 	void critical_thread()
 	{
 		job *cr_j=0;
-        _job_lock.acquire();
+		_job_lock.acquire();
 		while (_running)
 		{
 			if (_critical_jobs.empty())
 			{
 				_cr_job_rdy.wait(_job_lock);
-                continue;
+				continue;
 			}
 
 			cr_j = _critical_jobs.front();
@@ -450,22 +450,22 @@ private:
 			if (cr_j->_deleteme)
 				delete cr_j;
 			cr_j = 0;
-            _job_lock.acquire();
+			_job_lock.acquire();
 			_job_done.signal();
 		}
-        _job_lock.release();
+		_job_lock.release();
 		delete this;
 	}
 
 	void idle_thread()
 	{
 		job *id_j=0;
-        _job_lock.acquire();
+		_job_lock.acquire();
 		while (_running)
 		{
 			if (id_j)
 			{
-                _job_lock.release();
+				_job_lock.release();
 				id_j->step();
 				if (id_j->done)
 				{
@@ -475,25 +475,25 @@ private:
 					id_j = 0;
 					_job_done.signal();
 				}
-                _job_lock.acquire();
+				_job_lock.acquire();
 			}
 			else 
 			{
 				if (_idle_jobs.empty())
 				{
 					_job_rdy.wait(_job_lock);
-                    continue;
+					continue;
 				}
 				id_j = _idle_jobs.front();
 				_idle_jobs.pop();
 				id_j->_worker = this;
 			}
 		}
-        _job_lock.release();
+		_job_lock.release();
 		delete this;
 	}
 
-    static bool _running;
+	static bool _running;
 };
 
 #endif // !defined(LOADER_H)

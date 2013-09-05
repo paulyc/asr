@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #include "util.h"
 
@@ -137,19 +137,19 @@ void buf_copy(char *buf_src, char *buf_dst, int num_items, int item_sz, int stri
 #include <CoreFoundation/CoreFoundation.h>
 std::string CFStringRefToString(CFStringRef ref)
 {
-    const char *cStr = CFStringGetCStringPtr(ref, kCFStringEncodingUTF8);
-    if (!cStr)
-    {
-        CFIndex len = CFStringGetLength(ref);
-        char *buffer = new char[len+1];
-        CFStringGetCString(ref, buffer, len+1, kCFStringEncodingUTF8);
-        std::string s = std::string(buffer);
-        delete [] buffer;
-        return s;
-    }
-    else
-    {
-        return std::string(cStr);
-    }
+	const char *cStr = CFStringGetCStringPtr(ref, kCFStringEncodingUTF8);
+	if (!cStr)
+	{
+		CFIndex len = CFStringGetLength(ref);
+		char *buffer = new char[len+1];
+		CFStringGetCString(ref, buffer, len+1, kCFStringEncodingUTF8);
+		std::string s = std::string(buffer);
+		delete [] buffer;
+		return s;
+	}
+	else
+	{
+		return std::string(cStr);
+	}
 }
 #endif

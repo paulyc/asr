@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _TRACK_H
 #define _TRACK_H
@@ -369,11 +369,11 @@ public:
 
 		_filename = 0;
 	}
-    
-    void analyze()
-    {
-        _detector.analyze();
-    }
+	
+	void analyze()
+	{
+		_detector.analyze();
+	}
 
 	virtual typename T_source<Chunk_T>::pos_info& len()
 	{
@@ -411,7 +411,7 @@ public:
 
 	void set_source_file(std::string filename, CriticalSectionGuard &lock);
 	Chunk_T* next();
-    void load(CriticalSectionGuard *lock=0);
+	void load(CriticalSectionGuard *lock=0);
 
 	bool play_pause(bool pause_monitor=false)
 	{
@@ -459,7 +459,7 @@ public:
 	//	pthread_mutex_lock(&_config_lock);
 		ViewableMixin<Chunk_T>::zoom_px(d);
 		Worker::do_job(new Worker::draw_waveform_job<AudioTrack<Chunk_T> >(this, 0));
-    //	pthread_mutex_unlock(&_config_lock);
+	//	pthread_mutex_unlock(&_config_lock);
 	}
 
 	void move_px(int d)
@@ -479,9 +479,9 @@ public:
 		if (_io->get_ui()->want_render())
 			Worker::do_job(new Worker::draw_waveform_job<AudioTrack<Chunk_T> >(this, 0));
 	}
-    
-    void update_position()
-    {
+	
+	void update_position()
+	{
 		const double tm = this->_resample_filter->get_time();
 		if (tm > this->_cuepoint && _last_time < this->_cuepoint)
 		{
@@ -489,7 +489,7 @@ public:
 		}
 		_last_time = tm;
 		_io->get_ui()->set_position(this, get_display_pos(tm), true);
-    }
+	}
 
 	void deferred_call(deferred *d)
 	{
@@ -537,12 +537,12 @@ public:
 	{
 		SeekableMixin<Chunk_T>::seek_time(d);
 	}
-    
-    void quitting()
-    {
-        delete _future;
-        _future = 0;
-    }
+	
+	void quitting()
+	{
+		delete _future;
+		_future = 0;
+	}
 
 protected:
 	ASIOProcessor *_io;
@@ -559,7 +559,7 @@ protected:
 
 	std::string _filename;
 	bool _pause_monitor;
-    
+	
 private:
 	void set_source_file_impl(std::string filename, CriticalSectionGuard *lock);
 };

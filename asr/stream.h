@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _STREAM_H
 #define _STREAM_H
@@ -227,40 +227,40 @@ template <typename T>
 class VectorSource : public T_source<T>
 {
 public:
-    VectorSource<T>(int sz) : _vec(sz, 0), _readIndx(0), _writeIndx(0) {}
-    ~VectorSource<T>() { for (--_writeIndx; _writeIndx >= 0; --_writeIndx) T_allocator<T>::free(_vec[_writeIndx]); }
-    T *next()
-    {
-        if (_readIndx >= _vec.size())
-        {
-            return zero_source<T>::get()->next();
-        }
-        else
-        {
-            T_allocator<T>::add_refx(_vec[_readIndx]);
-            return _vec[_readIndx++];
-        }
-    }
-    void add(T *t)
-    {
-        T_allocator<T>::add_refx(t);
-        _vec[_writeIndx++] = t;
-    }
-        
-    T* get(int i)
-    {
-        _vec[i]->add_ref();
-        return _vec[i];
-    }
+	VectorSource<T>(int sz) : _vec(sz, 0), _readIndx(0), _writeIndx(0) {}
+	~VectorSource<T>() { for (--_writeIndx; _writeIndx >= 0; --_writeIndx) T_allocator<T>::free(_vec[_writeIndx]); }
+	T *next()
+	{
+		if (_readIndx >= _vec.size())
+		{
+			return zero_source<T>::get()->next();
+		}
+		else
+		{
+			T_allocator<T>::add_refx(_vec[_readIndx]);
+			return _vec[_readIndx++];
+		}
+	}
+	void add(T *t)
+	{
+		T_allocator<T>::add_refx(t);
+		_vec[_writeIndx++] = t;
+	}
+		
+	T* get(int i)
+	{
+		_vec[i]->add_ref();
+		return _vec[i];
+	}
 
-    size_t size() const
-    {
-        return _vec.size();
-    }
+	size_t size() const
+	{
+		return _vec.size();
+	}
 private:
-    std::vector<T*> _vec;
-    int _readIndx;
-    int _writeIndx;
+	std::vector<T*> _vec;
+	int _readIndx;
+	int _writeIndx;
 };
 
 template <typename T>
@@ -300,52 +300,52 @@ template <typename T>
 class IChunkGeneratorCallback
 {
 public:
-    virtual void lock(int id) = 0;
-    virtual void unlock(int id) = 0;
+	virtual void lock(int id) = 0;
+	virtual void unlock(int id) = 0;
 };
 
 template <typename T>
 class IChunkGeneratorLoop
 {
 public:
-    virtual T *get() = 0;
-    virtual void kill() = 0;
+	virtual T *get() = 0;
+	virtual void kill() = 0;
 };
 
 class ChunkGenerator : public IChunkGeneratorCallback<chunk_t>
 {
 public:
-    ChunkGenerator(int bufferSizeFrames, CriticalSectionGuard *ioLock) : _ioLock(ioLock), _lockMask(0)
-    {
-        _chunksToBuffer = bufferSizeFrames / chunk_t::chunk_size;
-        if (bufferSizeFrames % chunk_t::chunk_size > 0)
-            ++_chunksToBuffer;
-    }
-    
-    void AddChunkSource(T_source<chunk_t> *src, int id);
-    chunk_t* GetNextChunk(int streamID);
-    virtual void lock(int id);
-    virtual void unlock(int id);
-    void kill();
+	ChunkGenerator(int bufferSizeFrames, CriticalSectionGuard *ioLock) : _ioLock(ioLock), _lockMask(0)
+	{
+		_chunksToBuffer = bufferSizeFrames / chunk_t::chunk_size;
+		if (bufferSizeFrames % chunk_t::chunk_size > 0)
+			++_chunksToBuffer;
+	}
+	
+	void AddChunkSource(T_source<chunk_t> *src, int id);
+	chunk_t* GetNextChunk(int streamID);
+	virtual void lock(int id);
+	virtual void unlock(int id);
+	void kill();
 private:
-    std::unordered_map<int, IChunkGeneratorLoop<chunk_t>*> _streams;
-    int _chunksToBuffer;
-    Lock_T _lock;
-    CriticalSectionGuard *_ioLock;
-    int _lockMask;
+	std::unordered_map<int, IChunkGeneratorLoop<chunk_t>*> _streams;
+	int _chunksToBuffer;
+	Lock_T _lock;
+	CriticalSectionGuard *_ioLock;
+	int _lockMask;
 };
 
 class BlockingChunkStream : public T_source<chunk_t>
 {
 public:
-    BlockingChunkStream(ChunkGenerator *gen, int streamID) : _gen(gen), _streamID(streamID) {}
-    chunk_t *next()
-    {
-        return _gen->GetNextChunk(_streamID);
-    }
+	BlockingChunkStream(ChunkGenerator *gen, int streamID) : _gen(gen), _streamID(streamID) {}
+	chunk_t *next()
+	{
+		return _gen->GetNextChunk(_streamID);
+	}
 private:
-    ChunkGenerator *_gen;
-    int _streamID;
+	ChunkGenerator *_gen;
+	int _streamID;
 };
 
 template <typename Input_Chunk_T, typename Output_Chunk_T>
@@ -357,7 +357,7 @@ public:
 };
 
 template <int chunk_size>
-class ChunkConverter<chunk_time_domain_1d<SamplePairf, chunk_size>, chunk_time_domain_1d<SamplePairInt16, chunk_size> >  :
+class ChunkConverter<chunk_time_domain_1d<SamplePairf, chunk_size>, chunk_time_domain_1d<SamplePairInt16, chunk_size> >	 :
 public T_source<chunk_time_domain_1d<SamplePairInt16, chunk_size> >,
 public T_sink<chunk_time_domain_1d<SamplePairf, chunk_size> >
 {
@@ -372,7 +372,7 @@ public:
 		float in;
 		output_chunk_t *out_chk = T_allocator<output_chunk_t>::alloc();
 		SamplePairInt16 *out_data = out_chk->_data;
-        
+		
 		for (int i=0; i<chunk_size; ++i)
 		{
 			in = in_data[i][0];
@@ -380,7 +380,7 @@ public:
 				out_data[i][0] = short(fmax(-1.0f, in) * -SHRT_MIN);
 			else
 				out_data[i][0] = short(fmin(1.0f, in) * SHRT_MAX);
-            
+			
 			in = in_data[i][1];
 			if (in < 0.0f)
 				out_data[i][1] = short(fmax(-1.0f, in) * -SHRT_MIN);

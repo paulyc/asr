@@ -29,14 +29,14 @@ typedef unsigned int bits_t;
 typedef unsigned int slot_no_t;
 
 struct slot_t {
-    unsigned int timecode;
-    slot_no_t next; /* next slot with the same hash */
+	unsigned int timecode;
+	slot_no_t next; /* next slot with the same hash */
 };
 
 struct lut_t {
-    struct slot_t *slot;
-    slot_no_t *table, /* hash -> slot lookup */
-        avail; /* next available slot */
+	struct slot_t *slot;
+	slot_no_t *table, /* hash -> slot lookup */
+		avail; /* next available slot */
 };
 
 typedef unsigned int bits_t;
@@ -48,38 +48,38 @@ unsigned int lut_lookup(struct lut_t *lut, unsigned int timecode);
 
 inline bits_t lfsr(bits_t code, bits_t taps)
 {
-    bits_t taken;
-    int xrs;
+	bits_t taken;
+	int xrs;
 
-    taken = code & taps;
-    xrs = 0;
-    while (taken != 0x0) {
-        xrs += taken & 0x1;
-        taken >>= 1;
-    }
+	taken = code & taps;
+	xrs = 0;
+	while (taken != 0x0) {
+		xrs += taken & 0x1;
+		taken >>= 1;
+	}
 
-    return xrs & 0x1;
+	return xrs & 0x1;
 }
 
 inline bits_t fwd(bits_t current)
 {
-    bits_t l;
+	bits_t l;
 
-    /* New bits are added at the MSB; shift right by one */
+	/* New bits are added at the MSB; shift right by one */
 
-    l = lfsr(current, 0x041040 | 0x1);
-    return (current >> 1) | (l << (23 - 1));
+	l = lfsr(current, 0x041040 | 0x1);
+	return (current >> 1) | (l << (23 - 1));
 }
 
 inline bits_t rev(bits_t current)
 {
-    bits_t l, mask;
+	bits_t l, mask;
 
-    /* New bits are added at the LSB; shift left one and mask */
+	/* New bits are added at the LSB; shift left one and mask */
 
-    mask = (1 << 23) - 1;
-    l = lfsr(current, (0x041040 >> 1) | (0x1 << (23 - 1)));
-    return ((current << 1) & mask) | l;
+	mask = (1 << 23) - 1;
+	l = lfsr(current, (0x041040 >> 1) | (0x1 << (23 - 1)));
+	return ((current << 1) & mask) | l;
 }
 
 template <typename Sample_T, typename Chunk_T, int chunk_size, int fft_size=1024>
@@ -483,7 +483,7 @@ public:
 
 				if (r >= 0) {
 				//if (when)
-				//    *when = tc->timecode_ticker * tc->dt;
+				//	  *when = tc->timecode_ticker * tc->dt;
 				//return r;
 				//	printf("valid %d\n", _valid_counter);
 					if (_valid_counter > 23)

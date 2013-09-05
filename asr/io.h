@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _IO_H
 #define _IO_H
@@ -48,30 +48,30 @@ class AudioTrack;
 class chunk_file_writer : public Worker::job
 {
 public:
-    chunk_file_writer(CoreAudioInput *src, const char *filename) : _src(src)
-    {
-        _f = fopen(filename, "wb");
-    }
-    virtual ~chunk_file_writer()
-    {
-        fclose(_f);
-    }
-    virtual void do_it()
-    {
-        chunk_t *chk = 0;
-        while ((chk = _src->next()) != 0)
-        {
-            fwrite(chk->_data, sizeof(typename chunk_t::sample_t), chunk_t::chunk_size, _f);
-            T_allocator<chunk_t>::free(chk);
-        }
-        done = true;
-        delete _src;
-    }
-    virtual void step(){ do_it(); }
-    void stop() { _src->stop(); }
+	chunk_file_writer(CoreAudioInput *src, const char *filename) : _src(src)
+	{
+		_f = fopen(filename, "wb");
+	}
+	virtual ~chunk_file_writer()
+	{
+		fclose(_f);
+	}
+	virtual void do_it()
+	{
+		chunk_t *chk = 0;
+		while ((chk = _src->next()) != 0)
+		{
+			fwrite(chk->_data, sizeof(typename chunk_t::sample_t), chunk_t::chunk_size, _f);
+			T_allocator<chunk_t>::free(chk);
+		}
+		done = true;
+		delete _src;
+	}
+	virtual void step(){ do_it(); }
+	void stop() { _src->stop(); }
 private:
-    CoreAudioInput *_src;
-    FILE *_f;
+	CoreAudioInput *_src;
+	FILE *_f;
 };
 
 class ASIOProcessor
@@ -122,7 +122,7 @@ public:
 	{
 #if 1
 	//	_io_lock.acquire();
-        _io_lock.enter();
+		_io_lock.enter();
 		if (o==Main)
 		{
 			switch (s)
@@ -158,10 +158,10 @@ public:
 					break;
 			}
 		}
-        _io_lock.leave();
+		_io_lock.leave();
 	//	_io_lock.release();
 #else
-        throw std::exception();
+		throw std::exception();
 #endif
 	}
 
@@ -242,15 +242,15 @@ public: // was protected
 	GenericUI *_ui;
 
 	//Lock_T _io_lock;
-    CriticalSectionGuard _io_lock;
+	CriticalSectionGuard _io_lock;
 	Condition_T _do_gen;
 	Condition_T _gen_done;
 	bool _finishing;
 	pthread_t _gen_th;
-    bool _need_buffers;
+	bool _need_buffers;
 
-    IAudioDevice *_device;
-    IAudioDevice *_inputDevice;
+	IAudioDevice *_device;
+	IAudioDevice *_inputDevice;
 	bool _sync_cue;
 
 	bool _waiting;
@@ -258,18 +258,18 @@ public: // was protected
 	IMIDIController *_midi_controller;
 public:
 	FilterController<resampling_filter_td<chunk_t, double> > *_filter_controller;
-    
-    IAudioStream *_inputStream;
-    IAudioStream *_outputStream;
-    
-    CoreAudioInput *_input;
-    CoreAudioInputProcessor *_inputStreamProcessor;
-    CoreAudioOutputProcessor *_outputStreamProcessor;
-    CoreMIDIClient _client;
-    
-    ChunkGenerator *_gen;
-    gain<T_source<chunk_t> > *_gain1, *_gain2;
-    chunk_file_writer *_fileWriter;
+	
+	IAudioStream *_inputStream;
+	IAudioStream *_outputStream;
+	
+	CoreAudioInput *_input;
+	CoreAudioInputProcessor *_inputStreamProcessor;
+	CoreAudioOutputProcessor *_outputStreamProcessor;
+	CoreMIDIClient _client;
+	
+	ChunkGenerator *_gen;
+	gain<T_source<chunk_t> > *_gain1, *_gain2;
+	chunk_file_writer *_fileWriter;
 };
 
 #endif // !defined(_IO_H)

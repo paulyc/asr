@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _CHUNK_H
 #define _CHUNK_H
@@ -59,7 +59,7 @@ class chunk_base : public countable
 {
 public:
 	chunk_base(Sample_T *input=0) :
-	    countable(),
+		countable(),
 		_data(input)
 	{
 	}
@@ -120,8 +120,8 @@ protected:
 	void copy_from_chunk_transform(chunk_base_domain<Sample_T> *chk, int sign=FFTW_FORWARD)
 	{
 		//	fftwf_execute_dft_r2c(
-     //     const fftw_plan p,
-     //     double *in, fftw_complex *out);
+	 //		const fftw_plan p,
+	 //		double *in, fftw_complex *out);
 	}
 
 	void copy_from_chunk_direct(chunk_base_domain<Sample_T> *chk)
@@ -373,7 +373,7 @@ public:
 			val = *(uint16_t*)buf;
 			val = ntohs(val);
 			buf += 2;
-			this->_data[r][1] =  (float)(((int16_t)val) * multiplier);
+			this->_data[r][1] =	 (float)(((int16_t)val) * multiplier);
 		}
 	}
 

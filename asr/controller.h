@@ -1,5 +1,5 @@
 // ASR - Digital Signal Processor
-// Copyright (C) 2002-2013  Paul Ciarlo <paul.ciarlo@gmail.com>
+// Copyright (C) 2002-2013	Paul Ciarlo <paul.ciarlo@gmail.com>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -8,11 +8,11 @@
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _CONTROLLER_H
 #define _CONTROLLER_H
@@ -128,11 +128,11 @@ public:
 		if (backward)
 			_tracks[channel]->seek_time(0.0);
 	}
-    
-    virtual void HandleSwitchTrack(int track)
-    {
-        printf("track is %d\n", track);
-    }
+	
+	virtual void HandleSwitchTrack(int track)
+	{
+		printf("track is %d\n", track);
+	}
 
 	struct ControlEvent
 	{
@@ -140,7 +140,7 @@ public:
 		float64_t time;
 		float64_t fparam1;
 		float64_t fparam2;
-		int32_t   iparam;
+		int32_t	  iparam;
 	};
 	const static int MAX_EVENTS_PER_CHANNEL = 0x1000;
 	const static int NUM_CHANNELS = 10;
