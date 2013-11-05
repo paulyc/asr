@@ -37,9 +37,10 @@
 #include "speedparser.h"
 #include "wavformdisplay.h"
 #include "worker.h"
-#include "AudioDevice.h"
 
-class ASIOProcessor;
+#include "ioconfig.h"
+
+class IOProcessor;
 class GenericUI;
 class IMIDIDevice;
 template <typename T>
@@ -74,12 +75,12 @@ private:
 	FILE *_f;
 };
 
-class ASIOProcessor
+class IOProcessor : public IOConfig
 {
 public:
 	
-	ASIOProcessor();
-	virtual ~ASIOProcessor();
+	IOProcessor();
+	virtual ~IOProcessor() throw();
 
 public:
 	void Start();
@@ -209,7 +210,7 @@ public:
 
 public: // was protected
 	void Init();
-	void Reconfig();
+	void configure();
 	void Destroy();
 	void Finish();
 
@@ -249,8 +250,6 @@ public: // was protected
 	pthread_t _gen_th;
 	bool _need_buffers;
 
-	IAudioDevice *_device;
-	IAudioDevice *_inputDevice;
 	bool _sync_cue;
 
 	bool _waiting;
@@ -258,9 +257,6 @@ public: // was protected
 	IMIDIController *_midi_controller;
 public:
 	FilterController<resampling_filter_td<chunk_t, double> > *_filter_controller;
-	
-	IAudioStream *_inputStream;
-	IAudioStream *_outputStream;
 	
 	CoreAudioInput *_input;
 	CoreAudioInputProcessor *_inputStreamProcessor;

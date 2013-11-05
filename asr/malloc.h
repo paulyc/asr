@@ -182,7 +182,12 @@ class T_allocator
 protected:
 	T_allocator(){}
 	static std::queue<T*> _T_queue;
-	static FastUserSpinLock _lock;
+#if IOS
+	typedef PthreadLock Lock_T;
+#else
+	typedef FastUserSpinLock Lock_T;
+#endif
+	static Lock_T _lock;
 #if DEBUG_ALLOCATOR
 	struct t_info
 	{
@@ -428,7 +433,7 @@ template <typename T>
 std::queue<T*> T_allocator<T>::_T_queue;
 
 template <typename T>
-FastUserSpinLock T_allocator<T>::_lock;
+typename T_allocator<T>::Lock_T T_allocator<T>::_lock;
 
 //template <typename T>
 //std::queue<T*> T_allocator<T>::_T_queue;

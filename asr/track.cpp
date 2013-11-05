@@ -47,7 +47,7 @@ void BufferedSource<Chunk_T>::create(const char *filename, CriticalSectionGuard 
 }
 
 template <typename Chunk_T>
-AudioTrack<Chunk_T>::AudioTrack(ASIOProcessor *io, int track_id, const char *filename) :
+AudioTrack<Chunk_T>::AudioTrack(IOProcessor *io, int track_id, const char *filename) :
 _io(io),
 _in_config(false),
 _paused(true),
@@ -173,7 +173,7 @@ void AudioTrack<Chunk_T>::load(CriticalSectionGuard *lock)
 	this->_display->set_left(0.0);
 	this->_display->set_wav_heights(lock);
 	
-	this->_detector.reset_source(this->_src_buf, lock);
+	//this->_detector.reset_source(this->_src_buf, lock);
 	
 	_loading_lock.acquire();
 	_loaded = true;

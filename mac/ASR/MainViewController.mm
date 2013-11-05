@@ -16,6 +16,7 @@
 
 #import "AppDelegate.h"
 #import "MainViewController.h"
+#import "PrefsViewController.h"
 #import "../../asr/ui.h"
 
 @interface MainViewController ()
@@ -78,6 +79,12 @@
 - (BOOL)track1Active
 {
     return YES;
+}
+
+- (void)showPrefs
+{
+	//AppDelegate *del = [NSApp delegate];
+	[[PrefsViewController alloc] initWithNibName:@"PrefsWindow" bundle:nil];
 }
 
 @end

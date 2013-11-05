@@ -21,7 +21,7 @@
 #include "io.h"
 #include "future.h"
 
-class ASIOProcessor;
+class IOProcessor;
 class GenericUI;
 
 #ifndef WIN32
@@ -54,15 +54,15 @@ struct UIWavform
 	bool mouseover;
 };
 
-struct UIButton
+struct MyUIButton
 {
-	UIButton(GenericUI *ui);
+	MyUIButton(GenericUI *ui);
 	functor1<GenericUI, int> callback;
 };
 
-struct UIText
+struct MyUIText
 {
-	UIText(GenericUI *ui, int i);
+	MyUIText(GenericUI *ui, int i);
 	void set_text(const char *txt, bool del=true);
 	void set_text_pct(double v);
 	void set_text_db(double db);
@@ -83,9 +83,9 @@ struct UITrack
 	int id;
 	double coarse_val;
 	double fine_val;
-	UIText filename;
-	UIText pitch;
-	UIText gain;
+	MyUIText filename;
+	MyUIText pitch;
+	MyUIText gain;
 	bool clip;
 	bool dirty;
 	bool vinyl_control;
@@ -93,7 +93,7 @@ struct UITrack
 	bool add_pitch;
 };
 
-struct UISlider
+struct MyUISlider
 {
 	virtual void set_pos(double p) = 0;
 };
@@ -101,7 +101,7 @@ struct UISlider
 class GenericUI
 {
 public:
-	GenericUI(ASIOProcessor *io, UITrack t1, UITrack t2);
+	GenericUI(IOProcessor *io, UITrack t1, UITrack t2);
 	virtual ~GenericUI() {}
 
 	virtual void create() = 0;
@@ -176,7 +176,7 @@ public:
 	double get_track_pitch(int track_id) { return get_track(track_id).get_pitch(); }
 	virtual void play_pause(int trackid) { }
 	//protected:
-	ASIOProcessor *_io;
+	IOProcessor *_io;
 	int _lastx, _lasty;
 	UITrack _track1;
 	UITrack _track2;
@@ -192,7 +192,7 @@ public:
 class OpenGLUI : public GenericUI
 {
 public:
-	OpenGLUI(ASIOProcessor *io);
+	OpenGLUI(IOProcessor *io);
 	virtual void create();
 	virtual void destroy();
 	virtual void main_loop();
@@ -215,7 +215,7 @@ public:
 //	HACCEL	_accelTable;
 
 private:
-	static ASIOProcessor *_io;
+	static IOProcessor *_io;
 	void set_text_field_impl(int id, const wchar_t *txt, bool del);
 	void set_clip_impl(int t_id);
 	void render_impl(int t_id);
@@ -225,7 +225,7 @@ private:
 class CommandlineUI : public GenericUI
 {
 public:
-	CommandlineUI(ASIOProcessor *io) :
+	CommandlineUI(IOProcessor *io) :
 		GenericUI(io,
 			  UITrack(this, 1, 1, 2, 3),
 			  UITrack(this, 2, 4, 5, 6))
@@ -248,6 +248,10 @@ public:
 #if MAC
 
 #include "ui_cocoa.hpp"
+
+#if IOS
+#include "ui_ios.hpp"
+#endif // IOS
 
 #endif // MAC
 

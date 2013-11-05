@@ -22,7 +22,12 @@
 
 #include "config.h"
 
+#if IOS
+#include <CoreAudio/CoreAudioTypes.h>
+#include <AudioToolbox/AudioToolbox.h>
+#else
 #include <CoreAudio/CoreAudio.h>
+#endif
 
 #include "type.h"
 #include "stream.h"
@@ -59,9 +64,10 @@ class IAudioStreamDescriptor
 {
 public:
 	enum StreamType		 { Input, Output };
-	enum SampleType		 { SignedInt, UnsignedInt, Float };
+	enum SampleType		 { SignedInt, UnsignedInt, Float, Unknown };
 	enum SampleAlignment { LeastSignificant, MostSignificant };
 	
+	virtual IAudioDevice*   GetDevice() const = 0;
 	virtual StreamType		GetStreamType() const = 0;
 	virtual int				GetNumChannels() const = 0;
 	virtual SampleType		GetSampleType() const = 0;
@@ -308,6 +314,103 @@ private:
 	std::vector<MacAudioDriverDescriptor> _drivers;
 };
 
+#if IOS
+
+class iOSAudioStreamDescriptor : public IAudioStreamDescriptor
+{
+public:
+	virtual int				GetNumChannels() const { return _format.mChannelsPerFrame; }
+	virtual SampleType		GetSampleType() const { return SignedInt; }
+	virtual int				GetSampleSizeInBits() const { return _format.mBitsPerChannel; }
+	virtual int				GetSampleWordSizeInBytes() const { return sizeof(AudioSampleType); }
+	virtual SampleAlignment GetSampleAlignment() const { return LeastSignificant; }
+	virtual float64_t		GetSampleRate() const { return _format.mSampleRate; }
+	
+	virtual IAudioStream   *GetStream() const;
+	
+	const AudioStreamBasicDescription* GetStreamDescription() const { return &_format; }
+	
+	const AudioStreamBasicDescription _format = {
+		.mSampleRate       = 44100.0,
+		.mFormatID         = kAudioFormatLinearPCM,
+		.mFormatFlags      = kAudioFormatFlagsCanonical, //  kAudioFormatFlagIsSignedInteger | kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsPacked,
+		.mBytesPerPacket   = 2 * sizeof (AudioSampleType),
+		.mFramesPerPacket  = 1,
+		.mBytesPerFrame    = 2 * sizeof (AudioSampleType),
+		.mChannelsPerFrame = 2,
+		.mBitsPerChannel   = 8 * sizeof (AudioSampleType),
+		.mReserved         = 0
+	};
+};
+
+class iOSAudioOutputStreamDescriptor : public iOSAudioStreamDescriptor
+{
+public:
+	virtual StreamType GetStreamType() const { return Output; }
+};
+
+class iOSAudioOutputStream : public IAudioStream
+{
+public:
+	iOSAudioOutputStream(const iOSAudioOutputStreamDescriptor &desc) : _desc(desc), _q(NULL)
+	{
+		if (AudioQueueNewOutput(desc.GetStreamDescription(), _bufferCallback, (void*)this, CFRunLoopGetCurrent(), kCFRunLoopCommonModes, 0, &_q) != noErr)
+		{
+			throw std::runtime_error("AudioQueueNewOutput failed");
+		}
+	}
+	
+	virtual ~iOSAudioOutputStream()
+	{
+		if (_q)
+			AudioQueueDispose(_q, true);
+	}
+	
+	virtual const IAudioStreamDescriptor *GetDescriptor() const { return &_desc; }
+	virtual void SetProc(IAudioStreamProcessor *proc) {}
+	
+	virtual void Start() {}
+	virtual void Stop() {}
+private:
+	static void _bufferCallback(void *                  inUserData,
+								AudioQueueRef           inAQ,
+								AudioQueueBufferRef     inCompleteAQBuffer);
+	
+	const iOSAudioOutputStreamDescriptor &_desc;
+	
+	AudioQueueRef _q;
+};
+
+class iOSAudioDevice : public IAudioDevice
+{
+public:
+	iOSAudioDevice(const IAudioDeviceDescriptor &desc) : _desc(desc) {}
+	
+	virtual const IAudioDeviceDescriptor *GetDescriptor() const { return &_desc; }
+	virtual std::vector<const IAudioStreamDescriptor*> GetStreams() const {
+		std::vector<const IAudioStreamDescriptor*> streams;
+		streams.push_back(&_streamDesc);
+		return streams;
+	}
+	virtual void RegisterStream(IAudioStream *stream) {}
+	
+	virtual void Start() {}
+	virtual void Stop() {}
+private:
+	const IAudioDeviceDescriptor &_desc;
+	iOSAudioOutputStreamDescriptor _streamDesc;
+};
+
+class iOSAudioDeviceDescriptor : public IAudioDeviceDescriptor
+{
+public:
+	virtual std::string GetName() const { return "iOSAudioDevice"; }
+	virtual IAudioDevice *Instantiate() const { return new iOSAudioDevice(*this); }
+	virtual uint32_t GetBufferSizeFrames() const { return 0; }
+};
+
+#else
+
 class CoreAudioDeviceDescriptor : public IAudioDeviceDescriptor
 {
 public:
@@ -378,6 +481,7 @@ public:
 	{
 	}
 	
+	virtual IAudioDevice*   GetDevice() const;
 	virtual StreamType		GetStreamType() const { return _type; }
 	virtual int				GetNumChannels() const { return _nChannels; }
 	virtual SampleType		GetSampleType() const { return _sampleType; }
@@ -446,5 +550,7 @@ private:
 	AudioDeviceIOProcID _procID;
 	CoreAudioDevice *_device;
 };
+
+#endif // !IOS
 
 #endif /* defined(__mac__AudioDevice__) */

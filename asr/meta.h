@@ -63,7 +63,7 @@ public:
 		return _src->len();
 	}
 
-	void load_metadata(CriticalSectionGuard *lock, ASIOProcessor *io)
+	void load_metadata(CriticalSectionGuard *lock, IOProcessor *io)
 	{
 		for (int chk_ofs=0; chk_ofs < _src->len().chunks; ++chk_ofs)
 		{

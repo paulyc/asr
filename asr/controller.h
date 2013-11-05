@@ -25,12 +25,12 @@
 class MagicController
 {
 public:
-	MagicController(ASIOProcessor *io) : _io(io), _magic_count(-1) {}
+	MagicController(IOProcessor *io) : _io(io), _magic_count(-1) {}
 	
 	void do_magic();
 	void next_time(double t, int t_id);
 protected:
-	ASIOProcessor *_io;
+	IOProcessor *_io;
 	int _magic_count;
 	double _magic_times[4];
 	int _first_track;
@@ -51,7 +51,7 @@ template <typename Filter_T>
 class FilterController : public IControlListener
 {
 public:
-//	FilterController(ASIOProcessor *io) : _io(io) {}
+//	FilterController(IOProcessor *io) : _io(io) {}
 	FilterController(ITrackController *t1, ITrackController *t2)
 	{
 		_tracks[0] = t1;
@@ -172,7 +172,7 @@ private:
 		int numEvents;
 	};
 	ControlChannel _channels[NUM_CHANNELS];
-//	ASIOProcessor *_io;
+//	IOProcessor *_io;
 	PthreadLock _lock;
 
 	ITrackController *_tracks[2];

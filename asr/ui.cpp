@@ -21,12 +21,12 @@
 
 #include <cstdio>
 
-typedef ASIOProcessor ASIOP;
+typedef IOProcessor ASIOP;
 //extern ASIOP * asio;
 typedef ASIOP::track_t track_t;
 //extern GenericUI *ui;
 
-GenericUI::GenericUI(ASIOProcessor *io, UITrack t1, UITrack t2) :
+GenericUI::GenericUI(IOProcessor *io, UITrack t1, UITrack t2) :
 	_io(io),
 	_track1(t1),
 	_track2(t2),
@@ -287,23 +287,23 @@ double UITrack::get_pitch()
 	return 48000.0 / (coarse_val+fine_val) - 1.0;
 }
 
-UIText::UIText(GenericUI *ui, int i) : _ui(ui), id(i)
+MyUIText::MyUIText(GenericUI *ui, int i) : _ui(ui), id(i)
 {
 }
 
-void UIText::set_text(const char *txt, bool del)
+void MyUIText::set_text(const char *txt, bool del)
 {
 	_ui->set_text_field(id, txt, del);
 }
 
-void UIText::set_text_pct(double pct)
+void MyUIText::set_text_pct(double pct)
 {
 	char *buf = new char[32];
 	snprintf(buf, 32, "%.02f%%", pct);
 	set_text(buf);
 }
 
-void UIText::set_text_db(double db)
+void MyUIText::set_text_db(double db)
 {
 	char *buf = new char[64];
 	snprintf(buf, 64, "%.02f dB", db);

@@ -15,9 +15,12 @@
 // along with this program.	 If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
-#include <emmintrin.h>
 
 #include "config.h"
+
+#if PLATFORM_X86
+#include <emmintrin.h>
+#endif
 
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -52,7 +55,7 @@ typable(double)
 
 ASR::ASR(int argc, char **argv)
 {
-	_asio = new ASIOProcessor;
+	_asio = new IOProcessor;
 #if OPENGL_ENABLED
 	_ui = new OpenGLUI(_asio, argc, argv);
 #elif MAC
@@ -64,7 +67,7 @@ ASR::ASR(int argc, char **argv)
 
 ASR::ASR(GenericUI *ui) : _ui(ui)
 {
-	_asio = new ASIOProcessor;
+	_asio = new IOProcessor;
 	_ui->_io = _asio;
 }
 

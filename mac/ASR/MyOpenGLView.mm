@@ -19,6 +19,8 @@
 #import "../../asr/ui.h"
 #import "../../asr/track.h"
 
+#include <GLUT/GLUT.h>
+
 @implementation MyOpenGLView
 
 - (id)initWithFrame:(NSRect)frame

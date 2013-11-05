@@ -39,7 +39,7 @@ void ChunkGenerator::lock(int id)
 {
    // _ioLock->enter();
 	T_allocator<chunk_t>::lock();
-	Worker::suspend_all();
+//	Worker::suspend_all();
 	T_allocator<chunk_t>::unlock();
 }
 
@@ -47,7 +47,7 @@ void ChunkGenerator::unlock(int id)
 {
    // _ioLock->leave();
 	T_allocator<chunk_t>::lock();
-	Worker::unsuspend_all();
+//	Worker::unsuspend_all();
 	T_allocator<chunk_t>::unlock();
 }
 

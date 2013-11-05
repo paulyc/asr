@@ -26,5 +26,6 @@
 - (BOOL)track1Active;
 - (void)playTrack1;
 - (void)playTrack2;
+- (void)showPrefs;
 
 @end

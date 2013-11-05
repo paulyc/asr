@@ -16,13 +16,20 @@
 
 #include "ui.h"
 
+#if IOS
+#include <UIKit/UIKit.h>
+#else
 #include <AppKit/AppKit.h>
-#include <cstdio>
-
 #include "../mac/ASR/AppDelegate.h"
 #include "../mac/ASR/MyOpenGLView.h"
+#include <GLUT/GLUT.h>
+#endif
+
+#include <cstdio>
+
 #include "track.h"
 
+#if !IOS
 bool FileOpenDialog::OpenSingleFile(std::string &filename)
 {
 	NSOpenPanel* openDlg = [NSOpenPanel openPanel];
@@ -45,6 +52,7 @@ bool FileOpenDialog::OpenSingleFile(std::string &filename)
 	}
 	return false;
 }
+#endif // !IOS
 
 void CocoaUI::mouse_down(MouseButton b, int x, int y, int trackid)
 {
@@ -200,6 +208,7 @@ void CocoaUI::play_pause(int trackid)
 	_io->GetTrack(trackid)->play_pause();
 }
 
+#if !IOS
 void CocoaUI::render(int trackid)
 {
 	AppDelegate *del = [NSApp delegate];
@@ -224,7 +233,7 @@ void CocoaUI::render_impl(int trackid)
 	const int width = rect.size.width;
 	const double unit = 1.0 / width;
 	
-	ASIOProcessor::track_t *track = _io->GetTrack(trackid);
+	IOProcessor::track_t *track = _io->GetTrack(trackid);
 	UITrack *uit;
 	if (trackid==1)
 		uit = &_track1;
@@ -257,7 +266,7 @@ void CocoaUI::render_impl(int trackid)
 	double x = unit / 2.0;
 	for (int p=0; p<width; ++p)
 	{
-		const ASIOProcessor::track_t::display_t::wav_height &h =
+		const IOProcessor::track_t::display_t::wav_height &h =
 		track->get_wav_height(p);
 		double px_pk = 0.5-h.peak_top/2;
 		double px_avg_top = 0.5-h.avg_top/2;
@@ -334,3 +343,4 @@ void CocoaUI::render_impl(int trackid)
 	glFlush();
 	glSwapAPPLE();
 }
+#endif // !IOS

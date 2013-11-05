@@ -7,9 +7,19 @@
 		<key>ASR release.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>3</integer>
+			<integer>0</integer>
 		</dict>
 		<key>ASR.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+		<key>asr.ios.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
+		<key>asr.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>2</integer>
@@ -23,6 +33,26 @@
 			<true/>
 		</dict>
 		<key>5F1F0F22173C9F3100DEA888</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>5F28459518178998004C3341</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>5F2845BA18178999004C3341</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>5F391FA018112D8400FB5F8A</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>5F391FC818112D8500FB5F8A</key>
 		<dict>
 			<key>primary</key>
 			<true/>

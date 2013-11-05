@@ -18,7 +18,7 @@
 
 #if OPENGL_ENABLED
 
-OpenGLUI::OpenGLUI(ASIOProcessor *io, int argc, char **argv) : _io(io)
+OpenGLUI::OpenGLUI(IOProcessor *io, int argc, char **argv) : _io(io)
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);

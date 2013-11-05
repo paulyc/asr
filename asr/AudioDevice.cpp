@@ -17,7 +17,12 @@
 #include "AudioDevice.h"
 
 #include <math.h>
+#if IOS
+#include <CoreAudio/CoreAudioTypes.h>
+#else
 #include <CoreAudio/CoreAudio.h>
+#endif
+
 
 SineAudioOutputProcessor::SineAudioOutputProcessor(float32_t frequency, const IAudioStreamDescriptor *streamDesc) :
 	_frequency(frequency),
@@ -39,6 +44,15 @@ void SineAudioOutputProcessor::ProcessOutput(IAudioBuffer *buffer)
 		_time += 1.0 / _sampleRate;
 	}
 }
+
+#if IOS
+
+IAudioStream *iOSAudioOutputStreamDescriptor::GetStream() const
+{
+	return new iOSAudioOutputStream(*this);
+}
+
+#endif // IOS
 
 CoreAudioInput::CoreAudioInput(int id, int ch1ofs, int ch2ofs) :
 _id(id),
@@ -377,6 +391,11 @@ void CoreAudioDevice::Stop()
 	{
 		(*i)->Stop();
 	}
+}
+
+IAudioDevice *CoreAudioStreamDescriptor::GetDevice() const
+{
+	return _device;
 }
 
 IAudioStream *CoreAudioStreamDescriptor::GetStream() const

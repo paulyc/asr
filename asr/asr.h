@@ -51,7 +51,7 @@
 #include "stream.h"
 #include "midi.h"
 
-class ASIOProcessor;
+class IOProcessor;
 class GenericUI;
 
 class ASR
@@ -66,7 +66,7 @@ public:
 	void finish();
 
 private:
-	ASIOProcessor *_asio;
+	IOProcessor *_asio;
 	GenericUI *_ui;
 };
 

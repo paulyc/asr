@@ -241,7 +241,7 @@ public:
 
 	virtual void lock() = 0;
 	virtual void unlock() = 0;
-	//virtual ASIOProcessor *get_io() const = 0;
+	//virtual IOProcessor *get_io() const = 0;
 
 	void create(BufferedStream<Chunk_T> *src)
 	{
@@ -283,11 +283,8 @@ public:
 	void set_display_width(int width)
 	{
 	//	pthread_mutex_lock(&_config_lock);
-//#if USE_NEW_WAVE
 		_display_width = width;
-//#else
 		_display->set_width(width);
-//#endif
 	//	pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -353,7 +350,7 @@ public:
 
 	void create(const char *filename, CriticalSectionGuard *lock);
 
-//	void createZero(ASIOProcessor *io)
+//	void createZero(IOProcessor *io)
 //	{
 //		_src = zero_source<Chunk_T>::get();
 //		_src_buf = new BufferedStream<Chunk_T>(io, _src);
@@ -406,7 +403,7 @@ public:
 	using SeekableMixin<Chunk_T>::goto_cuepoint;
 	using SeekableMixin<Chunk_T>::seek_time;
 
-	AudioTrack(ASIOProcessor *io, int track_id, const char *filename);
+	AudioTrack(IOProcessor *io, int track_id, const char *filename);
 	virtual ~AudioTrack();
 
 	void set_source_file(std::string filename, CriticalSectionGuard &lock);
@@ -545,7 +542,7 @@ public:
 	}
 
 protected:
-	ASIOProcessor *_io;
+	IOProcessor *_io;
 	bool _in_config;
 	bool _paused;
 	bool _loaded;

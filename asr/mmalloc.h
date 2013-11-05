@@ -93,7 +93,7 @@ public:
 			node *n = tbl[i];
 			while (n)
 			{
-				printf("%p allocated %s:%d bytes %d\n", n->it,
+				printf("%p allocated %s:%d bytes %zu\n", n->it,
 				   n->info.file,
 				   n->info.line,
 				   n->info.bytes);

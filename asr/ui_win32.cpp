@@ -19,7 +19,7 @@
 
 #include <cstdio>
 
-typedef ASIOProcessor ASIOP;
+typedef IOProcessor ASIOP;
 typedef ASIOP::track_t track_t;
 
 #if WINDOWS
@@ -45,7 +45,7 @@ INT_PTR CALLBACK Win32UI::MyDialogProc(HWND hwndDlg,
 	LPARAM lParam
 )
 {
-	ASIOProcessor *asio = _io;
+	IOProcessor *asio = _io;
 	Win32UI *ui = dynamic_cast<Win32UI*>(asio->get_ui());
 
 	switch (uMsg)
@@ -421,7 +421,7 @@ LRESULT CALLBACK CustomWndProc(HWND hwnd,
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-Win32UI::Win32UI(ASIOProcessor *io) :
+Win32UI::Win32UI(IOProcessor *io) :
 	GenericUI(io, 
 		UITrack(this, 1, IDC_EDIT1, IDC_EDIT3, IDC_EDIT5), 
 		UITrack(this, 2, IDC_EDIT2, IDC_EDIT4, IDC_EDIT6)),
@@ -568,10 +568,8 @@ void Win32UI::create()
 	SendMessage(GetDlgItem(g_dlg, IDC_RADIO1), BM_SETCHECK, BST_CHECKED, 0);
 	SendMessage(GetDlgItem(g_dlg, IDC_RADIO5), BM_SETCHECK, BST_CHECKED, 0);
 
-	//#if USE_NEW_WAVE
 	_io->GetTrack(1)->set_display_width(_track1.wave.width());
 	_io->GetTrack(2)->set_display_width(_track2.wave.width());
-//#endif
 
 	br = CreateSolidBrush(RGB(255,255,255));
 	pen_dk = CreatePen(PS_SOLID, 1, RGB(0,0,255));

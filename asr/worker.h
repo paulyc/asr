@@ -336,7 +336,7 @@ public:
 	}
 	
 	volatile static int _suspend_count;
-	
+#if !IOS
 	static void suspend_all()
 	{
 		int count_before = _suspend_count;
@@ -370,7 +370,7 @@ public:
 			}
 		}
 	}
-	
+#endif
 	void suspend_if_suspendable()
 	{
 		if (__sync_bool_compare_and_swap(&_flags, FLAG_SUSPENDABLE, FLAG_SUSPENDABLE_AND_SUSPENDED))

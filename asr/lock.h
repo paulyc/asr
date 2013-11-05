@@ -20,9 +20,12 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <sched.h>
-#include <emmintrin.h>
 
 #include "config.h"
+
+#if !IOS
+#include <emmintrin.h>
+#endif
 
 #if ONE_CPU
 #define YIELD_IF_1CPU sched_yield();
@@ -182,6 +185,7 @@ protected:
 	pthread_t _owner;
 };
 
+#if !IOS
 class FastUserSpinLock
 {
 public:
@@ -239,6 +243,7 @@ private:
 	int _waiters;
 	sem_t _sem;
 };
+#endif
 
 class CriticalSectionGuard
 {
@@ -268,10 +273,15 @@ public:
 	}
 private:
 	int _criticalCount;
-	FastUserSpinLock _lock;
-	FastUserCondition _wait;
-  //  PthreadLock _lock;
-  //  PthreadCondition _wait;
+#if IOS
+	typedef PthreadLock Lock_T;
+	typedef PthreadCondition Cond_T;
+#else
+	typedef FastUserSpinLock Lock_T;
+	typedef FastUserCondition Cond_T;
+#endif
+	Lock_T _lock;
+	Cond_T _wait;
 };
 
 #if 0

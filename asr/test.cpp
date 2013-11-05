@@ -68,8 +68,8 @@ void testf()
 			tmp[i] = BUFFERSIZE/2 - i;
 			fprintf(output, "%d ", tmp[i]);
 		}
-		fprintf(output, "\ncalling ASIOProcessor::LoadHelp\n");
-		end = ASIOProcessor::LoadHelp(buffer, tmp);
+		fprintf(output, "\ncalling IOProcessor::LoadHelp\n");
+		end = IOProcessor::LoadHelp(buffer, tmp);
 		for (int i=0;i<BUFFERSIZE;++i)
 		{
 			fprintf(output, "%f ", buffer[i]);

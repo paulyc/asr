@@ -27,7 +27,7 @@
 #include "compressor.h"
 #include "track.h"
 
-ASIOProcessor::ASIOProcessor() :
+IOProcessor::IOProcessor() :
 	_running(false),
 	_speed(1.0),
 	//_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
@@ -50,13 +50,9 @@ ASIOProcessor::ASIOProcessor() :
 	_aux(0),
 	_ui(0),
 	_finishing(false),
-	_device(0),
-	_inputDevice(0),
 	_sync_cue(false),
 	_midi_controller(0),
 	_input(0),
-	_inputStream(0),
-	_outputStream(0),
 	_inputStreamProcessor(0),
 	_outputStreamProcessor(0),
 	_client(CFSTR("The MIDI Client")),
@@ -67,60 +63,14 @@ ASIOProcessor::ASIOProcessor() :
 	Init();
 }
 
-ASIOProcessor::~ASIOProcessor()
+IOProcessor::~IOProcessor() throw()
 {
 	Destroy();
 }
 
-void ASIOProcessor::Init()
+void IOProcessor::Init()
 {
-	MacAudioDriverFactory fac;
-	IAudioDeviceFactory *deviceFac = 0;
-	std::vector<const IAudioDriverDescriptor*> drivers = fac.Enumerate();
-	for (std::vector<const IAudioDriverDescriptor*>::iterator i = drivers.begin();
-		 i != drivers.end();
-		 i++)
-	{
-		if ((*i)->GetName() == std::string("CoreAudio"))
-			deviceFac = (*i)->Instantiate();
-	}
-	
-	if (!deviceFac)
-	{
-		throw std::runtime_error("Failed to create CoreAudio device factory");
-	}
-	
-	std::vector<const IAudioDeviceDescriptor*> devices = deviceFac->Enumerate();
-	for (std::vector<const IAudioDeviceDescriptor*>::iterator devIter = devices.begin();
-		 devIter != devices.end();
-		 devIter++)
-	{
-		if ((*devIter)->GetName() == std::string("Saffire"))
-		{
-			_device = (*devIter)->Instantiate();
-		}
-	}
-	if (!_device)
-	{
-		for (std::vector<const IAudioDeviceDescriptor*>::iterator devIter = devices.begin();
-			 devIter != devices.end();
-			 devIter++)
-		{
-			if ((*devIter)->GetName() == std::string("Built-in Output"))
-			{
-				_device = (*devIter)->Instantiate();
-			}
-			if ((*devIter)->GetName() == std::string("Built-in Microphone"))
-			{
-				_inputDevice = (*devIter)->Instantiate();
-			}
-		}
-	}
-	if (!_device)
-	{
-		throw std::runtime_error("Failed to create audio device");
-	}
-	delete deviceFac;
+	configure();
 	
 	_need_buffers = true;
 	
@@ -145,36 +95,22 @@ void ASIOProcessor::Init()
 }
 
 // stop using ui before destroying
-void ASIOProcessor::Finish()
+void IOProcessor::Finish()
 {
 	_finishing = true;
 	if (_running)
 		Stop();
-	
-#if GENERATE_LOOP
-	_do_gen.signal();
-	pthread_join(_gen_th, 0);
-	
-	// something weird with this? go before the last lines?
-	_io_lock.acquire();
-	_gen_done.signal();
-	_io_lock.release();
-#endif
 }
 
-void ASIOProcessor::Destroy()
+void IOProcessor::Destroy()
 {
 	delete _midi_controller;
 	delete _filter_controller;
 	
 	if (_fileWriter) _fileWriter->stop(); // deletes _fileWriter and _input
 	
-	delete _inputStream;
 	delete _inputStreamProcessor;
-	delete _outputStream;
 	delete _outputStreamProcessor;
-	delete _device;
-	delete _inputDevice;
 	
 	delete _my_pk_det;
 	//	delete _my_gain;
@@ -206,7 +142,7 @@ void ASIOProcessor::Destroy()
 #endif
 }
 
-void ASIOProcessor::CreateTracks()
+void IOProcessor::CreateTracks()
 {
 	_tracks.push_back(new AudioTrack<chunk_t>(this, 1, _default_src));
 	_tracks.push_back(new AudioTrack<chunk_t>(this, 2, _default_src));
@@ -223,7 +159,7 @@ void ASIOProcessor::CreateTracks()
 	_gain2 = new gain<T_source<chunk_t> >(_tracks[1]);
 	_gain2->set_gain_db(-1.0);
 	
-	_gen = new ChunkGenerator(_device->GetDescriptor()->GetBufferSizeFrames(), &_io_lock);
+	_gen = new ChunkGenerator(getOutputDevice()->GetDescriptor()->GetBufferSizeFrames(), &_io_lock);
 	_gen->AddChunkSource(_gain1, 1);
 	_gen->AddChunkSource(_gain2, 2);
 	
@@ -240,140 +176,76 @@ void ASIOProcessor::CreateTracks()
 	_master_xfader->set_gain(2, gain);
 	//_aux = new xfader<track_t>(_tracks[0], _tracks[1]);
 	*/
-	
-	
-	std::vector<const IAudioStreamDescriptor*> streams = _device->GetStreams();
-	for (std::vector<const IAudioStreamDescriptor*>::iterator i = streams.begin();
-		 i != streams.end();
-		 i++)
-	{
-		if ((*i)->GetStreamType() == IAudioStreamDescriptor::Input)
-		{
-			_inputStream = (*i)->GetStream();
-		}
-		else
-		{
-			_outputStream = (*i)->GetStream();
-			_outputStreamProcessor = new CoreAudioOutputProcessor(_outputStream->GetDescriptor());
-			_outputStreamProcessor->AddOutput(CoreAudioOutput(_gen, 1, 0, 1));
-			_outputStreamProcessor->AddOutput(CoreAudioOutput(_gen, 2, 2, 3));
-		}
-	}
-#if CARE_ABOUT_INPUT
-	if (!_inputStream && _inputDevice)
-	{
-		streams = _inputDevice->GetStreams();
-		for (std::vector<const IAudioStreamDescriptor*>::iterator i = streams.begin();
-			 i != streams.end();
-			 i++)
-		{
-			if ((*i)->GetStreamType() == IAudioStreamDescriptor::Input)
-			{
-				_inputStream = (*i)->GetStream();
-			}
-		}
-	}
-	
-	if (_inputStream)
-	{
-		_inputStreamProcessor = new CoreAudioInputProcessor(_inputStream->GetDescriptor());
-		_input = new CoreAudioInput(1, _inputDevice ? 0 : 2, _inputDevice ? 1 : 3);
-		_fileWriter = new chunk_file_writer(_input, "output.raw");
-		_inputStreamProcessor->AddInput(_input);
-		Worker::do_job(_fileWriter, false, false);
-		_inputStream->SetProc(_inputStreamProcessor);
-	}
-#endif
-	
-	_outputStream->SetProc(_outputStreamProcessor);
-
-	/*asio_sink<chunk_t, chunk_buffer, int32_t> *main_out = new asio_sink<chunk_t, chunk_buffer, int32_t>(
-		&_main_mgr,
-		_iomgr->getBuffers(2), 
-		_iomgr->getBuffers(3),
-		_iomgr->getBufferSize());
-	_iomgr->addOutput(main_out);
-
-	asio_sink<chunk_t, chunk_buffer, int32_t> *out_2 = new asio_sink<chunk_t, chunk_buffer, int32_t>(
-		&_2_mgr,
-		_iomgr->getBuffers(4), 
-		_iomgr->getBuffers(5),
-		_iomgr->getBufferSize());
-	_iomgr->addOutput(out_2);
-	
-	T_sink<chunk_t> *dummy_sink = new T_sink<chunk_t>(0);
-	asio_source<int32_t, SamplePairf, chunk_t> *input1 = new asio_source<int32_t, SamplePairf, chunk_t>(
-		dummy_sink,
-		_iomgr->getBufferSize(),
-		_iomgr->getBuffers(0),
-		_iomgr->getBuffers(1));
-	_iomgr->addInput(input1);*/
-
-#if !PARALLELS_ASIO
-	/*T_sink<chunk_t> *dummy_sink2 = new T_sink<chunk_t>(input1);
-	asio_source<int32_t, SamplePairf, chunk_t> *input2 = new asio_source<int32_t, SamplePairf, chunk_t>(
-		dummy_sink2,
-		_iomgr->getBufferSize(),
-		_iomgr->getBuffers(6),
-		_iomgr->getBuffers(7));
-	_iomgr->addInput(input2);
-*/
-	//_aux = new ChunkConverter<chunk_t, chunk_time_domain_1d<SamplePairInt16, chunk_t::chunk_size> >(input2);
-#endif
-
-	try {
-	//	_my_gain = new gain<asio_source<short, SamplePairf, chunk_t> >(_my_source);
-	//	_my_gain->set_gain_db(36.0);
-		
-	//	_my_pk_det = new peak_detector<SamplePairf, chunk_t, chunk_t::chunk_size>(input1);
-	//	dummy_sink->set_src(_my_pk_det);
-
-	//	_my_raw_output = new file_raw_output<chunk_t>(_my_pk_det);
-	} catch (std::exception e) {
-		throw e;
-	}
 
 	_main_src = _master_xfader;
 	_file_src = 0;
+}
 
-#if GENERATE_LOOP
-	Worker::do_job(new Worker::callback_th_job<ASIOProcessor>(
-		functor1<ASIOProcessor, pthread_t>(this, &ASIOProcessor::GenerateLoop)),
-		false, true
-	);
+void IOProcessor::configure()
+{
+	auto output1Channel = getChannel(Output1Channel);
+	auto output1Stream = output1Channel.stream;
+	
+	auto output2Channel = getChannel(Output2Channel);
+	auto output2Stream = output2Channel.stream;
+	
+	// should always be an output 1, but not necessarily 2
+	// TODO this is not going to work if output1Stream != output2Stream
+	assert(output1Stream);
+	assert(!output2Stream || output1Stream == output2Stream);
+	
+	_outputStreamProcessor = new CoreAudioOutputProcessor(output1Stream->GetDescriptor());
+	_outputStreamProcessor->AddOutput(CoreAudioOutput(_gen, 1, output1Channel.leftChannelIndex, output1Channel.rightChannelIndex));
+	
+	if (output2Stream)
+	{
+		_outputStreamProcessor->AddOutput(CoreAudioOutput(_gen, 2, output2Channel.leftChannelIndex, output2Channel.rightChannelIndex));
+	}
+	
+	output1Stream->SetProc(_outputStreamProcessor);
+	
+#if CARE_ABOUT_INPUT
+	auto input1Channel = getChannel(Input1Channel);
+	auto input1Stream = input1Channel.stream;
+	
+	if (input1Stream)
+	{
+		_inputStreamProcessor = new CoreAudioInputProcessor(input1Stream->GetDescriptor());
+		_input = new CoreAudioInput(1, input1Channel.leftChannelIndex, input1Channel.rightChannelIndex);
+		_fileWriter = new chunk_file_writer(_input, "output.raw");
+		_inputStreamProcessor->AddInput(_input);
+		Worker::do_job(_fileWriter, false, false);
+		input1Stream->SetProc(_inputStreamProcessor);
+	}
 #endif
 }
 
-void ASIOProcessor::Reconfig()
-{
-}
-
-void ASIOProcessor::Start()
+void IOProcessor::Start()
 {
 	_running = true;
 	_src_active = true;
 	if (_midi_controller)
 		_midi_controller->Start();
-	_device->Start();
-	if (_inputDevice) _inputDevice->Start();
+	getOutputDevice()->Start();
+	if (getInputDevice()) getInputDevice()->Start();
 }
 
-void ASIOProcessor::Stop()
+void IOProcessor::Stop()
 {
 	_running = false;
 	_src_active = false;
 	if (_midi_controller)
 		_midi_controller->Stop();
-	_device->Stop();
-	if (_inputDevice) _inputDevice->Stop();
+	getOutputDevice()->Stop();
+	if (getInputDevice()) getInputDevice()->Stop();
 }
 
-int ASIOProcessor::get_track_id_for_filter(void *filt) const
+int IOProcessor::get_track_id_for_filter(void *filt) const
 {
 	return _tracks[0]->get_source() == filt ? 1 : 2;
 }
 
-void ASIOProcessor::trigger_sync_cue(int caller_id)
+void IOProcessor::trigger_sync_cue(int caller_id)
 {
 	if (_sync_cue)
 	{

@@ -243,7 +243,7 @@ public:
 	Sample_T* get_at_ofs(smp_ofs_t ofs, int n);
 
 protected:
-	ASIOProcessor *_io;
+	IOProcessor *_io;
 	std::vector<Chunk_T*> _chks;
 	smp_ofs_t _chk_ofs;
 	smp_ofs_t _smp_ofs;

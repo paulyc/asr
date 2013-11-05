@@ -18,12 +18,16 @@
 #define _CONFIG_H
 
 #define MAC 1
+#define IOS 0
 #define PPC 0
 #define WINDOWS 0
 #define SGI 0
 #define SUN 0
 #define LINUX 0
 #define BEOS 0
+
+#define PLATFORM_X86 0
+#define PLATFORM_ARM 1
 
 #if MAC
 #define OPENGL_ENABLED 0
@@ -71,13 +75,8 @@
 #define USE_BUFFER_MGR 1
 
 #define DEBUG_ALLOCATOR 0
-#define USE_NEW_WAVE 0
 
 #define TRACE 0
-
-#define ASYNC_GENERATE 0
-
-#define GENERATE_LOOP 0
 
 #define HANDLE_TOPLEVEL_EXCEPTIONS 1
 
