@@ -16,7 +16,7 @@
 
 #import "AppDelegate.h"
 #import "MainViewController.h"
-#import "PrefsViewController.h"
+#import "PrefsWindowController.h"
 #import "../../asr/ui.h"
 
 @interface MainViewController ()
@@ -83,8 +83,8 @@
 
 - (void)showPrefs
 {
-	//AppDelegate *del = [NSApp delegate];
-	[[PrefsViewController alloc] initWithNibName:@"PrefsWindow" bundle:nil];
+	//NSWindowController * wc = [[[NSWindowController alloc] initWithNibName:@"PrefsWindow" bundle:nil]];
+	[[[PrefsWindowController alloc] initWithWindowNibName:@"PrefsWindow"] window];
 }
 
 @end

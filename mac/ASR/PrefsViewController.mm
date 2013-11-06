@@ -14,8 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#import "PrefsView.h"
+#import "AppDelegate.h"
 #import "PrefsViewController.h"
+#import "../../asr/io.h"
 
 @interface PrefsViewController ()
 
@@ -23,16 +24,53 @@
 
 @implementation PrefsViewController
 
-- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+- (void)setView:(NSView*)view
 {
-    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    if (self) {
-        // Initialization code here.
-		PrefsView *view = [[PrefsView alloc] init];
-		[self setView:view];
-		[self loadView];
-    }
-    return self;
+	[super setView:view];
+	
+	AppDelegate *del = [NSApp delegate];
+	IOProcessor *io = del.ui->_io;
+	_inputChannels = io->getInputChannels();
+	_outputChannels = io->getOutputChannels();
+	NSPopUpButton *drivers = [view viewWithTag:1];
+	[drivers removeAllItems];
+	[drivers addItemWithTitle:@"Core Audio"];
+	
+	NSPopUpButton *output1 = [view viewWithTag:2];
+	NSPopUpButton *output2 = [view viewWithTag:3];
+	[output1 removeAllItems];
+	[output2 removeAllItems];
+	
+	const int output1ch = io->getConfigOption(IOConfig::Output1Channel);
+	const int output2ch = io->getConfigOption(IOConfig::Output2Channel);
+	int index = 0;
+	for (const auto &pair : _outputChannels)
+	{
+		[output1 addItemWithTitle:[[NSString alloc] initWithUTF8String:pair.second.c_str()]];
+		[output2 addItemWithTitle:[[NSString alloc] initWithUTF8String:pair.second.c_str()]];
+		
+		if (pair.first == output1ch)
+			[output1 selectItemAtIndex:index];
+		if (pair.first == output2ch)
+			[output2 selectItemAtIndex:index];
+		
+		++index;
+	}
+	
+	NSPopUpButton *input1 = [view viewWithTag:4];
+	[input1 removeAllItems];
+	
+	const int input1ch = io->getConfigOption(IOConfig::Output2Channel);
+	index = 0;
+	for (const auto &pair : _inputChannels)
+	{
+		[input1 addItemWithTitle:[[NSString alloc] initWithUTF8String:pair.second.c_str()]];
+		
+		if (pair.first == input1ch)
+			[input1 selectItemAtIndex:index];
+		
+		++index;
+	}
 }
 
 @end

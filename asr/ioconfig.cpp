@@ -78,7 +78,7 @@ void IOConfig::initDriver(std::string name)
 		}
 	}
 	
-	for (auto config : _channels)
+	for (const auto &config : _channels)
 	{
 		std::cout << config.toString() << std::endl;
 	}
@@ -149,7 +149,9 @@ std::vector<std::pair<int, std::string>> IOConfig::getChannels(IAudioStreamDescr
 	std::vector<std::pair<int, std::string>> channels;
 	for (int i=0; i < _channels.size(); ++i)
 	{
-		if (_channels[i].stream->GetDescriptor()->GetStreamType() == type)
+		if (!_channels[i].stream)
+			channels.push_back({i, "None"});
+		else if (_channels[i].stream->GetDescriptor()->GetStreamType() == type)
 			channels.push_back({i, _channels[i].toString()});
 	}
 	return channels;

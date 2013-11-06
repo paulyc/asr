@@ -15,7 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #import <Cocoa/Cocoa.h>
+#include <vector>
+#include <string>
 
 @interface PrefsViewController : NSViewController
+
+@property std::vector<std::pair<int, std::string>> inputChannels;
+@property std::vector<std::pair<int, std::string>> outputChannels;
 
 @end

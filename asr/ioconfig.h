@@ -56,6 +56,7 @@ public:
 	};
 	
 	// Note you must call configure once after all setConfigOption calls or things may break!
+	int getConfigOption(ConfigOption opt) { return _configs[opt]; }
 	void setConfigOption(ConfigOption opt, int value) { _configs[opt] = value; }
 	virtual void configure() = 0;
 	

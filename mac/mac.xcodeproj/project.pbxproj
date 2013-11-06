@@ -56,6 +56,7 @@
 		5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E7F17475993002ECDD4 /* MainViewController.mm */; };
 		5F935E81174779A7002ECDD4 /* malloc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B326173210A50006871C /* malloc.cpp */; };
 		5F935E8417477F2A002ECDD4 /* mmalloc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E8217477F29002ECDD4 /* mmalloc.cpp */; };
+		5F992D51182A103A00EFB15A /* PrefsWindowController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F992D50182A103A00EFB15A /* PrefsWindowController.mm */; };
 		5F9B8E7D173F67DA009F0966 /* CoreMIDI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */; };
 		5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */; };
 		5F9B8E81173F67ED009F0966 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */; };
@@ -70,7 +71,6 @@
 		5FC233C4181A28E100B5B3F6 /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
 		5FC233C5181A28E200B5B3F6 /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
 		5FC233C7181A2BC600B5B3F6 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FC233C6181A2BC600B5B3F6 /* AudioToolbox.framework */; };
-		5FD7646C18270E8F00D7BB5A /* PrefsView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5FD7646B18270E8F00D7BB5A /* PrefsView.mm */; };
 		5FD7646F18270F3500D7BB5A /* ioconfig.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FD7646D18270F3500D7BB5A /* ioconfig.cpp */; };
 		5FD9E51A17433FAB0052157F /* io.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B31D173210A50006871C /* io.cpp */; };
 		5FD9E51B174340AF0052157F /* AudioDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B384173236400006871C /* AudioDevice.cpp */; };
@@ -154,6 +154,8 @@
 		5F935E7F17475993002ECDD4 /* MainViewController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MainViewController.mm; sourceTree = "<group>"; };
 		5F935E8217477F29002ECDD4 /* mmalloc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mmalloc.cpp; sourceTree = "<group>"; };
 		5F935E8317477F2A002ECDD4 /* mmalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mmalloc.h; sourceTree = "<group>"; };
+		5F992D4F182A103A00EFB15A /* PrefsWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrefsWindowController.h; sourceTree = "<group>"; };
+		5F992D50182A103A00EFB15A /* PrefsWindowController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PrefsWindowController.mm; sourceTree = "<group>"; };
 		5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
 		5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
@@ -223,8 +225,6 @@
 		5FB4AE5417421C52001A2FF2 /* stream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = stream.cpp; sourceTree = "<group>"; };
 		5FC233C2181A28AE00B5B3F6 /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.0.sdk/System/Library/Frameworks/CoreMIDI.framework; sourceTree = DEVELOPER_DIR; };
 		5FC233C6181A2BC600B5B3F6 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.0.sdk/System/Library/Frameworks/AudioToolbox.framework; sourceTree = DEVELOPER_DIR; };
-		5FD7646A18270E8F00D7BB5A /* PrefsView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrefsView.h; sourceTree = "<group>"; };
-		5FD7646B18270E8F00D7BB5A /* PrefsView.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PrefsView.mm; sourceTree = "<group>"; };
 		5FD7646D18270F3500D7BB5A /* ioconfig.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ioconfig.cpp; sourceTree = "<group>"; };
 		5FD7646E18270F3500D7BB5A /* ioconfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ioconfig.h; sourceTree = "<group>"; };
 		5FD9E5171743304D0052157F /* track.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = track.cpp; sourceTree = "<group>"; };
@@ -237,7 +237,7 @@
 		5FDE426B18179107002C2892 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS7.0.sdk/System/Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
 		5FF356E61828A9D200907224 /* PrefsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrefsViewController.h; sourceTree = "<group>"; };
 		5FF356E71828A9D200907224 /* PrefsViewController.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = PrefsViewController.mm; sourceTree = "<group>"; };
-		5FF356F41828B04100907224 /* en */ = {isa = PBXFileReference; lastKnownFileType = file; name = en; path = en.lproj/PrefsWindow.xib; sourceTree = "<group>"; };
+		5FF356F41828B04100907224 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/PrefsWindow.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -337,10 +337,10 @@
 				5F935E7E17475993002ECDD4 /* MainViewController.h */,
 				5F935E7F17475993002ECDD4 /* MainViewController.mm */,
 				5FF356F01828B02300907224 /* PrefsWindow.xib */,
-				5FD7646A18270E8F00D7BB5A /* PrefsView.h */,
-				5FD7646B18270E8F00D7BB5A /* PrefsView.mm */,
 				5FF356E61828A9D200907224 /* PrefsViewController.h */,
 				5FF356E71828A9D200907224 /* PrefsViewController.mm */,
+				5F992D4F182A103A00EFB15A /* PrefsWindowController.h */,
+				5F992D50182A103A00EFB15A /* PrefsWindowController.mm */,
 			);
 			path = ASR;
 			sourceTree = "<group>";
@@ -709,8 +709,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				5F1F0F32173C9F3200DEA888 /* main.m in Sources */,
+				5F992D51182A103A00EFB15A /* PrefsWindowController.mm in Sources */,
 				5F1F0F39173C9F3200DEA888 /* AppDelegate.mm in Sources */,
-				5FD7646C18270E8F00D7BB5A /* PrefsView.mm in Sources */,
 				5F1F0F40173CA8C700DEA888 /* util.cpp in Sources */,
 				5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */,
 				5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */,
