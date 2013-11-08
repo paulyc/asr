@@ -609,14 +609,6 @@ private:
 	Condition_T _cond;
 };
 
-#if ONE_CPU
-#define LOCK_IF_SMP(lock) lock->acquire();
-#define UNLOCK_IF_SMP(lock) lock->release();
-#else
-#define LOCK_IF_SMP(lock)
-#define UNLOCK_IF_SMP(lock)
-#endif
-
 template <int N, typename T=double>
 class moving_average
 {
@@ -642,8 +634,11 @@ protected:
 };
 
 #if 1
+
 #define CRITICAL_SECTION_GUARD(lock)
+
 #else
+
 #if 0
 #if !ONE_CPU
 #define CRITICAL_SECTION_GUARD(lock)
@@ -652,11 +647,12 @@ protected:
 (lock)->acquire(); \
 (lock)->release(); \
 sched_yield(); }
-#endif
-#else
+#endif // ONE_CPU
+#else // 1
 #define CRITICAL_SECTION_GUARD(lock) if (lock) (lock)->yield();
-#endif
-#endif
+#endif // 1
+
+#endif // 0
 
 #if MAC
 #include <string>

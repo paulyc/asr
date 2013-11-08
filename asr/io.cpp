@@ -30,7 +30,8 @@
 IOProcessor::IOProcessor() :
 	_running(false),
 	_speed(1.0),
-	_default_src("/Users/paulyc/Downloads/z C#m 130 Armin van Buuren - Pulsar (Original Mix).aiff"),
+	//_default_src("/Users/paulyc/Downloads/z C#m 130 Armin van Buuren - Pulsar (Original Mix).aiff"),
+	_default_src(0),
 	_my_pk_det(0),
 	_outputTime(0.0),
 	_src_active(false),
@@ -210,7 +211,6 @@ void IOProcessor::configure()
 	_tracks[1]->set_sample_rate_out(output1Stream->GetDescriptor()->GetSampleRate());
 	_tracks[1]->set_output_sampling_frequency(output1Stream->GetDescriptor()->GetSampleRate());
 	
-#if CARE_ABOUT_INPUT
 	auto input1Channel = getChannel(Input1Channel);
 	auto input1Stream = input1Channel.stream;
 	
@@ -223,7 +223,6 @@ void IOProcessor::configure()
 		Worker::do_job(_fileWriter, false, false);
 		input1Stream->SetProc(_inputStreamProcessor);
 	}
-#endif
 }
 
 void IOProcessor::Start()

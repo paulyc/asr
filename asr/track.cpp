@@ -113,11 +113,9 @@ void AudioTrack<Chunk_T>::set_source_file_impl(std::string filename, CriticalSec
 	}
 	//	pthread_mutex_unlock(&_loading_lock);
 	
-	//	LOCK_IF_SMP(lock);
 	PitchableMixin<Chunk_T>::create(this->_src_buf, this->_src->sample_rate());
 	ViewableMixin<Chunk_T>::create(this->_src_buf);
 	this->_cuepoint = 0.0;
-	//	UNLOCK_IF_SMP(lock);
 	
 	//	pthread_mutex_lock(&_loading_lock);
 	_in_config = false;

@@ -26,8 +26,8 @@
 #define LINUX 0
 #define BEOS 0
 
-#define PLATFORM_X86 0
-#define PLATFORM_ARM 1
+#define PLATFORM_X86 !IOS
+#define PLATFORM_ARM IOS
 
 #if MAC
 #define OPENGL_ENABLED 0
@@ -39,10 +39,9 @@
 #include <unistd.h>
 #endif
 
-#define NATIVE_INT64 0
 #define IEEE754_64FLOAT 1
 
-#define ONE_CPU 1
+#define ONE_CPU 0
 
 #define OLD_PATH 1
 #define TEST 0
@@ -51,7 +50,6 @@
 #define TEST2 0
 
 #define NON_SSE_INTS 1
-#define CARE_ABOUT_INPUT 1
 #define ECHO_INPUT 0
 #define DO_OUTPUT 1
 
