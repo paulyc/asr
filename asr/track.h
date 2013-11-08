@@ -58,6 +58,11 @@ public:
 		delete _resample_filter;
 		_resample_filter = 0;
 	}
+	
+	void set_sample_rate_out(double f)
+	{
+		_sampleRateOut = f;
+	}
 
 	void set_output_sampling_frequency(double f)
 	{

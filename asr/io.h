@@ -205,8 +205,6 @@ public:
 	bool _running;
 	double _speed;
 	const char *_default_src;
-	bool _resample;
-	float _resamplerate;
 
 public: // was protected
 	void Init();

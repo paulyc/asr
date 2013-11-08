@@ -30,17 +30,8 @@
 IOProcessor::IOProcessor() :
 	_running(false),
 	_speed(1.0),
-	//_default_src(L"F:\\Beatport Music\\Sander van Doorn - Riff (Original Mix).mp3"),
 	_default_src("/Users/paulyc/Downloads/z C#m 130 Armin van Buuren - Pulsar (Original Mix).aiff"),
-//4233537_Mesocyclone_Original_Mix.aiff
-//4045992_Wayfarer_Original_Mix.aiff"),
-//_default_src("clip.wav"),
-	//_default_src(L"H:\\Music\\Heatbeat - Hadoken (Original Mix).wav"),
-	//_default_src(L"H:\\Music\\Sean Tyas - Melbourne (Original Mix).wav"),
-	//_default_src(L"H:\\Music\\Super8 & Tab, Anton Sonin - Black Is The New Yellow (Activa Remix).wav"),
 	_my_pk_det(0),
-	_resample(false),
-	_resamplerate(48000.0),
 	_outputTime(0.0),
 	_src_active(false),
 	_log("mylog.txt"),
@@ -70,8 +61,6 @@ IOProcessor::~IOProcessor() throw()
 
 void IOProcessor::Init()
 {
-	configure();
-	
 	_need_buffers = true;
 	
 	IMIDIDevice *dev = 0; //midifac.Instantiate(1, true);
@@ -98,8 +87,7 @@ void IOProcessor::Init()
 void IOProcessor::Finish()
 {
 	_finishing = true;
-	if (_running)
-		Stop();
+	Stop();
 }
 
 void IOProcessor::Destroy()
@@ -155,13 +143,11 @@ void IOProcessor::CreateTracks()
 	
 	//const double gain =
 	_gain1 = new gain<T_source<chunk_t> >(_tracks[0]);
-	_gain1->set_gain_db(-1.0);
+	_gain1->set_gain_db(-3.0); // due to certain tracks resampling outside [-1.0,1.0]
 	_gain2 = new gain<T_source<chunk_t> >(_tracks[1]);
-	_gain2->set_gain_db(-1.0);
+	_gain2->set_gain_db(-3.0);
 	
-	_gen = new ChunkGenerator(getOutputDevice()->GetDescriptor()->GetBufferSizeFrames(), &_io_lock);
-	_gen->AddChunkSource(_gain1, 1);
-	_gen->AddChunkSource(_gain2, 2);
+	configure();
 	
 	/*
 	_master_xfader = new xfader<T_source<chunk_t> >(_tracks[0], _tracks[1]);
@@ -194,6 +180,21 @@ void IOProcessor::configure()
 	assert(output1Stream);
 	assert(!output2Stream || output1Stream == output2Stream);
 	
+	Stop();
+	if (_fileWriter) _fileWriter->stop(); // deletes _fileWriter and _input
+	
+	if (_gen) _gen->kill();
+	delete _gen;
+	_gen = 0;
+	delete _outputStreamProcessor;
+	_outputStreamProcessor = 0;
+	delete _inputStreamProcessor;
+	_inputStreamProcessor = 0;
+	
+	_gen = new ChunkGenerator(getOutputDevice()->GetDescriptor()->GetBufferSizeFrames(), &_io_lock);
+	_gen->AddChunkSource(_gain1, 1);
+	_gen->AddChunkSource(_gain2, 2);
+	
 	_outputStreamProcessor = new CoreAudioOutputProcessor(output1Stream->GetDescriptor());
 	_outputStreamProcessor->AddOutput(CoreAudioOutput(_gen, 1, output1Channel.leftChannelIndex, output1Channel.rightChannelIndex));
 	
@@ -203,6 +204,11 @@ void IOProcessor::configure()
 	}
 	
 	output1Stream->SetProc(_outputStreamProcessor);
+	
+	_tracks[0]->set_sample_rate_out(output1Stream->GetDescriptor()->GetSampleRate());
+	_tracks[0]->set_output_sampling_frequency(output1Stream->GetDescriptor()->GetSampleRate());
+	_tracks[1]->set_sample_rate_out(output1Stream->GetDescriptor()->GetSampleRate());
+	_tracks[1]->set_output_sampling_frequency(output1Stream->GetDescriptor()->GetSampleRate());
 	
 #if CARE_ABOUT_INPUT
 	auto input1Channel = getChannel(Input1Channel);
@@ -222,22 +228,28 @@ void IOProcessor::configure()
 
 void IOProcessor::Start()
 {
-	_running = true;
-	_src_active = true;
-	if (_midi_controller)
-		_midi_controller->Start();
-	getOutputDevice()->Start();
-	if (getInputDevice()) getInputDevice()->Start();
+	if (!_running)
+	{
+		_running = true;
+		_src_active = true;
+		if (_midi_controller)
+			_midi_controller->Start();
+		getOutputDevice()->Start();
+		if (getInputDevice()) getInputDevice()->Start();
+	}
 }
 
 void IOProcessor::Stop()
 {
-	_running = false;
-	_src_active = false;
-	if (_midi_controller)
-		_midi_controller->Stop();
-	getOutputDevice()->Stop();
-	if (getInputDevice()) getInputDevice()->Stop();
+	if (_running)
+	{
+		_running = false;
+		_src_active = false;
+		if (_midi_controller)
+			_midi_controller->Stop();
+		getOutputDevice()->Stop();
+		if (getInputDevice()) getInputDevice()->Stop();
+	}
 }
 
 int IOProcessor::get_track_id_for_filter(void *filt) const
