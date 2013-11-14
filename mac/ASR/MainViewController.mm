@@ -18,6 +18,7 @@
 #import "MainViewController.h"
 #import "PrefsWindowController.h"
 #import "../../asr/ui.h"
+#import "../../asr/track.h"
 
 @interface MainViewController ()
 
@@ -25,15 +26,9 @@
 
 @implementation MainViewController
 
-- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
-{
-    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
-    if (self) {
-        // Initialization code here.
-    }
-    
-    return self;
-}
+const float pitchRange = 0.08;
+float pitch1Value = 500.0f;
+float pitch2Value = 500.0f;
 
 - (void)setStart:(BOOL)status
 {
@@ -74,6 +69,52 @@
 {
     AppDelegate *del = [NSApp delegate];
     del.ui->play_pause(2);
+}
+
+- (void)setCuepoint1
+{
+	
+}
+
+- (void)setCuepoint2
+{
+	
+}
+
+- (void)gotoCuepoint1
+{
+	
+}
+
+- (void)gotoCuepoint2
+{
+	
+}
+
+- (void)setPitch1:(float)value
+{
+	pitch1Value = value;
+	AppDelegate *del = [NSApp delegate];
+	const double pitchValue = (1.0 - pitchRange) + 2.0*pitchRange * value/1000.0f;
+	del.ui->_io->GetTrack(1)->set_pitch(pitchValue);
+}
+
+- (void)setPitch2:(float)value
+{
+	pitch2Value = value;
+	AppDelegate *del = [NSApp delegate];
+	const double pitchValue = (1.0 - pitchRange) + 2.0*pitchRange * value/1000.0f;
+	del.ui->_io->GetTrack(2)->set_pitch(pitchValue);
+}
+
+- (float)getPitch1
+{
+	return pitch1Value;
+}
+
+- (float)getPitch2
+{
+	return pitch2Value;
 }
 
 - (BOOL)track1Active

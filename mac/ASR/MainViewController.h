@@ -20,12 +20,19 @@
 
 @property(nonatomic, setter = setStart:) BOOL start;
 
+@property(getter = getPitch1, setter = setPitch1:) float pitch1;
+@property(getter = getPitch2, setter = setPitch2:) float pitch2;
+
 - (void)setStart:(BOOL)start;
 - (void)button1Push;
 - (void)button2Push;
 - (BOOL)track1Active;
 - (void)playTrack1;
 - (void)playTrack2;
+- (void)setCuepoint1;
+- (void)setCuepoint2;
+- (void)gotoCuepoint1;
+- (void)gotoCuepoint2;
 - (void)showPrefs;
 
 @end
