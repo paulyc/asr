@@ -160,6 +160,7 @@ public:
 	void set_cuepoint(double pos)
 	{
 		_cuepoint = pos;
+		render();
 	}
 
 	double get_cuepoint()
