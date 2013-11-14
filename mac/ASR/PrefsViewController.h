@@ -23,4 +23,7 @@
 @property std::vector<std::pair<int, std::string>> inputChannels;
 @property std::vector<std::pair<int, std::string>> outputChannels;
 
+- (id)getSubView:(NSString*)name;
+- (void)configure;
+
 @end

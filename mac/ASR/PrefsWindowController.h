@@ -11,6 +11,8 @@
 
 @interface PrefsWindowController : NSWindowController
 
-@property PrefsViewController *viewController;
+@property(strong) PrefsViewController *viewController;
+
+-(void)configure;
 
 @end

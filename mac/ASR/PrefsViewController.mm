@@ -24,6 +24,19 @@
 
 @implementation PrefsViewController
 
+NSDictionary *subviewIds = @{
+							@"Drivers" : @1,
+							@"Output1" : @2,
+							@"Output2" : @3,
+							@"Input1" : @4,
+							};
+
+- (id)getSubView:(NSString*)name
+{
+	NSNumber *num = subviewIds[name];
+	return [[self view] viewWithTag:[num integerValue]];
+}
+
 - (void)setView:(NSView*)view
 {
 	[super setView:view];
@@ -32,12 +45,12 @@
 	IOProcessor *io = del.ui->_io;
 	_inputChannels = io->getInputChannels();
 	_outputChannels = io->getOutputChannels();
-	NSPopUpButton *drivers = [view viewWithTag:1];
+	NSPopUpButton *drivers = [self getSubView:@"Drivers"];
 	[drivers removeAllItems];
 	[drivers addItemWithTitle:@"Core Audio"];
 	
-	NSPopUpButton *output1 = [view viewWithTag:2];
-	NSPopUpButton *output2 = [view viewWithTag:3];
+	NSPopUpButton *output1 = [self getSubView:@"Output1"];
+	NSPopUpButton *output2 = [self getSubView:@"Output2"];
 	[output1 removeAllItems];
 	[output2 removeAllItems];
 	
@@ -57,7 +70,7 @@
 		++index;
 	}
 	
-	NSPopUpButton *input1 = [view viewWithTag:4];
+	NSPopUpButton *input1 = [self getSubView:@"Input1"];
 	[input1 removeAllItems];
 	
 	const int input1ch = io->getConfigOption(IOConfig::Output2Channel);
@@ -71,6 +84,25 @@
 		
 		++index;
 	}
+}
+
+- (void)configure
+{
+	AppDelegate *del = [NSApp delegate];
+	IOProcessor *io = del.ui->_io;
+	NSPopUpButton *output1 = [self getSubView:@"Output1"];
+	NSInteger itemIndex = [output1 indexOfSelectedItem];
+	io->setConfigOption(IOConfig::Output1Channel, _outputChannels[itemIndex].first);
+	
+	NSPopUpButton *output2 = [self getSubView:@"Output2"];
+	itemIndex = [output2 indexOfSelectedItem];
+	io->setConfigOption(IOConfig::Output2Channel, _outputChannels[itemIndex].first);
+	
+	NSPopUpButton *input1 = [self getSubView:@"Input1"];
+	itemIndex = [input1 indexOfSelectedItem];
+	io->setConfigOption(IOConfig::Input1Channel, _inputChannels[itemIndex].first);
+	
+	io->configure();
 }
 
 @end

@@ -33,4 +33,10 @@
 	[_viewController setView:[[self window] contentView]];
 }
 
+- (void)configure
+{
+	[_viewController configure];
+	[super close];
+}
+
 @end

@@ -203,7 +203,6 @@ public:
 
 	long _doubleBufferIndex;
 	bool _running;
-	double _speed;
 	const char *_default_src;
 
 public: // was protected

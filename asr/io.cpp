@@ -29,7 +29,6 @@
 
 IOProcessor::IOProcessor() :
 	_running(false),
-	_speed(1.0),
 	//_default_src("/Users/paulyc/Downloads/z C#m 130 Armin van Buuren - Pulsar (Original Mix).aiff"),
 	_default_src(0),
 	_my_pk_det(0),

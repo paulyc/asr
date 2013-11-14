@@ -17,7 +17,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="349" height="176"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="2048" height="1258"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1650" height="1028"/>
             <view key="contentView" id="2">
                 <rect key="frame" x="0.0" y="0.0" width="349" height="176"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -65,15 +65,22 @@
                         </textFieldCell>
                     </textField>
                     <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="b8f-Gf-Rbt">
-                        <rect key="frame" x="148" y="13" width="59" height="32"/>
+                        <rect key="frame" x="119" y="13" width="111" height="32"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                        <buttonCell key="cell" type="push" title="OK" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="mnn-gD-BuL">
+                        <buttonCell key="cell" type="push" title="Configure" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="mnn-gD-BuL">
                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                             <font key="font" metaFont="system"/>
                             <string key="keyEquivalent" base64-UTF8="YES">
 DQ
 </string>
                         </buttonCell>
+                        <connections>
+                            <binding destination="-2" name="target" keyPath="self" id="bJa-oM-5sC">
+                                <dictionary key="options">
+                                    <string key="NSSelectorName">configure</string>
+                                </dictionary>
+                            </binding>
+                        </connections>
                     </button>
                     <popUpButton verticalHuggingPriority="750" fixedFrame="YES" tag="2" translatesAutoresizingMaskIntoConstraints="NO" id="aPh-zd-A6p">
                         <rect key="frame" x="96" y="108" width="236" height="26"/>
@@ -132,5 +139,6 @@ DQ
                 </subviews>
             </view>
         </window>
+        <userDefaultsController representsSharedInstance="YES" id="uGC-aL-MMc"/>
     </objects>
 </document>
