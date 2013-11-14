@@ -18,7 +18,6 @@
 #import "MainViewController.h"
 #import "PrefsWindowController.h"
 #import "../../asr/ui.h"
-#import "../../asr/track.h"
 
 @interface MainViewController ()
 
@@ -29,6 +28,12 @@
 const float pitchRange = 0.08;
 float pitch1Value = 500.0f;
 float pitch2Value = 500.0f;
+
+- (typename IOProcessor::track_t*)getTrack:(int)track_id
+{
+	AppDelegate *del = [NSApp delegate];
+	return del.ui->_io->GetTrack(track_id);
+}
 
 - (void)setStart:(BOOL)status
 {
@@ -73,38 +78,36 @@ float pitch2Value = 500.0f;
 
 - (void)setCuepoint1
 {
-	
+	[self getTrack:1]->set_cuepoint([self getTrack:1]->get_playback_time());
 }
 
 - (void)setCuepoint2
 {
-	
+	[self getTrack:2]->set_cuepoint([self getTrack:2]->get_playback_time());
 }
 
 - (void)gotoCuepoint1
 {
-	
+	[self getTrack:1]->goto_cuepoint(false);
 }
 
 - (void)gotoCuepoint2
 {
-	
+	[self getTrack:2]->goto_cuepoint(false);
 }
 
 - (void)setPitch1:(float)value
 {
 	pitch1Value = value;
-	AppDelegate *del = [NSApp delegate];
 	const double pitchValue = (1.0 - pitchRange) + 2.0*pitchRange * value/1000.0f;
-	del.ui->_io->GetTrack(1)->set_pitch(pitchValue);
+	[self getTrack:1]->set_pitch(pitchValue);
 }
 
 - (void)setPitch2:(float)value
 {
 	pitch2Value = value;
-	AppDelegate *del = [NSApp delegate];
 	const double pitchValue = (1.0 - pitchRange) + 2.0*pitchRange * value/1000.0f;
-	del.ui->_io->GetTrack(2)->set_pitch(pitchValue);
+	[self getTrack:2]->set_pitch(pitchValue);
 }
 
 - (float)getPitch1

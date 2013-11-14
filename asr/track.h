@@ -501,6 +501,11 @@ public:
 		_last_time = tm;
 		_io->get_ui()->set_position(this, get_display_pos(tm), true);
 	}
+	
+	double get_playback_time()
+	{
+		return this->_resample_filter->get_time();
+	}
 
 	void deferred_call(deferred *d)
 	{

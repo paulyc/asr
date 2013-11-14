@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #import <Cocoa/Cocoa.h>
+#import "../../asr/track.h"
 
 @interface MainViewController : NSViewController
 
@@ -34,5 +35,6 @@
 - (void)gotoCuepoint1;
 - (void)gotoCuepoint2;
 - (void)showPrefs;
+- (typename IOProcessor::track_t*)getTrack:(int)track_id;
 
 @end
