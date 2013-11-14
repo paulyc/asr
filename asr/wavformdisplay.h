@@ -26,13 +26,12 @@ using std::max;
 #include "type.h"
 #include "ui.h"
 
-template <typename Source_T, typename Controller_T>
+template <typename Source_T>
 class WavFormDisplay
 {
 public:
-	WavFormDisplay(Source_T *src, Controller_T *controller, int width) :
+	WavFormDisplay(Source_T *src, int width) :
 		_src(src),
-		_controller(controller),
 		_wav_heights(0),
 		_center(0.5),
 		_zoom(1.0),
@@ -271,12 +270,12 @@ public:
 	  _right = _center + 0.5/_zoom;
   }
 
-	double get_display_time(double f)
+	virtual double get_display_time(double f)
 	{
 		return (_left+f*(_right-_left))*_src->len().time;
 	}
 
-	double get_display_pos(double tm)
+	virtual double get_display_pos(double tm)
 	{
 		double d = tm/_src->len().time;
 		return (d - _left)/(_right-_left);
@@ -311,7 +310,6 @@ public:
 
 protected:
 	Source_T *_src;
-	Controller_T *_controller;
 	int _width;
 	wav_height *_wav_heights;
 	double _center;
@@ -322,6 +320,33 @@ protected:
 	bool _pos_locked;
 	int _lock_px;
 	int _level;
+};
+
+template <typename Source_T>
+class DummyDisplay : public WavFormDisplay<Source_T>
+{
+public:
+	typedef typename WavFormDisplay<Source_T>::wav_height wav_height;
+	
+	DummyDisplay(int width) : WavFormDisplay<Source_T>(0, width) {}
+	
+	virtual void set_wav_heights(CriticalSectionGuard *lock=0) {}
+	virtual const wav_height& get_wav_height(int pixel)
+	{
+		return _dummyHeight;
+	}
+	virtual double get_display_time(double f)
+	{
+		return 0.0;
+	}
+	
+	virtual double get_display_pos(double tm)
+	{
+		return 0.0;
+	}
+	
+private:
+	const wav_height _dummyHeight;
 };
 
 #endif // !defined(_WAVFORMDISPLAY_H)

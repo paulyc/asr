@@ -60,6 +60,11 @@ _pause_monitor(false)
 	
 	if (filename)
 		set_source_file_impl(std::string(filename), &_io->get_lock());
+	else
+	{
+		ViewableMixin<Chunk_T>::createDummy();
+		this->render();
+	}
 }
 
 template <typename Chunk_T>

@@ -239,9 +239,11 @@ class ViewableMixin
 {
 public:
 	typedef WavFormDisplay<
-		StreamMetadata<Chunk_T>, 
-		ViewableMixin<Chunk_T> 
+		StreamMetadata<Chunk_T>
 	> display_t;
+	typedef DummyDisplay<
+		StreamMetadata<Chunk_T>
+	> dummy_display_t;
 
 	ViewableMixin() : _meta(0), _display(0), _display_width(750) {}
 
@@ -253,9 +255,13 @@ public:
 	{
 		destroy();
 		_meta = new StreamMetadata<Chunk_T>(src);
-		_display = new WavFormDisplay<
-			StreamMetadata<Chunk_T>, 
-			ViewableMixin<Chunk_T> >(_meta, this, _display_width);
+		_display = new display_t(_meta, _display_width);
+	}
+	
+	void createDummy()
+	{
+		destroy();
+		_display = new dummy_display_t(_display_width);
 	}
 
 	void destroy()
@@ -485,6 +491,8 @@ public:
 	
 	void update_position()
 	{
+		if (!this->_resample_filter) return; // when there is a dummy display at startup
+		
 		const double tm = this->_resample_filter->get_time();
 		if (tm > this->_cuepoint && _last_time < this->_cuepoint)
 		{
