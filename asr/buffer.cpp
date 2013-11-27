@@ -179,7 +179,7 @@ bool BufferedStream<Chunk_T>::load_next()
 		_src_lock.release();
 		return false;
 	}
-	next_chunk(_chk_ofs_loading++);
+	this->get_chunk(_chk_ofs_loading++);
 	return true;
 }
 
@@ -226,4 +226,11 @@ typename BufferedStream<Chunk_T>::Sample_T* BufferedStream<Chunk_T>::get_at_ofs(
 {
 	get_samples(ofs, _buffer, n);
 	return _buffer;
+}
+
+template <typename Chunk_T>
+void BufferedStream<Chunk_T>::load_complete()
+{
+	while (this->load_next())
+		;
 }

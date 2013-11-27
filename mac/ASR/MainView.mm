@@ -38,7 +38,12 @@
 }
 
 - (BOOL)acceptsFirstResponder {
-    return NO;
+    return NO; // change to YES and help magically works
+}
+
+- (void)showHelp:(id)sender
+{
+	printf("Hello");
 }
 
 - (void)drawRect:(NSRect)dirtyRect

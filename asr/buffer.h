@@ -237,6 +237,7 @@ public:
 	int get_samples(smp_ofs_t ofs, typename Chunk_T::sample_t *buf, int num);
 	typename T_source<Chunk_T>::pos_info& len();
 	bool load_next();
+	void load_complete();
 
 	Sample_T* load(double tm);
 	Sample_T* get_at(double tm, int num_samples=26);
