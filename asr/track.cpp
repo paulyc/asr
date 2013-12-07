@@ -157,7 +157,11 @@ Chunk_T* AudioTrack<Chunk_T>::next()
 		{
 			chk = this->_resample_filter->next();
 			if (true && this->_resample_filter->get_time() >= len().time)
+			{
 				this->_resample_filter->seek_time(0.0);
+				_pause_monitor = false;
+				_paused = true;
+			}
 		}
 		_loading_lock.release();
 		render();
