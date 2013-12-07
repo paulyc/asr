@@ -137,7 +137,7 @@ void IOConfig::setupDefaultConfig()
 			{
 				if (config.leftChannelIndex == 0)
 					_configs[Output1Channel] = i;
-				else if (config.rightChannelIndex == 2)
+				else if (config.leftChannelIndex == 2)
 					_configs[Output2Channel] = i;
 			}
 		}

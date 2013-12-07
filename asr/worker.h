@@ -143,7 +143,7 @@ public:
 			uint64_t t_begin, t_end;
 			myLock.acquire();
 			t_begin = mach_absolute_time();
-			cbObj->lock(chkId);
+		//	cbObj->lock(chkId);
 			while (running)
 			{
 				if (nextChks.size() >= _chunks_to_buffer)
@@ -158,7 +158,7 @@ public:
 				}
 				nextChks.push(src->next());
 			}
-			cbObj->unlock(chkId);
+			//cbObj->unlock(chkId);
 		}
 		
 		Chunk_T *get()

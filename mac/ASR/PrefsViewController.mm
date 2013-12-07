@@ -73,7 +73,7 @@ NSDictionary *subviewIds = @{
 	NSPopUpButton *input1 = [self getSubView:@"Input1"];
 	[input1 removeAllItems];
 	
-	const int input1ch = io->getConfigOption(IOConfig::Output2Channel);
+	const int input1ch = io->getConfigOption(IOConfig::Input1Channel);
 	index = 0;
 	for (const auto &pair : _inputChannels)
 	{
