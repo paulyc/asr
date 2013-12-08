@@ -106,24 +106,25 @@ void AudioTrack<Chunk_T>::set_source_file_impl(std::string filename, CriticalSec
 	_loaded = false;
 	_paused = true;
 	
+	_loading_lock.release();
+	
 	try {
 		BufferedSource<Chunk_T>::create(filename.c_str(), lock);
 	} catch (std::exception &e) {
 		printf("Could not set_source_file due to %s\n", e.what());
+		_loading_lock.acquire();
 		_in_config = false;
 		_loaded = true;
 		_paused = true;
-		//	BufferedSource<Chunk_T>::createZero(_io);
 		_loading_lock.release();
 		return;
 	}
-	//	pthread_mutex_unlock(&_loading_lock);
 	
 	PitchableMixin<Chunk_T>::create(this->_src_buf, this->_src->sample_rate());
 	ViewableMixin<Chunk_T>::create(this->_src_buf);
 	this->_cuepoint = 0.0;
 	
-	//	pthread_mutex_lock(&_loading_lock);
+	_loading_lock.acquire();
 	_in_config = false;
 	_last_time = 0.0;
 	_filename = filename;
