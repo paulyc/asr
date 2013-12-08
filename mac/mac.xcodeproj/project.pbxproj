@@ -52,6 +52,7 @@
 		5F391FA518112D8400FB5F8A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F391FA418112D8400FB5F8A /* CoreGraphics.framework */; };
 		5F391FCB18112D8500FB5F8A /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F391FCA18112D8500FB5F8A /* XCTest.framework */; };
 		5F391FCC18112D8500FB5F8A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F391FA218112D8400FB5F8A /* Foundation.framework */; };
+		5F8DF84D1847D0410022409C /* mpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5F8DF84C1847D0410022409C /* mpeg.cpp */; };
 		5F935E7D17474BAD002ECDD4 /* MainView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E7C17474BAD002ECDD4 /* MainView.mm */; };
 		5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F935E7F17475993002ECDD4 /* MainViewController.mm */; };
 		5F935E81174779A7002ECDD4 /* malloc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B326173210A50006871C /* malloc.cpp */; };
@@ -106,6 +107,7 @@
 		5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ui_cli.cpp; sourceTree = "<group>"; };
 		5F0C4F1D1738D6770025E149 /* task.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = task.cpp; sourceTree = "<group>"; };
 		5F0C4F1E1738D6770025E149 /* task.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = task.h; sourceTree = "<group>"; };
+		5F0CEBEB1854FD41006F8F07 /* AudioTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioTypes.h; sourceTree = "<group>"; };
 		5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ui_cocoa.mm; sourceTree = "<group>"; };
 		5F1F0ED8173C8F2C00DEA888 /* ui_cocoa.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ui_cocoa.hpp; sourceTree = "<group>"; };
 		5F1F0F23173C9F3100DEA888 /* ASR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ASR.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -121,6 +123,8 @@
 		5F1F0F37173C9F3200DEA888 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		5F1F0F38173C9F3200DEA888 /* AppDelegate.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
 		5F1F0F3B173C9F3200DEA888 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		5F230BA3184951ED00B61111 /* spotifysource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = spotifysource.cpp; sourceTree = "<group>"; };
+		5F230BA4184951ED00B61111 /* spotifysource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = spotifysource.h; sourceTree = "<group>"; };
 		5F28458D1817860E004C3341 /* ui_ios.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ui_ios.hpp; sourceTree = "<group>"; };
 		5F28458E1817868D004C3341 /* ui_ios.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ui_ios.mm; sourceTree = "<group>"; };
 		5F28459618178998004C3341 /* asr.ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = asr.ios.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -148,6 +152,7 @@
 		5F391FA418112D8400FB5F8A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		5F391FC918112D8500FB5F8A /* asrTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = asrTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5F391FCA18112D8500FB5F8A /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		5F8DF84C1847D0410022409C /* mpeg.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mpeg.cpp; sourceTree = "<group>"; };
 		5F935E7B17474BAD002ECDD4 /* MainView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainView.h; sourceTree = "<group>"; };
 		5F935E7C17474BAD002ECDD4 /* MainView.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = MainView.mm; sourceTree = "<group>"; };
 		5F935E7E17475993002ECDD4 /* MainViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainViewController.h; sourceTree = "<group>"; };
@@ -506,6 +511,10 @@
 				5F28458E1817868D004C3341 /* ui_ios.mm */,
 				5FD7646D18270F3500D7BB5A /* ioconfig.cpp */,
 				5FD7646E18270F3500D7BB5A /* ioconfig.h */,
+				5F8DF84C1847D0410022409C /* mpeg.cpp */,
+				5F230BA3184951ED00B61111 /* spotifysource.cpp */,
+				5F230BA4184951ED00B61111 /* spotifysource.h */,
+				5F0CEBEB1854FD41006F8F07 /* AudioTypes.h */,
 			);
 			name = asr;
 			path = ../asr;
@@ -724,6 +733,7 @@
 				5FD9E51D174341680052157F /* controller.cpp in Sources */,
 				5FD9E51E17434AD80052157F /* asr.cpp in Sources */,
 				5FDC485E1747287E004C2378 /* MyOpenGLView.mm in Sources */,
+				5F8DF84D1847D0410022409C /* mpeg.cpp in Sources */,
 				5F935E7D17474BAD002ECDD4 /* MainView.mm in Sources */,
 				5F935E8017475994002ECDD4 /* MainViewController.mm in Sources */,
 				5F935E81174779A7002ECDD4 /* malloc.cpp in Sources */,

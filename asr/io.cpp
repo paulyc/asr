@@ -191,7 +191,9 @@ void IOProcessor::configure()
 	delete _inputStreamProcessor;
 	_inputStreamProcessor = 0;
 	
-	_gen = new ChunkGenerator(getOutputDevice()->GetDescriptor()->GetBufferSizeFrames(), &_io_lock);
+	const auto bufferSizeFrames = getOutputDevice()->GetDescriptor()->GetBufferSizeFrames();
+	printf("BufferSizeFrames = %d\n", bufferSizeFrames);
+	_gen = new ChunkGenerator(bufferSizeFrames, &_io_lock);
 	_gen->AddChunkSource(_gain1, 1);
 	_gen->AddChunkSource(_gain2, 2);
 	

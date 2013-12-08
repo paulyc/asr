@@ -166,14 +166,15 @@ public:
 			Chunk_T *chk = 0;
 			myLock.acquire();
 			if (nextChks.empty())
+			{
+				printf("nextChks was empty\n");
 				chk = zero_source<chunk_t>::get()->next();
+			}
 			else
 			{
 				chk = nextChks.front();
 				nextChks.pop();
-				cbObj->lock(chkId);
 				doGen.signal();
-				
 			}
 			myLock.release();
 			return chk;

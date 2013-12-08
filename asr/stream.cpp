@@ -17,6 +17,16 @@
 #include "stream.h"
 #include "worker.h"
 
+#include "AudioTypes.h"
+
+ChunkGenerator::ChunkGenerator(int bufferSizeFrames, CriticalSectionGuard *ioLock) : _ioLock(ioLock), _lockMask(0)
+{
+	_chunksToBuffer = bufferSizeFrames / chunk_t::chunk_size;
+	if (bufferSizeFrames % chunk_t::chunk_size > 0)
+		++_chunksToBuffer;
+	printf("chunksToBuffer = %d\n", _chunksToBuffer);
+}
+
 void ChunkGenerator::AddChunkSource(T_source<chunk_t> *src, int id)
 {
 	_lock.acquire();

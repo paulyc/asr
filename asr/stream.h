@@ -315,12 +315,7 @@ public:
 class ChunkGenerator : public IChunkGeneratorCallback<chunk_t>
 {
 public:
-	ChunkGenerator(int bufferSizeFrames, CriticalSectionGuard *ioLock) : _ioLock(ioLock), _lockMask(0)
-	{
-		_chunksToBuffer = bufferSizeFrames / chunk_t::chunk_size;
-		if (bufferSizeFrames % chunk_t::chunk_size > 0)
-			++_chunksToBuffer;
-	}
+	ChunkGenerator(int bufferSizeFrames, CriticalSectionGuard *ioLock);
 	
 	void AddChunkSource(T_source<chunk_t> *src, int id);
 	chunk_t* GetNextChunk(int streamID);
@@ -346,6 +341,18 @@ public:
 private:
 	ChunkGenerator *_gen;
 	int _streamID;
+};
+
+class IAudioStreamProcessor;
+class IAudioStreamDescriptor;
+
+class BufferGenerator
+{
+public:
+	BufferGenerator(IAudioStreamProcessor *outputProc, IAudioStreamDescriptor *streamDesc);
+	
+private:
+	
 };
 
 template <typename Input_Chunk_T, typename Output_Chunk_T>
