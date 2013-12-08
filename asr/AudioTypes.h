@@ -69,6 +69,8 @@ public:
 class IAudioBuffer
 {
 public:
+	virtual ~IAudioBuffer() {}
+	
 	virtual void *GetBuffer() = 0;
 	virtual int GetBufferSize() const = 0;
 };
@@ -122,11 +124,48 @@ private:
 	int _bytesPerFrame;
 };
 
+class CoreAudioBufferOwner : public CoreAudioBuffer
+{
+public:
+	CoreAudioBufferOwner(int channels, int bytesPerSample, int numFrames) : CoreAudioBuffer(channels, channels*bytesPerSample)
+	{
+		_bufferSize = channels * bytesPerSample * numFrames;
+		_buffer = new char[_bufferSize];
+	}
+	virtual ~CoreAudioBufferOwner()
+	{
+		delete [] (char*)_buffer;
+	}
+};
+
 class IAudioStreamProcessor
 {
 public:
 	virtual void ProcessInput(IAudioBuffer *buffer) = 0;
 	virtual void ProcessOutput(IAudioBuffer *buffer) = 0;
+};
+
+class IAudioDeviceFactory
+{
+public:
+	virtual ~IAudioDeviceFactory() {}
+	
+	virtual std::vector<const IAudioDeviceDescriptor*> Enumerate() const = 0;
+};
+
+class IAudioStream;
+
+class IAudioDevice
+{
+public:
+	virtual ~IAudioDevice() {}
+	
+	virtual const IAudioDeviceDescriptor *GetDescriptor() const = 0;
+	virtual std::vector<const IAudioStreamDescriptor*> GetStreams() const = 0;
+	virtual void RegisterStream(IAudioStream *stream) = 0;
+	
+	virtual void Start() = 0;
+	virtual void Stop() = 0;
 };
 
 #endif

@@ -24,29 +24,6 @@
 
 #include "AudioTypes.h"
 
-class IAudioDeviceFactory
-{
-public:
-	virtual ~IAudioDeviceFactory() {}
-	
-	virtual std::vector<const IAudioDeviceDescriptor*> Enumerate() const = 0;
-};
-
-class IAudioStream;
-
-class IAudioDevice
-{
-public:
-	virtual ~IAudioDevice() {}
-	
-	virtual const IAudioDeviceDescriptor *GetDescriptor() const = 0;
-	virtual std::vector<const IAudioStreamDescriptor*> GetStreams() const = 0;
-	virtual void RegisterStream(IAudioStream *stream) = 0;
-	
-	virtual void Start() = 0;
-	virtual void Stop() = 0;
-};
-
 class AudioInput : public T_source<chunk_t>
 {
 public:
