@@ -418,6 +418,8 @@ CoreAudioStream::~CoreAudioStream()
 
 void CoreAudioStream::SetProc(IAudioStreamProcessor *proc)
 {
+	if (_proc)
+		AudioDeviceDestroyIOProcID(_desc.GetDeviceID(), _procID);
 	_proc = proc;
 	AudioDeviceCreateIOProcID(_desc.GetDeviceID(), _audioCB, this, &_procID);
 }
