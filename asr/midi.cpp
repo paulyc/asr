@@ -264,7 +264,7 @@ void CDJ350MIDIController::Stop()
 
 static double GetTempo(int code)
 {
-	const double range = 0.06;
+	const double range = 0.08;
 	double t = 1.0;
 	if (code != 0x40)
 	{
