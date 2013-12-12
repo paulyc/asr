@@ -167,6 +167,7 @@ void IOProcessor::CreateTracks()
 	_file_src = 0;
 }
 
+// TODO Crashes if configure while loading, due to trying to stop twice and start again
 void IOProcessor::configure()
 {
 	auto output1Channel = getChannel(Output1Channel);

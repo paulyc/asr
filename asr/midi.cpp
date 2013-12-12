@@ -264,11 +264,12 @@ void CDJ350MIDIController::Stop()
 
 static double GetTempo(int code)
 {
+	const double range = 0.06;
 	double t = 1.0;
 	if (code != 0x40)
 	{
-		double increment = 0.12 / 0x7F;
-		t = 0.94 + code * increment;
+		double increment = 2*range / 0x7F;
+		t = 1.0-range + code * increment;
 	}
 //	printf("tempo %f\n", t);
 	return t;
@@ -277,10 +278,11 @@ static double GetTempo(int code)
 static double GetBend(int code)
 {
 	double dt = 0.0;
+	const double range = 0.4;
 	if (code != 0x40)
 	{
-		double increment = 0.8 / 0x7F;
-		dt = -0.4 + code * increment;
+		double increment = 2*range / 0x7F;
+		dt = -range + code * increment;
 	}
 	return dt;
 }
