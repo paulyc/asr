@@ -23,6 +23,7 @@
 #include "malloc.h"
 #include "util.h"
 #include "lock.h"
+#include "worker.h"
 
 template <typename T>
 class T_source
@@ -328,6 +329,73 @@ private:
 	Lock_T _lock;
 	CriticalSectionGuard *_ioLock;
 	int _lockMask;
+};
+
+struct generate_chunk_loop : public Worker::job, public IChunkGeneratorLoop<chunk_t>
+{
+	T_source<chunk_t> *src;
+	IChunkGeneratorCallback<chunk_t> *cbObj;
+	int chkId;
+	Lock_T *lock;
+	generate_chunk_loop(T_source<chunk_t> *s,
+						IChunkGeneratorCallback<chunk_t> *cbo, int cid, int chunks_to_buffer) :
+	src(s), cbObj(cbo), chkId(cid), running(true), _chunks_to_buffer(chunks_to_buffer) {_name="generate chunk";}
+	
+	void do_it()
+	{
+		uint64_t t_begin, t_end;
+		myLock.acquire();
+		t_begin = mach_absolute_time();
+		//	cbObj->lock(chkId);
+		while (running)
+		{
+			if (nextChks.size() >= _chunks_to_buffer)
+			{
+				//	  cbObj->unlock(chkId);
+				t_end = mach_absolute_time();
+				//printf("time is %lld\n", t_end - t_begin);
+				doGen.wait(myLock);
+				t_begin = mach_absolute_time();
+				//	  cbObj->lock(chkId);
+				continue;
+			}
+			nextChks.push(src->next());
+		}
+		//cbObj->unlock(chkId);
+	}
+	
+	chunk_t *get()
+	{
+		chunk_t *chk = 0;
+		myLock.acquire();
+		if (nextChks.empty())
+		{
+			printf("nextChks was empty\n");
+			chk = zero_source<chunk_t>::get()->next();
+		}
+		else
+		{
+			chk = nextChks.front();
+			nextChks.pop();
+			doGen.signal();
+		}
+		myLock.release();
+		return chk;
+	}
+	
+	void kill()
+	{
+		myLock.acquire();
+		running = false;
+		doGen.signal();
+		myLock.release();
+	}
+	
+	Lock_T myLock;
+	Condition_T doGen;
+	bool running;
+	std::queue<chunk_t*> nextChks;
+	int _chunks_to_buffer;
 };
 
 class BlockingChunkStream : public T_source<chunk_t>

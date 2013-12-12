@@ -64,6 +64,7 @@
 		5F9B8E85173F6817009F0966 /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F1F0F28173C9F3100DEA888 /* AppKit.framework */; };
 		5FB4AE5617421C52001A2FF2 /* stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB4AE5417421C52001A2FF2 /* stream.cpp */; };
 		5FB4AE5717421CB2001A2FF2 /* worker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B367173210A50006871C /* worker.cpp */; };
+		5FBC431118598F9F003FACFD /* CoreAudio.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B381173235D90006871C /* CoreAudio.cpp */; };
 		5FC233BE181A285900B5B3F6 /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
 		5FC233BF181A285A00B5B3F6 /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
 		5FC233C0181A287700B5B3F6 /* midi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B329173210A50006871C /* midi.cpp */; };
@@ -723,6 +724,7 @@
 				5F1F0F40173CA8C700DEA888 /* util.cpp in Sources */,
 				5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */,
 				5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */,
+				5FBC431118598F9F003FACFD /* CoreAudio.cpp in Sources */,
 				5F33836817402EF600356397 /* midi.cpp in Sources */,
 				5FB4AE5617421C52001A2FF2 /* stream.cpp in Sources */,
 				5FB4AE5717421CB2001A2FF2 /* worker.cpp in Sources */,

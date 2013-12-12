@@ -130,7 +130,6 @@ void AudioTrack<Chunk_T>::set_source_file_impl(std::string filename, CriticalSec
 	_filename = filename;
 	_loading_lock.release();
 	
-	//Worker::do_job(new Worker::load_track_job<AudioTrack<Chunk_T> >(this, lock));
 	this->load(lock);
 	//T_allocator<chunk_t>::gc();
 }

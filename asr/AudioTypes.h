@@ -85,62 +85,28 @@ public:
 	void SetBuffer(void *buf) { _buffer = buf; }
 	virtual int GetBufferSize() const { return _bufferSize; }
 	void SetBufferSize(int sz) { _bufferSize = sz; }
-private:
-	void *_buffer;
-	int _bufferSize;
-};
-
-class MultichannelAudioBuffer : public IAudioBuffer
-{
-public:
-	MultichannelAudioBuffer() : _buffer(0) {}
-	MultichannelAudioBuffer(void *buf) : _buffer(buf) {}
-	
-	virtual void *GetBuffer() { return _buffer; }
-	void SetBuffer(void *buf) { _buffer = buf; }
-	virtual int GetBufferSize() const { return _bufferSize; }
-	void SetBufferSize(int sz) { _bufferSize = sz; }
-	
-	virtual int GetBufferSizeFrames() = 0;
-	virtual void *GetChannelBuffer(int ch) = 0;
-	virtual int GetStride() = 0;
-	virtual int GetNumChannels() = 0;
 protected:
 	void *_buffer;
 	int _bufferSize;
 };
 
-class CoreAudioBuffer : public MultichannelAudioBuffer
+class MultichannelAudioBuffer : public SimpleAudioBuffer
 {
 public:
-	CoreAudioBuffer(int channels, int bytesPerFrame) : _channels(channels), _bytesPerFrame(bytesPerFrame) {}
+	MultichannelAudioBuffer() : SimpleAudioBuffer(0) {}
+	MultichannelAudioBuffer(void *buf) : SimpleAudioBuffer(buf) {}
 	
-	virtual int GetBufferSizeFrames() { return _bufferSize / _bytesPerFrame; }
-	virtual void *GetChannelBuffer(int ch) { return ((float32_t*)_buffer) + ch; }
-	virtual int GetStride() { return _channels; }
-	virtual int GetNumChannels() { return _channels; }
-private:
-	int _channels;
-	int _bytesPerFrame;
-};
-
-class CoreAudioBufferOwner : public CoreAudioBuffer
-{
-public:
-	CoreAudioBufferOwner(int channels, int bytesPerSample, int numFrames) : CoreAudioBuffer(channels, channels*bytesPerSample)
-	{
-		_bufferSize = channels * bytesPerSample * numFrames;
-		_buffer = new char[_bufferSize];
-	}
-	virtual ~CoreAudioBufferOwner()
-	{
-		delete [] (char*)_buffer;
-	}
+	virtual int GetBufferSizeFrames() = 0;
+	virtual void *GetChannelBuffer(int ch) = 0;
+	virtual int GetStride() = 0;
+	virtual int GetNumChannels() = 0;
 };
 
 class IAudioStreamProcessor
 {
 public:
+	virtual ~IAudioStreamProcessor() {}
+	
 	virtual void ProcessInput(IAudioBuffer *buffer) = 0;
 	virtual void ProcessOutput(IAudioBuffer *buffer) = 0;
 };
@@ -153,8 +119,6 @@ public:
 	virtual std::vector<const IAudioDeviceDescriptor*> Enumerate() const = 0;
 };
 
-class IAudioStream;
-
 class IAudioDevice
 {
 public:
@@ -163,6 +127,18 @@ public:
 	virtual const IAudioDeviceDescriptor *GetDescriptor() const = 0;
 	virtual std::vector<const IAudioStreamDescriptor*> GetStreams() const = 0;
 	virtual void RegisterStream(IAudioStream *stream) = 0;
+	
+	virtual void Start() = 0;
+	virtual void Stop() = 0;
+};
+
+class IAudioStream
+{
+public:
+	virtual ~IAudioStream() {}
+	
+	virtual const IAudioStreamDescriptor *GetDescriptor() const = 0;
+	virtual void SetProc(IAudioStreamProcessor *proc) = 0;
 	
 	virtual void Start() = 0;
 	virtual void Stop() = 0;

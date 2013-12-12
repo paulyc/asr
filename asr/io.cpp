@@ -61,8 +61,6 @@ IOProcessor::~IOProcessor() throw()
 
 void IOProcessor::Init()
 {
-	_need_buffers = true;
-	
 	IMIDIDevice *dev = 0; //midifac.Instantiate(1, true);
 	
 	std::vector<const IMIDIDeviceDescriptor*> midiDevices = _client.Enumerate();
@@ -199,11 +197,11 @@ void IOProcessor::configure()
 	_gen->AddChunkSource(_gain2, 2);
 	
 	_outputStreamProcessor = new CoreAudioOutputProcessor(output1Stream->GetDescriptor());
-	_outputStreamProcessor->AddOutput(CoreAudioOutput(_gen, 1, output1Channel.leftChannelIndex, output1Channel.rightChannelIndex));
+	_outputStreamProcessor->AddOutput(new CoreAudioOutput(_gen, 1, output1Channel.leftChannelIndex, output1Channel.rightChannelIndex));
 	
 	if (output2Stream)
 	{
-		_outputStreamProcessor->AddOutput(CoreAudioOutput(_gen, 2, output2Channel.leftChannelIndex, output2Channel.rightChannelIndex));
+		_outputStreamProcessor->AddOutput(new CoreAudioOutput(_gen, 2, output2Channel.leftChannelIndex, output2Channel.rightChannelIndex));
 	}
 	
 	output1Stream->SetProc(_outputStreamProcessor);
@@ -222,7 +220,6 @@ void IOProcessor::configure()
 		_input = new CoreAudioInput(1, input1Channel.leftChannelIndex, input1Channel.rightChannelIndex);
 		_fileWriter = new chunk_file_writer(_input, "output.raw");
 		_inputStreamProcessor->AddInput(_input);
-		Worker::do_job(_fileWriter, false, false);
 		input1Stream->SetProc(_inputStreamProcessor);
 	}
 }

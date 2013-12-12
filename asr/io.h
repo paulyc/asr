@@ -52,6 +52,7 @@ public:
 	chunk_file_writer(CoreAudioInput *src, const char *filename) : _src(src)
 	{
 		_f = fopen(filename, "wb");
+		Worker::do_job(this, false, false);
 	}
 	virtual ~chunk_file_writer()
 	{
@@ -241,11 +242,7 @@ public: // was protected
 
 	//Lock_T _io_lock;
 	CriticalSectionGuard _io_lock;
-	Condition_T _do_gen;
-	Condition_T _gen_done;
 	bool _finishing;
-	pthread_t _gen_th;
-	bool _need_buffers;
 
 	bool _sync_cue;
 

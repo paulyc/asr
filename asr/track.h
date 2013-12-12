@@ -467,7 +467,7 @@ public:
 		if (!_loaded) return;
 	//	pthread_mutex_lock(&_config_lock);
 		ViewableMixin<Chunk_T>::zoom_px(d);
-		Worker::do_job(new Worker::draw_waveform_job<AudioTrack<Chunk_T> >(this, 0));
+		Worker::do_job(new draw_waveform_job(this));
 	//	pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -477,7 +477,7 @@ public:
 	//	pthread_mutex_lock(&_config_lock);
 		if (!_loaded) return;
 		ViewableMixin<Chunk_T>::move_px(d);
-		Worker::do_job(new Worker::draw_waveform_job<AudioTrack<Chunk_T> >(this, 0));
+		Worker::do_job(new draw_waveform_job(this));
 	//	pthread_mutex_unlock(&_config_lock);
 	}
 
@@ -486,7 +486,7 @@ public:
 	//	printf("track::render\n");
 		update_position();
 		if (_io->get_ui()->want_render())
-			Worker::do_job(new Worker::draw_waveform_job<AudioTrack<Chunk_T> >(this, 0));
+			Worker::do_job(new draw_waveform_job(this));
 	}
 	
 	void update_position()
@@ -559,6 +559,20 @@ public:
 		delete _future;
 		_future = 0;
 	}
+	
+	struct draw_waveform_job : public Worker::job
+	{
+		draw_waveform_job(AudioTrack<Chunk_T> *t):track(t){
+			_name="draw wave";
+		}
+		AudioTrack<Chunk_T> *track;
+		
+		void step()
+		{
+			track->draw_if_loaded();
+			done = true;
+		}
+	};
 
 protected:
 	IOProcessor *_io;

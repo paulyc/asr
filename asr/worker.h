@@ -27,7 +27,6 @@
 //#include "track.h"
 #include "util.h"
 #include "malloc.h"
-#include "stream.h"
 
 #define FLAG_NONE 0
 #define FLAG_SUSPENDABLE 1
@@ -110,91 +109,6 @@ public:
 		}
 	};
 
-	template <typename Source_T, typename Chunk_T>
-	struct generate_chunk_job : public job
-	{
-		Source_T *src;
-		IChunkGeneratorCallback<Chunk_T> *cbObj;
-		int chkId;
-		Lock_T *lock;
-		generate_chunk_job(Source_T *s, 
-			IChunkGeneratorCallback<Chunk_T> *cbo, int cid, Lock_T *l) :
-			src(s), cbObj(cbo), chkId(cid), lock(l) {_name="generate chunk";}
-
-		void do_it()
-		{
-			cbObj->chunkCb(src->next(), chkId);
-		}
-	};
-	
-	template <typename Source_T, typename Chunk_T>
-	struct generate_chunk_loop : public job, public IChunkGeneratorLoop<Chunk_T>
-	{
-		Source_T *src;
-		IChunkGeneratorCallback<Chunk_T> *cbObj;
-		int chkId;
-		Lock_T *lock;
-		generate_chunk_loop(Source_T *s,
-						   IChunkGeneratorCallback<Chunk_T> *cbo, int cid, int chunks_to_buffer) :
-		src(s), cbObj(cbo), chkId(cid), running(true), _chunks_to_buffer(chunks_to_buffer) {_name="generate chunk";}
-		
-		void do_it()
-		{
-			uint64_t t_begin, t_end;
-			myLock.acquire();
-			t_begin = mach_absolute_time();
-		//	cbObj->lock(chkId);
-			while (running)
-			{
-				if (nextChks.size() >= _chunks_to_buffer)
-				{
-				 //	  cbObj->unlock(chkId);
-					t_end = mach_absolute_time();
-					//printf("time is %lld\n", t_end - t_begin);
-					doGen.wait(myLock);
-					t_begin = mach_absolute_time();
-				 //	  cbObj->lock(chkId);
-					continue;
-				}
-				nextChks.push(src->next());
-			}
-			//cbObj->unlock(chkId);
-		}
-		
-		Chunk_T *get()
-		{
-			Chunk_T *chk = 0;
-			myLock.acquire();
-			if (nextChks.empty())
-			{
-				printf("nextChks was empty\n");
-				chk = zero_source<chunk_t>::get()->next();
-			}
-			else
-			{
-				chk = nextChks.front();
-				nextChks.pop();
-				doGen.signal();
-			}
-			myLock.release();
-			return chk;
-		}
-		
-		void kill()
-		{
-			myLock.acquire();
-			running = false;
-			doGen.signal();
-			myLock.release();
-		}
-		
-		Lock_T myLock;
-		Condition_T doGen;
-		bool running;
-		std::queue<Chunk_T*> nextChks;
-		int _chunks_to_buffer;
-	};
-
 	template <typename Obj_T>
 	struct callback_job : public job
 	{
@@ -240,56 +154,6 @@ public:
 			pthread_exit(0);
 		}
 		Obj_T *_object;
-	};
-
-	template <typename Track_T>
-	struct load_track_job : public job
-	{
-		load_track_job(Track_T *t, Lock_T *l):track(t),_lock(l){
-			_name="load track";
-		}
-		Track_T *track;
-		
-		//const wchar_t *file;
-		//void do_it()
-		//{
-		//	track->set_source_file(file);
-		//	done = true;
-		//}
-		Lock_T _l;
-		Lock_T *_lock;
-		Condition_T _next_step;
-		void step()
-		{
-			track->load(_lock);
-			T_allocator<typename Track_T::chunk_t>::gc();
-			done = true;
-			printf("job done %p\n", this);
-		}
-	};
-
-	template <typename Track_T>
-	struct draw_waveform_job : public job
-	{
-		draw_waveform_job(Track_T *t, Lock_T *l):track(t),_lock(l){
-			_name="draw wave";
-		}
-		Track_T *track;
-		
-		//const wchar_t *file;
-		//void do_it()
-		//{
-		//	track->set_source_file(file);
-		//	done = true;
-		//}
-		Lock_T _l;
-		Lock_T *_lock;
-		Condition_T _next_step;
-		void step()
-		{
-			track->draw_if_loaded();
-			done = true;
-		}
 	};
 
 	static Lock_T _job_lock;

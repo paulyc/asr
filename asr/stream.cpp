@@ -30,7 +30,7 @@ ChunkGenerator::ChunkGenerator(int bufferSizeFrames, CriticalSectionGuard *ioLoc
 void ChunkGenerator::AddChunkSource(T_source<chunk_t> *src, int id)
 {
 	_lock.acquire();
-	Worker::generate_chunk_loop<T_source<chunk_t>, chunk_t> *job = new Worker::generate_chunk_loop<T_source<chunk_t>, chunk_t>(src, this, id, _chunksToBuffer);
+	generate_chunk_loop *job = new generate_chunk_loop(src, this, id, _chunksToBuffer);
 	_streams[id] = job;
 	Worker::do_job(job, false, true);
 	_lock.release();
