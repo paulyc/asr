@@ -4,5 +4,24 @@ Previously developed for Win32 / ASIO and ported to Mac.
 
 Only Mac build is currently working, open mac/mac.xcodeproj and build.
 
-Developed for use with a Saffire Pro 24 FireWire audio interface
-and CDJ-350 MIDI controller. Can use other hardware with some work.
+Developed for use with a Core Audio interface and 
+CDJ-350 MIDI controller, although it can be controlled entirely with 
+a mouse, this is not recommended for proper performance.
+
+Usage instructions:
+Select Preferences from ASR menu to set up audio IO. If you only
+have one audio output only one track will work. If you select an input
+device, that input will be automatically dumped in raw 32-bit floating
+point stereo format to a file called output.raw in the working directory.
+
+After Configuring, press 
+Start to run the system and 
+Load Track 1 or 2 to get some audio to work with.
+Supported formats are WAV, AIFF, FLAC, and MP3, 16-bit samples at 44.1 or 48 kHz.
+
+* Press the Play/Pause button to begin or stop playback of that track.
+* To change playback position, double click on the waveform where you would like to seek.  
+* To set a cuepoint, right click on the waveform or press the Set Cuepoint button. 
+* Click Goto Cuepoint to seek playback position to the cue point.  
+* The pitch slider can be adjusted to modify playback rate in a range of +/-8%.
+* The waveform view may be adjusted by scrolling or click-dragging to zoom and pan.
