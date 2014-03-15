@@ -54,6 +54,17 @@ bool FileOpenDialog::OpenSingleFile(std::string &filename)
 }
 #endif // !IOS
 
+CocoaUI::CocoaUI() : GenericUI(0,
+					  UITrack(this, 1, 1, 2, 3),
+					  UITrack(this, 2, 4, 5, 6))
+{
+	AppDelegate *del = [NSApp delegate];
+	MyOpenGLView *glView = [[del.window contentView] viewWithTag:'wav1'];
+	[glView setupDragAndDrop];
+	glView = [[del.window contentView] viewWithTag:'wav2'];
+	[glView setupDragAndDrop];
+}
+
 void CocoaUI::mouse_down(MouseButton b, int x, int y, int trackid)
 {
 	switch (b)

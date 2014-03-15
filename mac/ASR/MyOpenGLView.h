@@ -18,6 +18,7 @@
 
 @interface MyOpenGLView : NSOpenGLView
 
+- (void)setupDragAndDrop;
 - (void)renderInto;
 - (int)trackID;
 - (NSPoint)windowCoordsToViewCoords:(NSPoint)p;

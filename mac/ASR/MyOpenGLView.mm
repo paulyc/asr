@@ -33,6 +33,12 @@
     return self;
 }
 
+- (void)setupDragAndDrop
+{
+	[self registerForDraggedTypes:[NSArray arrayWithObjects:
+								   NSURLPboardType, nil]];
+}
+
 - (NSInteger)tag
 {
     if ([self.identifier isEqualToString:@"Wave1"])
@@ -148,6 +154,16 @@ static void drawAnObject ()
     glSwapAPPLE();*/
 }
 
+- (NSDragOperation)draggingEntered:(id <NSDraggingInfo>)sender
+{
+	return NSDragOperationEvery;
+}
+
+- (BOOL)prepareForDragOperation:(id <NSDraggingInfo>)sender
+{
+	return YES;
+}
+
 - (BOOL) performDragOperation:(id<NSDraggingInfo>)sender
 {
     NSPasteboard *pboard = [sender draggingPasteboard];
@@ -164,7 +180,7 @@ static void drawAnObject ()
             }
             else if ([self tag] == 'wav2')
             {
-                del.ui->drop_file([[fileURL path] UTF8String], true);
+                del.ui->drop_file([[fileURL path] UTF8String], false);
             }
         }
     }

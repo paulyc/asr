@@ -20,9 +20,7 @@
 class CocoaUI : public GenericUI
 {
 public:
-    CocoaUI() : GenericUI(0,
-                          UITrack(this, 1, 1, 2, 3),
-                          UITrack(this, 2, 4, 5, 6)) {}
+    CocoaUI();
     virtual void create() {}
 	virtual void destroy() {}
 	virtual void main_loop() { throw std::runtime_error("Not implemented. Use AppKit loop"); }
