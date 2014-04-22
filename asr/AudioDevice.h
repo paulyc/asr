@@ -101,7 +101,7 @@ public:
 	// does not delete inputs
 	void AddInput(CoreAudioInput *in) { _inputs.push_back(in); }
 	virtual void ProcessInput(IAudioBuffer *buffer);
-	virtual void ProcessOutput(IAudioBuffer *buffer) {}
+	virtual void ProcessOutput(IAudioStream *stream, IAudioBuffer *buffer) {}
 private:
 	int _channels;
 	int _frameSize;
@@ -111,9 +111,17 @@ private:
 class CoreAudioOutput : public AudioOutput
 {
 public:
-	CoreAudioOutput(ChunkGenerator *gen, int id, int ch1ofs, int ch2ofs) : AudioOutput(0, ch1ofs, ch2ofs), _gen(gen), _id(id), _clip(false) {}
+	CoreAudioOutput(IAudioStream *stream, ChunkGenerator *gen, int id, int ch1ofs, int ch2ofs) :
+		AudioOutput(0, ch1ofs, ch2ofs),
+		_stream(stream),
+		_gen(gen),
+		_id(id),
+		_clip(false)
+	{}
 	virtual void process(MultichannelAudioBuffer *buf);
+	virtual IAudioStream *getStream() const { return _stream; }
 private:
+	IAudioStream *_stream;
 	ChunkGenerator *_gen;
 	int _id;
 	bool _clip;
@@ -122,16 +130,14 @@ private:
 class CoreAudioOutputProcessor : public IAudioStreamProcessor
 {
 public:
-	CoreAudioOutputProcessor(const IAudioStreamDescriptor *streamDesc);
+	CoreAudioOutputProcessor();
 	virtual ~CoreAudioOutputProcessor();
 	
 	// does delete outputs
 	void AddOutput(CoreAudioOutput *out) { _outputs.push_back(out); }
-	virtual void ProcessOutput(IAudioBuffer *buffer);
+	virtual void ProcessOutput(IAudioStream *stream, IAudioBuffer *buffer);
 	virtual void ProcessInput(IAudioBuffer *buffer) {}
 private:
-	int _channels;
-	int _frameSize;
 	std::vector<CoreAudioOutput*> _outputs;
 };
 

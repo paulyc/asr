@@ -180,10 +180,10 @@ void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
 	}
 }
 
-CoreAudioOutputProcessor::CoreAudioOutputProcessor(const IAudioStreamDescriptor *streamDesc)
+CoreAudioOutputProcessor::CoreAudioOutputProcessor(/*const IAudioStreamDescriptor *streamDesc*/)
 {
-	_channels = streamDesc->GetNumChannels();
-	_frameSize = _channels * streamDesc->GetSampleWordSizeInBytes();
+	//_channels = streamDesc->GetNumChannels();
+	//_frameSize = _channels * streamDesc->GetSampleWordSizeInBytes();
 }
 
 CoreAudioOutputProcessor::~CoreAudioOutputProcessor()
@@ -194,10 +194,10 @@ CoreAudioOutputProcessor::~CoreAudioOutputProcessor()
 	}
 }
 
-void CoreAudioOutputProcessor::ProcessOutput(IAudioBuffer *buffer)
+void CoreAudioOutputProcessor::ProcessOutput(IAudioStream *stream, IAudioBuffer *buffer)
 {
 	for (auto out: _outputs)
 	{
-		out->process(dynamic_cast<MultichannelAudioBuffer*>(buffer));
+		if (out->getStream() == stream) out->process(dynamic_cast<MultichannelAudioBuffer*>(buffer));
 	}
 }

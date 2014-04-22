@@ -98,7 +98,7 @@ public:
 	  double chunks_per_pixel_d = double(chunks) / _width;
 	  int chunks_per_pixel = max(1, int(chunks_per_pixel_d));
 	//	printf("cpp %f\n", chunks_per_pixel_d);
-	  if (chunks_per_pixel_d < 1.0 && chunks_per_pixel_d >= 0.1)
+	  if (chunks_per_pixel_d < 0.8 && chunks_per_pixel_d >= 0.1) // mid zoom
 	  {
 		  for (int p = 0; p < _width; ++p)
 		  {
@@ -113,7 +113,7 @@ public:
 		  }
 		   
 	  }
-	  else if (chunks_per_pixel_d >= 1.0)
+	  else if (chunks_per_pixel_d >= 0.8) // low zoom
 	  {
 			for (int p = 0; p < _width; ++p)
 		  {
@@ -135,7 +135,7 @@ public:
 		  }
 		  
 	  }
-	  else
+	  else // high zoom
 	  {
 		  // slow for higher values of chunks per pixel
 		  chunks = _src->len().chunks;

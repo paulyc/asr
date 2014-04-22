@@ -177,7 +177,7 @@ void IOProcessor::configure()
 	// should always be an output 1, but not necessarily 2
 	// TODO this is not going to work if output1Stream != output2Stream
 	assert(output1Stream);
-	assert(!output2Stream || output1Stream == output2Stream);
+	//assert(!output2Stream || output1Stream == output2Stream);
 	
 	Stop();
 	if (_fileWriter) _fileWriter->stop(); // deletes _fileWriter and _input
@@ -196,20 +196,27 @@ void IOProcessor::configure()
 	_gen->AddChunkSource(_gain1, 1);
 	_gen->AddChunkSource(_gain2, 2);
 	
-	_outputStreamProcessor = new CoreAudioOutputProcessor(output1Stream->GetDescriptor());
-	_outputStreamProcessor->AddOutput(new CoreAudioOutput(_gen, 1, output1Channel.leftChannelIndex, output1Channel.rightChannelIndex));
+	_outputStreamProcessor = new CoreAudioOutputProcessor;
+	_outputStreamProcessor->AddOutput(new CoreAudioOutput(output1Stream, _gen, 1, output1Channel.leftChannelIndex, output1Channel.rightChannelIndex));
 	
 	if (output2Stream)
 	{
-		_outputStreamProcessor->AddOutput(new CoreAudioOutput(_gen, 2, output2Channel.leftChannelIndex, output2Channel.rightChannelIndex));
+		_outputStreamProcessor->AddOutput(new CoreAudioOutput(output2Stream, _gen, 2, output2Channel.leftChannelIndex, output2Channel.rightChannelIndex));
 	}
 	
 	output1Stream->SetProc(_outputStreamProcessor);
+	if (output2Stream && output2Stream != output1Stream)
+	{
+		output2Stream->SetProc(_outputStreamProcessor);
+	}
 	
 	_tracks[0]->set_sample_rate_out(output1Stream->GetDescriptor()->GetSampleRate());
 	_tracks[0]->set_output_sampling_frequency(output1Stream->GetDescriptor()->GetSampleRate());
-	_tracks[1]->set_sample_rate_out(output1Stream->GetDescriptor()->GetSampleRate());
-	_tracks[1]->set_output_sampling_frequency(output1Stream->GetDescriptor()->GetSampleRate());
+	if (output2Stream)
+	{
+		_tracks[1]->set_sample_rate_out(output2Stream->GetDescriptor()->GetSampleRate());
+		_tracks[1]->set_output_sampling_frequency(output2Stream->GetDescriptor()->GetSampleRate());
+	}
 	
 	auto input1Channel = getChannel(Input1Channel);
 	auto input1Stream = input1Channel.stream;
@@ -232,7 +239,15 @@ void IOProcessor::Start()
 		_src_active = true;
 		if (_midi_controller)
 			_midi_controller->Start();
-		getOutputDevice()->Start();
+		auto stream1 = _channels[_configs[Output1Channel]].stream;
+		auto device1 = stream1->GetDescriptor()->GetDevice();
+		device1->Start();
+		auto stream2 = _channels[_configs[Output2Channel]].stream;
+		if (stream2)
+		{
+			auto device2 = stream2->GetDescriptor()->GetDevice();
+			if (device1 != device2) device2->Start();
+		}
 		if (getInputDevice()) getInputDevice()->Start();
 	}
 }
@@ -245,7 +260,15 @@ void IOProcessor::Stop()
 		_src_active = false;
 		if (_midi_controller)
 			_midi_controller->Stop();
-		getOutputDevice()->Stop();
+		auto stream1 = _channels[_configs[Output1Channel]].stream;
+		auto device1 = stream1->GetDescriptor()->GetDevice();
+		device1->Stop();
+		auto stream2 = _channels[_configs[Output2Channel]].stream;
+		if (stream2)
+		{
+			auto device2 = stream2->GetDescriptor()->GetDevice();
+			if (device1 != device2) device2->Stop();
+		}
 		if (getInputDevice()) getInputDevice()->Stop();
 	}
 }

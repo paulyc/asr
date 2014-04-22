@@ -277,7 +277,7 @@ OSStatus CoreAudioStream::_audioCB(AudioObjectID		   inDevice,
 	{
 		buf.SetBuffer(outOutputData->mBuffers[i].mData);
 		buf.SetBufferSize(outOutputData->mBuffers[i].mDataByteSize);
-		stream->_proc->ProcessOutput(&buf);
+		stream->_proc->ProcessOutput((IAudioStream*)stream, &buf);
 	}
 	numBuffers = inInputData->mNumberBuffers;
 	for (UInt32 i = 0; i < numBuffers; ++i)

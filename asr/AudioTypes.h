@@ -108,7 +108,7 @@ public:
 	virtual ~IAudioStreamProcessor() {}
 	
 	virtual void ProcessInput(IAudioBuffer *buffer) = 0;
-	virtual void ProcessOutput(IAudioBuffer *buffer) = 0;
+	virtual void ProcessOutput(IAudioStream *stream, IAudioBuffer *buffer) = 0;
 };
 
 class IAudioDeviceFactory
