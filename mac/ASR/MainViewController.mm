@@ -101,6 +101,7 @@ float pitch2Value = 500.0f;
 	pitch1Value = value;
 	const double pitchValue = (1.0 - pitchRange) + 2.0*pitchRange * value/1000.0f;
 	[self getTrack:1]->set_pitch(pitchValue);
+	_pitch1str = [NSString stringWithFormat:@"%.02f", (pitchValue-1.0)*100.0f];
 }
 
 - (void)setPitch2:(float)value
@@ -108,6 +109,7 @@ float pitch2Value = 500.0f;
 	pitch2Value = value;
 	const double pitchValue = (1.0 - pitchRange) + 2.0*pitchRange * value/1000.0f;
 	[self getTrack:2]->set_pitch(pitchValue);
+	//_pitch2str = [NSString stringWithFormat:@"%.02f", (pitchValue-1.0)*100.0f];
 }
 
 - (float)getPitch1

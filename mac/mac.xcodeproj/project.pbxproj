@@ -16,6 +16,8 @@
 		5F1F0F40173CA8C700DEA888 /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B363173210A50006871C /* util.cpp */; };
 		5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
 		5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */; };
+		5F249B8119A8A5020060D89F /* spotify.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5F249B7F19A8A5020060D89F /* spotify.cpp */; };
+		5F249B8319A8A7200060D89F /* libspotify.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F249B8219A8A7200060D89F /* libspotify.framework */; };
 		5F28459718178998004C3341 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F391FA218112D8400FB5F8A /* Foundation.framework */; };
 		5F28459818178998004C3341 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F391FA418112D8400FB5F8A /* CoreGraphics.framework */; };
 		5F28459F18178998004C3341 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5F28459D18178998004C3341 /* InfoPlist.strings */; };
@@ -126,6 +128,8 @@
 		5F1F0F3B173C9F3200DEA888 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		5F230BA3184951ED00B61111 /* spotifysource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = spotifysource.cpp; sourceTree = "<group>"; };
 		5F230BA4184951ED00B61111 /* spotifysource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = spotifysource.h; sourceTree = "<group>"; };
+		5F249B7F19A8A5020060D89F /* spotify.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = spotify.cpp; sourceTree = "<group>"; };
+		5F249B8219A8A7200060D89F /* libspotify.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = libspotify.framework; sourceTree = "<group>"; };
 		5F28458D1817860E004C3341 /* ui_ios.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ui_ios.hpp; sourceTree = "<group>"; };
 		5F28458E1817868D004C3341 /* ui_ios.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ui_ios.mm; sourceTree = "<group>"; };
 		5F28459618178998004C3341 /* asr.ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = asr.ios.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -165,6 +169,7 @@
 		5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMIDI.framework; path = System/Library/Frameworks/CoreMIDI.framework; sourceTree = SDKROOT; };
 		5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		5F9BB3951A676B4000B8B061 /* spotify.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = spotify.h; sourceTree = "<group>"; };
 		5FB2B2B6173210A50006871C /* asr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = asr.cpp; sourceTree = "<group>"; };
 		5FB2B2B7173210A50006871C /* asr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asr.h; sourceTree = "<group>"; };
 		5FB2B2C1173210A50006871C /* buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buffer.h; sourceTree = "<group>"; };
@@ -257,6 +262,7 @@
 				5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */,
 				5F9B8E7D173F67DA009F0966 /* CoreMIDI.framework in Frameworks */,
 				5F1F0F26173C9F3100DEA888 /* Cocoa.framework in Frameworks */,
+				5F249B8319A8A7200060D89F /* libspotify.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -414,6 +420,7 @@
 		5FB2B29B1732107C0006871C = {
 			isa = PBXGroup;
 			children = (
+				5F249B8219A8A7200060D89F /* libspotify.framework */,
 				5FDC485F17472939004C2378 /* OpenGL.framework */,
 				5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */,
 				5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */,
@@ -516,6 +523,8 @@
 				5F230BA3184951ED00B61111 /* spotifysource.cpp */,
 				5F230BA4184951ED00B61111 /* spotifysource.h */,
 				5F0CEBEB1854FD41006F8F07 /* AudioTypes.h */,
+				5F249B7F19A8A5020060D89F /* spotify.cpp */,
+				5F9BB3951A676B4000B8B061 /* spotify.h */,
 			);
 			name = asr;
 			path = ../asr;
@@ -633,7 +642,7 @@
 		5FB2B29C1732107C0006871C /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0500;
+				LastUpgradeCheck = 0610;
 				ORGANIZATIONNAME = "Paul Ciarlo";
 				TargetAttributes = {
 					5F2845BA18178999004C3341 = {
@@ -720,6 +729,7 @@
 			files = (
 				5F1F0F32173C9F3200DEA888 /* main.m in Sources */,
 				5F992D51182A103A00EFB15A /* PrefsWindowController.mm in Sources */,
+				5F249B8119A8A5020060D89F /* spotify.cpp in Sources */,
 				5F1F0F39173C9F3200DEA888 /* AppDelegate.mm in Sources */,
 				5F1F0F40173CA8C700DEA888 /* util.cpp in Sources */,
 				5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */,
@@ -887,6 +897,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "ASR/ASR-Prefix.pch";
 				HEADER_SEARCH_PATHS = (
@@ -915,6 +929,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "ASR/ASR-Prefix.pch";
 				HEADER_SEARCH_PATHS = (
@@ -943,7 +961,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CLANG_ENABLE_MODULES = YES;
@@ -998,7 +1015,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CLANG_ENABLE_MODULES = YES;

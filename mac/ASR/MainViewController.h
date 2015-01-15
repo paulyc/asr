@@ -24,6 +24,9 @@
 @property(getter = getPitch1, setter = setPitch1:) float pitch1;
 @property(getter = getPitch2, setter = setPitch2:) float pitch2;
 
+@property(strong) NSString *pitch1str;
+@property(strong) NSString *pitch2str;
+
 - (void)setStart:(BOOL)start;
 - (void)button1Push;
 - (void)button2Push;

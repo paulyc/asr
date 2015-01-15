@@ -19,7 +19,7 @@
 class ASR;
 class CocoaUI;
 
-@interface AppDelegate : NSObject <NSApplicationDelegate>
+@interface AppDelegate : NSObject <NSFileManagerDelegate>
 
 - (void)renderTrack:(NSString*)trackid;
 

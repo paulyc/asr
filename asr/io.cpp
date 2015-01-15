@@ -79,6 +79,12 @@ void IOProcessor::Init()
 		printf("Have midi\n");
 		_midi_controller = new CDJ350MIDIController(dev);
 	}
+#if SPOTIFY_ENABLED
+	_spotify = new Spotify;
+#if 0
+	_spotify->login("username", "password");
+#endif
+#endif
 }
 
 // stop using ui before destroying
@@ -90,6 +96,9 @@ void IOProcessor::Finish()
 
 void IOProcessor::Destroy()
 {
+#if SPOTIFY_ENABLED
+	delete _spotify;
+#endif
 	delete _midi_controller;
 	delete _filter_controller;
 	

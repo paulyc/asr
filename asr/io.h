@@ -40,6 +40,10 @@
 
 #include "ioconfig.h"
 
+#if SPOTIFY_ENABLED
+#include "spotify.h"
+#endif
+
 class IOProcessor;
 class GenericUI;
 class IMIDIDevice;
@@ -260,6 +264,9 @@ public:
 	ChunkGenerator *_gen;
 	gain<T_source<chunk_t> > *_gain1, *_gain2;
 	chunk_file_writer *_fileWriter;
+#if SPOTIFY_ENABLED
+	Spotify *_spotify;
+#endif
 };
 
 #endif // !defined(_IO_H)

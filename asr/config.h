@@ -89,6 +89,8 @@
 
 #define PARALLEL_PROCESS 1
 
+#define SPOTIFY_ENABLED 1
+
 #include <stdlib.h>
 #include "malloc.h"
 
