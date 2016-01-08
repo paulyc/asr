@@ -17,7 +17,6 @@
 		5F1F0F41173CA94900DEA888 /* fft.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FB2B314173210A50006871C /* fft.cpp */; };
 		5F1F0F42173CA95700DEA888 /* ui_cocoa.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5F1F0ED6173C8E8B00DEA888 /* ui_cocoa.mm */; };
 		5F249B8119A8A5020060D89F /* spotify.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5F249B7F19A8A5020060D89F /* spotify.cpp */; };
-		5F249B8319A8A7200060D89F /* libspotify.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F249B8219A8A7200060D89F /* libspotify.framework */; };
 		5F28459718178998004C3341 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F391FA218112D8400FB5F8A /* Foundation.framework */; };
 		5F28459818178998004C3341 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F391FA418112D8400FB5F8A /* CoreGraphics.framework */; };
 		5F28459F18178998004C3341 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 5F28459D18178998004C3341 /* InfoPlist.strings */; };
@@ -87,6 +86,9 @@
 		5FDE426C18179107002C2892 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5FDE426B18179107002C2892 /* UIKit.framework */; };
 		5FF356E81828A9D200907224 /* PrefsViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5FF356E71828A9D200907224 /* PrefsViewController.mm */; };
 		5FF356EE1828B02300907224 /* PrefsWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5FF356F01828B02300907224 /* PrefsWindow.xib */; };
+		FA520D751C404A5C0018E29B /* libspotify.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA520D741C404A5C0018E29B /* libspotify.framework */; };
+		FA520D761C404ABD0018E29B /* libspotify.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA520D741C404A5C0018E29B /* libspotify.framework */; };
+		FA520D771C404ABD0018E29B /* libspotify.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FA520D741C404A5C0018E29B /* libspotify.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,6 +107,20 @@
 			remoteInfo = asr;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FA520D781C404ABE0018E29B /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				FA520D771C404ABD0018E29B /* libspotify.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		5F0C4F1B1736E5D60025E149 /* ui_cli.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ui_cli.cpp; sourceTree = "<group>"; };
@@ -129,7 +145,6 @@
 		5F230BA3184951ED00B61111 /* spotifysource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = spotifysource.cpp; sourceTree = "<group>"; };
 		5F230BA4184951ED00B61111 /* spotifysource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = spotifysource.h; sourceTree = "<group>"; };
 		5F249B7F19A8A5020060D89F /* spotify.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = spotify.cpp; sourceTree = "<group>"; };
-		5F249B8219A8A7200060D89F /* libspotify.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = libspotify.framework; sourceTree = "<group>"; };
 		5F28458D1817860E004C3341 /* ui_ios.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ui_ios.hpp; sourceTree = "<group>"; };
 		5F28458E1817868D004C3341 /* ui_ios.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ui_ios.mm; sourceTree = "<group>"; };
 		5F28459618178998004C3341 /* asr.ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = asr.ios.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -249,6 +264,7 @@
 		5FF356E61828A9D200907224 /* PrefsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PrefsViewController.h; sourceTree = "<group>"; };
 		5FF356E71828A9D200907224 /* PrefsViewController.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = PrefsViewController.mm; sourceTree = "<group>"; };
 		5FF356F41828B04100907224 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/PrefsWindow.xib; sourceTree = "<group>"; };
+		FA520D741C404A5C0018E29B /* libspotify.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = libspotify.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -256,13 +272,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FA520D761C404ABD0018E29B /* libspotify.framework in Frameworks */,
 				5FDC486017472939004C2378 /* OpenGL.framework in Frameworks */,
 				5F9B8E85173F6817009F0966 /* AppKit.framework in Frameworks */,
 				5F9B8E81173F67ED009F0966 /* CoreFoundation.framework in Frameworks */,
 				5F9B8E7F173F67E6009F0966 /* CoreAudio.framework in Frameworks */,
 				5F9B8E7D173F67DA009F0966 /* CoreMIDI.framework in Frameworks */,
+				FA520D751C404A5C0018E29B /* libspotify.framework in Frameworks */,
 				5F1F0F26173C9F3100DEA888 /* Cocoa.framework in Frameworks */,
-				5F249B8319A8A7200060D89F /* libspotify.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -312,6 +329,11 @@
 		5F1F0F24173C9F3100DEA888 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				FA520D741C404A5C0018E29B /* libspotify.framework */,
+				5FDC485F17472939004C2378 /* OpenGL.framework */,
+				5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */,
+				5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */,
+				5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */,
 				5FC233C6181A2BC600B5B3F6 /* AudioToolbox.framework */,
 				5FC233C2181A28AE00B5B3F6 /* CoreMIDI.framework */,
 				5FDE426B18179107002C2892 /* UIKit.framework */,
@@ -420,11 +442,6 @@
 		5FB2B29B1732107C0006871C = {
 			isa = PBXGroup;
 			children = (
-				5F249B8219A8A7200060D89F /* libspotify.framework */,
-				5FDC485F17472939004C2378 /* OpenGL.framework */,
-				5F9B8E80173F67ED009F0966 /* CoreFoundation.framework */,
-				5F9B8E7E173F67E6009F0966 /* CoreAudio.framework */,
-				5F9B8E7C173F67DA009F0966 /* CoreMIDI.framework */,
 				5FB2B2B0173210A50006871C /* asr */,
 				5F1F0F2B173C9F3100DEA888 /* ASR */,
 				5F28459A18178998004C3341 /* asr.ios */,
@@ -556,6 +573,7 @@
 				5F1F0F1F173C9F3100DEA888 /* Sources */,
 				5F1F0F20173C9F3100DEA888 /* Frameworks */,
 				5F1F0F21173C9F3100DEA888 /* Resources */,
+				FA520D781C404ABE0018E29B /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -642,7 +660,7 @@
 		5FB2B29C1732107C0006871C /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0610;
+				LastUpgradeCheck = 0720;
 				ORGANIZATIONNAME = "Paul Ciarlo";
 				TargetAttributes = {
 					5F2845BA18178999004C3341 = {
@@ -909,6 +927,7 @@
 					../contrib/flac/include,
 				);
 				INFOPLIST_FILE = "ASR/ASR-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"../contrib/libmad-0.15.1b/lib",
 					../contrib/flac/lib,
@@ -920,6 +939,7 @@
 					"-lfftw3",
 					"-lfftw3f",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ciarloenterprises.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -941,6 +961,7 @@
 					../contrib/flac/include,
 				);
 				INFOPLIST_FILE = "ASR/ASR-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"../contrib/libmad-0.15.1b/lib",
 					../contrib/flac/lib,
@@ -952,6 +973,7 @@
 					"-lfftw3",
 					"-lfftw3f",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = "ciarloenterprises.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -1004,6 +1026,7 @@
 					"-lfftw3",
 					"-lFLAC-static",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.github.paulyc.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1054,6 +1077,7 @@
 					"-lfftw3",
 					"-lFLAC-static",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.github.paulyc.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1087,6 +1111,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				INFOPLIST_FILE = "asr.iosTests/asr.iosTests-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.github.paulyc.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				TEST_HOST = "$(BUNDLE_LOADER)";
@@ -1116,6 +1141,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				INFOPLIST_FILE = "asr.iosTests/asr.iosTests-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.github.paulyc.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				TEST_HOST = "$(BUNDLE_LOADER)";
@@ -1138,6 +1164,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(PROJECT_DIR)",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "asr/asr-Prefix.pch";
@@ -1150,6 +1177,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				INFOPLIST_FILE = "asr/asr-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "ciarloenterprises.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1172,6 +1200,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(PROJECT_DIR)",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "asr/asr-Prefix.pch";
@@ -1180,6 +1209,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				INFOPLIST_FILE = "asr/asr-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "ciarloenterprises.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1262,6 +1292,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;

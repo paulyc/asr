@@ -6,3 +6,4 @@ contrib
 **/*.raw
 **/*.out
 **/*.o
+**/*xcuserdata*/**
