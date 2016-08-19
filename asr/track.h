@@ -379,19 +379,21 @@ public:
 		_filename = 0;
 	}
 	
+#if TEST_BEATS
 	void analyze()
 	{
 		_detector.analyze();
 	}
 
-	virtual typename T_source<Chunk_T>::pos_info& len()
-	{
-		return _src_buf->len();
-	}
-
 	const std::vector<double>& beats()
 	{
 		return _detector.beats();
+	}
+#endif
+
+	virtual typename T_source<Chunk_T>::pos_info& len()
+	{
+		return _src_buf->len();
 	}
 
 protected:
@@ -399,7 +401,9 @@ protected:
 	BufferedStream<Chunk_T> *_src_buf;
 	const char *_filename;
 
+#if TEST_BEATS
 	BeatDetector<Chunk_T> _detector;
+#endif
 };
 
 template <typename Chunk_T>

@@ -331,7 +331,7 @@ void CocoaUI::render_impl(int trackid)
 	glVertex2d(x, 1.0);
 	
 	
-#define SHOW_BEATS 1
+#define SHOW_BEATS 0
 #if SHOW_BEATS
 	glColor3f(1.0f, 0.0f, 0.5f);
 	const std::vector<double>& beats = track->beats();

@@ -37,7 +37,7 @@
     
     // Implement this method to handle any initialization after your window controller's window has been loaded from its nib file.
 
-	_viewController = [PrefsViewController alloc];
+	_viewController = [[PrefsViewController alloc] init];
 	[_viewController setView:[[self window] contentView]];
 }
 

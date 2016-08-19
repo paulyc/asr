@@ -207,7 +207,6 @@
 		5FB2B32A173210A50006871C /* midi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = midi.h; sourceTree = "<group>"; };
 		5FB2B32B173210A50006871C /* mpeg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mpeg.h; sourceTree = "<group>"; };
 		5FB2B32D173210A50006871C /* mylog.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = mylog.txt; sourceTree = "<group>"; };
-		5FB2B32E173210A50006871C /* out */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = out; sourceTree = "<group>"; };
 		5FB2B32F173210A50006871C /* peaks.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = peaks.txt; sourceTree = "<group>"; };
 		5FB2B354173210A50006871C /* resource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = resource.h; sourceTree = "<group>"; };
 		5FB2B355173210A50006871C /* speedparser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = speedparser.cpp; sourceTree = "<group>"; };
@@ -216,7 +215,7 @@
 		5FB2B358173210A50006871C /* test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test.cpp; sourceTree = "<group>"; };
 		5FB2B359173210A50006871C /* tracer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tracer.cpp; sourceTree = "<group>"; };
 		5FB2B35A173210A50006871C /* tracer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tracer.h; sourceTree = "<group>"; };
-		5FB2B35B173210A50006871C /* track.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = track.h; sourceTree = "<group>"; };
+		5FB2B35B173210A50006871C /* track.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; lineEnding = 2; path = track.h; sourceTree = "<group>"; };
 		5FB2B35C173210A50006871C /* trackmgr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = trackmgr.h; sourceTree = "<group>"; };
 		5FB2B35E173210A50006871C /* type.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = type.h; sourceTree = "<group>"; };
 		5FB2B35F173210A50006871C /* ui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ui.cpp; sourceTree = "<group>"; };
@@ -486,7 +485,6 @@
 				5FB2B32A173210A50006871C /* midi.h */,
 				5FB2B32B173210A50006871C /* mpeg.h */,
 				5FB2B32D173210A50006871C /* mylog.txt */,
-				5FB2B32E173210A50006871C /* out */,
 				5FB2B32F173210A50006871C /* peaks.txt */,
 				5FB2B354173210A50006871C /* resource.h */,
 				5FB2B355173210A50006871C /* speedparser.cpp */,
