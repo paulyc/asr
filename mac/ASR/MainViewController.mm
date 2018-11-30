@@ -31,13 +31,15 @@ float pitch2Value = 500.0f;
 
 - (typename IOProcessor::track_t*)getTrack:(int)track_id
 {
-	AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
 	return del.ui->_io->GetTrack(track_id);
 }
 
 - (void)setStart:(BOOL)status
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     if (status == YES)
         del.ui->_io->Start();
     else
@@ -46,7 +48,8 @@ float pitch2Value = 500.0f;
 
 - (void)button1Push
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     std::string filename;
     if (FileOpenDialog::OpenSingleFile(filename))
     {
@@ -56,7 +59,8 @@ float pitch2Value = 500.0f;
 
 - (void)button2Push
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     std::string filename;
     if (FileOpenDialog::OpenSingleFile(filename))
     {
@@ -66,13 +70,15 @@ float pitch2Value = 500.0f;
 
 - (void)playTrack1
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     del.ui->play_pause(1);
 }
 
 - (void)playTrack2
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     del.ui->play_pause(2);
 }
 

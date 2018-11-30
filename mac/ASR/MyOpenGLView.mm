@@ -71,28 +71,32 @@
 
 - (void)mouseDragged:(NSEvent *)theEvent
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     NSPoint p = [self windowCoordsToViewCoords:[theEvent locationInWindow]];
     del.ui->mouse_drag(p.x, p.y, [self trackID]);
 }
 
 - (void)mouseDown:(NSEvent *)theEvent
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     NSPoint p = [self windowCoordsToViewCoords:[theEvent locationInWindow]];
     del.ui->mouse_down(GenericUI::Left, p.x, p.y, [self trackID]);
 }
 
 - (void)rightMouseDown:(NSEvent *)theEvent
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     NSPoint p = [self windowCoordsToViewCoords:[theEvent locationInWindow]];
     del.ui->mouse_down(GenericUI::Right, p.x, p.y, [self trackID]);
 }
 
 - (void)mouseUp:(NSEvent *)theEvent
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     NSPoint p = [self windowCoordsToViewCoords:[theEvent locationInWindow]];
     del.ui->mouse_up(GenericUI::Left, p.x, p.y, [self trackID]);
     if ([theEvent clickCount] == 2)
@@ -101,7 +105,8 @@
 
 - (void)rightMouseUp:(NSEvent *)theEvent
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     NSPoint p = [self windowCoordsToViewCoords:[theEvent locationInWindow]];
     del.ui->mouse_up(GenericUI::Right, p.x, p.y, [self trackID]);
     if ([theEvent clickCount] == 2)
@@ -110,14 +115,16 @@
 
 - (void)scrollWheel:(NSEvent *)theEvent
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     NSPoint p = [self windowCoordsToViewCoords:[theEvent locationInWindow]];
     del.ui->mouse_scroll([theEvent deltaX], [theEvent deltaY], p.x, [self trackID]);
 }
 
 - (void)keyUp:(NSEvent *)theEvent
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     unsigned short keyCode = [theEvent keyCode];
 
         switch (keyCode)
@@ -167,7 +174,8 @@ static void drawAnObject ()
 - (BOOL) performDragOperation:(id<NSDraggingInfo>)sender
 {
     NSPasteboard *pboard = [sender draggingPasteboard];
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     
     if ( [[pboard types] containsObject:NSURLPboardType] ) {
         NSURL *fileURL = [NSURL URLFromPasteboard:pboard];

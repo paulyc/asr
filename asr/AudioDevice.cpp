@@ -80,7 +80,7 @@ void CoreAudioInput::process(MultichannelAudioBuffer *buf)
 	if (_ch1ofs >= buf->GetNumChannels())
 		return;
 	const int stride = buf->GetStride();
-	int to_read = buf->GetBufferSizeFrames(), loop_read, bytes_read=0, chunk_left;
+	size_t to_read = buf->GetBufferSizeFrames(), loop_read, bytes_read=0, chunk_left;
 	float32_t * const read = (float32_t* const)buf->GetBuffer();
 	
 	while (to_read > 0)
@@ -144,12 +144,24 @@ void CoreAudioInputProcessor::ProcessInput(IAudioBuffer *buffer)
 	}
 }
 
+void CoreAudioOutput::clear(MultichannelAudioBuffer *buf)
+{
+    const int stride = buf->GetStride();
+    size_t to_write = buf->GetBufferSizeFrames(), loop_write, written=0, chunk_left;
+    float32_t * const write = (float32_t* const)buf->GetBuffer();
+
+    for (size_t i = 0; i < to_write; ++i) {
+        write[i*stride+_ch1id] = 0.0f;
+        write[i*stride+_ch2id] = 0.0f;
+    }
+}
+
 void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
 {
 	if (_ch1id >= buf->GetNumChannels())
 		return;
 	const int stride = buf->GetStride();
-	int to_write = buf->GetBufferSizeFrames(), loop_write, written=0, chunk_left;
+	size_t to_write = buf->GetBufferSizeFrames(), loop_write, written=0, chunk_left;
 	float32_t * const write = (float32_t* const)buf->GetBuffer();
 	
 	while (to_write > 0)
@@ -164,8 +176,8 @@ void CoreAudioOutput::process(MultichannelAudioBuffer *buf)
 		loop_write = std::min(to_write, chunk_left);
 		for (int i = 0; i < loop_write; ++i)
 		{
-			write[i*stride+_ch1id] = _read[i][0];
-			write[i*stride+_ch2id] = _read[i][1];
+			write[i*stride+_ch1id] += _read[i][0];
+			write[i*stride+_ch2id] += _read[i][1];
 			
 			if (!_clip && (_read[i][0] > 1.0f || _read[i][1] > 1.0f))
 			{
@@ -188,7 +200,7 @@ CoreAudioOutputProcessor::CoreAudioOutputProcessor(/*const IAudioStreamDescripto
 
 CoreAudioOutputProcessor::~CoreAudioOutputProcessor()
 {
-	for (auto out: _outputs)
+	for (CoreAudioOutput* out: _outputs)
 	{
 		delete out;
 	}
@@ -196,7 +208,12 @@ CoreAudioOutputProcessor::~CoreAudioOutputProcessor()
 
 void CoreAudioOutputProcessor::ProcessOutput(IAudioStream *stream, IAudioBuffer *buffer)
 {
-	for (auto out: _outputs)
+    for (CoreAudioOutput* out: _outputs)
+    {
+        out->clear(dynamic_cast<MultichannelAudioBuffer*>(buffer));
+    }
+
+	for (CoreAudioOutput* out: _outputs)
 	{
 		if (out->getStream() == stream) out->process(dynamic_cast<MultichannelAudioBuffer*>(buffer));
 	}

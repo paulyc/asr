@@ -50,6 +50,7 @@ public:
 	}
 	
 	virtual void process(MultichannelAudioBuffer *buf) = 0;
+    virtual void clear(MultichannelAudioBuffer *buf) = 0;
 	virtual void switchBuffers(int dbIndex) {}
 protected:
 	int _ch1id;
@@ -119,6 +120,7 @@ public:
 		_clip(false)
 	{}
 	virtual void process(MultichannelAudioBuffer *buf);
+    virtual void clear(MultichannelAudioBuffer *buf);
 	virtual IAudioStream *getStream() const { return _stream; }
 private:
 	IAudioStream *_stream;

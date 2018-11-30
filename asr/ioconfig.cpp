@@ -37,7 +37,7 @@ void IOConfig::initDriver(std::string name)
 	
 	IAudioDeviceFactory *deviceFac = 0;
 	
-	for (auto driver : _drivers)
+	for (const IAudioDriverDescriptor* driver : _drivers)
 	{
 		if (driver->GetName() == name)
 			deviceFac = driver->Instantiate();
@@ -48,7 +48,7 @@ void IOConfig::initDriver(std::string name)
 		throw std::runtime_error("No such driver: " + name);
 	}
 	
-	for (auto deviceDesc : deviceFac->Enumerate())
+	for (const IAudioDeviceDescriptor* deviceDesc : deviceFac->Enumerate())
 	{
 		_devices.push_back(deviceDesc->Instantiate());
 	}
@@ -63,9 +63,9 @@ void IOConfig::initDriver(std::string name)
 	// Get all streams and channels
 	_channels.push_back(_noneChannel);
 	
-	for (auto dev: _devices)
+	for (IAudioDevice* dev: _devices)
 	{
-		for (auto streamDesc: dev->GetStreams())
+		for (const IAudioStreamDescriptor* streamDesc: dev->GetStreams())
 		{
 			IAudioStream *stream = streamDesc->GetStream();
 			_streams.push_back(stream);
@@ -78,7 +78,7 @@ void IOConfig::initDriver(std::string name)
 		}
 	}
 	
-	for (const auto &config : _channels)
+	for (const ChannelConfig &config : _channels)
 	{
 		std::cout << config.toString() << std::endl;
 	}
@@ -90,13 +90,13 @@ void IOConfig::cleanupDriver()
 {
 	_channels.clear();
 	
-	for (auto stream: _streams)
+	for (IAudioStream* stream: _streams)
 	{
 		delete stream;
 	}
 	_streams.clear();
 	
-	for (auto device: _devices)
+	for (IAudioDevice* device: _devices)
 	{
 		delete device;
 	}
@@ -128,10 +128,11 @@ void IOConfig::setupDefaultConfig()
 		}
 		else
 		{
-			// use built-in output for channel 1 if no Saffire present
+			// use built-in output for channel 1 and 2 if no Saffire present
 			if (deviceDesc->GetName() == "Built-in Output" && config.leftChannelIndex == 0 && _configs[Output1Channel] == 0)
 			{
 				_configs[Output1Channel] = i;
+                _configs[Output2Channel] = i;
 			}
 			else if (deviceDesc->GetName() == "Saffire")
 			{

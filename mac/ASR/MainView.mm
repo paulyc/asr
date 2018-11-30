@@ -55,7 +55,8 @@
 
 - (void)keyUp:(NSEvent *)theEvent
 {
-    AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
     NSPoint p = [theEvent locationInWindow];
     
     NSView *target = [self hitTest:p];

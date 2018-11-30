@@ -58,7 +58,8 @@ CocoaUI::CocoaUI() : GenericUI(0,
 					  UITrack(this, 1, 1, 2, 3),
 					  UITrack(this, 2, 4, 5, 6))
 {
-	AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
 	MyOpenGLView *glView = [[del.window contentView] viewWithTag:'wav1'];
 	[glView setupDragAndDrop];
 	glView = [[del.window contentView] viewWithTag:'wav2'];
@@ -222,16 +223,18 @@ void CocoaUI::play_pause(int trackid)
 #if !IOS
 void CocoaUI::render(int trackid)
 {
-	AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
 	if (trackid==1)
-		[del performSelectorOnMainThread:@selector(renderTrack:) withObject:@"1" waitUntilDone:NO];
+		[[NSApp delegate] performSelectorOnMainThread:@selector(renderTrack:) withObject:@"1" waitUntilDone:NO];
 	else
-		[del performSelectorOnMainThread:@selector(renderTrack:) withObject:@"2" waitUntilDone:NO];
+		[[NSApp delegate] performSelectorOnMainThread:@selector(renderTrack:) withObject:@"2" waitUntilDone:NO];
 }
 
 void CocoaUI::render_impl(int trackid)
 {
-	AppDelegate *del = [NSApp delegate];
+	id delId = [NSApp delegate];
+    AppDelegate *del = delId;
 	MyOpenGLView *glView;
 	if (trackid==1)
 		glView = [[del.window contentView] viewWithTag:'wav1'];

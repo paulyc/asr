@@ -41,7 +41,8 @@ NSDictionary *subviewIds = @{
 {
 	[super setView:view];
 	
-	AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
 	IOProcessor *io = del.ui->_io;
 	_inputChannels = io->getInputChannels();
 	_outputChannels = io->getOutputChannels();
@@ -88,7 +89,8 @@ NSDictionary *subviewIds = @{
 
 - (void)configure
 {
-	AppDelegate *del = [NSApp delegate];
+    id delId = [NSApp delegate];
+    AppDelegate *del = delId;
 	IOProcessor *io = del.ui->_io;
 	NSPopUpButton *output1 = [self getSubView:@"Output1"];
 	NSInteger itemIndex = [output1 indexOfSelectedItem];
